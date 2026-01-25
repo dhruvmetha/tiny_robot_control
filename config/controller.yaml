@@ -1,0 +1,39 @@
+# Controller configuration defaults
+# These values match micromvp defaults
+
+# Speed settings (normalized 0.0 - 1.0)
+speed:
+  # Default max speed for all controllers
+  default: 0.3
+
+  # Max speed for keyboard/manual control (same as default for safety)
+  keyboard: 0.3
+
+  # Speed presets (can be cycled with +/- keys or UI buttons)
+  presets: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9]
+
+# Navigation controller
+navigation:
+  max_speed: 0.3
+  pre_rotation_skip_angle: 45.0  # degrees - skip pre-rotation if heading error < this
+  rotation_tolerance: 2.5  # degrees - rotation complete when within this
+
+# Follow path controller
+follow_path:
+  max_speed: 0.3
+  lookahead_distance: 15.0  # cm
+  cte_kp: 0.015  # Cross-track error proportional gain
+  cte_kd: 0.005  # Cross-track error derivative gain
+  path_resample_step: 5.0  # cm - resample path to this resolution
+  arrival_threshold: 5.0  # cm - consider arrived when within this distance
+
+# Keyboard controller
+keyboard:
+  max_speed: 0.3
+  turn_ratio: 0.6  # Inner wheel speed ratio when turning
+
+# Pure pursuit parameters
+pure_pursuit:
+  min_lookahead: 8.0  # cm
+  max_lookahead: 25.0  # cm
+  speed_lookahead_gain: 0.5  # Lookahead increases with speed

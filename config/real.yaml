@@ -1,0 +1,52 @@
+# Real environment configuration
+# Robot and object marker definitions
+
+# Camera settings
+camera:
+  device: 0
+  resolution: "720p"
+  fps: 60
+  # Path to camera calibration file (camera matrix K and distortion D)
+  # If empty, uses default approximation
+  calibration_file: ""
+  # Camera exposure (-6 is typical for ArUco detection, null for auto)
+  exposure: -6
+  # Apply undistortion to frames before processing (requires calibration)
+  undistort: false
+
+# Robot marker (4x4 ArUco)
+robot:
+  marker_id: 1
+  marker_size_mm: 36.0
+  # Robot dimensions in cm (for 2D footprint)
+  width_cm: 5.0   # side-to-side
+  height_cm: 5.0  # front-to-back (depth)
+  # Offset from marker center to wheel center [x_cm, y_cm] in marker-local coords
+  # Use if the ArUco marker is not placed at the robot's center of rotation
+  # Positive x = forward, positive y = left
+  marker_to_wheel_offset: [0.0, 0.0]
+
+# Object markers (6x6 ArUco)
+# Maps object name to (marker_id, width_mm, height_mm)
+objects:
+  box1:
+    marker_id: 20
+    size_mm: [40, 40]
+  box2:
+    marker_id: 21
+    size_mm: [40, 40]
+  box3:
+    marker_id: 22
+    size_mm: [40, 40]
+
+# Workspace settings (fixed 40x60 cm)
+workspace:
+  warmup_frames: 30
+  min_inliers: 12
+
+# Serial port settings (for SerialActionSender)
+serial:
+  port: "/dev/ttyACM0"
+  baudrate: 115200
+  send_hz: 30.0
+  invert_right_wheel: false

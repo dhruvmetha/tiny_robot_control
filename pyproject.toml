@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robot_control"
+version = "0.1.0"
+description = "Core abstractions for robot control"
+requires-python = ">=3.10"
+dependencies = ["pypubsub>=4.0.3"]
+
+[project.optional-dependencies]
+gui = ["PySide6"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"robot_control.assets" = ["*.png"]
