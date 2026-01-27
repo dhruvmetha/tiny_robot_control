@@ -33,11 +33,10 @@ Controls:
 from __future__ import annotations
 
 import argparse
-import math
 import threading
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Tuple
 
 import yaml
 
@@ -46,7 +45,8 @@ from robot_control.controller import (
     NavigationController,
     FollowPathController,
 )
-from robot_control.core.types import Action, Observation, WorkspaceConfig
+from robot_control.coordinator import ControlCoordinator
+from robot_control.core.types import WorkspaceConfig
 from robot_control.core.world_state import WorldState
 from robot_control.gui import Window
 from robot_control.planner import RVGPlanner
@@ -56,10 +56,9 @@ try:
     from robot_control.camera import (
         ArucoObserver,
         ObserverConfig,
-        WORKSPACE_WIDTH_CM,
-        WORKSPACE_HEIGHT_CM,
         make_real_workspace_config,
     )
+    from robot_control.camera.observer import ObjectDefinition
     from robot_control.environment.real import RealEnv, RealEnvConfig
     from robot_control.nodes import CameraSensorNode, CameraConfig
     from robot_control.utils import CameraRecorder
@@ -76,21 +75,33 @@ except ImportError:
     SIM_AVAILABLE = False
 
 
-# Speed presets (max 0.9 for safety)
-SPEED_PRESETS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9]
+def load_objects_yaml(objects_path: str) -> Dict[str, "ObjectDefinition"]:
+    """Load object definitions from objects.yaml."""
+    with open(objects_path, "r") as f:
+        data = yaml.safe_load(f)
+
+    object_defs = {}
+    for name, obj in data.get("objects", {}).items():
+        obj_type = obj.get("type", "movable")
+        shape = obj.get("shape", {})
+        offset = obj.get("marker_offset", {})
+        object_defs[name] = ObjectDefinition(
+            marker_id=obj["marker_id"],
+            is_static=(obj_type == "static"),
+            is_goal=(obj_type == "goal"),
+            width_cm=shape.get("width", 0.0),
+            depth_cm=shape.get("depth", 0.0),
+            height_cm=shape.get("height", 0.0),
+            marker_offset_x_cm=offset.get("x", 0.0),
+            marker_offset_y_cm=offset.get("y", 0.0),
+        )
+    return object_defs
 
 
-def load_real_config(config_path: str) -> Tuple:
-    """Load configuration from YAML file for real robot."""
+def load_real_config(config_path: str, objects_path: str = "config/objects.yaml") -> Tuple:
+    """Load configuration from YAML files for real robot."""
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-
-    # Build objects dict: name -> (marker_id, width, height)
-    objects = {}
-    for name, obj_config in config.get("objects", {}).items():
-        marker_id = obj_config["marker_id"]
-        size = obj_config.get("size_mm", [40, 40])
-        objects[name] = (marker_id, size[0], size[1])
 
     camera_cfg = config.get("camera", {})
     robot_cfg = config.get("robot", {})
@@ -103,6 +114,11 @@ def load_real_config(config_path: str) -> Tuple:
         marker_offset_tuple = (float(marker_offset[0]), float(marker_offset[1]))
     else:
         marker_offset_tuple = (0.0, 0.0)
+
+    # Load object definitions from objects.yaml
+    object_defs = {}
+    if Path(objects_path).exists():
+        object_defs = load_objects_yaml(objects_path)
 
     # Camera sensor config
     camera_config = CameraConfig(
@@ -119,7 +135,8 @@ def load_real_config(config_path: str) -> Tuple:
         robot_marker_id=robot_cfg.get("marker_id", 1),
         robot_marker_size_mm=robot_cfg.get("marker_size_mm", 36.0),
         marker_to_wheel_offset_cm=marker_offset_tuple,
-        objects=objects,
+        object_defs=object_defs,  # From objects.yaml
+        object_marker_size_mm=robot_cfg.get("object_marker_size_mm", 30.0),
         warmup_frames=workspace_cfg.get("warmup_frames", 30),
         min_workspace_inliers=workspace_cfg.get("min_inliers", 12),
     )
@@ -152,6 +169,12 @@ def main():
         type=str,
         default="config/real.yaml",
         help="Path to config file (for real robot mode)"
+    )
+    parser.add_argument(
+        "--objects",
+        type=str,
+        default="config/objects.yaml",
+        help="Path to objects definition file"
     )
     parser.add_argument(
         "--port",
@@ -189,16 +212,14 @@ def run_simulation(args):
     """Run in simulation mode."""
     # Create simulation config
     sim_config = SimConfig(
-        width=640,
-        height=480,
-        car_width=30,
-        car_height=40,
-        x=320,
-        y=240,
+        car_width=8,
+        car_height=10,
+        x=10,
+        y=10,
         theta=0,
         objects={
-            "box1": (450, 300, 0),
-            "box2": (200, 350, 45),
+            "box1": (22, 32, 0),    # Center (5x5 cm from objects.yaml)
+            "box2": (12, 45, 45),   # Upper left
         }
     )
     workspace_config = sim_config.workspace_config
@@ -223,8 +244,14 @@ def run_simulation(args):
         "navigation": NavigationController(workspace_config, planner, max_speed=args.speed),
         "follow_path": FollowPathController(workspace_config, max_speed=args.speed),
     }
-    active_controller = "keyboard"
-    current_speed = args.speed
+
+    # Create coordinator
+    coordinator = ControlCoordinator(
+        controllers=controllers,
+        world=world,
+        initial_controller="keyboard",
+        initial_speed=args.speed,
+    )
 
     # Create GUI
     window = Window(
@@ -235,206 +262,23 @@ def run_simulation(args):
     )
     window.enable_canvas_click(True)
     window.set_controller("Keyboard")
-    window.update_speed(current_speed)
+
+    # Bind coordinator to window
+    coordinator.bind_to_window(window)
 
     # State
     running = True
-    pressed_keys: Set[str] = set()
-    rotation_mode = False
 
-    def on_controller_changed(controller_id: str):
-        nonlocal active_controller
+    def on_quit():
+        nonlocal running
+        running = False
+        window.close_window()
 
-        # Reset all controllers when switching (clears paths, goals, etc.)
-        for ctrl in controllers.values():
-            if hasattr(ctrl, "cancel"):
-                ctrl.cancel()
+    def on_emergency_stop():
+        print("Emergency stop")
 
-        # Clear drawings
-        window.update_drawings([])
-
-        active_controller = controller_id
-
-        # Update UI based on controller type
-        if controller_id == "keyboard":
-            window.set_controller("Keyboard")
-            window.enable_canvas_click(False)
-            window.enable_draw(False)
-            print("Switched to Keyboard mode (WASD)")
-        elif controller_id == "navigation":
-            window.set_controller("Navigation")
-            window.enable_canvas_click(True)
-            window.enable_draw(False)
-            print("Switched to Navigation mode (click to navigate)")
-        elif controller_id == "follow_path":
-            window.set_controller("Follow Path")
-            window.enable_canvas_click(False)
-            window.enable_draw(True)
-            print("Switched to Follow Path mode (draw path)")
-
-    def on_canvas_click(x: float, y: float):
-        if active_controller != "navigation":
-            return
-
-        obs = world.get()
-        if obs is None:
-            print("No observation available")
-            return
-
-        # Build obstacle list
-        obstacles = [
-            (o.x, o.y, o.theta, o.width if o.width > 0 else 4.0, o.height if o.height > 0 else 4.0)
-            for o in obs.objects.values()
-        ]
-
-        # Calculate goal theta if rotation mode enabled
-        goal_theta = None
-        if rotation_mode:
-            dx = x - obs.robot_x
-            dy = y - obs.robot_y
-            if math.hypot(dx, dy) > 1.0:
-                goal_theta = math.degrees(math.atan2(dy, dx))
-                if goal_theta < 0:
-                    goal_theta += 360
-
-        # Navigate
-        nav = controllers["navigation"]
-        if nav.navigate_to(x, y, goal_theta, (obs.robot_x, obs.robot_y), obstacles):
-            print(f"Navigating to ({x:.1f}, {y:.1f})")
-        else:
-            print(f"Planning failed to ({x:.1f}, {y:.1f})")
-
-    def on_curve_drawn(points: List[Tuple[float, float]]):
-        if active_controller != "follow_path":
-            return
-
-        if len(points) < 2:
-            print("Path too short")
-            return
-
-        controllers["follow_path"].set_path(points)
-        print(f"Following path with {len(points)} points")
-
-    def on_navigation_goal(x: float, y: float, theta):
-        """Handle navigation goal from UI."""
-        # Switch to navigation mode if not already
-        nonlocal active_controller
-        if active_controller != "navigation":
-            active_controller = "navigation"
-            window.set_controller("Navigation")
-            window.enable_canvas_click(True)
-            window.enable_draw(False)
-
-        # Cancel current plan before starting new one
-        controllers["navigation"].cancel()
-        window.update_drawings([])
-
-        obs = world.get()
-        if obs is None:
-            print("No observation available")
-            return
-
-        # Build obstacle list
-        obstacles = [
-            (o.x, o.y, o.theta, o.width if o.width > 0 else 4.0, o.height if o.height > 0 else 4.0)
-            for o in obs.objects.values()
-        ]
-
-        # Navigate with provided theta (can be None)
-        nav = controllers["navigation"]
-        theta_str = f", θ={theta:.1f}°" if theta is not None else ""
-        if nav.navigate_to(x, y, theta, (obs.robot_x, obs.robot_y), obstacles):
-            print(f"Navigating to ({x:.1f}, {y:.1f}{theta_str})")
-        else:
-            print(f"Planning failed to ({x:.1f}, {y:.1f})")
-
-    def on_cancel():
-        """Handle cancel button - stop robot and clear current plan."""
-        ctrl = controllers[active_controller]
-        if hasattr(ctrl, "cancel"):
-            ctrl.cancel()
-        window.update_drawings([])
-        print("Cancelled")
-
-    def change_speed(direction: int):
-        """Change speed by direction (-1 = decrease, +1 = increase)."""
-        nonlocal current_speed
-        if direction > 0:
-            # Increase speed
-            idx = 0
-            for i, preset in enumerate(SPEED_PRESETS):
-                if current_speed <= preset:
-                    idx = min(i + 1, len(SPEED_PRESETS) - 1)
-                    break
-            current_speed = SPEED_PRESETS[idx]
-        else:
-            # Decrease speed
-            idx = len(SPEED_PRESETS) - 1
-            for i, preset in enumerate(SPEED_PRESETS):
-                if current_speed <= preset:
-                    idx = max(i - 1, 0)
-                    break
-            current_speed = SPEED_PRESETS[idx]
-
-        for ctrl in controllers.values():
-            if hasattr(ctrl, "set_speed"):
-                ctrl.set_speed(current_speed)
-            elif hasattr(ctrl, "max_speed"):
-                ctrl.max_speed = current_speed
-        window.update_speed(current_speed)
-        print(f"Speed: {current_speed}")
-
-    def on_speed_change(direction: int):
-        """Handle speed change from UI buttons."""
-        change_speed(direction)
-
-    def on_key_press(key: str):
-        nonlocal running, rotation_mode
-        key = key.lower()
-
-        if key == "escape":
-            running = False
-            window.close_window()
-        elif key == "r":
-            rotation_mode = not rotation_mode
-            mode_str = "ON" if rotation_mode else "OFF"
-            print(f"Rotation mode: {mode_str}")
-        elif key == "c":
-            # Cancel current action
-            if active_controller == "navigation":
-                controllers["navigation"].cancel()
-            elif active_controller == "follow_path":
-                controllers["follow_path"].cancel()
-            print("Cancelled")
-        elif key == "space":
-            # Emergency stop
-            for ctrl in controllers.values():
-                if hasattr(ctrl, "cancel"):
-                    ctrl.cancel()
-            print("Emergency stop")
-        elif key in ("=", "+"):
-            change_speed(+1)
-        elif key in ("-", "_"):
-            change_speed(-1)
-        else:
-            pressed_keys.add(key)
-            if active_controller == "keyboard":
-                controllers["keyboard"].set_keys(pressed_keys)
-
-    def on_key_release(key: str):
-        key = key.lower()
-        pressed_keys.discard(key)
-        if active_controller == "keyboard":
-            controllers["keyboard"].set_keys(pressed_keys)
-
-    window.register_callback("on_controller_changed", on_controller_changed)
-    window.register_callback("on_canvas_click", on_canvas_click)
-    window.register_callback("on_curve_drawn", on_curve_drawn)
-    window.register_callback("on_key_press", on_key_press)
-    window.register_callback("on_key_release", on_key_release)
-    window.register_callback("on_speed_change", on_speed_change)
-    window.register_callback("on_navigation_goal", on_navigation_goal)
-    window.register_callback("on_cancel", on_cancel)
+    coordinator.on_quit(on_quit)
+    coordinator.on_emergency_stop(on_emergency_stop)
 
     # Start environment and sensor
     env.start()
@@ -450,19 +294,16 @@ def run_simulation(args):
 
             obs = world.get()
             if obs is not None:
-                # Get action from active controller
-                ctrl = controllers[active_controller]
-                action = ctrl.step(obs, subgoal=None)
+                # Get action from coordinator
+                action = coordinator.step(obs)
 
                 # Apply action
                 env.apply(action)
 
                 # Update GUI
                 window.update(obs)
-                if hasattr(ctrl, "get_status"):
-                    window.set_status(ctrl.get_status())
-                if hasattr(ctrl, "get_drawings"):
-                    window.update_drawings(ctrl.get_drawings())
+                window.set_status(coordinator.get_status())
+                window.update_drawings(coordinator.get_drawings())
                 window.update_action(action)
 
             # Maintain rate
@@ -476,7 +317,7 @@ def run_simulation(args):
     print("\n" + "=" * 50)
     print("Robot Control - Simulation")
     print("=" * 50)
-    print(f"Speed: {current_speed}")
+    print(f"Speed: {coordinator.current_speed}")
     print("=" * 50)
     print("Select controller from right panel")
     print("Press +/- to change speed")
@@ -498,9 +339,14 @@ def run_real_robot(args):
     """Run with real robot."""
     # Load config
     config_path = Path(args.config)
+    objects_path = Path(args.objects)
     if config_path.exists():
         print(f"Loading config from {config_path}")
-        camera_config, observer_config, real_env_config, robot_width, robot_height = load_real_config(str(config_path))
+        if objects_path.exists():
+            print(f"Loading objects from {objects_path}")
+        camera_config, observer_config, real_env_config, robot_width, robot_height = load_real_config(
+            str(config_path), str(objects_path)
+        )
     else:
         print(f"Config not found: {config_path}, using defaults")
         camera_config = CameraConfig()
@@ -532,11 +378,17 @@ def run_real_robot(args):
         "navigation": NavigationController(workspace_config, planner, max_speed=args.speed),
         "follow_path": FollowPathController(workspace_config, max_speed=args.speed),
     }
-    active_controller = "keyboard"
-    current_speed = args.speed
 
     # Create world state
     world = WorldState()
+
+    # Create coordinator
+    coordinator = ControlCoordinator(
+        controllers=controllers,
+        world=world,
+        initial_controller="keyboard",
+        initial_speed=args.speed,
+    )
 
     # Create camera sensor node
     print("\nStarting CameraSensorNode...")
@@ -579,122 +431,22 @@ def run_real_robot(args):
     )
     window.enable_canvas_click(False)  # Start with keyboard mode
     window.set_controller("Keyboard")
-    window.update_speed(current_speed)
+
+    # Bind coordinator to window
+    coordinator.bind_to_window(window)
 
     # State
     running = True
-    pressed_keys: Set[str] = set()
-    rotation_mode = False
 
-    def on_controller_changed(controller_id: str):
-        nonlocal active_controller
+    def on_quit():
+        nonlocal running
+        running = False
+        window.close_window()
 
-        # Reset all controllers when switching (clears paths, goals, etc.)
-        for ctrl in controllers.values():
-            if hasattr(ctrl, "cancel"):
-                ctrl.cancel()
-
-        # Clear drawings
-        window.update_drawings([])
-
-        active_controller = controller_id
-
-        if controller_id == "keyboard":
-            window.set_controller("Keyboard")
-            window.enable_canvas_click(False)
-            window.enable_draw(False)
-            print("Switched to Keyboard mode (WASD)")
-        elif controller_id == "navigation":
-            window.set_controller("Navigation")
-            window.enable_canvas_click(True)
-            window.enable_draw(False)
-            print("Switched to Navigation mode (click to navigate)")
-        elif controller_id == "follow_path":
-            window.set_controller("Follow Path")
-            window.enable_canvas_click(False)
-            window.enable_draw(True)
-            print("Switched to Follow Path mode (draw path)")
-
-    def on_canvas_click(x: float, y: float):
-        if active_controller != "navigation":
-            return
-
-        obs = world.get()
-        if obs is None:
-            print("No observation available")
-            return
-
-        obstacles = [
-            (o.x, o.y, o.theta, o.width if o.width > 0 else 4.0, o.height if o.height > 0 else 4.0)
-            for o in obs.objects.values()
-        ]
-
-        goal_theta = None
-        if rotation_mode:
-            dx = x - obs.robot_x
-            dy = y - obs.robot_y
-            if math.hypot(dx, dy) > 1.0:
-                goal_theta = math.degrees(math.atan2(dy, dx))
-                if goal_theta < 0:
-                    goal_theta += 360
-
-        nav = controllers["navigation"]
-        if nav.navigate_to(x, y, goal_theta, (obs.robot_x, obs.robot_y), obstacles):
-            print(f"Navigating to ({x:.1f}, {y:.1f})")
-        else:
-            print(f"Planning failed to ({x:.1f}, {y:.1f})")
-
-    def on_curve_drawn(points: List[Tuple[float, float]]):
-        if active_controller != "follow_path":
-            return
-
-        if len(points) < 2:
-            print("Path too short")
-            return
-
-        controllers["follow_path"].set_path(points)
-        print(f"Following path with {len(points)} points")
-
-    def on_navigation_goal(x: float, y: float, theta):
-        """Handle navigation goal from UI."""
-        # Switch to navigation mode if not already
-        nonlocal active_controller
-        if active_controller != "navigation":
-            active_controller = "navigation"
-            window.set_controller("Navigation")
-            window.enable_canvas_click(True)
-            window.enable_draw(False)
-
-        # Cancel current plan before starting new one
-        controllers["navigation"].cancel()
-        window.update_drawings([])
-
-        obs = world.get()
-        if obs is None:
-            print("No observation available")
-            return
-
-        # Build obstacle list
-        obstacles = [
-            (o.x, o.y, o.theta, o.width if o.width > 0 else 4.0, o.height if o.height > 0 else 4.0)
-            for o in obs.objects.values()
-        ]
-
-        # Navigate with provided theta (can be None)
-        nav = controllers["navigation"]
-        theta_str = f", θ={theta:.1f}°" if theta is not None else ""
-        if nav.navigate_to(x, y, theta, (obs.robot_x, obs.robot_y), obstacles):
-            print(f"Navigating to ({x:.1f}, {y:.1f}{theta_str})")
-        else:
-            print(f"Planning failed to ({x:.1f}, {y:.1f})")
-
-    def on_cancel():
-        """Handle cancel button - stop robot and clear current plan."""
-        ctrl = controllers[active_controller]
-        if hasattr(ctrl, "cancel"):
-            ctrl.cancel()
-        window.update_drawings([])
-        print("Cancelled")
+    def on_emergency_stop():
+        if not args.dry_run:
+            real_env.stop_robot()
+        print("Emergency stop")
 
     def on_record_toggled(recording: bool):
         """Handle record button toggle from GUI."""
@@ -703,86 +455,27 @@ def run_real_robot(args):
         else:
             recorder.stop()
 
-    def change_speed(direction: int):
-        """Change speed by direction (-1 = decrease, +1 = increase)."""
-        nonlocal current_speed
-        if direction > 0:
-            # Increase speed
-            idx = 0
-            for i, preset in enumerate(SPEED_PRESETS):
-                if current_speed <= preset:
-                    idx = min(i + 1, len(SPEED_PRESETS) - 1)
-                    break
-            current_speed = SPEED_PRESETS[idx]
-        else:
-            # Decrease speed
-            idx = len(SPEED_PRESETS) - 1
-            for i, preset in enumerate(SPEED_PRESETS):
-                if current_speed <= preset:
-                    idx = max(i - 1, 0)
-                    break
-            current_speed = SPEED_PRESETS[idx]
+    def on_key_r():
+        """Handle R key for recording toggle."""
+        is_recording = recorder.toggle()
+        window.set_recording(is_recording)
 
-        for ctrl in controllers.values():
-            if hasattr(ctrl, "set_speed"):
-                ctrl.set_speed(current_speed)
-            elif hasattr(ctrl, "max_speed"):
-                ctrl.max_speed = current_speed
-        window.update_speed(current_speed)
-        print(f"Speed: {current_speed}")
+    coordinator.on_quit(on_quit)
+    coordinator.on_emergency_stop(on_emergency_stop)
 
-    def on_speed_change(direction: int):
-        """Handle speed change from UI buttons."""
-        change_speed(direction)
-
-    def on_key_press(key: str):
-        nonlocal running, rotation_mode
-        key = key.lower()
-
-        if key == "escape":
-            running = False
-            window.close_window()
-        elif key == "r":
-            # Toggle recording
-            is_recording = recorder.toggle()
-            window.set_recording(is_recording)
-        elif key == "c":
-            if active_controller == "navigation":
-                controllers["navigation"].cancel()
-            elif active_controller == "follow_path":
-                controllers["follow_path"].cancel()
-            print("Cancelled")
-        elif key == "space":
-            for ctrl in controllers.values():
-                if hasattr(ctrl, "cancel"):
-                    ctrl.cancel()
-            if not args.dry_run:
-                real_env.stop_robot()
-            print("Emergency stop")
-        elif key in ("=", "+"):
-            change_speed(+1)
-        elif key in ("-", "_"):
-            change_speed(-1)
-        else:
-            pressed_keys.add(key)
-            if active_controller == "keyboard":
-                controllers["keyboard"].set_keys(pressed_keys)
-
-    def on_key_release(key: str):
-        key = key.lower()
-        pressed_keys.discard(key)
-        if active_controller == "keyboard":
-            controllers["keyboard"].set_keys(pressed_keys)
-
-    window.register_callback("on_controller_changed", on_controller_changed)
-    window.register_callback("on_canvas_click", on_canvas_click)
-    window.register_callback("on_curve_drawn", on_curve_drawn)
-    window.register_callback("on_key_press", on_key_press)
-    window.register_callback("on_key_release", on_key_release)
-    window.register_callback("on_speed_change", on_speed_change)
-    window.register_callback("on_navigation_goal", on_navigation_goal)
-    window.register_callback("on_cancel", on_cancel)
+    # Register recording callback (separate from coordinator)
     window.register_callback("on_record_toggled", on_record_toggled)
+
+    # Override key handler to add R key for recording
+    original_key_handler = coordinator._on_key_press
+
+    def extended_key_handler(key: str):
+        if key.lower() == "r":
+            on_key_r()
+        else:
+            original_key_handler(key)
+
+    window.register_callback("on_key_press", extended_key_handler)
 
     # Control loop
     control_rate = 30.0
@@ -794,17 +487,15 @@ def run_real_robot(args):
 
             obs = world.get()
             if obs is not None:
-                ctrl = controllers[active_controller]
-                action = ctrl.step(obs, subgoal=None)
+                # Get action from coordinator
+                action = coordinator.step(obs)
 
                 if not args.dry_run:
                     real_env.apply(action)
 
                 window.update(obs)
-                if hasattr(ctrl, "get_status"):
-                    window.set_status(ctrl.get_status())
-                if hasattr(ctrl, "get_drawings"):
-                    window.update_drawings(ctrl.get_drawings())
+                window.set_status(coordinator.get_status())
+                window.update_drawings(coordinator.get_drawings())
                 window.update_action(action)
 
             # Update camera view
@@ -828,7 +519,7 @@ def run_real_robot(args):
     print("=" * 50)
     print(f"Serial port: {real_env_config.port}")
     print(f"Robot ID: {real_env_config.robot_id}")
-    print(f"Speed: {current_speed}")
+    print(f"Speed: {coordinator.current_speed}")
     print(f"Dry run: {args.dry_run}")
     print("=" * 50)
     print("Select controller from right panel")

@@ -1,7 +1,7 @@
 """Workspace marker definitions for ArUco detection.
 
-Workspace is 40cm x 60cm with 5x5 ArUco boundary markers.
-Coordinate system: origin at top-left, +X right, +Y down.
+Workspace is 45cm x 65cm with 5x5 ArUco boundary markers.
+Coordinate system: origin at bottom-left, +X right, +Y up.
 """
 
 from __future__ import annotations
@@ -9,11 +9,15 @@ from __future__ import annotations
 from typing import Dict, Tuple
 
 # Workspace dimensions in cm
-WORKSPACE_WIDTH_CM = 40.0
-WORKSPACE_HEIGHT_CM = 60.0
+WORKSPACE_WIDTH_CM = 45.0
+WORKSPACE_HEIGHT_CM = 65.0
 
 # Marker size in cm (5x5 ArUco boundary markers)
 MARKER_SIZE_CM = 4.0
+
+# Origin offset: physical (0,0) relative to marker 8's top-left corner
+# Add this to all detected positions
+ORIGIN_OFFSET_CM = (2.0, 2.0)
 
 # Workspace boundary marker positions
 # Maps marker_id -> (x_cm, y_cm) of marker top-left corner

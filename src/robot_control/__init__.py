@@ -2,6 +2,7 @@
 
 from robot_control.core.types import Action, ObjectPose, Observation, Subgoal
 from robot_control.controller.base import Controller
+from robot_control.coordinator import ControlCoordinator
 from robot_control.environment.base import Environment
 from robot_control.environment.sim import SimConfig, SimEnv
 from robot_control.planner.base import Planner
@@ -9,6 +10,7 @@ from robot_control.runtime import Runtime
 
 __all__ = [
     "Action",
+    "ControlCoordinator",
     "Controller",
     "Environment",
     "ObjectPose",

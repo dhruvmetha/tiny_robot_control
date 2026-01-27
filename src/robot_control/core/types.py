@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 
 @dataclass
 class ObjectPose:
     """Pose and size of an object in the workspace."""
 
-    x: float
-    y: float
-    theta: float
-    width: float = 0.0   # Object width (0 = unknown, use default)
-    height: float = 0.0  # Object height (0 = unknown, use default)
+    x: float             # cm
+    y: float             # cm
+    theta: float         # degrees
+    width: float = 0.0   # cm (X dimension)
+    depth: float = 0.0   # cm (Y dimension)
+    height: float = 0.0  # cm (Z dimension)
+    is_static: bool = False  # True for walls, False for movable objects
 
 
 @dataclass
@@ -26,6 +28,8 @@ class Observation:
     robot_theta: float
     objects: Dict[str, ObjectPose]
     timestamp: float
+    goal_x: Optional[float] = None  # Goal position from marker 0 (cm)
+    goal_y: Optional[float] = None  # Goal position from marker 0 (cm)
 
 
 @dataclass

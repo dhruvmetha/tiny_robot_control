@@ -34,6 +34,7 @@ from robot_control.camera import (
     WORKSPACE_HEIGHT_CM,
     make_real_workspace_config,
 )
+from robot_control.camera.observer import ObjectDefinition
 from robot_control.controller import NavigationController
 from robot_control.core.world_state import WorldState
 from robot_control.environment.real import RealEnv, RealEnvConfig
@@ -42,17 +43,35 @@ from robot_control.nodes import CameraSensorNode, CameraConfig
 from robot_control.planner import RVGPlanner
 
 
-def load_config(config_path: str) -> Tuple[CameraConfig, ObserverConfig, RealEnvConfig, Dict]:
-    """Load configuration from YAML file."""
+def load_objects_yaml(objects_path: str) -> Dict[str, ObjectDefinition]:
+    """Load object definitions from objects.yaml."""
+    with open(objects_path, "r") as f:
+        data = yaml.safe_load(f)
+
+    object_defs = {}
+    for name, obj in data.get("objects", {}).items():
+        obj_type = obj.get("type", "movable")
+        shape = obj.get("shape", {})
+        offset = obj.get("marker_offset", {})
+        object_defs[name] = ObjectDefinition(
+            marker_id=obj["marker_id"],
+            is_static=(obj_type == "static"),
+            is_goal=(obj_type == "goal"),
+            width_cm=shape.get("width", 0.0),
+            depth_cm=shape.get("depth", 0.0),
+            height_cm=shape.get("height", 0.0),
+            marker_offset_x_cm=offset.get("x", 0.0),
+            marker_offset_y_cm=offset.get("y", 0.0),
+        )
+    return object_defs
+
+
+def load_config(
+    config_path: str, objects_path: str = "config/objects.yaml"
+) -> Tuple[CameraConfig, ObserverConfig, RealEnvConfig, Dict]:
+    """Load configuration from YAML files."""
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-
-    # Build objects dict: name -> (marker_id, width, height)
-    objects = {}
-    for name, obj_config in config.get("objects", {}).items():
-        marker_id = obj_config["marker_id"]
-        size = obj_config.get("size_mm", [40, 40])
-        objects[name] = (marker_id, size[0], size[1])
 
     camera_cfg = config.get("camera", {})
     robot_cfg = config.get("robot", {})
@@ -65,6 +84,11 @@ def load_config(config_path: str) -> Tuple[CameraConfig, ObserverConfig, RealEnv
         marker_offset_tuple = (float(marker_offset[0]), float(marker_offset[1]))
     else:
         marker_offset_tuple = (0.0, 0.0)
+
+    # Load object definitions from objects.yaml
+    object_defs = {}
+    if Path(objects_path).exists():
+        object_defs = load_objects_yaml(objects_path)
 
     # Camera sensor config
     camera_config = CameraConfig(
@@ -81,7 +105,8 @@ def load_config(config_path: str) -> Tuple[CameraConfig, ObserverConfig, RealEnv
         robot_marker_id=robot_cfg.get("marker_id", 1),
         robot_marker_size_mm=robot_cfg.get("marker_size_mm", 36.0),
         marker_to_wheel_offset_cm=marker_offset_tuple,
-        objects=objects,
+        object_defs=object_defs,  # From objects.yaml
+        object_marker_size_mm=robot_cfg.get("object_marker_size_mm", 30.0),
         warmup_frames=workspace_cfg.get("warmup_frames", 30),
         min_workspace_inliers=workspace_cfg.get("min_inliers", 12),
     )
@@ -107,6 +132,12 @@ def main():
         help="Path to config file"
     )
     parser.add_argument(
+        "--objects",
+        type=str,
+        default="config/objects.yaml",
+        help="Path to objects definition file"
+    )
+    parser.add_argument(
         "--port",
         type=str,
         default=None,
@@ -127,9 +158,14 @@ def main():
 
     # Load config
     config_path = Path(args.config)
+    objects_path = Path(args.objects)
     if config_path.exists():
         print(f"Loading config from {config_path}")
-        camera_config, observer_config, real_env_config, raw_config = load_config(str(config_path))
+        if objects_path.exists():
+            print(f"Loading objects from {objects_path}")
+        camera_config, observer_config, real_env_config, raw_config = load_config(
+            str(config_path), str(objects_path)
+        )
     else:
         print(f"Config not found: {config_path}, using defaults")
         camera_config = CameraConfig()
@@ -142,8 +178,8 @@ def main():
         real_env_config.port = args.port
 
     # Robot dimensions (approximate, in cm)
-    robot_width_cm = 8.0
-    robot_height_cm = 10.0
+    robot_width_cm = 5.0
+    robot_height_cm = 5.0
 
     # Create workspace config for real camera
     workspace_config = make_real_workspace_config(
@@ -157,7 +193,7 @@ def main():
         workspace_height=workspace_config.height,
         robot_width=workspace_config.car_width,
         robot_height=workspace_config.car_height,
-        robot_geometry_scale=1.2,
+        robot_geometry_scale=1.27,  # Matches wavefront (3.5 cm effective radius)
     )
 
     # Create navigation controller
@@ -218,12 +254,20 @@ def main():
             return
 
         # Build obstacle list from observed objects
+        # Dimensions come from objects.yaml via ArucoObserver
         obstacles = [
-            (o.x, o.y, o.theta, o.width if o.width > 0 else 4.0, o.height if o.height > 0 else 4.0)
+            (o.x, o.y, o.theta, o.width, o.depth)
             for o in obs.objects.values()
+            if o.width > 0 and o.depth > 0  # Skip objects without dimensions
         ]
 
         current_pos = (obs.robot_x, obs.robot_y)
+
+        # Debug: print obstacles
+        print(f"[DEBUG] Robot at: {current_pos}")
+        print(f"[DEBUG] Obstacles ({len(obstacles)}):")
+        for i, o in enumerate(obstacles):
+            print(f"  {i}: pos=({o[0]:.1f}, {o[1]:.1f}) theta={o[2]:.1f}° size={o[3]:.1f}x{o[4]:.1f}")
 
         # Calculate goal theta if rotation mode enabled
         goal_theta = None
@@ -278,6 +322,10 @@ def main():
             if obs is not None:
                 # Compute action
                 action = controller.step(obs, subgoal=None)
+
+                # Debug: log action and position when moving
+                if action.left_speed != 0 or action.right_speed != 0:
+                    print(f"[ACTION] L={action.left_speed:.2f} R={action.right_speed:.2f} | Robot: ({obs.robot_x:.1f}, {obs.robot_y:.1f})")
 
                 # Send to robot (if not dry run)
                 if not args.dry_run:

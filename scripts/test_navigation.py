@@ -37,12 +37,14 @@ def main():
     args = parser.parse_args()
 
     # Environment with obstacles
+    # Object names must match objects.yaml - dimensions loaded automatically
+    # Workspace is 45x65 cm (matching real robot)
     config = SimConfig(
-        x=100, y=120, theta=0,
+        x=10, y=10, theta=0,
         objects={
-            "box1": (320, 240, 0),   # Center obstacle
-            "box2": (200, 350, 30),  # Upper left
-            "box3": (450, 300, -15), # Right side
+            "box1": (22, 32, 0),    # Center obstacle (5x5 cm from objects.yaml)
+            "box2": (12, 45, 30),   # Upper left
+            "box3": (35, 25, -15),  # Right side
         }
     )
 
@@ -55,8 +57,8 @@ def main():
     # WorldState aggregates sensor data
     world = WorldState()
 
-    # GUI
-    window = Window(config.workspace_config)
+    # GUI (with settings panel for rotate button)
+    window = Window(config.workspace_config, show_settings=True)
     window.enable_canvas_click(True)
 
     # Navigation controller with RVG planner
@@ -66,7 +68,7 @@ def main():
         workspace_height=workspace_config.height,
         robot_width=workspace_config.car_width,
         robot_height=workspace_config.car_height,
-        robot_geometry_scale=1.2,  # Conservative paths
+        robot_geometry_scale=1.27,  # Matches wavefront (3.5 cm effective radius)
     )
     controller = NavigationController(workspace_config, planner, max_speed=args.speed)
 
@@ -83,11 +85,12 @@ def main():
             return
 
         # Build obstacle list from observed objects
-        # Format: (x, y, theta_deg, width, height)
-        # Using fixed size (40x40) for obstacles - adjust as needed
+        # Format: (x, y, theta_deg, width, depth)
+        # Dimensions come from objects.yaml via SimEnv
         obstacles = [
-            (o.x, o.y, o.theta, 40.0, 40.0)
+            (o.x, o.y, o.theta, o.width, o.depth)
             for o in obs.objects.values()
+            if o.width > 0 and o.depth > 0  # Skip objects without dimensions
         ]
 
         current_pos = (obs.robot_x, obs.robot_y)
@@ -131,8 +134,14 @@ def main():
             controller.cancel()
             print("Emergency stop")
 
+    def on_rotation_goal(theta: float):
+        """Handle rotation button click - rotate in place."""
+        controller.rotate_to(theta)
+        print(f"Rotating to {theta:.0f}°")
+
     window.register_callback("on_canvas_click", on_canvas_click)
     window.register_callback("on_key_press", on_key_press)
+    window.register_callback("on_rotation_goal", on_rotation_goal)
     window.set_controller("Navigation")
 
     # Start systems

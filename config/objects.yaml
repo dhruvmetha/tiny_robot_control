@@ -1,0 +1,123 @@
+# Object definitions for ArUco-based detection
+# All dimensions in cm, angles in degrees
+
+# ArUco dictionary: 6x6_50 for objects/walls
+# Types: "goal" (marker 0), "movable" (pushable boxes), "static" (walls)
+# Marker IDs: 0 = goal, 1-9 = objects (movable by default)
+
+objects:
+  # Goal marker (marker 0 is reserved for goal)
+  goal:
+    marker_id: 0
+    type: goal
+
+  # Movable boxes (5cm cubes) - markers 1-9
+  box1:
+    marker_id: 1
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  box2:
+    marker_id: 2
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  box3:
+    marker_id: 3
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  box4:
+    marker_id: 4
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  box5:
+    marker_id: 5
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  box6:
+    marker_id: 6
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  box7:
+    marker_id: 7
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  box8:
+    marker_id: 8
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+
+  # Static walls - markers 9+
+  # Customize shape and marker_offset for each wall
+  wall9:
+    marker_id: 9
+    type: static
+    shape:
+      width: 19.0   # cm
+      depth: 5.2    # cm
+      height: 10.0  # cm
+    marker_offset:
+      x: 0.0        # cm - no forward/back offset
+      y: 7.0        # cm - wall center is 7cm LEFT of marker (marker is 2.5cm from right edge)
+
+  wall10:
+    marker_id: 10
+    type: static
+    shape:
+      width: 19.0
+      depth: 5.2
+      height: 10.0
+    marker_offset:
+      x: 0.0
+      y: 0.0
+
+  wall11:
+    marker_id: 11
+    type: static
+    shape:
+      width: 19.0
+      depth: 5.2
+      height: 10.0
+    marker_offset:
+      x: 0.0
+      y: 0.0
+
+  wall12:
+    marker_id: 12
+    type: static
+    shape:
+      width: 19.0
+      depth: 5.2
+      height: 10.0
+    marker_offset:
+      x: 0.0
+      y: 0.0

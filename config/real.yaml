@@ -18,9 +18,9 @@ camera:
 robot:
   marker_id: 1
   marker_size_mm: 36.0
-  # Robot dimensions in cm (for 2D footprint)
-  width_cm: 5.0   # side-to-side
-  height_cm: 5.0  # front-to-back (depth)
+  # Robot dimensions in cm (for 2D footprint / planner)
+  width_cm: 5.5   # side-to-side
+  height_cm: 5.5  # front-to-back (depth)
   # Offset from marker center to wheel center [x_cm, y_cm] in marker-local coords
   # Use if the ArUco marker is not placed at the robot's center of rotation
   # Positive x = forward, positive y = left
@@ -28,16 +28,44 @@ robot:
 
 # Object markers (6x6 ArUco)
 # Maps object name to (marker_id, width_mm, height_mm)
+# Using 30mm markers on 50mm cubes
 objects:
+  box0:
+    marker_id: 0
+    size_mm: [50, 50]
   box1:
-    marker_id: 20
-    size_mm: [40, 40]
+    marker_id: 1
+    size_mm: [50, 50]
   box2:
-    marker_id: 21
-    size_mm: [40, 40]
+    marker_id: 2
+    size_mm: [50, 50]
   box3:
-    marker_id: 22
-    size_mm: [40, 40]
+    marker_id: 3
+    size_mm: [50, 50]
+  box4:
+    marker_id: 4
+    size_mm: [50, 50]
+  box5:
+    marker_id: 5
+    size_mm: [50, 50]
+  box6:
+    marker_id: 6
+    size_mm: [50, 50]
+  box7:
+    marker_id: 7
+    size_mm: [50, 50]
+  box8:
+    marker_id: 8
+    size_mm: [50, 50]
+  box9:
+    marker_id: 9
+    size_mm: [50, 50]
+  box10:
+    marker_id: 10
+    size_mm: [50, 50]
+  box11:
+    marker_id: 11
+    size_mm: [50, 50]
 
 # Workspace settings (fixed 40x60 cm)
 workspace:

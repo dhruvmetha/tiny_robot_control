@@ -86,6 +86,7 @@ class NavigationState(Enum):
     """Navigation state machine states."""
 
     IDLE = "IDLE"
+    ROTATING = "ROTATING"  # Standalone rotation (no navigation)
     PRE_ROTATING = "PRE_ROTATING"  # Rotate toward first waypoint
     FOLLOWING = "FOLLOWING"  # Following path (delegated)
     POST_ROTATING = "POST_ROTATING"  # Rotate to goal theta
@@ -168,6 +169,9 @@ class NavigationController(Controller):
         # Path visualization
         self._planned_path: List[Point] = []
 
+        # Obstacle visualization (stored when navigate_to is called)
+        self._obstacles: List[ObstacleTuple] = []
+
     @property
     def state(self) -> NavigationState:
         """Current navigation state."""
@@ -209,6 +213,9 @@ class NavigationController(Controller):
         Returns:
             True if planning succeeded and navigation started
         """
+        # Store obstacles for visualization
+        self._obstacles = obstacles
+
         # Plan path
         raw_path = self._planner.plan(current_pos, (goal_x, goal_y), obstacles)
 
@@ -260,6 +267,21 @@ class NavigationController(Controller):
 
         return True
 
+    def rotate_to(self, target_theta: float) -> bool:
+        """
+        Start rotating to target heading (no navigation).
+
+        Args:
+            target_theta: Target orientation in degrees
+
+        Returns:
+            True (always succeeds, just sets up rotation)
+        """
+        self._target_theta = target_theta
+        self._rotation_stable_start = None
+        self._state = NavigationState.ROTATING
+        return True
+
     def cancel(self) -> None:
         """Cancel navigation and stop."""
         self._state = NavigationState.IDLE
@@ -268,6 +290,7 @@ class NavigationController(Controller):
         self._pre_rotation_target = None
         self._rotation_stable_start = None
         self._planned_path = []
+        self._obstacles = []
 
     def step(self, obs: Observation, subgoal: Subgoal) -> Action:
         """Compute action given observation."""
@@ -278,6 +301,21 @@ class NavigationController(Controller):
             return Action.stop()
 
         robot_theta = obs.robot_theta
+
+        # ROTATING: Standalone rotate-in-place
+        if self._state == NavigationState.ROTATING:
+            if self._target_theta is None:
+                self._state = NavigationState.FINISHED
+                return Action.stop()
+
+            heading_error = _wrap_to_180(self._target_theta - robot_theta)
+
+            action = self._handle_rotation(heading_error)
+            if action is None:
+                self._rotation_stable_start = None
+                self._state = NavigationState.FINISHED
+                return Action.stop()
+            return action
 
         # PRE_ROTATING: Rotate toward first waypoint
         if self._state == NavigationState.PRE_ROTATING:
@@ -421,6 +459,7 @@ class NavigationController(Controller):
         self._pre_rotation_target = None
         self._rotation_stable_start = None
         self._planned_path = []
+        self._obstacles = []
 
     def get_status(self) -> str:
         """Get current status label."""
@@ -429,6 +468,20 @@ class NavigationController(Controller):
     def get_drawings(self) -> List[Dict[str, Any]]:
         """Get drawing commands for canvas visualization."""
         drawings = []
+
+        # Draw obstacles as the planner sees them
+        for i, obs in enumerate(self._obstacles):
+            x, y, theta_deg, width, depth = obs
+            corners = self._obstacle_corners(x, y, theta_deg, width, depth)
+            # Close the polygon by repeating first point
+            corners.append(corners[0])
+            drawings.append({
+                "uuid": f"obstacle_{i}",
+                "type": "path",
+                "points": corners,
+                "color": "#FF6600",  # Orange for obstacles
+                "width": 2,
+            })
 
         # Draw planned path
         if self._planned_path and len(self._planned_path) >= 2:
@@ -450,3 +503,36 @@ class NavigationController(Controller):
             pass
 
         return drawings
+
+    def _obstacle_corners(
+        self, x: float, y: float, theta_deg: float, width: float, depth: float
+    ) -> List[Point]:
+        """Compute rotated rectangle corners for an obstacle.
+
+        Convention: depth = along heading, width = perpendicular to heading
+        In local frame: X = depth (forward), Y = width (sideways)
+        """
+        theta = math.radians(theta_deg)
+        cos_t = math.cos(theta)
+        sin_t = math.sin(theta)
+
+        # Half dimensions: depth along X (heading), width along Y (perpendicular)
+        hx = depth / 2   # X half-size (along heading)
+        hy = width / 2   # Y half-size (perpendicular)
+
+        # Corner offsets in local frame
+        corners_local = [
+            (-hx, -hy),
+            (hx, -hy),
+            (hx, hy),
+            (-hx, hy),
+        ]
+
+        # Rotate and translate to world frame
+        corners = []
+        for lx, ly in corners_local:
+            wx = x + lx * cos_t - ly * sin_t
+            wy = y + lx * sin_t + ly * cos_t
+            corners.append((wx, wy))
+
+        return corners

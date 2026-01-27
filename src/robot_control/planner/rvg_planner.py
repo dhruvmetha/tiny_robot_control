@@ -21,7 +21,7 @@ class RVGPlanner:
         workspace_height: float,
         robot_width: float,
         robot_height: float,
-        robot_geometry_scale: float = 1.2,
+        robot_geometry_scale: float = 1.27,  # Matches wavefront: 5.5/2 * 1.27 ≈ 3.5 cm
     ) -> None:
         """
         Initialize the RVG planner.
@@ -62,14 +62,14 @@ class RVGPlanner:
 
         Returns:
             List of (x, y) waypoints from start to goal.
-            Returns [start, goal] if planning fails or RVG unavailable.
+            Returns empty list if planning fails.
         """
         try:
             from rvg import vertex, polygon, rvg
             import numpy as np
         except ImportError:
-            print("[RVGPlanner] RVG not available, using direct path")
-            return [start, goal]
+            print("[RVGPlanner] RVG not available")
+            return []
 
         try:
             # Create workspace border polygon
@@ -93,67 +93,89 @@ class RVGPlanner:
                     obstacle_polys.append(obs_poly)
 
             # Create RVG solver
-            solver = rvg(
-                robot=robot_poly,
-                border=border,
-                obstacles=obstacle_polys,
-                resolution=18,
-                numThreads=1,
-                verbose=False,
-                fineApprox=True,
-            )
-            solver.setWeight(euclideanWeight=1.0, rotationalWeight=0.1)
+            import sys
+            try:
+                solver = rvg(
+                    robot=robot_poly,
+                    border=border,
+                    obstacles=obstacle_polys,
+                    resolution=18,
+                    numThreads=1,
+                    verbose=False,
+                    fineApprox=True,
+                )
+                solver.setWeight(euclideanWeight=1.0, rotationalWeight=0.1)
+            except Exception as e:
+                print(f"[RVGPlanner] Solver creation failed: {e}")
+                return []
+
+            # Pre-check: ensure start/goal with robot footprint fits in workspace
+            max_robot_extent = max(abs(p[0]) for p in self._robot_geometry)
+            max_robot_extent = max(max_robot_extent, max(abs(p[1]) for p in self._robot_geometry))
+            margin = max_robot_extent + 0.1  # small extra margin
+
+            if (start[0] < margin or start[0] > self._width - margin or
+                start[1] < margin or start[1] > self._height - margin):
+                print(f"[RVGPlanner] Start ({start[0]:.1f}, {start[1]:.1f}) too close to boundary")
+                return []
+            if (goal[0] < margin or goal[0] > self._width - margin or
+                goal[1] < margin or goal[1] > self._height - margin):
+                print(f"[RVGPlanner] Goal ({goal[0]:.1f}, {goal[1]:.1f}) too close to boundary")
+                return []
 
             # Create start and goal vertices
             start_v = vertex(start[0], start[1], 0, 2 * np.pi, 0)
             goal_v = vertex(goal[0], goal[1], 0, 2 * np.pi, 0)
 
-            # Check if start/goal are legal before calling shortestPath
-            # Check ALL layers to be safe (RVG checks legality per-layer)
+            # Check if start/goal are legal in ALL layers before calling shortestPath
+            # This prevents crashes from shortestPath checking legality across layers in parallel
             layers = solver.getLayers()
-
             if not layers:
-                print("[RVGPlanner] No layers available, using direct path")
-                return [start, goal]
+                print("[RVGPlanner] No layers available")
+                return []
 
             for layer in layers:
-                if not layer.legalConfig(start_v):
-                    print(
-                        f"[RVGPlanner] Start ({start[0]:.1f}, {start[1]:.1f}) "
-                        "is not legal, using direct path"
-                    )
-                    return [start, goal]
-                if not layer.legalConfig(goal_v):
-                    print(
-                        f"[RVGPlanner] Goal ({goal[0]:.1f}, {goal[1]:.1f}) "
-                        "is not legal, using direct path"
-                    )
-                    return [start, goal]
+                try:
+                    if not layer.legalConfig(start_v):
+                        theta_lb = layer.getThetaLb()
+                        theta_ub = layer.getThetaUb()
+                        print(f"[RVGPlanner] Start ({start[0]:.1f}, {start[1]:.1f}) not legal in layer θ=[{theta_lb:.2f}, {theta_ub:.2f}]")
+                        return []
+                    if not layer.legalConfig(goal_v):
+                        theta_lb = layer.getThetaLb()
+                        theta_ub = layer.getThetaUb()
+                        print(f"[RVGPlanner] Goal ({goal[0]:.1f}, {goal[1]:.1f}) not legal in layer θ=[{theta_lb:.2f}, {theta_ub:.2f}]")
+                        return []
+                except Exception as e:
+                    print(f"[RVGPlanner] Layer check failed: {e}")
+                    return []
 
             # Find shortest path (wrap in extra try for C++ exceptions)
             try:
                 path_result = solver.shortestPath(start_v, goal_v)
             except (RuntimeError, SystemError, Exception) as e:
-                print(f"[RVGPlanner] shortestPath failed: {e}, using direct path")
-                return [start, goal]
+                print(f"[RVGPlanner] shortestPath failed: {e}")
+                return []
 
             if path_result is None or len(path_result) == 0:
-                return [start, goal]
+                print("[RVGPlanner] No path found")
+                return []
 
             # Convert result to list of points
             path = [(v.getX(), v.getY()) for v in path_result]
-            return path if path else [start, goal]
+            return path if path else []
 
         except Exception as e:
             print(f"[RVGPlanner] Path planning error: {e}")
-            return [start, goal]
+            return []
 
     def _obstacle_to_polygon(self, obs: ObstacleTuple):
         """
         Convert obstacle tuple to RVG polygon.
 
         Args:
-            obs: (x, y, theta_deg, width, height) obstacle tuple
+            obs: (x, y, theta_deg, width, depth) obstacle tuple
+                 width = X dimension, depth = Y dimension
 
         Returns:
             RVG polygon or None if invalid
@@ -164,19 +186,20 @@ class RVGPlanner:
         except ImportError:
             return None
 
-        x, y, theta_deg, width, height = obs
+        x, y, theta_deg, width, depth = obs
         theta = math.radians(theta_deg)
 
-        # Half dimensions
-        hw = width / 2
-        hh = height / 2
+        # Convention: depth = along heading, width = perpendicular to heading
+        # In local frame: X = depth (forward), Y = width (sideways)
+        hx = depth / 2   # X half-size (along heading)
+        hy = width / 2   # Y half-size (perpendicular)
 
         # Corner offsets in local frame
         corners_local = [
-            (-hw, -hh),
-            (hw, -hh),
-            (hw, hh),
-            (-hw, hh),
+            (-hx, -hy),
+            (hx, -hy),
+            (hx, hy),
+            (-hx, hy),
         ]
 
         # Rotate and translate to world frame

@@ -5,9 +5,16 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from threading import Lock, Thread
 from typing import Dict, Optional, Tuple
 
+from robot_control.camera.workspace import WORKSPACE_HEIGHT_CM, WORKSPACE_WIDTH_CM
+from robot_control.core.object_defs import (
+    DEFAULT_OBJECTS_YAML,
+    ObjectDef,
+    load_object_defs,
+)
 from robot_control.core.types import Action, ObjectPose, Observation, WorkspaceConfig
 from robot_control.environment.base import Environment
 
@@ -73,9 +80,9 @@ class SimConfig:
     y: float = 0.0
     theta: float = 0.0  # degrees
 
-    # Workspace dimensions
-    width: float = 640.0
-    height: float = 480.0
+    # Workspace dimensions (default: real robot workspace)
+    width: float = WORKSPACE_WIDTH_CM   # 45.0 cm
+    height: float = WORKSPACE_HEIGHT_CM  # 65.0 cm
 
     # Robot geometry
     car_width: float = 36.0
@@ -91,8 +98,15 @@ class SimConfig:
     speed_scale: float = 1.0  # 0=pause, 1=realtime, 2=2x speed
     physics_hz: float = 500.0  # Physics update rate
 
-    # Static objects: {object_id: (x, y, theta)}
+    # Object positions: {name: (x, y, theta)}
+    # Dimensions come from object_defs
     objects: Dict[str, Tuple[float, float, float]] = field(default_factory=dict)
+
+    # Object definitions (loaded from objects.yaml or provided directly)
+    object_defs: Dict[str, ObjectDef] = field(default_factory=dict)
+
+    # Path to objects.yaml (if object_defs not provided)
+    objects_yaml: Optional[Path] = None
 
     @property
     def workspace_config(self) -> WorkspaceConfig:
@@ -129,6 +143,16 @@ class SimEnv(Environment):
         self._theta = config.theta
         self._action: Action = Action.stop()
         self._speed_scale = config.speed_scale
+
+        # Load object definitions if not provided
+        if config.object_defs:
+            self._object_defs = config.object_defs
+        else:
+            yaml_path = config.objects_yaml or DEFAULT_OBJECTS_YAML
+            if yaml_path.exists():
+                self._object_defs = load_object_defs(yaml_path)
+            else:
+                self._object_defs = {}
 
         # Threading
         self._lock = Lock()
@@ -179,10 +203,19 @@ class SimEnv(Environment):
         with self._lock:
             x, y, theta = self._x, self._y, self._theta
 
-        objects = {
-            obj_id: ObjectPose(x=pose[0], y=pose[1], theta=pose[2])
-            for obj_id, pose in self._config.objects.items()
-        }
+        # Merge positions from config with dimensions from object_defs
+        objects = {}
+        for name, (ox, oy, oth) in self._config.objects.items():
+            obj_def = self._object_defs.get(name)
+            objects[name] = ObjectPose(
+                x=ox,
+                y=oy,
+                theta=oth,
+                width=obj_def.width if obj_def else 0.0,
+                depth=obj_def.depth if obj_def else 0.0,
+                height=obj_def.height if obj_def else 0.0,
+                is_static=obj_def.is_static if obj_def else False,
+            )
 
         return Observation(
             robot_x=x,

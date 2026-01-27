@@ -148,6 +148,7 @@ class Window(QMainWindow):
             self._settings_panel.controller_changed.connect(self._on_controller_changed)
             self._settings_panel.speed_change_requested.connect(self._on_speed_change)
             self._settings_panel.navigation_goal_submitted.connect(self._on_navigation_goal)
+            self._settings_panel.rotation_goal_submitted.connect(self._on_rotation_goal)
             self._settings_panel.cancel_requested.connect(self._on_cancel)
             splitter.addWidget(self._settings_panel)
 
@@ -189,6 +190,7 @@ class Window(QMainWindow):
             - "on_controller_changed": func(controller_id: str)
             - "on_speed_change": func(direction: int)  # -1 for decrease, +1 for increase
             - "on_navigation_goal": func(x: float, y: float, theta: Optional[float])
+            - "on_rotation_goal": func(theta: float)  # Rotate in place to heading
             - "on_cancel": func()  # Cancel current action
             - "on_record_toggled": func(recording: bool)  # Recording started/stopped
         """
@@ -208,6 +210,11 @@ class Window(QMainWindow):
         cb = self._callbacks.get("on_navigation_goal")
         if cb:
             cb(x, y, theta)
+
+    def _on_rotation_goal(self, theta: float) -> None:
+        cb = self._callbacks.get("on_rotation_goal")
+        if cb:
+            cb(theta)
 
     def _on_cancel(self) -> None:
         cb = self._callbacks.get("on_cancel")

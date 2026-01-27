@@ -125,9 +125,6 @@ def main():
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
     try:
-        last_print = 0
-        print_interval = 0.5
-
         while True:
             # Get visualization frame from observer
             vis_frame = observer.get_vis_frame()
@@ -137,22 +134,18 @@ def main():
             # Get observation from world state
             obs = world.get()
 
-            # Print status periodically
-            now = time.time()
-            if now - last_print >= print_interval:
-                last_print = now
-
-                if obs is None:
-                    print("No observation available")
-                else:
-                    print(f"\rRobot: ({obs.robot_x:.1f}, {obs.robot_y:.1f}) @ {obs.robot_theta:.1f}°  ", end="")
-                    if obs.objects:
-                        obj_str = " | ".join([
-                            f"{name}: ({o.x:.1f}, {o.y:.1f})"
-                            for name, o in obs.objects.items()
-                        ])
-                        print(f"Objects: {obj_str}  ", end="")
-                    print("", flush=True)
+            # Print every frame
+            if obs is None:
+                print("\rNo observation available", end="", flush=True)
+            else:
+                print(f"\rRobot: ({obs.robot_x:.1f}, {obs.robot_y:.1f}) @ {obs.robot_theta:.1f}°  ", end="")
+                if obs.objects:
+                    obj_str = " | ".join([
+                        f"{name}: ({o.x:.1f}, {o.y:.1f}, {o.theta:.1f}°)"
+                        for name, o in obs.objects.items()
+                    ])
+                    print(f"Objects: {obj_str}  ", end="")
+                print("", flush=True)
 
             # Handle keyboard
             key = cv2.waitKey(1) & 0xFF

@@ -17,7 +17,7 @@ class CameraRecorder:
     """
     Records camera frames to a video file.
 
-    Subscribes to Topics.CAMERA_FRAME and records when active.
+    Subscribes to Topics.CAMERA_BGR_RAW and records when active.
 
     Usage:
         recorder = CameraRecorder(output_dir="recordings")
@@ -77,7 +77,7 @@ class CameraRecorder:
     def subscribe(self) -> None:
         """Subscribe to camera frames."""
         if not self._subscribed:
-            pub.subscribe(self._on_frame, Topics.CAMERA_FRAME)
+            pub.subscribe(self._on_frame, Topics.CAMERA_BGR_RAW)
             self._subscribed = True
             print("[CameraRecorder] Subscribed to camera frames")
 
@@ -87,7 +87,7 @@ class CameraRecorder:
             # Stop recording if active
             if self._is_recording:
                 self.stop()
-            pub.unsubscribe(self._on_frame, Topics.CAMERA_FRAME)
+            pub.unsubscribe(self._on_frame, Topics.CAMERA_BGR_RAW)
             self._subscribed = False
             print("[CameraRecorder] Unsubscribed")
 

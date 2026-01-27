@@ -92,6 +92,8 @@ class NavigationGoalPanel(QGroupBox):
 
     # Signal emitted when Go button is clicked: (x, y, theta or None)
     goal_submitted = Signal(float, float, object)  # object for Optional[float]
+    # Signal emitted when Rotate button is clicked: (theta)
+    rotate_submitted = Signal(float)
 
     def __init__(self, workspace_width: float = 640.0, workspace_height: float = 480.0,
                  parent: Optional[QWidget] = None):
@@ -154,6 +156,10 @@ class NavigationGoalPanel(QGroupBox):
         theta_row.addWidget(self._theta_spin, 1)
         layout.addLayout(theta_row)
 
+        # Button row: Go and Rotate buttons
+        button_row = QHBoxLayout()
+        button_row.setSpacing(4)
+
         # Go button
         self._go_btn = QPushButton("Go")
         self._go_btn.setStyleSheet("""
@@ -173,7 +179,30 @@ class NavigationGoalPanel(QGroupBox):
             }
         """)
         self._go_btn.clicked.connect(self._on_go_clicked)
-        layout.addWidget(self._go_btn)
+        button_row.addWidget(self._go_btn, 1)
+
+        # Rotate button
+        self._rotate_btn = QPushButton("Rotate")
+        self._rotate_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #666666;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 6px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #777777;
+            }
+            QPushButton:pressed {
+                background-color: #555555;
+            }
+        """)
+        self._rotate_btn.clicked.connect(self._on_rotate_clicked)
+        button_row.addWidget(self._rotate_btn, 1)
+
+        layout.addLayout(button_row)
 
     def _on_theta_toggled(self, checked: bool) -> None:
         """Handle theta checkbox toggle."""
@@ -189,6 +218,11 @@ class NavigationGoalPanel(QGroupBox):
         y = self._y_spin.value()
         theta = self._theta_spin.value() if self._theta_check.isChecked() else None
         self.goal_submitted.emit(x, y, theta)
+
+    def _on_rotate_clicked(self) -> None:
+        """Handle Rotate button click."""
+        theta = self._theta_spin.value()
+        self.rotate_submitted.emit(theta)
 
     def set_workspace_size(self, width: float, height: float) -> None:
         """Update workspace size limits."""
@@ -436,6 +470,8 @@ class SettingsPanel(QWidget):
     speed_change_requested = Signal(int)
     # Signal emitted when navigation goal is submitted: (x, y, theta or None)
     navigation_goal_submitted = Signal(float, float, object)
+    # Signal emitted when rotation goal is submitted: (theta)
+    rotation_goal_submitted = Signal(float)
     # Signal emitted when cancel is requested
     cancel_requested = Signal()
 
@@ -464,6 +500,7 @@ class SettingsPanel(QWidget):
         # Navigation goal panel (hidden by default)
         self._nav_goal_panel = NavigationGoalPanel(workspace_width, workspace_height)
         self._nav_goal_panel.goal_submitted.connect(self._on_nav_goal_submitted)
+        self._nav_goal_panel.rotate_submitted.connect(self._on_rotate_submitted)
         self._nav_goal_panel.setVisible(False)
         layout.addWidget(self._nav_goal_panel)
 
@@ -517,6 +554,10 @@ class SettingsPanel(QWidget):
     def _on_nav_goal_submitted(self, x: float, y: float, theta: object) -> None:
         """Forward navigation goal signal."""
         self.navigation_goal_submitted.emit(x, y, theta)
+
+    def _on_rotate_submitted(self, theta: float) -> None:
+        """Forward rotation goal signal."""
+        self.rotation_goal_submitted.emit(theta)
 
     def _on_cancel_clicked(self) -> None:
         """Handle cancel button click."""

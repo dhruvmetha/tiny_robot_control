@@ -305,13 +305,21 @@ class Canvas(QGraphicsView):
             item = self._object_items[obj_id]
 
             # Use object size if available, otherwise default
-            obj_width = pose.width if pose.width > 0 else default_size
-            obj_height = pose.height if pose.height > 0 else default_size
+            # Convention: depth = along marker heading, width = perpendicular
+            # Before rotation (theta=0): heading is +X, so depth along X, width along Y
+            obj_width = pose.width if pose.width > 0 else default_size  # perpendicular to heading
+            obj_depth = pose.depth if pose.depth > 0 else default_size  # along heading
 
-            width_px = obj_width * self._pixels_per_unit
-            height_px = obj_height * self._pixels_per_unit
+            # In local frame (before rotation): X = depth (forward), Y = width (sideways)
+            x_px = obj_depth * self._pixels_per_unit  # along heading = X before rotation
+            y_px = obj_width * self._pixels_per_unit  # perpendicular = Y before rotation
             px, py = self.workspace_to_pixel(pose.x, pose.y)
-            item.setRect(px - width_px/2, py - height_px/2, width_px, height_px)
+
+            # Set rect centered at origin, then position and rotate
+            item.setRect(-x_px/2, -y_px/2, x_px, y_px)
+            item.setPos(px, py)
+            # Negate theta because workspace Y-up but screen Y-down
+            item.setRotation(-pose.theta)
 
     def update_drawings(self, drawings: List[Dict[str, Any]]) -> None:
         """

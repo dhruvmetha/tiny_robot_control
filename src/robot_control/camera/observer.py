@@ -18,12 +18,26 @@ from pubsub import pub
 
 from robot_control.camera.workspace import (
     MARKER_SIZE_CM,
+    ORIGIN_OFFSET_CM,
     WORKSPACE_HEIGHT_CM,
     WORKSPACE_MARKERS,
     WORKSPACE_WIDTH_CM,
 )
 from robot_control.core.topics import Topics
 from robot_control.core.types import ObjectPose, Observation
+
+
+@dataclass
+class ObjectDefinition:
+    """Definition of an object detected via ArUco marker."""
+    marker_id: int
+    is_static: bool = False  # True for walls, False for movable
+    is_goal: bool = False  # True for goal marker (marker 0)
+    width_cm: float = 0.0  # X dimension
+    depth_cm: float = 0.0  # Y dimension
+    height_cm: float = 0.0  # Z dimension
+    marker_offset_x_cm: float = 0.0  # offset from marker to object center (forward)
+    marker_offset_y_cm: float = 0.0  # offset from marker to object center (left)
 
 
 @dataclass
@@ -39,10 +53,14 @@ class ObserverConfig:
     robot_marker_size_mm: float = 36.0
     marker_to_wheel_offset_cm: Tuple[float, float] = (0.0, 0.0)
 
-    # Object markers (6x6 ArUco)
-    # Maps object_name -> (marker_id, width_mm, height_mm)
-    objects: Dict[str, Tuple[int, float, float]] = field(default_factory=dict)
+    # Object definitions (loaded from objects.yaml)
+    # Maps object_name -> ObjectDefinition
+    object_defs: Dict[str, ObjectDefinition] = field(default_factory=dict)
     object_marker_size_mm: float = 30.0
+
+    # Legacy: simple objects format (marker_id, width_mm, height_mm)
+    # Will be converted to object_defs if provided
+    objects: Dict[str, Tuple[int, float, float]] = field(default_factory=dict)
 
     # Workspace pose estimation
     warmup_frames: int = 30
@@ -106,10 +124,21 @@ class ArucoObserver:
         self._vis_frame: Optional[np.ndarray] = None
         self._lock = threading.Lock()
 
+        # Convert legacy objects format to object_defs if needed
+        if config.objects and not config.object_defs:
+            for name, (marker_id, width_mm, height_mm) in config.objects.items():
+                config.object_defs[name] = ObjectDefinition(
+                    marker_id=marker_id,
+                    is_static=False,
+                    width_cm=width_mm / 10.0,
+                    depth_cm=height_mm / 10.0,  # legacy used height as depth
+                    height_cm=5.0,  # default height
+                )
+
         # Build reverse lookup: marker_id -> object_name
         self._marker_to_object: Dict[int, str] = {}
-        for name, (marker_id, _, _) in config.objects.items():
-            self._marker_to_object[marker_id] = name
+        for name, obj_def in config.object_defs.items():
+            self._marker_to_object[obj_def.marker_id] = name
 
     def start(self) -> bool:
         """Start the observer. Subscribes to camera frames."""
@@ -209,9 +238,9 @@ class ArucoObserver:
             if vis is not None:
                 self._draw_workspace_boundary(vis)
 
-            # Detect robot and objects
+            # Detect robot, objects, and goal
             robot_pose = self._detect_robot(gray, vis)
-            objects = self._detect_objects(gray, vis)
+            objects, goal_pos = self._detect_objects(gray, vis)
 
             if robot_pose is not None:
                 x_cm, y_cm, yaw_deg = robot_pose
@@ -221,6 +250,8 @@ class ArucoObserver:
                     robot_theta=yaw_deg,
                     objects=objects,
                     timestamp=timestamp,
+                    goal_x=goal_pos[0] if goal_pos else None,
+                    goal_y=goal_pos[1] if goal_pos else None,
                 )
                 with self._lock:
                     self._observation = obs
@@ -232,7 +263,8 @@ class ArucoObserver:
                 with self._lock:
                     obs = self._observation
                 if obs is not None:
-                    status = f"Robot: OK | Objects: {len(obs.objects)}"
+                    goal_str = "OK" if obs.goal_x is not None else "N/A"
+                    status = f"Robot: OK | Objects: {len(obs.objects)} | Goal: {goal_str}"
                 else:
                     status = "Robot: N/A"
                 self._put_text(vis, status, (10, 30))
@@ -400,12 +432,16 @@ class ArucoObserver:
             corners_cm = self._transform_marker_to_workspace(rvec, tvec, self._robot_marker_pts_m)
             x_cm, y_cm, yaw_deg = self._compute_pose_from_corners(corners_cm)
 
-            # Apply offset
+            # Apply marker-to-wheel offset
             offset_x, offset_y = self._config.marker_to_wheel_offset_cm
             if offset_x != 0.0 or offset_y != 0.0:
                 yaw_rad = np.radians(yaw_deg)
                 x_cm += offset_x * np.cos(yaw_rad) - offset_y * np.sin(yaw_rad)
                 y_cm += offset_x * np.sin(yaw_rad) + offset_y * np.cos(yaw_rad)
+
+            # Apply origin offset (physical origin relative to marker 8)
+            x_cm += ORIGIN_OFFSET_CM[0]
+            y_cm += ORIGIN_OFFSET_CM[1]
 
             if vis is not None:
                 if self._config.draw_axis:
@@ -417,15 +453,22 @@ class ArucoObserver:
             return (x_cm, y_cm, yaw_deg)
         return None
 
-    def _detect_objects(self, gray: np.ndarray, vis: Optional[np.ndarray]) -> Dict[str, ObjectPose]:
+    def _detect_objects(self, gray: np.ndarray, vis: Optional[np.ndarray]) -> Tuple[Dict[str, ObjectPose], Optional[Tuple[float, float]]]:
+        """Detect objects and goal marker.
+
+        Returns:
+            Tuple of (objects dict, goal position or None)
+        """
         if not self._marker_to_object:
-            return {}
+            return {}, None
 
         corners, ids, _ = self._object_detector.detectMarkers(gray)
         if ids is None:
-            return {}
+            return {}, None
 
         objects: Dict[str, ObjectPose] = {}
+        goal_pos: Optional[Tuple[float, float]] = None
+
         rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
             corners, self._object_marker_len_m, self._K, self._D
         )
@@ -435,24 +478,57 @@ class ArucoObserver:
                 continue
 
             name = self._marker_to_object[mid]
+            obj_def = self._config.object_defs[name]
             rvec, tvec = rvecs[i, 0, :], tvecs[i, 0, :]
 
             corners_cm = self._transform_marker_to_workspace(rvec, tvec, self._object_marker_pts_m)
             x_cm, y_cm, yaw_deg = self._compute_pose_from_corners(corners_cm)
 
-            _, width_mm, height_mm = self._config.objects[name]
-            width_cm, height_cm = width_mm / 10.0, height_mm / 10.0
+            # Apply marker offset to get object center
+            # offset_x = forward (marker's +Y in our convention)
+            # offset_y = left (marker's +X in our convention)
+            if obj_def.marker_offset_x_cm != 0.0 or obj_def.marker_offset_y_cm != 0.0:
+                yaw_rad = np.radians(yaw_deg)
+                # Forward is along yaw direction, left is 90 degrees CCW
+                x_cm += obj_def.marker_offset_x_cm * np.cos(yaw_rad) - obj_def.marker_offset_y_cm * np.sin(yaw_rad)
+                y_cm += obj_def.marker_offset_x_cm * np.sin(yaw_rad) + obj_def.marker_offset_y_cm * np.cos(yaw_rad)
+
+            # Apply origin offset (physical origin relative to marker 8)
+            x_cm += ORIGIN_OFFSET_CM[0]
+            y_cm += ORIGIN_OFFSET_CM[1]
+
+            # Handle goal marker separately
+            if obj_def.is_goal:
+                goal_pos = (x_cm, y_cm)
+                if vis is not None:
+                    cv2.aruco.drawDetectedMarkers(vis, [corners[i]], np.array([[mid]]))
+                    center_px = corners[i].reshape(4, 2).mean(axis=0)
+                    self._put_text(vis, f"GOAL: {x_cm:.0f},{y_cm:.0f}", (int(center_px[0]), int(center_px[1]) + 20))
+                    # Draw a green circle at goal
+                    cv2.circle(vis, (int(center_px[0]), int(center_px[1])), 15, (0, 255, 0), 3)
+                continue  # Don't add goal to objects dict
 
             if vis is not None:
                 if self._config.draw_axis:
                     cv2.drawFrameAxes(vis, self._K, self._D, rvec, tvec, self._config.axis_length_m)
                 cv2.aruco.drawDetectedMarkers(vis, [corners[i]], np.array([[mid]]))
                 center_px = corners[i].reshape(4, 2).mean(axis=0)
-                self._put_text(vis, f"{name}: {x_cm:.0f},{y_cm:.0f}", (int(center_px[0]), int(center_px[1]) + 20))
+                label = f"{name}: {x_cm:.0f},{y_cm:.0f}"
+                if obj_def.is_static:
+                    label = f"[S] {label}"
+                self._put_text(vis, label, (int(center_px[0]), int(center_px[1]) + 20))
 
-            objects[name] = ObjectPose(x=x_cm, y=y_cm, theta=yaw_deg, width=width_cm, height=height_cm)
+            objects[name] = ObjectPose(
+                x=x_cm,
+                y=y_cm,
+                theta=yaw_deg,
+                width=obj_def.width_cm,
+                depth=obj_def.depth_cm,
+                height=obj_def.height_cm,
+                is_static=obj_def.is_static,
+            )
 
-        return objects
+        return objects, goal_pos
 
     # -------------------------
     # Drawing
