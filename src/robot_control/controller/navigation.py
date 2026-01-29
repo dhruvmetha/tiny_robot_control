@@ -12,6 +12,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 from robot_control.controller.base import Controller
+from robot_control.controller.config import NavigationConfig
 from robot_control.controller.follow_path import FollowPathController
 from robot_control.core.types import Action, Observation, Subgoal, WorkspaceConfig
 from robot_control.planner.rvg_planner import RVGPlanner
@@ -123,19 +124,12 @@ class NavigationController(Controller):
         env.apply(action)
     """
 
-    # Rotation parameters (matching micromvp)
-    ROTATION_TOLERANCE_DEG = 2.5  # Within +/- 2.5 deg
-    ROTATION_STABLE_TIME = 0.5  # Seconds to hold at target before done
-    ROTATION_SPEED_MAX = 0.25  # Max rotation wheel speed
-    ROTATION_SPEED_MIN = 0.15  # Min rotation wheel speed
-    WHEEL_DEADBAND = 0.05  # Motor deadband threshold
-
     def __init__(
         self,
         config: WorkspaceConfig,
         planner: RVGPlanner,
-        max_speed: float = 0.3,
-        pre_rotation_skip_angle: float = 45.0,
+        nav_config: Optional[NavigationConfig] = None,
+        max_speed: Optional[float] = None,
     ) -> None:
         """
         Initialize navigation controller.
@@ -143,21 +137,24 @@ class NavigationController(Controller):
         Args:
             config: Workspace configuration (dimensions, robot geometry)
             planner: RVG path planner
-            max_speed: Maximum wheel speed [0, 1] (default: 0.4)
-            pre_rotation_skip_angle: Skip pre-rotation if heading error < this (degrees)
+            nav_config: Navigation parameters (from YAML). If None, uses defaults.
+            max_speed: Override max speed (if None, uses nav_config value)
         """
         self._config = config
         self._planner = planner
-        self._max_speed = max_speed
+        self._nav_config = nav_config or NavigationConfig()
+        self._max_speed = max_speed if max_speed is not None else self._nav_config.max_speed
 
         # Path follower (delegated)
-        self._path_follower = FollowPathController(config, max_speed=max_speed)
+        car_size = max(config.car_width, config.car_height)
+        self._path_follower = FollowPathController(
+            config,
+            max_speed=self._max_speed,
+            goal_tolerance=self._nav_config.goal_tolerance_ratio * car_size,
+        )
 
         # State machine
         self._state = NavigationState.IDLE
-
-        # Rotation parameters
-        self._pre_rotation_skip_angle = pre_rotation_skip_angle
 
         # Rotation stable hold state
         self._rotation_stable_start: Optional[float] = None
@@ -326,7 +323,7 @@ class NavigationController(Controller):
                 heading_error = _wrap_to_180(self._pre_rotation_target - robot_theta)
 
                 # Skip pre-rotation if already reasonably aligned
-                if abs(heading_error) < self._pre_rotation_skip_angle:
+                if abs(heading_error) < self._nav_config.pre_rotation_skip_angle:
                     self._rotation_stable_start = None
                     self._state = NavigationState.FOLLOWING
                 else:
@@ -378,7 +375,7 @@ class NavigationController(Controller):
         Returns:
             Action to take, or None if rotation is complete
         """
-        if abs(heading_error) <= self.ROTATION_TOLERANCE_DEG:
+        if abs(heading_error) <= self._nav_config.rotation_tolerance_deg:
             # Within tolerance - check stable hold
             now = time.time()
 
@@ -387,7 +384,7 @@ class NavigationController(Controller):
                 self._rotation_stable_start = now
                 return Action.stop()
 
-            elif now - self._rotation_stable_start >= self.ROTATION_STABLE_TIME:
+            elif now - self._rotation_stable_start >= self._nav_config.rotation_stable_time:
                 # Stable hold complete - rotation done
                 return None
 
@@ -404,9 +401,9 @@ class NavigationController(Controller):
         Calculate in-place rotation action with variable speed.
 
         Speed varies based on error:
-        - > 45°: ROTATION_SPEED_MAX
+        - > 45°: rotation_speed_max
         - 15-45°: Linear interpolation
-        - < 15°: ROTATION_SPEED_MIN
+        - < 15°: rotation_speed_min
 
         Args:
             heading_error: Angle error in degrees (positive = rotate CCW)
@@ -415,18 +412,18 @@ class NavigationController(Controller):
             Differential drive action for rotation
         """
         abs_error = abs(heading_error)
+        speed_max = self._nav_config.rotation_speed_max
+        speed_min = self._nav_config.rotation_speed_min
 
         # Variable speed based on error (matching micromvp)
         if abs_error > 45.0:
-            speed = self.ROTATION_SPEED_MAX
+            speed = speed_max
         elif abs_error > 15.0:
             # Linear interpolation between min and max
             t = (abs_error - 15.0) / 30.0
-            speed = self.ROTATION_SPEED_MIN + t * (
-                self.ROTATION_SPEED_MAX - self.ROTATION_SPEED_MIN
-            )
+            speed = speed_min + t * (speed_max - speed_min)
         else:
-            speed = self.ROTATION_SPEED_MIN
+            speed = speed_min
 
         if heading_error > 0:
             # Rotate CCW: left wheel backward, right wheel forward
@@ -439,7 +436,7 @@ class NavigationController(Controller):
 
         # Apply deadband scaling
         left_speed, right_speed = _enforce_deadband_scale(
-            left_speed, right_speed, self.WHEEL_DEADBAND
+            left_speed, right_speed, self._nav_config.wheel_deadband
         )
 
         return Action(

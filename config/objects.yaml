@@ -11,6 +11,16 @@ objects:
     marker_id: 0
     type: goal
 
+  # Push test box - rectangular (12cm wide perpendicular, 4cm deep along heading)
+  # Convention: depth = X (along heading), width = Y (perpendicular)
+  push_box:
+    marker_id: 2
+    type: movable
+    shape:
+      width: 12.0  # cm - Y dimension (perpendicular to heading)
+      depth: 4.0   # cm - X dimension (along heading)
+      height: 4.0  # cm
+
   # Movable boxes (5cm cubes) - markers 1-9
   box1:
     marker_id: 1

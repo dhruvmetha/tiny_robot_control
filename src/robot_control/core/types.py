@@ -53,6 +53,24 @@ class Subgoal:
 
 
 @dataclass
+class NavigateSubgoal(Subgoal):
+    """Navigate to a target position."""
+
+    x: float  # Target x (cm)
+    y: float  # Target y (cm)
+    theta: Optional[float] = None  # Target orientation (degrees), None = any
+
+
+@dataclass
+class PushSubgoal(Subgoal):
+    """Push an object (for future NAMO integration)."""
+
+    object_id: str  # Which object to push
+    edge_idx: int  # 0-3: which face to approach from
+    push_steps: int  # Number of push units
+
+
+@dataclass
 class WorkspaceConfig:
     """
     Configuration for workspace and robot geometry.

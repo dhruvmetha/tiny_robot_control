@@ -71,6 +71,10 @@ class KeyboardController(Controller):
         """Set maximum speed multiplier [0.0, 1.0]."""
         self._max_speed = max(0.0, min(1.0, value))
 
+    def set_speed(self, speed: float) -> None:
+        """Set maximum speed. Called by coordinator on +/- changes."""
+        self.max_speed = speed
+
     def set_keys(self, keys: Set[str]) -> None:
         """
         Update keyboard state from pressed keys.

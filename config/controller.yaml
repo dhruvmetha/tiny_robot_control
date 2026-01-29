@@ -1,39 +1,41 @@
-# Controller configuration defaults
-# These values match micromvp defaults
-
-# Speed settings (normalized 0.0 - 1.0)
-speed:
-  # Default max speed for all controllers
-  default: 0.3
-
-  # Max speed for keyboard/manual control (same as default for safety)
-  keyboard: 0.3
-
-  # Speed presets (can be cycled with +/- keys or UI buttons)
-  presets: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9]
+# Controller configuration
+# Only contains parameters actually loaded by code
 
 # Navigation controller
 navigation:
   max_speed: 0.3
   pre_rotation_skip_angle: 45.0  # degrees - skip pre-rotation if heading error < this
-  rotation_tolerance: 2.5  # degrees - rotation complete when within this
+  robot_geometry_scale: 1.0      # RVG robot inflation (1.0 = half robot size, matches wavefront)
+  goal_tolerance_ratio: 0.2      # goal_tolerance = ratio * car_size
 
-# Follow path controller
-follow_path:
+  # Rotation parameters
+  rotation_tolerance_deg: 2.5    # degrees - rotation complete when within this
+  rotation_stable_time: 0.5      # seconds - hold at target before done
+  rotation_speed_max: 0.25       # max wheel speed for rotation
+  rotation_speed_min: 0.15       # min wheel speed for rotation
+  wheel_deadband: 0.05           # motor deadband threshold
+
+# Push controller
+push:
   max_speed: 0.3
-  lookahead_distance: 15.0  # cm
-  cte_kp: 0.015  # Cross-track error proportional gain
-  cte_kd: 0.005  # Cross-track error derivative gain
-  path_resample_step: 5.0  # cm - resample path to this resolution
-  arrival_threshold: 5.0  # cm - consider arrived when within this distance
+  standoff_multiplier: 1.0       # standoff = multiplier * robot_size
+  wheel_deadband: 0.05           # motor deadband threshold
+  lookahead_ratio: 0.3           # lookahead as fraction of object size
+  push_steps: 75                # control ticks per push (~3.3 seconds at 30Hz)
+  dynamic_direction: false       # true = update push direction every step, false = fix at start
 
-# Keyboard controller
-keyboard:
-  max_speed: 0.3
-  turn_ratio: 0.6  # Inner wheel speed ratio when turning
+  # Approach phase parameters
+  approach_skip_distance: 1.0    # cm - skip approach if closer than this
+  approach_skip_angle: 30.0      # degrees - skip approach if angle error < this
 
-# Pure pursuit parameters
-pure_pursuit:
-  min_lookahead: 8.0  # cm
-  max_lookahead: 25.0  # cm
-  speed_lookahead_gain: 0.5  # Lookahead increases with speed
+  # Edge point generation (matches namo_cpp algorithm)
+  # 1 = legacy (4 edges), 3 = standard (12 edges), 15 = high-res (60 edges)
+  points_per_face: 15
+
+  # Advance phase parameters (close gap before pushing)
+  advance_speed: 0.15            # Forward speed
+  advance_steps: 0              # Ticks to advance (~1 second at 30Hz)
+
+  # Retreat phase parameters (back up after push to clear object)
+  retreat_speed: 0.15            # Backup speed (applied as negative)
+  retreat_steps: 100             # Ticks to back up (~3.3 seconds at 30Hz)

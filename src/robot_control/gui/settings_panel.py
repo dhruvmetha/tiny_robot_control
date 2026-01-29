@@ -413,6 +413,123 @@ class ParametersPanel(QGroupBox):
         self._rotation_label.setText("-")
 
 
+class AutonomousPanel(QGroupBox):
+    """Control panel for autonomous mode with speed and stop controls."""
+
+    # Signal emitted when cancel/stop is clicked
+    cancel_clicked = Signal()
+    # Signal emitted when speed change is requested: +1 or -1
+    speed_changed = Signal(int)
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__("Autonomous", parent)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 12, 8, 8)
+        layout.setSpacing(8)
+
+        # Speed controls row: [-] [label] [+]
+        speed_row = QHBoxLayout()
+        speed_row.setSpacing(4)
+
+        self._speed_down = QPushButton("-")
+        self._speed_down.setFixedSize(32, 32)
+        self._speed_down.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._speed_down.setStyleSheet("""
+            QPushButton {
+                background-color: #444;
+                color: white;
+                border: 1px solid #666;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 18px;
+            }
+            QPushButton:hover {
+                background-color: #555;
+            }
+            QPushButton:pressed {
+                background-color: #333;
+            }
+        """)
+        speed_row.addWidget(self._speed_down)
+
+        self._speed_label = QLabel("0.3")
+        self._speed_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._speed_label.setStyleSheet("""
+            QLabel {
+                color: #0066cc;
+                font-weight: bold;
+                font-size: 16px;
+                background-color: #f0f0f0;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 4px;
+            }
+        """)
+        speed_row.addWidget(self._speed_label, 1)
+
+        self._speed_up = QPushButton("+")
+        self._speed_up.setFixedSize(32, 32)
+        self._speed_up.setStyleSheet("""
+            QPushButton {
+                background-color: #444;
+                color: white;
+                border: 1px solid #666;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 18px;
+            }
+            QPushButton:hover {
+                background-color: #555;
+            }
+            QPushButton:pressed {
+                background-color: #333;
+            }
+        """)
+        speed_row.addWidget(self._speed_up)
+
+        layout.addLayout(speed_row)
+
+        # Speed label row
+        speed_label_row = QHBoxLayout()
+        speed_text = QLabel("Speed")
+        speed_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        speed_text.setStyleSheet("color: #666; font-size: 11px;")
+        speed_label_row.addWidget(speed_text)
+        layout.addLayout(speed_label_row)
+
+        # Cancel/Stop button
+        self._cancel_btn = QPushButton("STOP")
+        self._cancel_btn.setMinimumHeight(40)
+        self._cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #cc0000;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #dd2222;
+            }
+            QPushButton:pressed {
+                background-color: #aa0000;
+            }
+        """)
+        layout.addWidget(self._cancel_btn)
+
+        # Connect signals
+        self._speed_down.clicked.connect(lambda: self.speed_changed.emit(-1))
+        self._speed_up.clicked.connect(lambda: self.speed_changed.emit(+1))
+        self._cancel_btn.clicked.connect(self.cancel_clicked.emit)
+
+    def update_speed(self, speed: float) -> None:
+        """Update the speed display."""
+        self._speed_label.setText(f"{speed:.1f}")
+
+
 class ActionPanel(QGroupBox):
     """Panel displaying current action/motor commands."""
 

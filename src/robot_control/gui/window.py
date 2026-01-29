@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 
 from robot_control.core.types import Action, Observation, WorkspaceConfig
 from robot_control.gui.canvas import Canvas
-from robot_control.gui.settings_panel import SettingsPanel
+from robot_control.gui.settings_panel import AutonomousPanel, SettingsPanel
 from robot_control.gui.sidebar import Sidebar
 
 
@@ -62,6 +62,7 @@ class Window(QMainWindow):
         show_camera: bool = False,
         show_connection: bool = False,
         show_settings: bool = False,
+        autonomous: bool = False,
         target_robot_id: Optional[int] = None,
         parent: Optional[QWidget] = None,
     ):
@@ -75,6 +76,7 @@ class Window(QMainWindow):
         self._show_camera = show_camera
         self._show_connection = show_connection
         self._show_settings = show_settings
+        self._autonomous = autonomous
         self._target_robot_id = target_robot_id
         self._callbacks: Dict[str, Callable] = {}
 
@@ -131,8 +133,9 @@ class Window(QMainWindow):
         self._canvas = Canvas(self._config)
         splitter.addWidget(self._canvas)
 
-        # Right: Settings panel (optional)
+        # Right: Settings panel or Autonomous panel (optional)
         self._settings_panel: Optional[SettingsPanel] = None
+        self._autonomous_panel: Optional[AutonomousPanel] = None
         if self._show_settings:
             # Vertical separator (right)
             separator_right = QFrame()
@@ -140,17 +143,24 @@ class Window(QMainWindow):
             separator_right.setFrameShadow(QFrame.Shadow.Sunken)
             splitter.addWidget(separator_right)
 
-            # Settings panel
-            self._settings_panel = SettingsPanel(
-                workspace_width=self._config.width,
-                workspace_height=self._config.height,
-            )
-            self._settings_panel.controller_changed.connect(self._on_controller_changed)
-            self._settings_panel.speed_change_requested.connect(self._on_speed_change)
-            self._settings_panel.navigation_goal_submitted.connect(self._on_navigation_goal)
-            self._settings_panel.rotation_goal_submitted.connect(self._on_rotation_goal)
-            self._settings_panel.cancel_requested.connect(self._on_cancel)
-            splitter.addWidget(self._settings_panel)
+            if self._autonomous:
+                # Autonomous mode: simplified controls
+                self._autonomous_panel = AutonomousPanel()
+                self._autonomous_panel.speed_changed.connect(self._on_speed_change)
+                self._autonomous_panel.cancel_clicked.connect(self._on_cancel)
+                splitter.addWidget(self._autonomous_panel)
+            else:
+                # Interactive mode: full settings panel
+                self._settings_panel = SettingsPanel(
+                    workspace_width=self._config.width,
+                    workspace_height=self._config.height,
+                )
+                self._settings_panel.controller_changed.connect(self._on_controller_changed)
+                self._settings_panel.speed_change_requested.connect(self._on_speed_change)
+                self._settings_panel.navigation_goal_submitted.connect(self._on_navigation_goal)
+                self._settings_panel.rotation_goal_submitted.connect(self._on_rotation_goal)
+                self._settings_panel.cancel_requested.connect(self._on_cancel)
+                splitter.addWidget(self._settings_panel)
 
         # Configure splitter
         if self._show_settings:
@@ -267,6 +277,8 @@ class Window(QMainWindow):
         """Handle speed update on main thread."""
         if self._settings_panel is not None:
             self._settings_panel.set_speed(speed)
+        if self._autonomous_panel is not None:
+            self._autonomous_panel.update_speed(speed)
 
     def _handle_action(self, left: float, right: float) -> None:
         """Handle action update on main thread."""

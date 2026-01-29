@@ -1,0 +1,47 @@
+# Object definitions for push testing
+# All dimensions in cm, angles in degrees
+#
+# Dimension convention:
+#   depth = X dimension (along marker heading when theta=0)
+#   width = Y dimension (perpendicular to marker heading)
+
+# ArUco dictionary: 6x6_50 for objects
+# This config defines objects specifically for push controller testing
+
+objects:
+  # Push test box - rectangular (12cm wide perpendicular, 4cm deep along heading)
+  # Marker ID 2 to avoid conflict with standard boxes
+  push_box:
+    marker_id: 2
+    type: movable
+    shape:
+      width: 12.0  # cm - Y dimension (perpendicular to heading)
+      depth: 4.0   # cm - X dimension (along heading)
+      height: 4.0  # cm
+    marker_offset:
+      x: 0.0
+      y: 0.0
+
+  # Alternative smaller box for testing
+  small_box:
+    marker_id: 3
+    type: movable
+    shape:
+      width: 5.0
+      depth: 5.0
+      height: 5.0
+    marker_offset:
+      x: 0.0
+      y: 0.0
+
+  # Larger rectangular box
+  large_box:
+    marker_id: 4
+    type: movable
+    shape:
+      width: 10.0
+      depth: 6.0
+      height: 5.0
+    marker_offset:
+      x: 0.0
+      y: 0.0

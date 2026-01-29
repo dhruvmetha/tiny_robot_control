@@ -84,14 +84,14 @@ class SimConfig:
     width: float = WORKSPACE_WIDTH_CM   # 45.0 cm
     height: float = WORKSPACE_HEIGHT_CM  # 65.0 cm
 
-    # Robot geometry
-    car_width: float = 36.0
-    car_height: float = 52.0
-    offset_w: float = 18.0  # Center offset from left edge
-    offset_h: float = 26.0  # Center offset from bottom edge
+    # Robot geometry (MicroMVP robot is ~5x5 cm)
+    car_width: float = 5.0
+    car_height: float = 5.0
+    offset_w: float = 2.5  # Center offset from left edge
+    offset_h: float = 2.5  # Center offset from bottom edge
 
     # Robot dynamics
-    wheel_base: float = 30.0
+    wheel_base: float = 4.0
     max_wheel_speed: float = 100.0
 
     # Simulation parameters
