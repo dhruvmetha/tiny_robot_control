@@ -21,8 +21,13 @@ class Planner(ABC):
         """Check if overall task is complete."""
         ...
 
-    def notify_subgoal_done(self, obs: Observation) -> None:
-        """Called when current subgoal is completed. Advance to next."""
+    def notify_subgoal_done(self, obs: Observation, failed: bool = False) -> None:
+        """Called when current subgoal is completed (or failed).
+
+        Args:
+            obs: Current observation after subgoal completion
+            failed: True if the subgoal failed (vs succeeded)
+        """
         pass
 
     def get_drawings(self) -> List[Dict[str, Any]]:

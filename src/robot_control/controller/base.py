@@ -20,6 +20,14 @@ class Controller(ABC):
         """Check if subgoal is achieved."""
         ...
 
+    def did_fail(self) -> bool:
+        """Check if controller failed (vs succeeded).
+
+        Only meaningful when is_done() returns True.
+        Default implementation returns False (success).
+        """
+        return False
+
     def reset(self) -> None:
         """Reset controller state."""
         pass

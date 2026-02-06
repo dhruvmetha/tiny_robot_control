@@ -99,6 +99,12 @@ class SubgoalExecutor:
             return True
         return self._active_controller.is_done(obs, self._current_subgoal)
 
+    def did_fail(self) -> bool:
+        """Check if current subgoal failed (vs succeeded)."""
+        if self._active_controller is None:
+            return False
+        return self._active_controller.did_fail()
+
     def has_active_subgoal(self) -> bool:
         """Check if executor has an active subgoal."""
         return self._current_subgoal is not None

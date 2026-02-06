@@ -13,8 +13,8 @@ class ObjectPose:
     x: float             # cm
     y: float             # cm
     theta: float         # degrees
-    width: float = 0.0   # cm (X dimension)
-    depth: float = 0.0   # cm (Y dimension)
+    width: float = 0.0   # cm (Y dimension - perpendicular to heading)
+    depth: float = 0.0   # cm (X dimension - along heading)
     height: float = 0.0  # cm (Z dimension)
     is_static: bool = False  # True for walls, False for movable objects
 

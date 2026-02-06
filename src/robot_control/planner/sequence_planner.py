@@ -42,8 +42,11 @@ class SequencePlanner(Planner):
         x, y, theta = self._waypoints[self._current_idx]
         return NavigateSubgoal(x=x, y=y, theta=theta)
 
-    def notify_subgoal_done(self, obs: Observation) -> None:
+    def notify_subgoal_done(self, obs: Observation, failed: bool = False) -> None:
         """Advance to next waypoint."""
+        if failed:
+            # For sequence planner, just skip failed waypoints
+            pass
         self._current_idx += 1
         if self._loop and self._current_idx >= len(self._waypoints):
             self._current_idx = 0
