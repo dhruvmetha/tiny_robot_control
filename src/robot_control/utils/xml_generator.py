@@ -82,7 +82,7 @@ class NAMOXMLGenerator:
     """
 
     # Robot parameters (real robot scale - will be multiplied by scale_factor)
-    ROBOT_RADIUS_BASE = 0.025  # 2.5cm radius sphere (25mm)
+    ROBOT_RADIUS_BASE = 0.03  # 3cm radius sphere (inflated from 2.5cm for safety margin)
     ROBOT_MASS = 5.0
     ROBOT_FRICTION = "1.0 0.005 0.0001"
 

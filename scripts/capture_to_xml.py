@@ -90,13 +90,16 @@ def load_config(config_path: str, objects_path: str = None):
         calibration_file=camera_cfg.get("calibration_file", ""),
     )
 
+    # object_marker_size_mm can be at root level or in robot section
+    object_marker_size = config.get("object_marker_size_mm") or robot_cfg.get("object_marker_size_mm", 30.0)
+
     observer_config = ObserverConfig(
         calibration_file=camera_cfg.get("calibration_file", ""),
         robot_marker_id=robot_cfg.get("marker_id", 1),
         robot_marker_size_mm=robot_cfg.get("marker_size_mm", 36.0),
         marker_to_wheel_offset_cm=marker_offset_tuple,
         object_defs=object_defs,
-        object_marker_size_mm=robot_cfg.get("object_marker_size_mm", 30.0),
+        object_marker_size_mm=object_marker_size,
         warmup_frames=workspace_cfg.get("warmup_frames", 30),
         min_workspace_inliers=workspace_cfg.get("min_inliers", 12),
     )

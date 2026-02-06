@@ -1,68 +1,82 @@
 # Object definitions for ArUco-based detection
-# All dimensions in cm, angles in degrees
+# =============================================
+# This is the SINGLE SOURCE OF TRUTH for all object definitions.
+# Used by: test_push.py, test_robot.py, Runtime, SimEnvironment, NAMO integration
+#
+# Naming convention:
+#   obj_<marker_id>  - Movable objects (markers 1-8)
+#   wall_<marker_id> - Static walls (markers 9-15)
+#   goal             - Goal marker (marker 0)
+#
+# Dimension convention (matching MuJoCo/namo_cpp):
+#   depth = X dimension (along marker heading when theta=0)
+#   width = Y dimension (perpendicular to marker heading)
+#
+# ArUco dictionaries:
+#   Goal/Objects/Walls: DICT_6X6_50
+#   Robot: DICT_4X4_50 (configured in real.yaml)
 
-# ArUco dictionary: 6x6_50 for objects/walls
-# Types: "goal" (marker 0), "movable" (pushable boxes), "static" (walls)
-# Marker IDs: 0 = goal, 1-9 = objects (movable by default)
+# Marker size for pose estimation (must match your printed markers)
+marker_size_mm: 30.0
 
 objects:
-  # Goal marker (marker 0 is reserved for goal)
+  # ─────────────────────────────────────────────────────────────
+  # GOAL (marker 0)
+  # ─────────────────────────────────────────────────────────────
   goal:
     marker_id: 0
     type: goal
 
-  # Push test box - rectangular (12cm wide perpendicular, 4cm deep along heading)
-  # Convention: depth = X (along heading), width = Y (perpendicular)
-  push_box:
+  # ─────────────────────────────────────────────────────────────
+  # MOVABLE OBJECTS (markers 1-8)
+  # ─────────────────────────────────────────────────────────────
+
+
+
+  # Rectangular block - 12cm x 4cm (the push test block)
+  obj_1:
     marker_id: 2
     type: movable
     shape:
-      width: 12.0  # cm - Y dimension (perpendicular to heading)
-      depth: 4.0   # cm - X dimension (along heading)
-      height: 4.0  # cm
+      width: 16.0   # cm (Y - perpendicular to heading)
+      depth: 4.0    # cm (X - along heading)
+      height: 4.0   # cm
 
-  # Movable boxes (5cm cubes) - markers 1-9
-  box1:
+  # 5cm cube
+  obj_2:
     marker_id: 1
     type: movable
     shape:
-      width: 5.0
-      depth: 5.0
-      height: 5.0
+      width: 11.4    # cm (Y)
+      depth: 4.2    # cm (X)
+      height: 5.0   # cm
 
-  box2:
-    marker_id: 2
-    type: movable
-    shape:
-      width: 5.0
-      depth: 5.0
-      height: 5.0
-
-  box3:
+  # 5cm cubes
+  obj_3:
     marker_id: 3
     type: movable
     shape:
-      width: 5.0
-      depth: 5.0
+      width: 20.0
+      depth: 4.6
       height: 5.0
 
-  box4:
+  obj_4:
     marker_id: 4
     type: movable
     shape:
-      width: 5.0
+      width: 12.0
       depth: 5.0
       height: 5.0
 
-  box5:
+  obj_5:
     marker_id: 5
     type: movable
     shape:
-      width: 5.0
-      depth: 5.0
+      width: 7.5
+      depth: 12.0
       height: 5.0
 
-  box6:
+  obj_6:
     marker_id: 6
     type: movable
     shape:
@@ -70,7 +84,7 @@ objects:
       depth: 5.0
       height: 5.0
 
-  box7:
+  obj_7:
     marker_id: 7
     type: movable
     shape:
@@ -78,7 +92,7 @@ objects:
       depth: 5.0
       height: 5.0
 
-  box8:
+  obj_8:
     marker_id: 8
     type: movable
     shape:
@@ -86,48 +100,43 @@ objects:
       depth: 5.0
       height: 5.0
 
-  # Static walls - markers 9+
-  # Customize shape and marker_offset for each wall
-  wall9:
+  # ─────────────────────────────────────────────────────────────
+  # STATIC WALLS (markers 9-15)
+  # ─────────────────────────────────────────────────────────────
+
+  # Long wall blocks - 19cm x 5.2cm
+  # Use marker_offset if marker is not centered on the object
+  wall_9:
     marker_id: 9
     type: static
     shape:
-      width: 19.0   # cm
-      depth: 5.2    # cm
+      width: 19.0   # cm (Y)
+      depth: 5.5   # cm (X)
       height: 10.0  # cm
     marker_offset:
-      x: 0.0        # cm - no forward/back offset
-      y: 7.0        # cm - wall center is 7cm LEFT of marker (marker is 2.5cm from right edge)
+      x: -0.5
+      y: 7.5        # marker is 7cm right of wall center
 
-  wall10:
+  wall_10:
     marker_id: 10
     type: static
     shape:
       width: 19.0
       depth: 5.2
       height: 10.0
-    marker_offset:
-      x: 0.0
-      y: 0.0
 
-  wall11:
+  wall_11:
     marker_id: 11
     type: static
     shape:
       width: 19.0
       depth: 5.2
       height: 10.0
-    marker_offset:
-      x: 0.0
-      y: 0.0
 
-  wall12:
+  wall_12:
     marker_id: 12
     type: static
     shape:
       width: 19.0
       depth: 5.2
       height: 10.0
-    marker_offset:
-      x: 0.0
-      y: 0.0

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Generate ArUco markers for obstacle detection.
+"""Generate ArUco markers for obstacle detection and robot tracking.
 
-Creates a printable A4 PDF with 12 ArUco markers (DICT_6X6_50, IDs 0-11).
-Default marker size is 50mm.
+Creates a printable A4 PDF with ArUco markers.
+- Objects/Walls/Goal: DICT_6X6_50, default 30mm
+- Robot: DICT_4X4_50, default 36mm
 
 Usage:
-    python scripts/generate_aruco_markers.py
+    python scripts/generate_aruco_markers.py                    # Object markers (6x6, IDs 0-11)
+    python scripts/generate_aruco_markers.py --robot            # Robot marker (4x4, ID 1)
+    python scripts/generate_aruco_markers.py --robot --ids 2 3  # Multiple robot markers
     python scripts/generate_aruco_markers.py --size 40 --output my_markers.pdf
-    python scripts/generate_aruco_markers.py --ids 0 1 2 3 4 5  # Specific IDs
 """
 
 from __future__ import annotations
@@ -111,16 +113,17 @@ def save_as_pdf(
     spacing_mm: float,
     output_path: Path,
     cut_size_mm: float = 50.0,
+    aruco_dict_type: int = cv2.aruco.DICT_6X6_50,
 ) -> None:
     """Save markers directly to PDF at correct physical size with cutting borders."""
     pdf_path = output_path.with_suffix('.pdf')
-    
+
     # Create PDF canvas (A4 size)
     c = canvas.Canvas(str(pdf_path), pagesize=A4)
     page_width, page_height = A4  # in points (72 per inch)
-    
+
     # Get ArUco dictionary
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_50)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)
     
     # Calculate border padding from cut size and marker size
     border_padding_mm = (cut_size_mm - marker_size_mm) / 2.0
@@ -223,20 +226,25 @@ def save_as_pdf(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate ArUco markers for obstacle detection (DICT_6X6_50)"
+        description="Generate ArUco markers for obstacle detection and robot tracking"
+    )
+    parser.add_argument(
+        "--robot",
+        action="store_true",
+        help="Generate robot markers (DICT_4X4_50, default ID 1, 36mm)",
     )
     parser.add_argument(
         "--ids",
         type=int,
         nargs="+",
-        default=list(range(12)),
-        help="Marker IDs to generate (default: 0-11)",
+        default=None,
+        help="Marker IDs to generate (default: 0-11 for objects, 1 for robot)",
     )
     parser.add_argument(
         "--size",
         type=float,
-        default=50.0,
-        help="Marker size in mm (default: 50)",
+        default=None,
+        help="Marker size in mm (default: 30 for objects, 36 for robot)",
     )
     parser.add_argument(
         "--margin",
@@ -253,41 +261,63 @@ def main():
     parser.add_argument(
         "--cut-size",
         type=float,
-        default=50.0,
-        help="Cut-out size in mm (default: 50, border = (cut-size - marker-size) / 2)",
+        default=None,
+        help="Cut-out size in mm (default: marker size + 20mm border)",
     )
     parser.add_argument(
         "--output",
         type=str,
-        default="aruco_markers_6x6_50",
-        help="Output filename without extension (default: aruco_markers_6x6_50)",
+        default=None,
+        help="Output filename without extension",
     )
     args = parser.parse_args()
-    
-    border_mm = (args.cut_size - args.size) / 2.0
-    
-    print(f"Generating {len(args.ids)} ArUco markers (DICT_6X6_50)")
-    print(f"  IDs: {args.ids}")
-    print(f"  Marker size: {args.size}mm")
-    print(f"  Cut size: {args.cut_size}mm x {args.cut_size}mm")
+
+    # Set defaults based on marker type
+    if args.robot:
+        aruco_dict_type = cv2.aruco.DICT_4X4_50
+        dict_name = "DICT_4X4_50"
+        marker_ids = args.ids if args.ids else [1]
+        marker_size = args.size if args.size else 36.0
+        output_name = args.output if args.output else "aruco_robot_4x4"
+    else:
+        aruco_dict_type = cv2.aruco.DICT_6X6_50
+        dict_name = "DICT_6X6_50"
+        marker_ids = args.ids if args.ids else list(range(12))
+        marker_size = args.size if args.size else 30.0
+        output_name = args.output if args.output else "aruco_markers_6x6"
+
+    cut_size = args.cut_size if args.cut_size else marker_size + 20.0
+    border_mm = (cut_size - marker_size) / 2.0
+
+    marker_type = "robot" if args.robot else "object"
+    print(f"Generating {len(marker_ids)} ArUco {marker_type} marker(s) ({dict_name})")
+    print(f"  IDs: {marker_ids}")
+    print(f"  Marker size: {marker_size}mm")
+    print(f"  Cut size: {cut_size}mm x {cut_size}mm")
     print(f"  White border: {border_mm}mm on each side")
     print(f"  Page margin: {args.margin}mm")
     print()
-    
+
     # Generate and save PDF
-    output_path = Path(args.output)
+    output_path = Path(output_name)
     save_as_pdf(
-        marker_ids=args.ids,
-        marker_size_mm=args.size,
+        marker_ids=marker_ids,
+        marker_size_mm=marker_size,
         margin_mm=args.margin,
         spacing_mm=args.spacing,
         output_path=output_path,
-        cut_size_mm=args.cut_size,
+        cut_size_mm=cut_size,
+        aruco_dict_type=aruco_dict_type,
     )
-    
+
     print()
-    print("Done! Remember to update your ObserverConfig:")
-    print(f"  object_marker_size_mm={args.size}")
+    if args.robot:
+        print("Done! Robot marker configuration (config/real.yaml):")
+        print(f"  marker_id: {marker_ids[0]}")
+        print(f"  marker_size_mm: {marker_size}")
+    else:
+        print("Done! Object marker configuration (config/objects.yaml):")
+        print(f"  marker_size_mm: {marker_size}")
 
 
 if __name__ == "__main__":

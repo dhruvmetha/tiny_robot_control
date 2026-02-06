@@ -22,7 +22,7 @@ from robot_control.coordinator import ControlCoordinator
 from robot_control.core.types import Action, Observation, WorkspaceConfig
 from robot_control.core.world_state import WorldState
 from robot_control.executor import SubgoalExecutor
-from robot_control.planner import RVGPlanner
+from robot_control.planner import RVGPlanner, WavefrontPathPlanner
 from robot_control.planner.base import Planner
 
 # Conditional imports for simulation
@@ -384,6 +384,9 @@ class Runtime:
         )
 
         # ArUco observer config
+        # object_marker_size_mm can be at root level or in robot section
+        object_marker_size = config.get("object_marker_size_mm") or robot_cfg.get("object_marker_size_mm", 30.0)
+
         observer_config = ObserverConfig(
             calibration_file=camera_cfg.get("calibration_file", ""),
             undistort=camera_cfg.get("undistort", False),
@@ -391,7 +394,7 @@ class Runtime:
             robot_marker_size_mm=robot_cfg.get("marker_size_mm", 36.0),
             marker_to_wheel_offset_cm=marker_offset_tuple,
             object_defs=object_defs,
-            object_marker_size_mm=robot_cfg.get("object_marker_size_mm", 30.0),
+            object_marker_size_mm=object_marker_size,
             warmup_frames=workspace_cfg.get("warmup_frames", 30),
             min_workspace_inliers=workspace_cfg.get("min_inliers", 12),
         )
@@ -416,13 +419,23 @@ class Runtime:
         # Load controller configs from YAML
         controller_configs = load_controller_configs()
 
-        planner = RVGPlanner(
-            workspace_width=self._workspace_config.width,
-            workspace_height=self._workspace_config.height,
-            robot_width=self._workspace_config.car_width,
-            robot_height=self._workspace_config.car_height,
-            robot_geometry_scale=controller_configs.navigation.robot_geometry_scale,
-        )
+        # Select planner based on config
+        if controller_configs.navigation.planner == "wavefront":
+            planner = WavefrontPathPlanner(
+                workspace_width=self._workspace_config.width,
+                workspace_height=self._workspace_config.height,
+                robot_width=self._workspace_config.car_width,
+                robot_height=self._workspace_config.car_height,
+                debug_dir=controller_configs.navigation.wavefront_debug_dir,
+            )
+        else:
+            planner = RVGPlanner(
+                workspace_width=self._workspace_config.width,
+                workspace_height=self._workspace_config.height,
+                robot_width=self._workspace_config.car_width,
+                robot_height=self._workspace_config.car_height,
+                robot_geometry_scale=controller_configs.navigation.robot_geometry_scale,
+            )
 
         # Create keyboard controller
         keyboard = KeyboardController(max_speed=self._config.initial_speed)
@@ -747,7 +760,8 @@ class Runtime:
         if self._executor.is_done(obs):
             # Only notify if we actually completed a subgoal (not first call)
             if self._executor.has_active_subgoal():
-                self._planner.notify_subgoal_done(obs)
+                failed = self._executor.did_fail()
+                self._planner.notify_subgoal_done(obs, failed=failed)
 
             # Check if plan is complete
             if self._planner.is_complete(obs):

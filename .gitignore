@@ -2,3 +2,6 @@
 *.txt
 *.egg-info/
 *.egg-info/*
+output_dump/
+*.mp4
+*.pdf

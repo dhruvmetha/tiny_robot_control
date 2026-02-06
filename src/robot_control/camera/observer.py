@@ -124,6 +124,11 @@ class ArucoObserver:
         self._vis_frame: Optional[np.ndarray] = None
         self._lock = threading.Lock()
 
+        # Object persistence cache - keep objects visible for a short time after detection loss
+        # This handles momentary ArUco detection failures
+        self._object_cache: Dict[str, Tuple[ObjectPose, float]] = {}  # name -> (pose, last_seen_time)
+        self._object_persist_sec: float = 0.5  # Keep objects for 0.5 seconds after last detection
+
         # Convert legacy objects format to object_defs if needed
         if config.objects and not config.object_defs:
             for name, (marker_id, width_mm, height_mm) in config.objects.items():
@@ -240,7 +245,24 @@ class ArucoObserver:
 
             # Detect robot, objects, and goal
             robot_pose = self._detect_robot(gray, vis)
-            objects, goal_pos = self._detect_objects(gray, vis)
+            detected_objects, goal_pos = self._detect_objects(gray, vis)
+
+            # Update object cache with current detections
+            for name, obj_pose in detected_objects.items():
+                self._object_cache[name] = (obj_pose, timestamp)
+
+            # Merge detected objects with cached (recently-seen) objects
+            objects = dict(detected_objects)  # Start with current detections
+            for name, (cached_pose, last_seen) in list(self._object_cache.items()):
+                if name not in objects:
+                    # Object not detected this frame - use cached if not too old
+                    age = timestamp - last_seen
+                    if age <= self._object_persist_sec:
+                        objects[name] = cached_pose
+                        # print(f"[ArucoObserver] Using cached position for '{name}' (age={age:.2f}s)")
+                    else:
+                        # Too old - remove from cache
+                        del self._object_cache[name]
 
             if robot_pose is not None:
                 x_cm, y_cm, yaw_deg = robot_pose

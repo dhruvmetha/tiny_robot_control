@@ -129,6 +129,9 @@ def load_real_config(config_path: str, objects_path: str = "config/objects.yaml"
     )
 
     # ArUco observer config
+    # object_marker_size_mm can be at root level or in robot section
+    object_marker_size = config.get("object_marker_size_mm") or robot_cfg.get("object_marker_size_mm", 30.0)
+
     observer_config = ObserverConfig(
         calibration_file=camera_cfg.get("calibration_file", ""),
         undistort=camera_cfg.get("undistort", False),
@@ -136,7 +139,7 @@ def load_real_config(config_path: str, objects_path: str = "config/objects.yaml"
         robot_marker_size_mm=robot_cfg.get("marker_size_mm", 36.0),
         marker_to_wheel_offset_cm=marker_offset_tuple,
         object_defs=object_defs,  # From objects.yaml
-        object_marker_size_mm=robot_cfg.get("object_marker_size_mm", 30.0),
+        object_marker_size_mm=object_marker_size,
         warmup_frames=workspace_cfg.get("warmup_frames", 30),
         min_workspace_inliers=workspace_cfg.get("min_inliers", 12),
     )

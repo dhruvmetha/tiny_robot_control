@@ -256,7 +256,7 @@ def main():
         "--objects-config",
         type=str,
         default=None,
-        help="Path to objects YAML (default: config/push_objects.yaml for real, config/objects.yaml for sim)",
+        help="Path to objects YAML (default: config/objects.yaml)",
     )
     args = parser.parse_args()
 
@@ -304,16 +304,12 @@ def main():
         num_repeats=args.repeat,
     )
 
-    # Determine objects config path
+    # Determine objects config path (always use objects.yaml as single source of truth)
     if args.objects_config:
         objects_path = args.objects_config
     else:
-        # Default: use push_objects.yaml for real, objects.yaml for sim
         config_dir = Path(__file__).parent.parent / "config"
-        if args.sim:
-            objects_path = str(config_dir / "objects.yaml")
-        else:
-            objects_path = str(config_dir / "push_objects.yaml")
+        objects_path = str(config_dir / "objects.yaml")
 
     if args.sim:
         # Simulation mode

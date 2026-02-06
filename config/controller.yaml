@@ -7,6 +7,8 @@ navigation:
   pre_rotation_skip_angle: 45.0  # degrees - skip pre-rotation if heading error < this
   robot_geometry_scale: 1.0      # RVG robot inflation (1.0 = half robot size, matches wavefront)
   goal_tolerance_ratio: 0.2      # goal_tolerance = ratio * car_size
+  planner: "wavefront"           # "wavefront" or "rvg"
+  wavefront_debug_dir: "output_dump/wavefront"  # Save wavefront path images here (null to disable)
 
   # Rotation parameters
   rotation_tolerance_deg: 2.5    # degrees - rotation complete when within this
@@ -17,11 +19,11 @@ navigation:
 
 # Push controller
 push:
-  max_speed: 0.3
-  standoff_multiplier: 1.0       # standoff = multiplier * robot_size
+  max_speed: 0.6
+  standoff_multiplier: 0.5       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
-  push_steps: 75                # control ticks per push (~3.3 seconds at 30Hz)
+  push_steps: 100                # control ticks per push (~3.3 seconds at 30Hz)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 
   # Approach phase parameters
@@ -38,4 +40,9 @@ push:
 
   # Retreat phase parameters (back up after push to clear object)
   retreat_speed: 0.15            # Backup speed (applied as negative)
-  retreat_steps: 100             # Ticks to back up (~3.3 seconds at 30Hz)
+  retreat_steps: 100             # Ticks to back up (~3.3 seconds at 30Hz) - fallback only
+  retreat_min_dist: 5.0          # cm - always retreat at least this far
+  retreat_max_dist: 15.0         # cm - max search distance for free cell
+
+  # Debug visualization
+  show_wavefront: true           # Show wavefront image window after each push

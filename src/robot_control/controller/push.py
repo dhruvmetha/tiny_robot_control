@@ -189,6 +189,10 @@ class PushController(Controller):
         # Push path state
         self._push_path: Optional[List[Point]] = None
 
+        # Retreat phase state
+        self._retreat_target: Optional[Point] = None
+        self._retreat_is_backward: bool = False
+
         # Visualization
         self._target_point: Optional[Point] = None
         self._object_pose: Optional[ObjectPose] = None
@@ -209,10 +213,16 @@ class PushController(Controller):
 
         self._current_subgoal = subgoal
 
+        # Debug: log state at start of each step
+        # print(f"[PUSH] step() state={self._state.value} robot=({obs.robot_x:.1f},{obs.robot_y:.1f})")
+
         # Get object from observation
         obj = obs.objects.get(subgoal.object_id)
         if obj is None:
-            # Object not visible - stop
+            # Object not visible - ArucoObserver should provide cached position for a few frames
+            # If still None, the object has been lost for too long
+            print(f"[PUSH] FAILED: Object '{subgoal.object_id}' not visible in observation!")
+            print(f"[PUSH]   Available objects: {list(obs.objects.keys())}")
             self._state = PushState.FAILED
             return Action.stop()
 
@@ -283,9 +293,10 @@ class PushController(Controller):
         # Check if wavefront adjusted the position
         if validated_pos != approach_pos:
             dist_moved = math.hypot(validated_pos[0] - approach_pos[0], validated_pos[1] - approach_pos[1])
-            print(f"[PUSH] WARNING: Wavefront adjusted approach position by {dist_moved:.1f}cm!")
-            print(f"[PUSH]   Edge point: ({approach_pos[0]:.1f}, {approach_pos[1]:.1f})")
-            print(f"[PUSH]   Validated:  ({validated_pos[0]:.1f}, {validated_pos[1]:.1f})")
+            if dist_moved > 3.0:
+                print(f"[PUSH] WARNING: Approach adjusted by {dist_moved:.1f}cm (edge blocked by nearby obstacle)")
+            print(f"[PUSH]   Original edge: ({approach_pos[0]:.1f}, {approach_pos[1]:.1f})")
+            print(f"[PUSH]   Validated:     ({validated_pos[0]:.1f}, {validated_pos[1]:.1f})")
 
         self._approach_position = validated_pos
 
@@ -301,6 +312,7 @@ class PushController(Controller):
         obstacles = self._build_obstacles(obs)
 
         # Navigate to approach position with correct orientation
+        print(f"[PUSH] Starting navigation: robot=({robot_pos[0]:.1f},{robot_pos[1]:.1f}) → approach=({validated_pos[0]:.1f},{validated_pos[1]:.1f})")
         success = self._nav_controller.navigate_to(
             validated_pos[0],
             validated_pos[1],
@@ -308,10 +320,32 @@ class PushController(Controller):
             robot_pos,
             obstacles,
         )
+        print(f"[PUSH] navigate_to() returned: {success}, nav_state={self._nav_controller.state.value}")
 
         if not success:
-            # Navigation planning failed - fail the subgoal
+            # Navigation planning failed - add debug info
             print(f"[PUSH] Navigation planning failed for approach to ({validated_pos[0]:.1f}, {validated_pos[1]:.1f})")
+            print(f"[PUSH]   Robot position: ({robot_pos[0]:.1f}, {robot_pos[1]:.1f})")
+            print(f"[PUSH]   Distance to approach: {math.hypot(validated_pos[0] - robot_pos[0], validated_pos[1] - robot_pos[1]):.1f}cm")
+            print(f"[PUSH]   Obstacles passed to navigation: {len(obstacles)}")
+            for i, o in enumerate(obstacles):
+                print(f"[PUSH]     [{i}] pos=({o[0]:.1f}, {o[1]:.1f}) theta={o[2]:.1f}° size=({o[3]:.0f}x{o[4]:.0f})")
+
+            # Check if robot position is free in wavefront
+            wavefront = self._build_wavefront(obs)
+            robot_m = (robot_pos[0] / 100.0, robot_pos[1] / 100.0)
+            goal_m = (validated_pos[0] / 100.0, validated_pos[1] / 100.0)
+            robot_free = wavefront.is_free(robot_m[0], robot_m[1])
+            goal_free = wavefront.is_free(goal_m[0], goal_m[1])
+            print(f"[PUSH]   Wavefront check: robot={'FREE' if robot_free else 'BLOCKED'}, goal={'FREE' if goal_free else 'BLOCKED'}")
+
+            # Try wavefront path planning
+            wavefront_path = wavefront.plan(robot_m, goal_m)
+            if wavefront_path:
+                print(f"[PUSH]   Wavefront CAN find path ({len(wavefront_path)} waypoints) - RVG is the issue")
+            else:
+                print(f"[PUSH]   Wavefront also cannot find path - position truly unreachable")
+
             self._state = PushState.FAILED
             return Action.stop()
 
@@ -323,12 +357,14 @@ class PushController(Controller):
     ) -> Action:
         """Execute approach navigation."""
         if self._nav_controller is None:
+            print("[PUSH] No nav controller - skipping approach")
             self._state = PushState.ADVANCING
             self._advance_step_count = 0
             return self._handle_advancing(obs, obj, subgoal)
 
         # Check if navigation is done
         if self._nav_controller.is_done(obs, None):
+            print(f"[PUSH] Navigation done - transitioning to ADVANCING (nav_state={self._nav_controller.state.value})")
             self._state = PushState.ADVANCING
             self._advance_step_count = 0
             return self._handle_advancing(obs, obj, subgoal)
@@ -356,8 +392,10 @@ class PushController(Controller):
     ) -> Action:
         """Execute push phase with Pure Pursuit + CTE-PD path following."""
         # Check if push is complete, transition to retreating
-        if self._step_count >= subgoal.push_steps:
-            self._print_wavefront_status(obs)
+        # Total ticks = NAMO push_steps * config.push_steps (ticks per NAMO step)
+        total_ticks = subgoal.push_steps * self._push_config.push_steps
+        if self._step_count >= total_ticks:
+            self._print_wavefront_status(obs, show=self._push_config.show_wavefront)
             self._state = PushState.RETREATING
             self._retreat_step_count = 0
             return self._handle_retreating(obs)
@@ -435,18 +473,190 @@ class PushController(Controller):
 
         return action
 
-    def _handle_retreating(self, obs: Observation) -> Action:
-        """Back up to clear the object after pushing."""
-        # Check if retreat is complete
+    def _find_retreat_target(self, obs: Observation) -> Tuple[Optional[Point], bool]:
+        """Find nearest free cell in forward or backward cone.
+
+        Uses dual-cone search:
+        1. Build wavefront from current observation
+        2. Search backward cone first (heading+180° ±cone_angle) - preferred, no rotation
+        3. Search forward cone (heading ±cone_angle) - fallback, requires rotation
+        4. Sample rays at 5° increments, points at 1cm increments
+
+        Returns:
+            (target_position, is_backward) - position in cm and whether it's behind robot
+        """
+        import numpy as np
+
+        wavefront = self._build_wavefront(obs)
+        robot_pos = (obs.robot_x, obs.robot_y)
+        heading_rad = math.radians(obs.robot_theta)
+
+        # Search parameters from config
+        cone_half_angle = math.radians(self._push_config.retreat_cone_angle)
+        angle_step = math.radians(5)  # 5° increments
+        min_dist_cm = self._push_config.retreat_min_dist  # Always retreat at least this far
+        max_dist_cm = self._push_config.retreat_max_dist
+        dist_step_cm = 1.0
+
+        def search_cone(base_angle: float) -> Optional[Tuple[Point, float]]:
+            """Search cone around base_angle, return nearest free point at least min_dist away."""
+            best_point: Optional[Point] = None
+            best_dist = float('inf')
+
+            # Sample angles within cone
+            angles = np.arange(-cone_half_angle, cone_half_angle + 0.001, angle_step)
+            for angle_offset in angles:
+                ray_angle = base_angle + angle_offset
+
+                # Sample distances along ray, starting from min_dist to ensure minimum retreat
+                dists = np.arange(min_dist_cm, max_dist_cm + 0.001, dist_step_cm)
+                for dist in dists:
+                    x = robot_pos[0] + dist * math.cos(ray_angle)
+                    y = robot_pos[1] + dist * math.sin(ray_angle)
+
+                    # Check if free in wavefront (convert cm to meters)
+                    if wavefront.is_free(x / 100.0, y / 100.0):
+                        if dist < best_dist:
+                            best_dist = dist
+                            best_point = (x, y)
+                        break  # Found free point on this ray, move to next
+
+            return (best_point, best_dist) if best_point else None
+
+        # Search backward cone first (preferred - no rotation)
+        backward_angle = heading_rad + math.pi
+        backward_result = search_cone(backward_angle)
+
+        # Search forward cone
+        forward_result = search_cone(heading_rad)
+
+        # Prefer backward (no rotation needed)
+        if backward_result:
+            return (backward_result[0], True)  # is_backward=True
+        if forward_result:
+            return (forward_result[0], False)  # is_backward=False
+
+        return (None, False)
+
+    def _reverse_toward(self, obs: Observation, target: Point) -> Action:
+        """Reverse toward target with steering correction.
+
+        Uses differential wheel speeds while backing up to steer toward target.
+        When reversing, steering is inverted: to go right, left wheel goes faster (more negative).
+        """
+        robot_x, robot_y = obs.robot_x, obs.robot_y
+        heading_rad = math.radians(obs.robot_theta)
+
+        # Angle to target
+        dx = target[0] - robot_x
+        dy = target[1] - robot_y
+        angle_to_target = math.atan2(dy, dx)
+
+        # We're reversing, so "forward" for the robot is opposite of heading
+        reverse_heading = heading_rad + math.pi
+
+        # Error: how much we need to steer while reversing
+        angle_error = _wrap_to_pi(angle_to_target - reverse_heading)
+
+        # Base reverse speed
+        base_speed = -self._push_config.retreat_speed
+
+        # Steering correction (inverted because we're reversing)
+        # Positive error = target is to the right of reverse direction
+        # When reversing, to go right, left wheel should be faster (more negative)
+        steer_gain = self._push_config.retreat_steer_gain
+        steer = angle_error * steer_gain
+
+        left_speed = base_speed - steer
+        right_speed = base_speed + steer
+
+        # Clamp
+        left_speed = max(-1.0, min(1.0, left_speed))
+        right_speed = max(-1.0, min(1.0, right_speed))
+
+        return Action(left_speed=left_speed, right_speed=right_speed)
+
+    def _blind_retreat(self, obs: Observation) -> Action:
+        """Fallback: blind reverse for fixed number of steps."""
         if self._retreat_step_count >= self._push_config.retreat_steps:
             self._state = PushState.FINISHED
             return Action.stop()
 
         self._retreat_step_count += 1
-
-        # Simple reverse at fixed speed
         retreat_speed = -self._push_config.retreat_speed
         return Action(left_speed=retreat_speed, right_speed=retreat_speed)
+
+    def _handle_retreating(self, obs: Observation) -> Action:
+        """Back up to nearest free cell after pushing.
+
+        Smart retreat algorithm:
+        1. On first call, find retreat target using dual-cone wavefront search
+        2. Prefer backward cone (no rotation needed) → custom reverse steering
+        3. Forward cone → use NavigationController (already facing forward)
+        4. Fall back to blind reverse if no free cell found
+        """
+        # On first call, find retreat target
+        if self._retreat_target is None:
+            target, is_backward = self._find_retreat_target(obs)
+            if target is None:
+                # No free cell found - fall back to blind reverse
+                print("[PUSH] No free cell found in cones, using blind reverse")
+                return self._blind_retreat(obs)
+
+            self._retreat_target = target
+            self._retreat_is_backward = is_backward
+            direction = "BACKWARD" if is_backward else "FORWARD"
+            print(f"[PUSH] Retreat target: ({target[0]:.1f}, {target[1]:.1f}) [{direction}]")
+
+            # If forward target and we have nav controller, start navigation
+            if not is_backward and self._nav_controller is not None:
+                robot_pos = (obs.robot_x, obs.robot_y)
+                # Build obstacles (include all objects)
+                obstacles = self._build_obstacles(obs)
+                # Navigate to retreat target (keep current orientation)
+                success = self._nav_controller.navigate_to(
+                    target[0], target[1],
+                    obs.robot_theta,  # Keep current heading
+                    robot_pos,
+                    obstacles,
+                )
+                if not success:
+                    print("[PUSH] Navigation to forward retreat failed, using blind reverse")
+                    self._retreat_is_backward = True  # Fall back to reverse
+
+        # Check if we've reached the target
+        dist = math.hypot(
+            obs.robot_x - self._retreat_target[0],
+            obs.robot_y - self._retreat_target[1],
+        )
+        if dist < self._push_config.retreat_tolerance:
+            self._state = PushState.FINISHED
+            if self._nav_controller is not None:
+                self._nav_controller.cancel()
+            return Action.stop()
+
+        # Safety: don't retreat forever (max 2x fallback steps)
+        self._retreat_step_count += 1
+        if self._retreat_step_count >= self._push_config.retreat_steps * 2:
+            print(f"[PUSH] Retreat timeout after {self._retreat_step_count} steps")
+            self._state = PushState.FINISHED
+            if self._nav_controller is not None:
+                self._nav_controller.cancel()
+            return Action.stop()
+
+        # Move toward target
+        if self._retreat_is_backward:
+            return self._reverse_toward(obs, self._retreat_target)
+        else:
+            # Forward target - use navigation controller
+            if self._nav_controller is not None:
+                if self._nav_controller.is_done(obs, None):
+                    self._state = PushState.FINISHED
+                    return Action.stop()
+                return self._nav_controller.step(obs, None)
+            else:
+                # No nav controller - fall back to reverse
+                return self._reverse_toward(obs, self._retreat_target)
 
     def _get_edge_point(self, obj: ObjectPose, edge_idx: int) -> EdgePoint:
         """Get edge point using namo_cpp-compatible algorithm.
@@ -507,14 +717,18 @@ class PushController(Controller):
         return obstacles
 
     def _build_wavefront(self, obs: Observation) -> WavefrontPlanner:
-        """Build wavefront from current observation."""
+        """Build wavefront from current observation.
+
+        IMPORTANT: Uses same inflation as WavefrontPathPlanner (1cm) for consistency.
+        Otherwise validation may pass but navigation fails.
+        """
         # Robot radius in meters (use half of largest dimension)
         car_size_m = max(self._config.car_width, self._config.car_height) / 100.0 / 2.0
 
         wavefront = WavefrontPlanner(WavefrontConfig(
             resolution=0.005,           # 5mm
             robot_radius=car_size_m,    # Half robot size
-            inflation_margin=0.0,       # No extra margin (half robot size is enough)
+            inflation_margin=0.003,     # 3mm margin - matches WavefrontPathPlanner & NAMO
         ))
 
         # Bounds in meters
@@ -525,15 +739,16 @@ class PushController(Controller):
             self._config.height / 100.0,
         )
 
-        # Objects in wavefront format: (x_m, y_m, hw_m, hd_m, theta_deg)
+        # Objects in wavefront format: (x_m, y_m, half_x, half_y, theta_deg)
+        # Convention from objects.yaml: depth=X (along heading), width=Y (perpendicular)
         objects = {}
         for obj_id, o in obs.objects.items():
             if o.width > 0 and o.depth > 0:
                 objects[obj_id] = (
                     o.x / 100.0,      # x in meters
                     o.y / 100.0,      # y in meters
-                    o.width / 200.0,  # half-width in meters
-                    o.depth / 200.0,  # half-depth in meters
+                    o.depth / 200.0,  # half-depth = X extent in meters
+                    o.width / 200.0,  # half-width = Y extent in meters
                     o.theta,          # theta in degrees
                 )
 
@@ -581,7 +796,7 @@ class PushController(Controller):
 
         # Step 2: Sample along push line, away from object
         step_cm = 0.5  # Match wavefront resolution (~5mm)
-        max_dist_cm = 15.0  # Max search distance
+        max_dist_cm = 5.0  # Max search distance - keep small to avoid ending up on wrong side of nearby obstacles
 
         dist = step_cm
         while dist <= max_dist_cm:
@@ -687,8 +902,17 @@ class PushController(Controller):
 
         return False
 
-    def _print_wavefront_status(self, obs: Observation) -> None:
-        """Print wavefront status at end of push for debugging."""
+    def did_fail(self) -> bool:
+        """Check if push failed (approach unreachable, nav failed, etc.)."""
+        return self._state == PushState.FAILED
+
+    def _print_wavefront_status(self, obs: Observation, show: bool = False) -> None:
+        """Print wavefront status at end of push for debugging.
+
+        Args:
+            obs: Current observation
+            show: If True, display wavefront image in a window
+        """
         import time
         from pathlib import Path
 
@@ -700,6 +924,13 @@ class PushController(Controller):
         robot_m = (obs.robot_x / 100.0, obs.robot_y / 100.0)
         robot_free = wavefront.is_free(robot_m[0], robot_m[1])
         print(f"[PUSH] Robot position is {'FREE' if robot_free else 'BLOCKED'} in wavefront")
+
+        # Goal position
+        goal_m = None
+        if obs.goal_x is not None and obs.goal_y is not None:
+            goal_m = (obs.goal_x / 100.0, obs.goal_y / 100.0)
+            goal_free = wavefront.is_free(goal_m[0], goal_m[1])
+            print(f"[PUSH] Goal: ({obs.goal_x:.1f}, {obs.goal_y:.1f}) - {'FREE' if goal_free else 'BLOCKED'}")
 
         # Show object positions
         for name, obj in obs.objects.items():
@@ -714,7 +945,8 @@ class PushController(Controller):
         output_dir.mkdir(exist_ok=True)
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         filepath = output_dir / f"wavefront_{timestamp}.png"
-        wavefront.save(str(filepath), robot_pos=robot_m)
+        wavefront.save(str(filepath), robot_pos=robot_m, goal_pos=goal_m, show=show)
+        print(f"[PUSH] Wavefront saved to: {filepath}")
 
         print(f"[PUSH] ======================================\n")
 
@@ -731,6 +963,10 @@ class PushController(Controller):
         self._object_pose = None
         self._push_path = None
 
+        # Reset retreat state
+        self._retreat_target = None
+        self._retreat_is_backward = False
+
         # Reset follow path controller
         self._follow_path_controller.reset()
 
@@ -746,11 +982,14 @@ class PushController(Controller):
         """Get current status label."""
         if self._state == PushState.PUSHING:
             if self._current_subgoal:
-                return f"PUSHING ({self._step_count}/{self._current_subgoal.push_steps})"
+                total_ticks = self._current_subgoal.push_steps * self._push_config.push_steps
+                return f"PUSHING ({self._step_count}/{total_ticks})"
             return f"PUSHING ({self._step_count})"
         if self._state == PushState.ADVANCING:
             return f"ADVANCING ({self._advance_step_count}/{self._push_config.advance_steps})"
         if self._state == PushState.RETREATING:
+            if self._retreat_target:
+                return f"RETREATING (step {self._retreat_step_count})"
             return f"RETREATING ({self._retreat_step_count}/{self._push_config.retreat_steps})"
         if self._state == PushState.APPROACHING:
             return "APPROACHING"
@@ -811,6 +1050,18 @@ class PushController(Controller):
                 "points": [self._approach_position, self._target_point],
                 "color": "#FF00FF",
                 "width": 2,
+            })
+
+        # Draw retreat target during retreating phase
+        if self._retreat_target and self._state == PushState.RETREATING:
+            color = "#FFA500" if self._retreat_is_backward else "#FF6600"  # Orange shades
+            drawings.append({
+                "uuid": "retreat_target",
+                "type": "point",
+                "position": self._retreat_target,
+                "radius": 5,
+                "color": color,
+                "fill": color,
             })
 
         # Always show all edge points when we have an object (for debugging)

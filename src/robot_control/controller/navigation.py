@@ -15,7 +15,20 @@ from robot_control.controller.base import Controller
 from robot_control.controller.config import NavigationConfig
 from robot_control.controller.follow_path import FollowPathController
 from robot_control.core.types import Action, Observation, Subgoal, WorkspaceConfig
-from robot_control.planner.rvg_planner import RVGPlanner
+
+# Protocol for path planners - both RVGPlanner and WavefrontPathPlanner implement this
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class PathPlanner(Protocol):
+    """Protocol for path planners (RVG or Wavefront)."""
+    def plan(
+        self,
+        start: Tuple[float, float],
+        goal: Tuple[float, float],
+        obstacles: List[Tuple[float, float, float, float, float]],
+    ) -> List[Tuple[float, float]]:
+        ...
 
 Point = Tuple[float, float]
 ObstacleTuple = Tuple[float, float, float, float, float]  # (x, y, theta_deg, w, h)
@@ -109,7 +122,7 @@ class NavigationController(Controller):
                                    +-> FINISHED (skip post-rotation if no goal theta)
 
     Usage:
-        planner = RVGPlanner(width, height, car_w, car_h)
+        # planner can be RVGPlanner or WavefrontPathPlanner
         controller = NavigationController(config, planner)
 
         # Navigate to click position
@@ -127,7 +140,7 @@ class NavigationController(Controller):
     def __init__(
         self,
         config: WorkspaceConfig,
-        planner: RVGPlanner,
+        planner: PathPlanner,
         nav_config: Optional[NavigationConfig] = None,
         max_speed: Optional[float] = None,
     ) -> None:
