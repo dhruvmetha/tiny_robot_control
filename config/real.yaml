@@ -20,7 +20,7 @@ robot:
   marker_size_mm: 36.0
   # Robot dimensions in cm (for 2D footprint / planner)
   width_cm: 6   # side-to-side
-  height_cm: 6  # front-to-back (depth)
+  height_cm: 6 # front-to-back (depth)
   # Offset from marker center to wheel center [x_cm, y_cm] in marker-local coords
   # Use if the ArUco marker is not placed at the robot's center of rotation
   # Positive x = forward, positive y = left
@@ -33,10 +33,10 @@ object_marker_size_mm: 30.0
 
 # Workspace settings
 workspace:
-  width_cm: 43.5
+  width_cm: 48.0
   height_cm: 65.0
   # Origin offset from physical corner [x_cm, y_cm]
-  origin_offset: [2.5, 1.0]
+  origin_offset: [4.0, 2.0]
   warmup_frames: 30
   min_inliers: 12
 

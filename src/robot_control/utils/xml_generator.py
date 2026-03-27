@@ -89,13 +89,14 @@ class NAMOXMLGenerator:
     # Object parameters (real robot scale - will be multiplied by scale_factor)
     OBJECT_HEIGHT_BASE = 0.025  # 2.5cm half-height (5cm total)
     OBJECT_MASS = 0.1
-    OBJECT_FRICTION = "0.0 0.005 0.001"
+    OBJECT_FRICTION = "0.5 0.1 0.1"
     OBJECT_COLOR = "1 1 0 1"  # yellow
 
     # Wall parameters (real robot scale - will be multiplied by scale_factor)
     WALL_THICKNESS_BASE = 0.01  # 1cm half-thickness (2cm total)
     WALL_HEIGHT_BASE = 0.05  # 5cm half-height (10cm total)
     WALL_COLOR = "0.800000011920929 0.800000011920929 0.800000011920929 1.0"
+    STATIC_FRICTION = "100000 100000 100000"
 
     # Floor friction
     FLOOR_FRICTION = "0.5 0.005 0.001"
@@ -104,18 +105,30 @@ class NAMOXMLGenerator:
     MIN_SEPARATION_BASE = 0.005  # 5mm margin (matches namo_cpp wavefront inflation)
     COLLISION_EXTRA_MARGIN = 0.08  # Extra 8cm margin when resolving robot collisions
 
-    def __init__(self, scale_factor: float = 1.0):
+    def __init__(
+        self,
+        scale_factor: float = 1.0,
+        robot_radius_cm: Optional[float] = None,
+    ):
         """Initialize generator with optional scale factor.
 
         Args:
             scale_factor: Multiply all positions and sizes by this factor.
                           Use 6.0 to scale from real robot (2.5cm) to simulation (15cm).
                           Physics parameters (mass, friction) remain unchanged.
+            robot_radius_cm: Robot radius in cm. If None, uses ROBOT_RADIUS_BASE (3cm).
+                            For rectangular robots, use max(width, height)/2.
         """
         self.scale_factor = scale_factor
 
+        # Use provided robot radius or default
+        if robot_radius_cm is not None:
+            robot_radius_base = robot_radius_cm / 100.0
+        else:
+            robot_radius_base = self.ROBOT_RADIUS_BASE
+
         # Scaled parameters
-        self.ROBOT_RADIUS = self.ROBOT_RADIUS_BASE * scale_factor
+        self.ROBOT_RADIUS = robot_radius_base * scale_factor
         self.OBJECT_HEIGHT = self.OBJECT_HEIGHT_BASE * scale_factor
         self.WALL_THICKNESS = self.WALL_THICKNESS_BASE * scale_factor
         self.WALL_HEIGHT = self.WALL_HEIGHT_BASE * scale_factor
@@ -405,11 +418,12 @@ class NAMOXMLGenerator:
         z_pos = half_height  # center is at half-height above ground
 
         if obj.is_static:
-            # Static object (wall) - no joint, gray color
+            # Static object (wall) - no joint, gray color, very high friction
             ET.SubElement(obj_body, "geom",
                           name=name, condim="4",
                           pos=f"{obj.x} {obj.y} {z_pos}",
                           euler=f"0 0 {obj.theta}",
+                          friction=self.STATIC_FRICTION,
                           rgba=self.WALL_COLOR,
                           size=f"{obj.half_width} {obj.half_depth} {half_height}",
                           type="box")

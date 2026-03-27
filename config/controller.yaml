@@ -9,6 +9,8 @@ navigation:
   goal_tolerance_ratio: 0.2      # goal_tolerance = ratio * car_size
   planner: "wavefront"           # "wavefront" or "rvg"
   wavefront_debug_dir: "output_dump/wavefront"  # Save wavefront path images here (null to disable)
+  obstacle_proximity_distance_cm: 2.0  # cm - how far from obstacles the extra cost extends
+  obstacle_proximity_weight: 5.0       # max cost multiplier at obstacle edge (0 to disable)
 
   # Rotation parameters
   rotation_tolerance_deg: 2.5    # degrees - rotation complete when within this
@@ -20,10 +22,10 @@ navigation:
 # Push controller
 push:
   max_speed: 0.6
-  standoff_multiplier: 0.5       # standoff = multiplier * robot_size
+  standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
-  push_steps: 100                # control ticks per push (~3.3 seconds at 30Hz)
+  push_steps: 120               # control ticks per push (~3.3 seconds at 30Hz)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 
   # Approach phase parameters

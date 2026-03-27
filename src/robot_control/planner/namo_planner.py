@@ -64,6 +64,9 @@ class NAMOPlanner(Planner):
         debug_xml_path: Optional[str] = None,
         enable_viewer: bool = False,
         pause_after_load: bool = False,
+        # ML goal model
+        ml_goal_model_path: Optional[str] = None,
+        ml_device: str = "cuda",
         # Workspace config for reachability checking (must match navigation planner)
         workspace_width_cm: float = 70.0,
         workspace_height_cm: float = 55.0,
@@ -92,6 +95,8 @@ class NAMOPlanner(Planner):
             debug_xml_path: If set, save generated XML to this path
             enable_viewer: Enable MuJoCo visualization window during planning
             pause_after_load: Pause after loading XML for interactive viewer inspection
+            ml_goal_model_path: Path to trained ML goal model (for ml strategies)
+            ml_device: PyTorch device for ML model ("cuda" or "cpu")
             workspace_width_cm: Workspace width for reachability check (must match navigation)
             workspace_height_cm: Workspace height for reachability check (must match navigation)
             robot_width_cm: Robot width for reachability check
@@ -109,6 +114,8 @@ class NAMOPlanner(Planner):
         self._goals_per_region = goals_per_region
         self._shuffle_edges = shuffle_edges
         self._shuffle_seed = shuffle_seed
+        self._ml_goal_model_path = ml_goal_model_path
+        self._ml_device = ml_device
         self._verbose = verbose
 
         # Create bridge for NAMO planning
@@ -120,6 +127,8 @@ class NAMOPlanner(Planner):
             debug_xml_path=debug_xml_path,
             enable_viewer=enable_viewer,
             pause_after_load=pause_after_load,
+            robot_width_cm=robot_width_cm,
+            robot_height_cm=robot_height_cm,
         )
 
         # Create wavefront planner for reachability checks
@@ -144,10 +153,17 @@ class NAMOPlanner(Planner):
         self._navigating_to_goal: bool = False
         self._goal_tolerance: float = 5.0  # cm - close enough to goal
 
+        # Cumulative planning time
+        self._total_planning_ms: float = 0.0
+        self._plan_count: int = 0
+
         # Retry state for unreachable approach positions
         self._max_replan_attempts: int = 5  # Max replans before giving up
         self._replan_attempt: int = 0  # Current replan attempt count
         self._failed_subgoal: Optional[PushSubgoal] = None  # Track which subgoal failed
+
+        # Retry state for planning failures (no solution found)
+        self._max_planning_retries: int = 5  # Retry with different seeds
 
     def plan(self, obs: Observation) -> Optional[Subgoal]:
         """Generate next subgoal from current observation.
@@ -255,21 +271,37 @@ class NAMOPlanner(Planner):
         self._failed_subgoal = None
 
         self._current_idx += 1
+        remaining = len(self._subgoals) - self._current_idx
 
         if self._verbose:
-            remaining = len(self._subgoals) - self._current_idx
             print(f"[NAMOPlanner] Subgoal done. Remaining: {remaining}")
+
+        # After every push, check if goal is now reachable
+        # This lets us skip remaining pushes and go straight to the goal
+        if remaining > 0:
+            print(
+                f"[NAMOPlanner] Checking reachability after push "
+                f"({remaining} subgoals remaining)..."
+            )
+            if self._is_goal_reachable(obs):
+                print(
+                    f"[NAMOPlanner] Goal is NOW REACHABLE - "
+                    f"skipping {remaining} remaining push(es)"
+                )
+                self._subgoals = []
+                self._current_idx = 0
+                self._plan_generated = False
+                return
 
         # If all pushes done, clear queue so next plan() re-checks reachability
         if self._current_idx >= len(self._subgoals):
             self._subgoals = []
             self._current_idx = 0
             self._plan_generated = False
-            if self._verbose:
-                print(
-                    "[NAMOPlanner] Push sequence complete. "
-                    "Will re-check reachability."
-                )
+            print(
+                "[NAMOPlanner] Push sequence complete. "
+                "Will re-check reachability."
+            )
 
     def is_complete(self, obs: Observation) -> bool:
         """Check if overall task is complete.
@@ -285,6 +317,10 @@ class NAMOPlanner(Planner):
             True if task is complete or failed
         """
         if self._planning_failed:
+            print(
+                f"[NAMOPlanner] Total planning: {self._plan_count} calls, "
+                f"{self._total_planning_ms:.0f}ms cumulative"
+            )
             return True
 
         # Only complete when navigating to goal AND close enough
@@ -297,7 +333,11 @@ class NAMOPlanner(Planner):
             obs.robot_y - self._robot_goal_cm[1],
         )
         if dist < self._goal_tolerance:
-            print(f"[NAMOPlanner] GOAL REACHED! Distance: {dist:.1f} cm")
+            print(
+                f"[NAMOPlanner] GOAL REACHED! Distance: {dist:.1f}cm | "
+                f"Total planning: {self._plan_count} calls, "
+                f"{self._total_planning_ms:.0f}ms cumulative"
+            )
             return True
 
         return False
@@ -387,65 +427,106 @@ class NAMOPlanner(Planner):
         return reachable
 
     def _generate_plan(self, obs: Observation) -> None:
-        """Generate subgoal queue via NAMO planning."""
+        """Generate subgoal queue via NAMO planning.
+
+        Retries up to _max_planning_retries times with different random seeds
+        when planning returns no solution (empty subgoals or exception).
+        """
         self._plan_generated = True
+        max_retries = self._max_planning_retries
 
-        # Compute shuffle seed for this attempt
-        # If user provided a seed, offset it by attempt number for reproducibility
-        # If no seed (None), use attempt number directly for varying results
-        if self._replan_attempt > 0:
-            if self._shuffle_seed is not None:
-                effective_seed = self._shuffle_seed + self._replan_attempt
+        for attempt in range(max_retries):
+            # Compute shuffle seed: combine replan attempt (execution retry)
+            # with planning attempt (no-solution retry) for maximum variation
+            combined_attempt = self._replan_attempt * max_retries + attempt
+            if combined_attempt > 0:
+                if self._shuffle_seed is not None:
+                    effective_seed = self._shuffle_seed + combined_attempt
+                else:
+                    effective_seed = combined_attempt * 12345
+                if attempt > 0:
+                    print(
+                        f"[NAMOPlanner] Planning retry {attempt}/{max_retries - 1} "
+                        f"with shuffle_seed={effective_seed}"
+                    )
+                elif self._replan_attempt > 0:
+                    print(
+                        f"[NAMOPlanner] Using shuffle_seed={effective_seed} "
+                        f"for replan attempt {self._replan_attempt}"
+                    )
             else:
-                # Use attempt number as seed for some variation
-                effective_seed = self._replan_attempt * 12345
-            print(f"[NAMOPlanner] Using shuffle_seed={effective_seed} for replan attempt {self._replan_attempt}")
-        else:
-            effective_seed = self._shuffle_seed
+                effective_seed = self._shuffle_seed
 
-        try:
-            subgoals = self._bridge.plan(
-                observation=obs,
-                robot_goal_cm=self._robot_goal_cm,
-                algorithm=self._algorithm,
-                goal_strategy=self._goal_strategy,
-                max_chain_depth=self._max_chain_depth,
-                allow_collisions=self._allow_collisions,
-                frontier_beam_width=self._frontier_beam_width,
-                chain_link_cost=self._chain_link_cost,
-                selection_strategy=self._selection_strategy,
-                goals_per_region=self._goals_per_region,
-                shuffle_edges=self._shuffle_edges,
-                shuffle_seed=effective_seed,
-            )
+            try:
+                # Build extra kwargs for ML strategies
+                extra_kwargs: Dict[str, Any] = {
+                    "shuffle_edges": self._shuffle_edges,
+                    "shuffle_seed": effective_seed,
+                }
+                if self._ml_goal_model_path:
+                    extra_kwargs["ml_goal_model_path"] = self._ml_goal_model_path
+                    extra_kwargs["ml_device"] = self._ml_device
 
-            self._subgoals = subgoals
-            self._current_idx = 0
+                subgoals = self._bridge.plan(
+                    observation=obs,
+                    robot_goal_cm=self._robot_goal_cm,
+                    algorithm=self._algorithm,
+                    goal_strategy=self._goal_strategy,
+                    max_chain_depth=self._max_chain_depth,
+                    allow_collisions=self._allow_collisions,
+                    frontier_beam_width=self._frontier_beam_width,
+                    chain_link_cost=self._chain_link_cost,
+                    selection_strategy=self._selection_strategy,
+                    goals_per_region=self._goals_per_region,
+                    **extra_kwargs,
+                )
 
-            if not subgoals:
-                print("[NAMOPlanner] Planning returned NO SUBGOALS")
-                print("[NAMOPlanner]   This usually means sim2real discrepancy:")
-                print("[NAMOPlanner]   - NAMO simulation thinks goal is reachable")
-                print("[NAMOPlanner]   - But local wavefront says it's blocked")
-                print("[NAMOPlanner]   - Real push may not have moved object as far as simulated")
-                self._planning_failed = True
-            else:
+                # Accumulate planning time
+                self._plan_count += 1
+                self._total_planning_ms += self._bridge.last_search_time_ms
+                print(
+                    f"[NAMOPlanner] Plan #{self._plan_count}: "
+                    f"{self._bridge.last_search_time_ms:.0f}ms, "
+                    f"cumulative: {self._total_planning_ms:.0f}ms"
+                )
+
+                if subgoals:
+                    self._subgoals = subgoals
+                    self._current_idx = 0
+                    if self._verbose:
+                        print(f"[NAMOPlanner] Generated {len(subgoals)} subgoals:")
+                        for i, sg in enumerate(subgoals):
+                            print(
+                                f"  [{i}] {sg.object_id} edge={sg.edge_idx} "
+                                f"steps={sg.push_steps}"
+                            )
+                    return  # Success
+
+                # No subgoals - will retry if attempts remain
+                print(
+                    f"[NAMOPlanner] Planning returned NO SUBGOALS "
+                    f"(attempt {attempt + 1}/{max_retries})"
+                )
+
+            except Exception as e:
+                print(
+                    f"[NAMOPlanner] Planning FAILED (attempt {attempt + 1}/{max_retries}): {e}"
+                )
                 if self._verbose:
-                    print(f"[NAMOPlanner] Generated {len(subgoals)} subgoals:")
-                    for i, sg in enumerate(subgoals):
-                        print(
-                            f"  [{i}] {sg.object_id} edge={sg.edge_idx} "
-                            f"steps={sg.push_steps}"
-                        )
+                    import traceback
+                    traceback.print_exc()
 
-        except Exception as e:
-            # Always print errors, not just in verbose mode
-            print(f"[NAMOPlanner] Planning FAILED: {e}")
-            import traceback
-            traceback.print_exc()
-            self._planning_failed = True
-            self._subgoals = []
-            self._current_idx = 0
+        # All retries exhausted
+        print(
+            f"[NAMOPlanner] All {max_retries} planning attempts failed"
+        )
+        print("[NAMOPlanner]   Possible causes:")
+        print("[NAMOPlanner]   - No feasible push found for any edge/depth")
+        print("[NAMOPlanner]   - Sim2real discrepancy (sim thinks goal reachable)")
+        print("[NAMOPlanner]   - Objects too tightly packed for primitives")
+        self._planning_failed = True
+        self._subgoals = []
+        self._current_idx = 0
 
     def get_subgoal_queue(self) -> List[PushSubgoal]:
         """Get the current subgoal queue (for debugging)."""

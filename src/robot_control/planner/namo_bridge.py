@@ -74,6 +74,8 @@ class NAMOPlanBridge:
         debug_xml_path: Optional[str] = None,
         enable_viewer: bool = False,
         pause_after_load: bool = False,
+        robot_width_cm: float = 6.0,
+        robot_height_cm: float = 6.0,
     ):
         """Initialize the NAMO bridge.
 
@@ -86,6 +88,8 @@ class NAMOPlanBridge:
             debug_xml_path: If set, save generated XML to this path for debugging
             enable_viewer: Enable MuJoCo visualization window during planning
             pause_after_load: Pause for user input after loading XML (for inspection)
+            robot_width_cm: Robot width in cm (for XML generation)
+            robot_height_cm: Robot height in cm (for XML generation)
         """
         self._namo_config_path = namo_config_path
         self._scale_factor = scale_factor
@@ -104,13 +108,24 @@ class NAMOPlanBridge:
             self._primitive_data_dir = primitive_data_dir
 
         self._object_mapping = ObjectMapping()
-        self._xml_generator = NAMOXMLGenerator(scale_factor=scale_factor)
+
+        # Use max(width, height)/2 as robot radius for sphere approximation
+        robot_radius_cm = max(robot_width_cm, robot_height_cm) / 2.0
+        self._xml_generator = NAMOXMLGenerator(
+            scale_factor=scale_factor,
+            robot_radius_cm=robot_radius_cm,
+        )
+        if verbose:
+            print(f"[NAMOBridge] Robot size: {robot_width_cm}x{robot_height_cm}cm -> radius={robot_radius_cm}cm")
 
         # Ensure namo_cpp python path is available
         self._setup_namo_path()
 
         # Lazy import planning service
         self._planning_service = None
+
+        # Timing from last plan_from_xml() call
+        self.last_search_time_ms: float = 0.0
 
     def _setup_namo_path(self) -> None:
         """Add namo_cpp python paths to sys.path."""
@@ -201,8 +216,9 @@ class NAMOPlanBridge:
             # Convert goal to simulation coordinates
             goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
 
-            # Get planning service
+            # Get planning service (and preload ML model if needed)
             service = self._get_planning_service()
+            service.preload_goal_model(goal_strategy, **kwargs)
 
             # Run planning
             result = service.plan_from_xml(
@@ -218,6 +234,8 @@ class NAMOPlanBridge:
                 goals_per_region=goals_per_region,
                 **kwargs,
             )
+
+            self.last_search_time_ms = result.search_time_ms
 
             if self._verbose:
                 print(
@@ -344,11 +362,21 @@ class NAMOPlanBridge:
             # Map simulation object ID to real object ID
             real_object_id = self._object_mapping.get_real_name(action.object_id)
 
+            # Bucket depth into push tiers:
+            #   depth 0-2 → 1 push unit, depth 3-5 → 2, depth 6-9 → 3
+            depth = action.depth
+            if depth <= 2:
+                push_steps = 1
+            elif depth <= 5:
+                push_steps = 2
+            else:
+                push_steps = 3
+
             subgoals.append(
                 PushSubgoal(
                     object_id=real_object_id,
                     edge_idx=action.edge_idx,
-                    push_steps=action.depth + 1,
+                    push_steps=push_steps,
                 )
             )
 

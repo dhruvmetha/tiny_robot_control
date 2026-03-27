@@ -170,42 +170,70 @@ def load_camera_config(config_path: str, objects_path: str):
     return camera_config, observer_config
 
 
-def detect_goal_from_camera(config_path: str, objects_path: str = "config/objects.yaml", timeout: float = 5.0) -> Optional[Tuple[float, float]]:
-    """Detect goal marker position from camera."""
-    from robot_control.camera import ArucoObserver
-    from robot_control.nodes import CameraSensorNode
+def detect_goal_from_camera(
+    config_path: str,
+    objects_path: str = "config/objects.yaml",
+    timeout: float = 5.0,
+    camera_service: Optional[str] = None,
+) -> Optional[Tuple[float, float]]:
+    """Detect goal marker position from camera.
 
-    camera_config, observer_config = load_camera_config(config_path, objects_path)
-
+    If camera_service address is provided, connects via ZMQ instead of
+    creating a local camera + observer.
+    """
     print("\n" + "=" * 60)
     print("STEP 0: Detecting Goal Marker")
     print("=" * 60)
     print("Looking for goal marker (ArUco 6x6, ID 0)...")
 
-    camera = CameraSensorNode(camera_config)
-    if not camera.start():
-        print("  ERROR: Failed to start camera!")
-        return None
+    if camera_service:
+        from robot_control.nodes.remote_observer import RemoteObserverNode
 
-    observer = ArucoObserver(observer_config)
-    if not observer.start():
-        print("  ERROR: Failed to start observer!")
-        camera.stop()
-        return None
+        node = RemoteObserverNode(camera_service)
+        if not node.start():
+            print("  ERROR: Failed to connect to camera service!")
+            return None
 
-    goal_pos = None
-    start_time = time.time()
+        goal_pos = None
+        start_time = time.time()
+        try:
+            while time.time() - start_time < timeout:
+                obs = node.get()
+                if obs is not None and obs.goal_x is not None and obs.goal_y is not None:
+                    goal_pos = (obs.goal_x, obs.goal_y)
+                    break
+                time.sleep(0.05)
+        finally:
+            node.stop()
+    else:
+        from robot_control.camera import ArucoObserver
+        from robot_control.nodes import CameraSensorNode
 
-    try:
-        while time.time() - start_time < timeout:
-            obs = observer.get()
-            if obs is not None and obs.goal_x is not None and obs.goal_y is not None:
-                goal_pos = (obs.goal_x, obs.goal_y)
-                break
-            time.sleep(0.05)
-    finally:
-        observer.stop()
-        camera.stop()
+        camera_config, observer_config = load_camera_config(config_path, objects_path)
+
+        camera = CameraSensorNode(camera_config)
+        if not camera.start():
+            print("  ERROR: Failed to start camera!")
+            return None
+
+        observer = ArucoObserver(observer_config)
+        if not observer.start():
+            print("  ERROR: Failed to start observer!")
+            camera.stop()
+            return None
+
+        goal_pos = None
+        start_time = time.time()
+        try:
+            while time.time() - start_time < timeout:
+                obs = observer.get()
+                if obs is not None and obs.goal_x is not None and obs.goal_y is not None:
+                    goal_pos = (obs.goal_x, obs.goal_y)
+                    break
+                time.sleep(0.05)
+        finally:
+            observer.stop()
+            camera.stop()
 
     if goal_pos:
         print(f"  SUCCESS: Goal marker detected at ({goal_pos[0]:.1f}, {goal_pos[1]:.1f}) cm")
@@ -215,17 +243,90 @@ def detect_goal_from_camera(config_path: str, objects_path: str = "config/object
     return goal_pos
 
 
-def capture_scene_interactive(config_path: str, objects_path: str, stable_frames: int = 10):
-    """Capture scene from camera with visual feedback."""
+def capture_scene_interactive(
+    config_path: str,
+    objects_path: str,
+    stable_frames: int = 10,
+    camera_service: Optional[str] = None,
+):
+    """Capture scene from camera with visual feedback.
+
+    If camera_service address is provided, polls the remote observer
+    and uses terminal-based capture (press Enter) instead of OpenCV window.
+    The operator can monitor the camera via the camera_service --show window.
+    """
+    print("\n" + "=" * 60)
+    print("STEP 1: Capture Scene from Camera")
+    print("=" * 60)
+
+    if camera_service:
+        from robot_control.nodes.remote_observer import RemoteObserverNode
+
+        print("Connecting to camera service for scene capture...")
+        print("Monitor the camera in the camera_service window.")
+        print("Press Enter to capture when ready, or 'q'+Enter to quit.")
+
+        node = RemoteObserverNode(camera_service)
+        if not node.start():
+            print("  ERROR: Failed to connect to camera service!")
+            return None
+
+        stable_count = 0
+        last_obs = None
+        captured_obs = None
+
+        import select
+        import sys
+
+        try:
+            while captured_obs is None:
+                obs = node.get()
+                if obs is not None:
+                    if last_obs is not None:
+                        dx = abs(obs.robot_x - last_obs.robot_x)
+                        dy = abs(obs.robot_y - last_obs.robot_y)
+                        if dx < 1.0 and dy < 1.0:
+                            stable_count += 1
+                        else:
+                            stable_count = 0
+                    last_obs = obs
+
+                    goal_str = (
+                        f"({obs.goal_x:.1f}, {obs.goal_y:.1f})"
+                        if obs.goal_x is not None
+                        else "N/A"
+                    )
+                    print(
+                        f"\r  Robot: ({obs.robot_x:.1f}, {obs.robot_y:.1f}) @ "
+                        f"{obs.robot_theta:.1f} | Objects: {len(obs.objects)} | "
+                        f"Goal: {goal_str} | Stable: {stable_count}/{stable_frames}  ",
+                        end="",
+                        flush=True,
+                    )
+
+                # Non-blocking stdin check
+                if select.select([sys.stdin], [], [], 0.05)[0]:
+                    line = sys.stdin.readline().strip()
+                    if line.lower() == "q":
+                        print("\n\nCancelled by user.")
+                        break
+                    elif obs is not None:
+                        captured_obs = obs
+                        print("\n\n  SUCCESS: Scene captured!")
+                else:
+                    time.sleep(0.05)
+        finally:
+            node.stop()
+
+        return captured_obs
+
+    # Local camera mode (original behavior)
     import cv2
     from robot_control.camera import ArucoObserver
     from robot_control.nodes import CameraSensorNode
 
     camera_config, observer_config = load_camera_config(config_path, objects_path)
 
-    print("\n" + "=" * 60)
-    print("STEP 1: Capture Scene from Camera")
-    print("=" * 60)
     print("Starting camera and ArUco detection...")
     print("Press 'c' to capture, 'q' to quit")
 
@@ -315,7 +416,10 @@ def run_interactive_mode(args):
     # =========================================================================
     # STEP 1: Capture scene
     # =========================================================================
-    obs = capture_scene_interactive(args.config, args.objects)
+    obs = capture_scene_interactive(
+        args.config, args.objects,
+        camera_service=getattr(args, "camera_service", None),
+    )
     if obs is None:
         print("ERROR: No observation captured!")
         return 1
@@ -414,10 +518,12 @@ def run_interactive_mode(args):
         chain_link_cost=args.chain_link_cost,
         selection_strategy=args.selection_strategy,
         goals_per_region=args.goals_per_region,
-        verbose=True,  # Always verbose in interactive mode
+        verbose=args.verbose,
         debug_xml_path=args.debug_xml,
         enable_viewer=args.viewer,
         pause_after_load=args.pause,
+        ml_goal_model_path=args.ml_goal_model_path,
+        ml_device=args.ml_device,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
@@ -438,6 +544,7 @@ def run_interactive_mode(args):
         planner=planner,
         dry_run=args.dry_run,
         quit_on_complete=True,
+        camera_service_address=getattr(args, "camera_service", None),
     )
 
     print("\n  Starting robot execution...")
@@ -472,7 +579,10 @@ def run_automatic_mode(args):
     elif mode == "real":
         # Detect goal from camera in real mode
         os.chdir(str(robot_control_dir))
-        goal_cm = detect_goal_from_camera(args.config, args.objects)
+        goal_cm = detect_goal_from_camera(
+            args.config, args.objects,
+            camera_service=getattr(args, "camera_service", None),
+        )
         if goal_cm is None:
             print("\nError: No goal specified!")
             print("Either provide --goal X Y or place goal marker (ArUco 6x6, ID 0) in the scene.")
@@ -552,6 +662,8 @@ def run_automatic_mode(args):
         debug_xml_path=args.debug_xml,
         enable_viewer=args.viewer,
         pause_after_load=args.pause,
+        ml_goal_model_path=args.ml_goal_model_path,
+        ml_device=args.ml_device,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
@@ -587,6 +699,7 @@ def run_automatic_mode(args):
             planner=planner,
             dry_run=args.dry_run,
             quit_on_complete=not args.no_quit,
+            camera_service_address=getattr(args, "camera_service", None),
         )
 
     # Run
@@ -624,6 +737,14 @@ def main():
         action="store_true",
         help="Run in interactive mode with step-by-step prompts",
     )
+    parser.add_argument(
+        "--camera-service",
+        type=str,
+        default=None,
+        metavar="ADDRESS",
+        help="ZMQ address of camera service (e.g. tcp://localhost:5556). "
+             "Skips local camera creation.",
+    )
     # Goal specification
     parser.add_argument(
         "--goal", "-g",
@@ -658,6 +779,18 @@ def main():
         type=str,
         default="primitive",
         help="Goal strategy (default: primitive)",
+    )
+    parser.add_argument(
+        "--ml-goal-model-path",
+        type=str,
+        default=None,
+        help="Path to trained ML goal model (required for ml strategies)",
+    )
+    parser.add_argument(
+        "--ml-device",
+        type=str,
+        default="cuda",
+        help="PyTorch device for ML model (default: cuda)",
     )
     parser.add_argument(
         "--max-chain-depth",

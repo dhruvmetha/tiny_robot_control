@@ -21,6 +21,8 @@ class WavefrontConfig:
     resolution: float = 0.005  # 5mm grid resolution
     robot_radius: float = 0.025  # 25mm robot radius
     inflation_margin: float = 0.005  # 5mm extra margin
+    obstacle_proximity_distance: float = 0.02  # 20mm - cost falloff distance from obstacles
+    obstacle_proximity_weight: float = 5.0  # max extra cost multiplier at obstacle edge
 
 
 class WavefrontPlanner:
@@ -44,6 +46,7 @@ class WavefrontPlanner:
     def __init__(self, config: Optional[WavefrontConfig] = None):
         self._config = config or WavefrontConfig()
         self._grid: Optional[np.ndarray] = None
+        self._cost_grid: Optional[np.ndarray] = None  # Per-cell cost multiplier
         self._bounds: Optional[Tuple[float, float, float, float]] = None
         self._width: int = 0
         self._height: int = 0
@@ -88,6 +91,9 @@ class WavefrontPlanner:
             self._grid[:inflation_cells, :] = self.OBSTACLE
             # Top edge
             self._grid[-inflation_cells:, :] = self.OBSTACLE
+
+        # Build proximity cost grid so paths prefer staying away from obstacles
+        self._build_cost_grid()
 
     def _add_box_to_grid(
         self,
@@ -146,6 +152,78 @@ class WavefrontPlanner:
                 # Check if inside inflated box
                 if abs(lx) <= hw and abs(ly) <= hd:
                     self._grid[gj, gi] = self.OBSTACLE
+
+    def _build_cost_grid(self) -> None:
+        """Build per-cell cost multiplier based on proximity to obstacles.
+
+        Free cells near obstacles get a higher traversal cost so Dijkstra
+        naturally routes paths away from obstacle edges.  Cost decays
+        linearly from (1 + weight) at the obstacle boundary to 1.0 at
+        proximity_distance away.
+        """
+        prox_dist = self._config.obstacle_proximity_distance
+        weight = self._config.obstacle_proximity_weight
+
+        # If proximity cost is disabled, use uniform cost
+        if prox_dist <= 0 or weight <= 0:
+            self._cost_grid = np.ones(
+                (self._height, self._width), dtype=np.float32
+            )
+            return
+
+        res = self._config.resolution
+        max_cells = int(math.ceil(prox_dist / res))
+
+        # Start with uniform cost
+        self._cost_grid = np.ones(
+            (self._height, self._width), dtype=np.float32
+        )
+
+        # Find obstacle boundary cells (obstacle cells with at least one free neighbor)
+        # using vectorized shift comparisons
+        is_obs = self._grid == self.OBSTACLE
+        is_free = self._grid == self.FREE
+
+        # Check 4-connected neighbors for free cells
+        has_free_neighbor = np.zeros_like(is_obs)
+        has_free_neighbor[:, 1:] |= is_free[:, :-1]   # free to the left
+        has_free_neighbor[:, :-1] |= is_free[:, 1:]    # free to the right
+        has_free_neighbor[1:, :] |= is_free[:-1, :]    # free below
+        has_free_neighbor[:-1, :] |= is_free[1:, :]    # free above
+
+        boundary = is_obs & has_free_neighbor
+
+        # Multi-source BFS from boundary cells into free cells
+        dist_cells = np.full(
+            (self._height, self._width), max_cells + 1, dtype=np.int32
+        )
+        queue: deque = deque()
+
+        # Seed BFS with boundary cells
+        seed_js, seed_is = np.where(boundary)
+        for gj, gi in zip(seed_js, seed_is):
+            dist_cells[gj, gi] = 0
+            queue.append((int(gi), int(gj)))
+
+        neighbors_4 = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        # BFS outward into free cells
+        while queue:
+            gi, gj = queue.popleft()
+            d = dist_cells[gj, gi]
+            if d >= max_cells:
+                continue
+            for di, dj in neighbors_4:
+                ni, nj = gi + di, gj + dj
+                if 0 <= ni < self._width and 0 <= nj < self._height:
+                    if self._grid[nj, ni] == self.FREE and d + 1 < dist_cells[nj, ni]:
+                        dist_cells[nj, ni] = d + 1
+                        queue.append((ni, nj))
+
+        # Vectorized: convert distance to cost multiplier for free cells
+        mask = (dist_cells <= max_cells) & is_free
+        frac = 1.0 - dist_cells[mask].astype(np.float32) / (max_cells + 1)
+        self._cost_grid[mask] = 1.0 + weight * frac
 
     def is_free(self, x: float, y: float) -> bool:
         """Check if position is free (not in obstacle)."""
@@ -322,9 +400,32 @@ class WavefrontPlanner:
             h, w = self._grid.shape
             img = np.zeros((h, w, 3), dtype=np.uint8)
 
-            # Free = white, Obstacle = black
-            img[self._grid == self.FREE] = [255, 255, 255]
+            # Obstacle = black
             img[self._grid == self.OBSTACLE] = [0, 0, 0]
+
+            # Free cells: shade by proximity cost (white = no cost, yellow = high cost)
+            free_mask = self._grid == self.FREE
+            if self._cost_grid is not None:
+                # Normalize cost to 0-1 range for coloring
+                max_cost = 1.0 + self._config.obstacle_proximity_weight
+                cost_norm = np.clip(
+                    (self._cost_grid - 1.0) / max(max_cost - 1.0, 1e-6), 0.0, 1.0
+                )
+                # White (no cost) → yellow (high cost)
+                r = np.where(free_mask, 255, 0).astype(np.uint8)
+                g = np.where(free_mask, 255, 0).astype(np.uint8)
+                b = np.where(
+                    free_mask,
+                    (255 * (1.0 - cost_norm)).astype(np.uint8),
+                    0,
+                ).astype(np.uint8)
+                img[:, :, 0] = b  # OpenCV BGR
+                img[:, :, 1] = g
+                img[:, :, 2] = r
+                # Re-apply obstacle color
+                img[self._grid == self.OBSTACLE] = [0, 0, 0]
+            else:
+                img[free_mask] = [255, 255, 255]
 
             # Flip Y for image coordinates (origin at bottom-left in world)
             img = cv2.flip(img, 0)
@@ -419,7 +520,9 @@ class WavefrontPlanner:
             for di, dj, cost in self._NEIGHBORS_WITH_COSTS:
                 ni, nj = gi + di, gj + dj
                 if self._is_valid_cell(ni, nj):
-                    new_dist = d + cost
+                    # Scale move cost by proximity penalty at destination cell
+                    cell_cost = cost * self._cost_grid[nj, ni]
+                    new_dist = d + cell_cost
                     if new_dist < dist[nj, ni]:
                         dist[nj, ni] = new_dist
                         heapq.heappush(heap, (new_dist, ni, nj))

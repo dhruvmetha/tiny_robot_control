@@ -17,6 +17,8 @@ class NavigationConfig:
     goal_tolerance_ratio: float = 0.5  # goal_tolerance = ratio * car_size
     planner: str = "wavefront"  # "wavefront" or "rvg"
     wavefront_debug_dir: Optional[str] = None  # Save wavefront images to this directory
+    obstacle_proximity_distance_cm: float = 2.0  # cm - cost falloff distance from obstacles
+    obstacle_proximity_weight: float = 5.0  # max cost multiplier at obstacle edge (0 to disable)
 
     # Rotation parameters
     rotation_tolerance_deg: float = 1.0
@@ -88,6 +90,8 @@ class ControllerConfigs:
                 goal_tolerance_ratio=nav_data.get("goal_tolerance_ratio", 0.5),
                 planner=nav_data.get("planner", "wavefront"),
                 wavefront_debug_dir=nav_data.get("wavefront_debug_dir", None),
+                obstacle_proximity_distance_cm=nav_data.get("obstacle_proximity_distance_cm", 2.0),
+                obstacle_proximity_weight=nav_data.get("obstacle_proximity_weight", 5.0),
                 rotation_tolerance_deg=nav_data.get("rotation_tolerance_deg", 1.0),
                 rotation_stable_time=nav_data.get("rotation_stable_time", 0.5),
                 rotation_speed_max=nav_data.get("rotation_speed_max", 0.25),

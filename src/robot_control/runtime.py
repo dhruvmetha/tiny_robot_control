@@ -60,6 +60,15 @@ except ImportError:
     CameraConfig = None
     CameraRecorder = None
 
+# Conditional import for remote camera service
+try:
+    from robot_control.nodes.remote_observer import RemoteObserverNode, ObjectSizeInfo
+    REMOTE_AVAILABLE = True
+except ImportError:
+    REMOTE_AVAILABLE = False
+    RemoteObserverNode = None
+    ObjectSizeInfo = None
+
 # Conditional import for GUI
 try:
     from robot_control.gui import Window
@@ -112,6 +121,9 @@ class RuntimeConfig:
     show_gui: bool = True
     show_camera: bool = True  # Only for real mode
     show_settings: bool = True
+
+    # Remote camera service (ZMQ address, e.g. "tcp://localhost:5556")
+    camera_service_address: Optional[str] = None
 
     # Control options
     initial_controller: str = "keyboard"
@@ -167,6 +179,7 @@ class Runtime:
         self._sensor: Optional[SimSensorNode | CameraSensorNode] = None
         self._observer: Optional[ArucoObserver] = None
         self._recorder: Optional[CameraRecorder] = None
+        self._remote_observer: Optional[RemoteObserverNode] = None
         self._world: Optional[WorldState] = None
         self._coordinator: Optional[ControlCoordinator] = None
         self._window: Optional[Window] = None
@@ -336,14 +349,33 @@ class Runtime:
         # Create world state
         self._world = WorldState()
 
-        # Create camera sensor
-        self._sensor = CameraSensorNode(camera_config)
-
-        # Create ArUco observer
-        self._observer = ArucoObserver(observer_config)
-
-        # Create camera recorder
-        self._recorder = CameraRecorder(output_dir="recordings", fps=30.0)
+        if self._config.camera_service_address:
+            # Remote camera mode: use ZMQ observer, skip local camera
+            if not REMOTE_AVAILABLE:
+                raise RuntimeError(
+                    "Remote camera service requires pyzmq. Install with: pip install pyzmq"
+                )
+            # Build object size lookup from object definitions (loaded from objects.yaml)
+            object_sizes = {}
+            if observer_config and observer_config.object_defs:
+                for name, obj_def in observer_config.object_defs.items():
+                    if not obj_def.is_goal:
+                        object_sizes[name] = ObjectSizeInfo(
+                            width=obj_def.width_cm,
+                            depth=obj_def.depth_cm,
+                            height=obj_def.height_cm,
+                            is_static=obj_def.is_static,
+                        )
+            self._remote_observer = RemoteObserverNode(
+                self._config.camera_service_address,
+                object_sizes=object_sizes,
+            )
+            print(f"[Runtime] Using remote camera service at {self._config.camera_service_address}")
+        else:
+            # Local camera mode: create camera sensor + observer + recorder
+            self._sensor = CameraSensorNode(camera_config)
+            self._observer = ArucoObserver(observer_config)
+            self._recorder = CameraRecorder(output_dir="recordings", fps=30.0)
 
         # Create real environment
         self._env = RealEnv(real_env_config)
@@ -427,6 +459,8 @@ class Runtime:
                 robot_width=self._workspace_config.car_width,
                 robot_height=self._workspace_config.car_height,
                 debug_dir=controller_configs.navigation.wavefront_debug_dir,
+                obstacle_proximity_distance_cm=controller_configs.navigation.obstacle_proximity_distance_cm,
+                obstacle_proximity_weight=controller_configs.navigation.obstacle_proximity_weight,
             )
         else:
             planner = RVGPlanner(
@@ -471,10 +505,16 @@ class Runtime:
     def _setup_gui(self) -> None:
         """Setup GUI window and bind callbacks."""
         is_real = self._config.mode == "real"
+        # No camera panel when using remote camera service (no vis_frame)
+        show_camera = (
+            is_real
+            and self._config.show_camera
+            and self._remote_observer is None
+        )
 
         self._window = Window(
             self._workspace_config,
-            show_camera=(is_real and self._config.show_camera),
+            show_camera=show_camera,
             show_connection=(is_real and not self._config.dry_run),
             show_settings=self._config.show_settings,
             autonomous=(self._planner is not None),
@@ -615,27 +655,37 @@ class Runtime:
 
     def _start_real(self) -> None:
         """Start real robot components."""
-        # Start camera sensor
-        print("[Runtime] Starting CameraSensorNode...")
-        if not self._sensor.start():
-            raise RuntimeError("Failed to start camera")
+        if self._remote_observer:
+            # Remote camera mode: just start the ZMQ receiver
+            print("[Runtime] Starting RemoteObserverNode...")
+            if not self._remote_observer.start():
+                raise RuntimeError(
+                    f"Failed to connect to camera service at "
+                    f"{self._config.camera_service_address}"
+                )
+        else:
+            # Local camera mode: start camera + observer + recorder
+            print("[Runtime] Starting CameraSensorNode...")
+            if not self._sensor.start():
+                raise RuntimeError("Failed to start camera")
 
-        # Subscribe recorder to camera frames
-        self._recorder.subscribe()
+            self._recorder.subscribe()
 
-        # Start ArUco observer
-        print("[Runtime] Starting ArucoObserver...")
-        if not self._observer.start():
-            self._recorder.unsubscribe()
-            self._sensor.stop()
-            raise RuntimeError("Failed to start ArUco observer")
+            print("[Runtime] Starting ArucoObserver...")
+            if not self._observer.start():
+                self._recorder.unsubscribe()
+                self._sensor.stop()
+                raise RuntimeError("Failed to start ArUco observer")
 
         # Start real environment (serial connection)
         if not self._config.dry_run:
             if not self._env.start():
-                self._observer.stop()
-                self._recorder.unsubscribe()
-                self._sensor.stop()
+                if self._remote_observer:
+                    self._remote_observer.stop()
+                else:
+                    self._observer.stop()
+                    self._recorder.unsubscribe()
+                    self._sensor.stop()
                 raise RuntimeError("Failed to start RealEnv")
         else:
             print("[Runtime] DRY RUN - not sending commands to robot")
@@ -682,6 +732,8 @@ class Runtime:
             except Exception as e:
                 print(f"[Runtime] Error stopping robot: {e}")
             self._env.stop()
+        if self._remote_observer:
+            self._remote_observer.stop()
         if self._observer:
             self._observer.stop()
         if self._sensor:

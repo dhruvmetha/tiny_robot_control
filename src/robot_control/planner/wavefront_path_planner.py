@@ -27,6 +27,8 @@ class WavefrontPathPlanner:
         robot_height: float,
         resolution_cm: float = 0.5,
         debug_dir: Optional[str] = None,
+        obstacle_proximity_distance_cm: float = 2.0,
+        obstacle_proximity_weight: float = 5.0,
     ) -> None:
         """
         Initialize the wavefront path planner.
@@ -38,6 +40,8 @@ class WavefrontPathPlanner:
             robot_height: Robot height in cm
             resolution_cm: Grid resolution in cm (default 0.5 = 5mm)
             debug_dir: If set, save wavefront images to this directory
+            obstacle_proximity_distance_cm: How far (cm) the extra cost extends from obstacles
+            obstacle_proximity_weight: Max cost multiplier at obstacle edge (0 to disable)
         """
         self._width_cm = workspace_width
         self._height_cm = workspace_height
@@ -55,6 +59,10 @@ class WavefrontPathPlanner:
         # Robot radius = max(width, height) / 2 (circular approximation)
         robot_radius_cm = max(robot_width, robot_height) / 2.0
         self._robot_radius_m = robot_radius_cm / 100.0
+
+        # Obstacle proximity cost parameters (convert to meters)
+        self._obstacle_proximity_distance_m = obstacle_proximity_distance_cm / 100.0
+        self._obstacle_proximity_weight = obstacle_proximity_weight
 
         # Keep reference to last planner for external access
         self._last_planner: Optional[WavefrontPlanner] = None
@@ -94,6 +102,8 @@ class WavefrontPathPlanner:
             resolution=self._resolution_m,
             robot_radius=self._robot_radius_m,
             inflation_margin=0.0,  # No extra margin beyond robot radius
+            obstacle_proximity_distance=self._obstacle_proximity_distance_m,
+            obstacle_proximity_weight=self._obstacle_proximity_weight,
         )
 
         # Create planner and build grid
