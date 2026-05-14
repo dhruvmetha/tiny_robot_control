@@ -12,7 +12,7 @@ Now includes reachability checking:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 from robot_control.core.types import NavigateSubgoal, Observation, PushSubgoal, Subgoal
 from robot_control.planner.base import Planner
@@ -48,6 +48,7 @@ class NAMOPlanner(Planner):
         robot_goal_cm: Tuple[float, float],
         namo_config_path: str,
         algorithm: str = "full_namo",
+        execution_mode: Literal["open_loop", "mpc"] = "mpc",
         goal_strategy: str = "primitive",
         scale_factor: float = 6.0,
         primitive_data_dir: str = "data",
@@ -79,6 +80,13 @@ class NAMOPlanner(Planner):
             robot_goal_cm: Goal position in cm (x, y)
             namo_config_path: Path to NAMO config YAML
             algorithm: Planning algorithm ("full_namo" or "region_opening")
+            execution_mode: Plan-level execution strategy. "mpc" (default)
+                queues only the first push from each planning call and replans
+                after each push completes — closed-loop at the plan level,
+                robust to real-world drift. "open_loop" queues the entire
+                planned sequence and only replans when the queue empties
+                without reaching the goal — fewer planning calls, but
+                commits to the simulator's predicted future across pushes.
             goal_strategy: Goal sampling strategy ("primitive", "ml", etc.)
             scale_factor: Scale factor for simulation (6.0 default)
             primitive_data_dir: Directory containing motion primitive data
@@ -102,8 +110,14 @@ class NAMOPlanner(Planner):
             robot_width_cm: Robot width for reachability check
             robot_height_cm: Robot height for reachability check
         """
+        if execution_mode not in ("open_loop", "mpc"):
+            raise ValueError(
+                f"execution_mode must be 'open_loop' or 'mpc', got {execution_mode!r}"
+            )
+
         self._robot_goal_cm = robot_goal_cm
         self._algorithm = algorithm
+        self._execution_mode = execution_mode
         self._goal_strategy = goal_strategy
         self._replan_on_completion = replan_on_completion
         self._max_chain_depth = max_chain_depth
@@ -491,11 +505,29 @@ class NAMOPlanner(Planner):
                 )
 
                 if subgoals:
-                    self._subgoals = subgoals
+                    if self._execution_mode == "mpc":
+                        # MPC: enqueue only the first push; discard the rest.
+                        # The next plan() call will replan from a fresh
+                        # observation, ensuring closed-loop behaviour at the
+                        # plan level.
+                        if len(subgoals) > 1:
+                            print(
+                                f"[NAMOPlanner] MPC mode: keeping 1 of "
+                                f"{len(subgoals)} planned pushes (rest "
+                                f"discarded for replan)"
+                            )
+                        self._subgoals = [subgoals[0]]
+                    else:
+                        # open_loop: commit to the full planned sequence.
+                        self._subgoals = subgoals
                     self._current_idx = 0
                     if self._verbose:
-                        print(f"[NAMOPlanner] Generated {len(subgoals)} subgoals:")
-                        for i, sg in enumerate(subgoals):
+                        print(
+                            f"[NAMOPlanner] Queued {len(self._subgoals)} subgoal(s) "
+                            f"({self._execution_mode} mode, planner returned "
+                            f"{len(subgoals)}):"
+                        )
+                        for i, sg in enumerate(self._subgoals):
                             print(
                                 f"  [{i}] {sg.object_id} edge={sg.edge_idx} "
                                 f"steps={sg.push_steps}"
