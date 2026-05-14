@@ -13,7 +13,7 @@ import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from robot_control.camera.workspace import WORKSPACE_HEIGHT_CM, WORKSPACE_WIDTH_CM
 from robot_control.core.types import Observation, PushSubgoal
@@ -172,6 +172,7 @@ class NAMOPlanBridge:
         chain_link_cost: int = 11,
         selection_strategy: str = "cost_first",
         goals_per_region: int = 10,
+        failed_pushes: Optional[Set[Tuple[str, int]]] = None,
         **kwargs,
     ) -> List[PushSubgoal]:
         """Plan push actions from current observation.
@@ -187,6 +188,11 @@ class NAMOPlanBridge:
             chain_link_cost: Additional cost per chain link
             selection_strategy: Frontier priority ("cost_first" or "ml_first")
             goals_per_region: Goal samples per region for validation
+            failed_pushes: Set of (real_object_id, edge_idx) pairs to blacklist.
+                If any action in the returned plan matches a blacklisted pair,
+                the entire plan is discarded (returns []). This is the failure-
+                feedback mechanism: previously failed pushes are never proposed
+                to the executor again within an episode.
             **kwargs: Additional algorithm parameters
 
         Returns:
@@ -244,6 +250,28 @@ class NAMOPlanBridge:
                 )
                 if result.error_message:
                     print(f"[NAMOBridge] Error: {result.error_message}")
+
+            # Apply blacklist filter: drop the entire plan if any action's
+            # (real_object_id, edge_idx) is in the blacklist. We discard the
+            # whole plan rather than individual actions because subsequent
+            # pushes are conditioned on earlier ones; cherry-picking would
+            # break the chain semantics. The caller will retry with a new
+            # random seed (different edge ordering) and eventually abort if
+            # nothing valid is found.
+            if failed_pushes:
+                blacklisted_in_plan = []
+                for action in result.actions:
+                    real_id = self._object_mapping.get_real_name(action.object_id)
+                    if (real_id, action.edge_idx) in failed_pushes:
+                        blacklisted_in_plan.append((real_id, action.edge_idx))
+                if blacklisted_in_plan:
+                    if self._verbose:
+                        print(
+                            f"[NAMOBridge] Plan contains {len(blacklisted_in_plan)} "
+                            f"blacklisted push(es) {blacklisted_in_plan}; "
+                            f"discarding plan to force retry"
+                        )
+                    return []
 
             # Convert to PushSubgoals
             return self._convert_to_subgoals(result.actions)

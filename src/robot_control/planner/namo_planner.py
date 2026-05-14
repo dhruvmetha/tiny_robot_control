@@ -12,7 +12,7 @@ Now includes reachability checking:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 
 from robot_control.core.types import NavigateSubgoal, Observation, PushSubgoal, Subgoal
 from robot_control.planner.base import Planner
@@ -179,6 +179,14 @@ class NAMOPlanner(Planner):
         # Retry state for planning failures (no solution found)
         self._max_planning_retries: int = 5  # Retry with different seeds
 
+        # Failed-push blacklist (failure feedback to the planner).
+        # Each entry is (object_id, edge_idx) in real-world (robot_control)
+        # naming. When a push fails, its (object_id, edge_idx) is added here
+        # and forwarded to the bridge, which drops any planned push matching
+        # a blacklisted pair before returning. Cleared on reset(); persists
+        # across replans within a single planning episode.
+        self._failed_pushes: Set[Tuple[str, int]] = set()
+
     def plan(self, obs: Observation) -> Optional[Subgoal]:
         """Generate next subgoal from current observation.
 
@@ -254,6 +262,19 @@ class NAMOPlanner(Planner):
                     f"[NAMOPlanner] Subgoal FAILED: {self._failed_subgoal.object_id} "
                     f"edge={self._failed_subgoal.edge_idx}"
                 )
+                # Feed the failure back into the planner: blacklist this
+                # (object_id, edge_idx) pair so future plans never suggest it
+                # again within this planning episode.
+                blacklist_entry = (
+                    self._failed_subgoal.object_id,
+                    self._failed_subgoal.edge_idx,
+                )
+                if blacklist_entry not in self._failed_pushes:
+                    self._failed_pushes.add(blacklist_entry)
+                    print(
+                        f"[NAMOPlanner] Blacklisted ({blacklist_entry[0]}, edge={blacklist_entry[1]}); "
+                        f"blacklist size now {len(self._failed_pushes)}"
+                    )
 
             # Increment replan attempt counter
             self._replan_attempt += 1
@@ -401,6 +422,7 @@ class NAMOPlanner(Planner):
         self._navigating_to_goal = False
         self._replan_attempt = 0
         self._failed_subgoal = None
+        self._failed_pushes = set()
 
     def _is_goal_reachable(self, obs: Observation) -> bool:
         """Check if robot can reach goal without pushing any objects.
@@ -492,6 +514,7 @@ class NAMOPlanner(Planner):
                     chain_link_cost=self._chain_link_cost,
                     selection_strategy=self._selection_strategy,
                     goals_per_region=self._goals_per_region,
+                    failed_pushes=self._failed_pushes,
                     **extra_kwargs,
                 )
 
