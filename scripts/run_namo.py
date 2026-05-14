@@ -498,6 +498,7 @@ def run_interactive_mode(args):
 
     print(f"\n  NAMO config: {namo_config_path}")
     print(f"  Algorithm: {args.algorithm}")
+    print(f"  Execution mode: {args.execution_mode}")
     print(f"  Goal strategy: {args.strategy}")
     print(f"  Max chain depth: {args.max_chain_depth}")
     print(f"  Workspace: {WORKSPACE_WIDTH_CM}x{WORKSPACE_HEIGHT_CM} cm")
@@ -508,6 +509,7 @@ def run_interactive_mode(args):
         robot_goal_cm=goal_cm,
         namo_config_path=namo_config_path,
         algorithm=args.algorithm,
+        execution_mode=args.execution_mode,
         goal_strategy=args.strategy,
         scale_factor=6.0,
         primitive_data_dir=primitive_data_dir,
@@ -648,6 +650,7 @@ def run_automatic_mode(args):
         robot_goal_cm=goal_cm,
         namo_config_path=namo_config_path,
         algorithm=args.algorithm,
+        execution_mode=args.execution_mode,
         goal_strategy=args.strategy,
         scale_factor=6.0,
         primitive_data_dir=primitive_data_dir,
@@ -771,8 +774,21 @@ def main():
     parser.add_argument(
         "--algorithm",
         type=str,
-        default="region_opening",
-        help="Planning algorithm (default: region_opening)",
+        default="full_namo",
+        choices=["full_namo", "region_opening"],
+        help="Planning algorithm (default: full_namo)",
+    )
+    parser.add_argument(
+        "--execution-mode",
+        type=str,
+        default="mpc",
+        choices=["open_loop", "mpc"],
+        help=(
+            "Plan-level execution strategy (default: mpc). "
+            "'mpc' executes only the first push from each plan, then replans "
+            "from a fresh observation (closed-loop at the plan level). "
+            "'open_loop' executes the entire planned sequence before replanning."
+        ),
     )
     parser.add_argument(
         "--strategy",
