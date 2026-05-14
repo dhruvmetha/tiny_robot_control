@@ -61,7 +61,7 @@ class NAMOPlanBridge:
         subgoals = bridge.plan(
             observation=obs,
             robot_goal_cm=(50.0, 40.0),
-            algorithm="region_opening",
+            algorithm="full_namo",
         )
     """
 
@@ -164,7 +164,7 @@ class NAMOPlanBridge:
         self,
         observation: Observation,
         robot_goal_cm: Tuple[float, float],
-        algorithm: str = "region_opening",
+        algorithm: str = "full_namo",
         goal_strategy: str = "primitive",
         max_chain_depth: int = 1,
         allow_collisions: bool = True,

@@ -47,7 +47,7 @@ class NAMOPlanner(Planner):
         self,
         robot_goal_cm: Tuple[float, float],
         namo_config_path: str,
-        algorithm: str = "region_opening",
+        algorithm: str = "full_namo",
         goal_strategy: str = "primitive",
         scale_factor: float = 6.0,
         primitive_data_dir: str = "data",
@@ -78,7 +78,7 @@ class NAMOPlanner(Planner):
         Args:
             robot_goal_cm: Goal position in cm (x, y)
             namo_config_path: Path to NAMO config YAML
-            algorithm: Planning algorithm ("region_opening")
+            algorithm: Planning algorithm ("full_namo" or "region_opening")
             goal_strategy: Goal sampling strategy ("primitive", "ml", etc.)
             scale_factor: Scale factor for simulation (6.0 default)
             primitive_data_dir: Directory containing motion primitive data
