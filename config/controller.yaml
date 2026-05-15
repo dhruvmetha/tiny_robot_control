@@ -25,7 +25,7 @@ push:
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
-  push_steps: 120               # control ticks per push (~3.3 seconds at 30Hz)
+  push_steps: 75                # control ticks per push UNIT (2.5s at 30Hz, matches namo_cpp sim: 250 mj_steps × 0.01s timestep)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 
   # Approach phase parameters

@@ -390,15 +390,13 @@ class NAMOPlanBridge:
             # Map simulation object ID to real object ID
             real_object_id = self._object_mapping.get_real_name(action.object_id)
 
-            # Bucket depth into push tiers:
-            #   depth 0-2 → 1 push unit, depth 3-5 → 2, depth 6-9 → 3
-            depth = action.depth
-            if depth <= 2:
-                push_steps = 1
-            elif depth <= 5:
-                push_steps = 2
-            else:
-                push_steps = 3
+            # Pass the planner's depth through 1:1 (no lossy bucketing).
+            # The planner's depth=N means (N+1) primitive applications, each
+            # of which corresponds to 2.5s of simulated push (250 mj_steps ×
+            # 0.01s timestep). The executor's controller.yaml is calibrated
+            # with push_steps=75 ticks (2.5s at 30Hz) per unit so real-robot
+            # push duration matches sim across the full 0-9 depth range.
+            push_steps = action.depth + 1
 
             subgoals.append(
                 PushSubgoal(
