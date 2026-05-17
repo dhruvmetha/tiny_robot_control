@@ -1,0 +1,22 @@
+# Centralized wavefront inflation settings for robot_control.
+# All values are in meters.
+#
+# Tier-1 rule for occupancy inflation:
+#   total_inflation = robot_radius + inflation_margin
+# We standardize the base inflation_margin to 0.005m everywhere.
+tier1:
+  base_inflation_margin_m: 0.005
+
+# Per-context additive margins on top of tier1.base_inflation_margin_m.
+# These preserve current behavior knobs while making the base explicit.
+navigation:
+  additional_margin_m: 0.0
+
+push_approach:
+  additional_margin_m: 0.003
+
+xml_collision_resolution:
+  # Minimum separation used during XML collision resolution wavefront checks.
+  # This is still additive with xml_collision_resolution.additional_margin_m.
+  min_separation_m: 0.005
+  additional_margin_m: 0.08

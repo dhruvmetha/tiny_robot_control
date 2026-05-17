@@ -10,7 +10,9 @@ import os
 import time
 from typing import List, Optional, Tuple
 
+from robot_control.utils.wavefront_inflation_config import get_wavefront_inflation_config
 from robot_control.utils.wavefront import WavefrontPlanner, WavefrontConfig
+from robot_control.utils.robot_geometry import rotation_safe_radius_m_from_cm
 
 Point = Tuple[float, float]
 ObstacleTuple = Tuple[float, float, float, float, float]  # (x, y, theta_deg, width, depth)
@@ -56,9 +58,8 @@ class WavefrontPathPlanner:
         self._height_m = workspace_height / 100.0
         self._resolution_m = resolution_cm / 100.0
 
-        # Robot radius = max(width, height) / 2 (circular approximation)
-        robot_radius_cm = max(robot_width, robot_height) / 2.0
-        self._robot_radius_m = robot_radius_cm / 100.0
+        # Rotation-safe radius from full extents (robot can rotate in place).
+        self._robot_radius_m = rotation_safe_radius_m_from_cm(robot_width, robot_height)
 
         # Obstacle proximity cost parameters (convert to meters)
         self._obstacle_proximity_distance_m = obstacle_proximity_distance_cm / 100.0
@@ -94,14 +95,16 @@ class WavefrontPathPlanner:
         # where X is along heading (depth) and Y is perpendicular (width)
         wavefront_obstacles = self._convert_obstacles(obstacles)
 
-        # Create wavefront config with robot inflation
-        # NAMO uses: robot_size=[0.15,0.15] (2.5cm real half-size) + robot_inflation=0.05m (0.83cm real)
-        # Total from center = 2.5cm + 0.83cm = 3.33cm
-        # Our robot_radius is already 3cm (half of 6cm robot), so margin should be 0.33cm
+        # Create wavefront config with standardized tier-1 inflation.
+        inflation_cfg = get_wavefront_inflation_config()
+        inflation_margin_m = (
+            inflation_cfg.tier1_base_inflation_margin_m
+            + inflation_cfg.navigation_additional_margin_m
+        )
         config = WavefrontConfig(
             resolution=self._resolution_m,
             robot_radius=self._robot_radius_m,
-            inflation_margin=0.0,  # No extra margin beyond robot radius
+            inflation_margin=inflation_margin_m,
             obstacle_proximity_distance=self._obstacle_proximity_distance_m,
             obstacle_proximity_weight=self._obstacle_proximity_weight,
         )

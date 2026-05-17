@@ -52,7 +52,12 @@ from robot_control.core.types import (
     Subgoal,
     WorkspaceConfig,
 )
+from robot_control.utils.wavefront_inflation_config import get_wavefront_inflation_config
 from robot_control.utils.wavefront import WavefrontConfig, WavefrontPlanner
+from robot_control.utils.robot_geometry import (
+    robot_diagonal_cm,
+    rotation_safe_radius_m_from_cm,
+)
 
 if TYPE_CHECKING:
     from robot_control.controller.navigation import NavigationController
@@ -159,9 +164,9 @@ class PushController(Controller):
         self._push_config = push_config or PushConfig()
         self._max_speed = max_speed if max_speed is not None else self._push_config.max_speed
 
-        # Compute standoff distance from config
-        car_size = max(config.car_width, config.car_height)
-        self._standoff_distance = self._push_config.standoff_multiplier * car_size
+        # Compute standoff distance from config using full-extent diagonal baseline.
+        robot_diag_cm = robot_diagonal_cm(config.car_width, config.car_height)
+        self._standoff_distance = self._push_config.standoff_multiplier * robot_diag_cm
 
         # Edge point configuration (matches namo_cpp)
         self._points_per_face = self._push_config.points_per_face
@@ -170,9 +175,9 @@ class PushController(Controller):
         # Follow path controller for push phase (Pure Pursuit + CTE-PD)
         self._follow_path_controller = FollowPathController(
             config=config,
-            lookahead_distance=self._push_config.lookahead_ratio * car_size,
+            lookahead_distance=self._push_config.lookahead_ratio * robot_diag_cm,
             max_speed=self._max_speed,
-            goal_tolerance=car_size * 0.3,  # Slightly loose tolerance for pushing
+            goal_tolerance=robot_diag_cm * 0.3,  # Slightly loose tolerance for pushing
         )
 
         # State
@@ -736,16 +741,24 @@ class PushController(Controller):
     def _build_wavefront(self, obs: Observation) -> WavefrontPlanner:
         """Build wavefront from current observation.
 
-        IMPORTANT: Uses same inflation as WavefrontPathPlanner (1cm) for consistency.
+        IMPORTANT: Uses standardized tier-1 inflation + push additive margin.
         Otherwise validation may pass but navigation fails.
         """
-        # Robot radius in meters (use half of largest dimension)
-        car_size_m = max(self._config.car_width, self._config.car_height) / 100.0 / 2.0
+        # Robot radius in meters from full extents (rotation-safe circle).
+        robot_radius_m = rotation_safe_radius_m_from_cm(
+            self._config.car_width,
+            self._config.car_height,
+        )
+        inflation_cfg = get_wavefront_inflation_config()
+        inflation_margin_m = (
+            inflation_cfg.tier1_base_inflation_margin_m
+            + inflation_cfg.push_approach_additional_margin_m
+        )
 
         wavefront = WavefrontPlanner(WavefrontConfig(
             resolution=0.005,           # 5mm
-            robot_radius=car_size_m,    # Half robot size
-            inflation_margin=0.003,     # 3mm margin - matches WavefrontPathPlanner & NAMO
+            robot_radius=robot_radius_m,
+            inflation_margin=inflation_margin_m,
         ))
 
         # Bounds in meters
@@ -872,8 +885,8 @@ class PushController(Controller):
         heading_error = _wrap_to_pi(angle_to_target - robot_theta_rad)
 
         # Lookahead distance (based on distance to target)
-        car_size = max(self._config.car_width, self._config.car_height)
-        lookahead = max(distance, self._push_config.lookahead_ratio * car_size)
+        robot_diag_cm = robot_diagonal_cm(self._config.car_width, self._config.car_height)
+        lookahead = max(distance, self._push_config.lookahead_ratio * robot_diag_cm)
 
         # Pure pursuit curvature
         curvature = 2.0 * math.sin(heading_error) / lookahead

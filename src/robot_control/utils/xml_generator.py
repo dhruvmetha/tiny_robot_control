@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
 
+from robot_control.utils.wavefront_inflation_config import get_wavefront_inflation_config
 from robot_control.utils.wavefront import WavefrontPlanner, WavefrontConfig
 
 
@@ -101,9 +102,9 @@ class NAMOXMLGenerator:
     # Floor friction
     FLOOR_FRICTION = "0.5 0.005 0.001"
 
-    # Collision avoidance
-    MIN_SEPARATION_BASE = 0.005  # 5mm margin (matches namo_cpp wavefront inflation)
-    COLLISION_EXTRA_MARGIN = 0.08  # Extra 8cm margin when resolving robot collisions
+    # Collision avoidance defaults (overridden by wavefront_inflation.yaml when present)
+    MIN_SEPARATION_BASE = 0.005
+    COLLISION_EXTRA_MARGIN = 0.08
 
     def __init__(
         self,
@@ -117,7 +118,7 @@ class NAMOXMLGenerator:
                           Use 6.0 to scale from real robot (2.5cm) to simulation (15cm).
                           Physics parameters (mass, friction) remain unchanged.
             robot_radius_cm: Robot radius in cm. If None, uses ROBOT_RADIUS_BASE (3cm).
-                            For rectangular robots, use max(width, height)/2.
+                            For rectangular robots, use the rotation-safe diagonal radius.
         """
         self.scale_factor = scale_factor
 
@@ -132,8 +133,10 @@ class NAMOXMLGenerator:
         self.OBJECT_HEIGHT = self.OBJECT_HEIGHT_BASE * scale_factor
         self.WALL_THICKNESS = self.WALL_THICKNESS_BASE * scale_factor
         self.WALL_HEIGHT = self.WALL_HEIGHT_BASE * scale_factor
-        # Fixed 5mm margin (NOT scaled) - matches namo_cpp's wavefront inflation
-        self.MIN_SEPARATION_M = 0.005
+
+        inflation_cfg = get_wavefront_inflation_config()
+        self.MIN_SEPARATION_M = inflation_cfg.xml_min_separation_m
+        self.COLLISION_EXTRA_MARGIN = inflation_cfg.xml_collision_additional_margin_m
 
         # Last resolved robot position (after collision resolution)
         self._last_robot_pos: Optional[Tuple[float, float]] = None
