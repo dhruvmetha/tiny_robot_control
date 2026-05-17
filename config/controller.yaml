@@ -25,7 +25,7 @@ push:
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
-  push_steps: 75                # control ticks per push UNIT (2.5s at 30Hz, matches namo_cpp sim: 250 mj_steps × 0.01s timestep)
+  push_steps: 50                # control ticks per push UNIT (~1.67s at 30Hz)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 
   # Approach phase parameters
@@ -46,5 +46,12 @@ push:
   retreat_min_dist: 5.0          # cm - always retreat at least this far
   retreat_max_dist: 15.0         # cm - max search distance for free cell
 
+  # Stuck-detection: if a push moves the object less than BOTH thresholds, mark
+  # subgoal as FAILED → planner blacklists (object_id, edge_idx) and won't retry.
+  # Note: AND-logic — a push that translates well OR rotates substantially is
+  # considered useful. Only when both are tiny is the push declared stuck.
+  min_push_displacement_cm: 2.0  # cm - below this counts as "didn't translate"
+  min_push_rotation_deg: 15.0    # deg - below this counts as "didn't rotate enough"
+
   # Debug visualization
-  show_wavefront: true           # Show wavefront image window after each push
+  show_wavefront: false          # cv2.imshow conflicts with PyQt6 event loop; image still saved to /tmp/wavefront

@@ -6,7 +6,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import yaml
 
@@ -19,7 +19,13 @@ from robot_control.controller import (
 )
 from robot_control.controller.config import load_controller_configs
 from robot_control.coordinator import ControlCoordinator
-from robot_control.core.types import Action, Observation, WorkspaceConfig
+from robot_control.core.types import (
+    Action,
+    NavigateSubgoal,
+    Observation,
+    PushSubgoal,
+    WorkspaceConfig,
+)
 from robot_control.core.world_state import WorldState
 from robot_control.executor import SubgoalExecutor
 from robot_control.planner import RVGPlanner, WavefrontPathPlanner
@@ -133,6 +139,13 @@ class RuntimeConfig:
     # Autonomous mode: if planner is set, runs in autonomous mode
     planner: Optional["Planner"] = None
     quit_on_complete: bool = True  # Quit when autonomous plan completes
+    step_confirm: bool = False  # Pause for user confirmation before each subgoal dispatch
+
+    # Diagnostics. When recorder is enabled, Runtime emits structured events
+    # (plans, subgoals, pushes, connectivity, scene snapshots) into the
+    # recorder's directory. When recorder is None, every call site is a no-op.
+    diagnostics_recorder: Optional[object] = None  # DiagnosticsRecorder, but kept loose-typed to avoid circular import
+    capture_scene: bool = False                    # If True, recorder captures scene_before/scene_after
 
 
 class Runtime:
@@ -194,22 +207,70 @@ class Runtime:
         self._planner: Optional[Planner] = None
         self._executor: Optional[SubgoalExecutor] = None
         self._plan_completed = False  # Track if plan has completed (for stop command)
+        self._subgoal_start_time: Optional[float] = None  # Wall-clock timer for subgoal duration logging
+
+        # Connectivity warning debounce. Without this the 30Hz loop would spam
+        # the log when the robot is offline; we throttle to one warn per N sec.
+        self._last_offline_warn_time: float = 0.0
+        self._offline_warn_interval_sec: float = 5.0
+        self._last_seen_robot_online: Optional[bool] = None  # None = never checked
+
+        # Diagnostics — recorder is shared across all runtime callsites.
+        # All recorder methods are no-ops when recorder is None or disabled.
+        self._diag = config.diagnostics_recorder
+        self._capture_scene = config.capture_scene
+        self._started_at_epoch: Optional[float] = None
+        self._ended_at_epoch: Optional[float] = None
+        self._offline_total_sec: float = 0.0
+        self._offline_since: Optional[float] = None
+        self._online_at_start: Optional[bool] = None
 
     def run(self) -> None:
         """Start all components and run until quit."""
         self._setup()
         self._start()
 
-        if self._window:
-            self._print_banner()
-            self._window.run()  # Blocks until window closed
-        else:
-            # Headless mode - run until stop() called
-            self._print_banner()
-            while self._running:
-                time.sleep(0.1)
+        # Begin diagnostics timeline.
+        self._started_at_epoch = time.time()
+        scene_before = self._capture_scene_snapshot("before")
 
-        self._shutdown()
+        outcome = "unknown"
+        outcome_reason = "no signal recorded"
+        try:
+            if self._window:
+                self._print_banner()
+                self._window.run()  # Blocks until window closed
+            else:
+                # Headless mode - run until stop() called
+                self._print_banner()
+                while self._running:
+                    time.sleep(0.1)
+
+            # Determine outcome from planner state (best-effort).
+            outcome, outcome_reason = self._determine_outcome()
+        except KeyboardInterrupt:
+            outcome = "aborted"
+            outcome_reason = "KeyboardInterrupt"
+            raise
+        except Exception as exc:
+            outcome = "crashed"
+            outcome_reason = f"{type(exc).__name__}: {exc}"
+            raise
+        finally:
+            self._ended_at_epoch = time.time()
+            # Always attempt the post-run snapshot, even on crash. Errors are
+            # captured into scene_capture_errors.log by the recorder rather
+            # than propagated — diagnostics must not mask the real exception.
+            try:
+                scene_after = self._capture_scene_snapshot("after")
+            except Exception as _exc:
+                print(f"[Runtime] scene_after capture raised: {_exc!r}", flush=True)
+                scene_after = {}
+            try:
+                self._write_summary(outcome, outcome_reason, scene_before, scene_after)
+            except Exception as _exc:
+                print(f"[Runtime] summary write raised: {_exc!r}", flush=True)
+            self._shutdown()
 
     def start(self) -> None:
         """Start all components without blocking. Use for headless mode."""
@@ -642,6 +703,26 @@ class Runtime:
         else:
             self._start_real()
 
+        # Attach the diagnostics recorder to the planner so plan() emissions
+        # appear in plans.jsonl. We do this AFTER _start_*() so the planner
+        # is fully initialised.
+        if self._diag is not None and self._planner is not None:
+            try:
+                self._planner.set_diagnostics_recorder(self._diag)
+            except AttributeError:
+                # Older planner type without diagnostics support — skip silently.
+                pass
+
+        # Run an initial connectivity check so the user sees the robot's
+        # state in the log immediately — instead of waiting for the first
+        # plan() call to surface it. In real mode this is critical since
+        # an offline robot means the run will silently produce no execution.
+        # Wait briefly so the SerialSender reader thread has a chance to
+        # parse its first [STATUS] line from the AP before we sample state.
+        if self._config.mode == "real":
+            time.sleep(0.5)
+            self._check_robot_connectivity(context="startup")
+
         # Start control loop
         self._control_thread = threading.Thread(
             target=self._control_loop, daemon=True, name="Runtime-ControlLoop"
@@ -765,7 +846,22 @@ class Runtime:
                                 if hasattr(self._env, "stop_robot"):
                                     self._env.stop_robot()
 
-                        # Quit if configured to do so
+                        # Quit if configured to do so.
+                        #
+                        # FIXME(known-issue): This auto-quit path is racy. See
+                        # robot_control/KNOWN_ISSUES.md §1. We are calling
+                        # GUI methods (update, set_status, update_drawings)
+                        # from the control thread, then asking QApplication
+                        # to quit from the same non-GUI thread. On long runs
+                        # the GUI event queue gets wedged and quit() never
+                        # processes — _window.run() blocks forever, run()'s
+                        # finally never fires, and summary.json/scene_after
+                        # are missing. Diagnostics JSONL is still intact
+                        # (line-buffered) but the run looks like it hung
+                        # at "Shutting down". Likely fix: drop the GUI
+                        # update calls below (window is about to close
+                        # anyway) and switch close_window() to
+                        # QTimer.singleShot(0, self.close).
                         if self._config.quit_on_complete:
                             if self._window:
                                 self._window.update(obs)
@@ -773,6 +869,11 @@ class Runtime:
                                 self._window.update_drawings(drawings)
                             print("[Runtime] Shutting down")
                             self._running = False
+                            if self._window is not None:
+                                try:
+                                    self._window.close_window()
+                                except Exception as _exc:
+                                    print(f"[Runtime] window close failed: {_exc!r}", flush=True)
                             break
                 else:
                     # === INTERACTIVE MODE ===
@@ -813,15 +914,39 @@ class Runtime:
             # Only notify if we actually completed a subgoal (not first call)
             if self._executor.has_active_subgoal():
                 failed = self._executor.did_fail()
+                duration = time.time() - self._subgoal_start_time if self._subgoal_start_time else 0.0
+                outcome = "FAILED" if failed else "SUCCESS"
+                print(
+                    f"[Subgoal] <-- DONE ({outcome}) after {duration:.1f}s, "
+                    f"robot now at ({obs.robot_x:.1f},{obs.robot_y:.1f},θ={obs.robot_theta:.1f}°)"
+                )
+                # Mirror to diagnostics recorder (subgoal lifecycle close +
+                # push-physics record). All hooks are no-ops if disabled.
+                self._record_subgoal_done(obs, failed=failed)
                 self._planner.notify_subgoal_done(obs, failed=failed)
+                self._subgoal_start_time = None
 
             # Check if plan is complete
             if self._planner.is_complete(obs):
                 return Action.stop(), self._planner.get_drawings(), "Plan Complete"
 
-            # Get next subgoal
+            # Get next subgoal — log robot connectivity around the planning call
+            # so the user can correlate "no plan found" diagnostics with whether
+            # the robot was actually online at the time.
+            self._check_robot_connectivity(context="plan()")
             subgoal = self._planner.plan(obs)
             if subgoal:
+                if self._config.step_confirm:
+                    decision = self._confirm_subgoal(subgoal, obs)
+                    if decision == "abort":
+                        self._running = False
+                        return Action.stop(), self._planner.get_drawings(), "Aborted by user"
+                    if decision == "skip":
+                        self._planner.notify_subgoal_done(obs, failed=True)
+                        return Action.stop(), self._planner.get_drawings(), "Skipped by user"
+                self._log_subgoal_dispatch(subgoal, obs)
+                self._record_subgoal_start(subgoal, obs)
+                self._subgoal_start_time = time.time()
                 self._executor.set_subgoal(subgoal, obs)
             else:
                 # No more subgoals
@@ -837,6 +962,502 @@ class Runtime:
         status = f"Autonomous: {self._executor.get_status()}"
 
         return action, drawings, status
+
+    # ------------------------------------------------------------ diagnostics
+
+    def _capture_scene_snapshot(self, when: str) -> Dict[str, Optional[str]]:
+        # Capture a scene snapshot (jpg + json + xml) when --capture-scene
+        # is enabled. `when` ∈ {"before", "after"}. Returns a dict naming
+        # which artifacts succeeded; empty dict when capture is disabled or
+        # the recorder is None.
+        if self._diag is None or not self._capture_scene:
+            return {}
+        try:
+            # Lazy import — diagnostics submodules only loaded when needed.
+            from robot_control.diagnostics.scene_serializer import build_scene_state
+            from robot_control.diagnostics.sim_renderer import render_top_down
+        except Exception as exc:
+            self._diag.log_capture_error(when, "imports", repr(exc))
+            return {}
+
+        # We need a current observation. In real mode the WorldState is
+        # populated by the camera service / ArucoObserver; in sim mode by
+        # SimSensorNode. If no observation has arrived yet we still want to
+        # try the snapshot — most fields just become null.
+        obs = None
+        try:
+            if self._world is not None:
+                obs = self._world.get()
+        except Exception:
+            obs = None
+        if obs is None:
+            self._diag.log_capture_error(when, "observation", "no observation available")
+            return {}
+
+        # 1) JPEG: real mode requests from the camera service; sim mode
+        # renders a synthetic top-down view from the same observation.
+        jpg_bytes: Optional[bytes] = None
+        if self._config.mode == "real":
+            addr = self._config.camera_service_address
+            if not addr:
+                self._diag.log_capture_error(
+                    when, "jpg",
+                    "real mode but --camera-service not set",
+                )
+            else:
+                try:
+                    from robot_control.diagnostics.capture import request_camera_frame
+                    jpg_bytes = request_camera_frame(addr, kind="vis", timeout_sec=2.0)
+                    if jpg_bytes is None:
+                        self._diag.log_capture_error(
+                            when, "jpg",
+                            f"camera_service at {addr} did not respond "
+                            f"(REP socket at port+1 — restart camera_service "
+                            f"to enable diagnostic frames)",
+                        )
+                except Exception as exc:
+                    self._diag.log_capture_error(when, "jpg",
+                                                f"capture failed: {exc!r}")
+        else:
+            # Sim mode: render synthetic top-down view from current obs.
+            try:
+                if self._workspace_config is None:
+                    raise RuntimeError("workspace_config is None")
+                jpg_bytes = render_top_down(
+                    self._workspace_config, obs,
+                    title=f"scene_{when}",
+                )
+            except Exception as exc:
+                self._diag.log_capture_error(when, "jpg",
+                                            f"render failed: {exc!r}")
+
+        # 2) JSON: structured state from observation.
+        json_payload: Optional[Dict[str, Any]] = None
+        try:
+            if self._workspace_config is None:
+                raise RuntimeError("workspace_config is None")
+            origin_offset = None
+            target_id = None
+            if self._real_env_config is not None:
+                target_id = self._real_env_config.robot_id
+            json_payload = build_scene_state(
+                mode=self._config.mode,
+                workspace=self._workspace_config,
+                observation=obs,
+                workspace_origin_offset_cm=origin_offset,
+                robot_marker_id=target_id,
+            )
+        except Exception as exc:
+            self._diag.log_capture_error(when, "json", f"serializer failed: {exc!r}")
+
+        # 3) XML: the planner generates a MuJoCo XML on each plan() call.
+        # When --capture-scene is on, we pointed planner.debug_xml_path at
+        # scene_{before|after}.xml via runtime startup (set below in _start()
+        # for "before"). For "after" we explicitly trigger one more XML
+        # generation.
+        xml_source: Optional[Path] = None
+        try:
+            xml_source = self._get_scene_xml_for(when)
+        except Exception as exc:
+            self._diag.log_capture_error(when, "xml", f"acquire failed: {exc!r}")
+
+        # save_scene copies/writes everything atomically and logs errors.
+        return self._diag.save_scene(when, jpg_bytes, json_payload, xml_source)
+
+    def _determine_outcome(self) -> Tuple[str, str]:
+        # Best-effort: read terminal state from the planner. Three signals:
+        #   1. Planner reported "planning failed" (no plan possible) → failure
+        #   2. Latest obs satisfies planner.is_complete() → success
+        #   3. Otherwise → aborted (e.g. user closed window before goal reached)
+        if self._planner is None:
+            return "unknown", "no planner attached"
+
+        # Planning failure flag exposed by NAMOPlanner.
+        if getattr(self._planner, "_planning_failed", False):
+            return "failure", "planner exhausted retries without finding a plan"
+
+        # Try is_complete on the latest observation.
+        try:
+            if self._world is not None:
+                obs = self._world.get()
+                if obs is not None and self._planner.is_complete(obs):
+                    return "success", "goal reached"
+        except Exception as exc:
+            return "unknown", f"is_complete check failed: {exc!r}"
+
+        # Normal exit without success → aborted.
+        return "aborted", "runtime stopped before goal reached"
+
+    def _write_summary(
+        self,
+        outcome: str,
+        outcome_reason: str,
+        scene_before: Dict[str, Optional[str]],
+        scene_after: Dict[str, Optional[str]],
+    ) -> None:
+        # No-op if recorder is disabled. Anything that fails inside this
+        # method is caught and logged so a buggy summary write can't break
+        # a successful run.
+        if self._diag is None or not self._diag.enabled:
+            return
+        try:
+            started = self._started_at_epoch or 0.0
+            ended = self._ended_at_epoch or time.time()
+            duration = max(0.0, ended - started)
+
+            # Final pose + distance to goal — best effort.
+            final_pose: Optional[list] = None
+            final_dist: Optional[float] = None
+            goal_target_cm: Optional[list] = None
+            try:
+                if self._planner is not None:
+                    goal = getattr(self._planner, "_robot_goal_cm", None)
+                    if goal is not None:
+                        goal_target_cm = list(goal)
+                if self._world is not None:
+                    obs = self._world.get()
+                    if obs is not None:
+                        final_pose = [obs.robot_x, obs.robot_y, obs.robot_theta]
+                        if goal_target_cm is not None:
+                            dx = obs.robot_x - goal_target_cm[0]
+                            dy = obs.robot_y - goal_target_cm[1]
+                            final_dist = float((dx * dx + dy * dy) ** 0.5)
+            except Exception:
+                pass
+
+            # Accumulate offline duration if currently still offline at exit.
+            offline_total = self._offline_total_sec
+            if self._offline_since is not None:
+                offline_total += time.time() - self._offline_since
+
+            payload = {
+                "run_name": self._diag.root.name,
+                "outcome": outcome,
+                "outcome_reason": outcome_reason,
+                "started_at_epoch": started,
+                "ended_at_epoch": ended,
+                "duration_sec": duration,
+                "mode": self._config.mode,
+                "strategy": getattr(self._planner, "_goal_strategy", None),
+                "algorithm": getattr(self._planner, "_algorithm", None),
+                "goal_target_cm": goal_target_cm,
+                "final_robot_pose_cm": final_pose,
+                "final_distance_to_goal_cm": final_dist,
+                "totals": dict(self._diag.totals),
+                "connectivity": {
+                    "online_at_start": self._online_at_start,
+                    "transitions": self._diag.totals.get("connectivity_transitions", 0),
+                    "total_offline_sec": offline_total,
+                    "offline_during_plan_count": self._diag.totals.get(
+                        "offline_during_plan_count", 0
+                    ),
+                },
+                "scene_capture": {
+                    "scene_before_jpg": scene_before.get("jpg"),
+                    "scene_before_json": scene_before.get("json"),
+                    "scene_before_xml": scene_before.get("xml"),
+                    "scene_after_jpg": scene_after.get("jpg"),
+                    "scene_after_json": scene_after.get("json"),
+                    "scene_after_xml": scene_after.get("xml"),
+                    "errors": [],  # Aggregated in scene_capture_errors.log
+                },
+            }
+            self._diag.write_summary(payload)
+        except Exception as exc:
+            print(f"[DIAG] ⚠️ summary write failed: {exc!r}", flush=True)
+
+    def _get_scene_xml_for(self, when: str) -> Optional[Path]:
+        # For scene_before/after we generate a fresh XML representing the
+        # current observation, without invoking the search. The planner
+        # exposes dump_scene_xml(obs, path) for this. We write to a transient
+        # path inside the run dir; the recorder.save_scene() copies it to its
+        # final destination (scene_{when}.xml).
+        if self._planner is None or self._diag is None:
+            return None
+        if not hasattr(self._planner, "dump_scene_xml"):
+            return None
+        obs = None
+        try:
+            if self._world is not None:
+                obs = self._world.get()
+        except Exception:
+            obs = None
+        if obs is None:
+            return None
+        # Temporary path — save_scene copies to scene_{when}.xml.
+        tmp_path = self._diag.root / f"_scene_{when}_tmp.xml"
+        try:
+            written = self._planner.dump_scene_xml(obs, tmp_path)
+        except Exception as exc:
+            print(f"[DIAG] dump_scene_xml failed: {exc!r}", flush=True)
+            return None
+        if written is None:
+            return None
+        return Path(written)
+
+    def _check_robot_connectivity(self, context: str) -> bool:
+        # Snapshot robot connectivity from the sender and log a one-liner
+        # when state matters. Returns True if the target robot is currently
+        # registered with the AP, False otherwise (sim mode always returns
+        # True since there's no AP).
+        if self._env is None or not hasattr(self._env, "get_status"):
+            return True
+        if self._real_env_config is None:
+            # sim or no real config — nothing to check
+            return True
+
+        try:
+            status = self._env.get_status()
+        except Exception:
+            # Don't let a status read failure crash the loop
+            return True
+
+        target_id = self._real_env_config.robot_id
+        ap_connected = bool(getattr(status, "is_connected", False))
+        alive_ids = list(getattr(status, "alive_robot_ids", []) or [])
+        last_update_time = float(getattr(status, "last_update_time", 0.0) or 0.0)
+        now = time.time()
+        never_received_status = (last_update_time == 0.0)
+        stale = never_received_status or (now - last_update_time > 3.0)
+        online = ap_connected and (target_id in alive_ids) and not stale
+
+        # Format "since last [STATUS] from AP" without the epoch-seconds gotcha
+        # when last_update_time has never been set.
+        if never_received_status:
+            last_status_str = "never (no [STATUS] line parsed since startup)"
+        else:
+            last_status_str = f"{now - last_update_time:.1f}s ago"
+
+        # Print a clear transition event whenever state flips, regardless of
+        # debounce, so the log shows when the robot went online/offline.
+        if self._last_seen_robot_online is not None and self._last_seen_robot_online != online:
+            transition = "ONLINE" if online else "OFFLINE"
+            print(
+                f"[Runtime] 🔌 Robot {target_id} → {transition} "
+                f"(alive_ids={alive_ids}, ap_connected={ap_connected}, "
+                f"last_status={last_status_str})",
+                flush=True,
+            )
+            self._last_offline_warn_time = now  # Reset debounce on transition
+
+            # Update offline-duration accumulator for the summary.
+            if not online:
+                self._offline_since = now
+            else:
+                if self._offline_since is not None:
+                    self._offline_total_sec += now - self._offline_since
+                    self._offline_since = None
+
+            # Mirror to diagnostics recorder as a structured event.
+            if self._diag is not None:
+                self._diag.record_connectivity({
+                    "event": "transition",
+                    "online": online,
+                    "alive_ids": alive_ids,
+                    "ap_connected": ap_connected,
+                    "last_status_age_sec": (
+                        None if never_received_status else now - last_update_time
+                    ),
+                    "target_robot_id": target_id,
+                    "context": context,
+                })
+
+        # Capture the first observed state for the summary's "online_at_start".
+        # On the first check, print a prominent line either way so the user
+        # immediately sees the connectivity state in the log without having
+        # to wait for the first plan() call's periodic warn.
+        if self._online_at_start is None:
+            self._online_at_start = online
+            if online:
+                print(
+                    f"[Runtime] 🔌 Robot {target_id} ONLINE at startup "
+                    f"(alive_ids={alive_ids}, ap_connected={ap_connected})",
+                    flush=True,
+                )
+            else:
+                # Bigger banner — robot not registered with AP means execution
+                # will fail. The user needs to see this immediately.
+                stale_str = "stale" if stale else "fresh"
+                print(
+                    "\n" + "!" * 70 + "\n"
+                    f"!! ROBOT {target_id} OFFLINE at startup !!\n"
+                    f"!!   ap_connected={ap_connected}, alive_ids={alive_ids}, "
+                    f"last_status={last_status_str} [{stale_str}]\n"
+                    f"!!   Planning will run (sim-only), but the robot CANNOT execute.\n"
+                    f"!!   Restart the robot or check the camera_service serial link.\n"
+                    + "!" * 70 + "\n",
+                    flush=True,
+                )
+                self._last_offline_warn_time = now  # Suppress immediate dup warn
+            if self._diag is not None:
+                self._diag.record_connectivity({
+                    "event": "initial",
+                    "online": online,
+                    "alive_ids": alive_ids,
+                    "ap_connected": ap_connected,
+                    "target_robot_id": target_id,
+                    "context": context,
+                })
+
+        self._last_seen_robot_online = online
+
+        # When offline, periodically remind the user that subsequent stats
+        # may be misleading (planning will run in sim regardless, but the
+        # robot can't execute, and any "no subgoals" diagnostic should be
+        # interpreted alongside this connectivity state).
+        if not online and (now - self._last_offline_warn_time) >= self._offline_warn_interval_sec:
+            stale_str = "stale" if stale else "fresh"
+            print(
+                f"[Runtime] ⚠️ Robot {target_id} OFFLINE during {context} "
+                f"(ap_connected={ap_connected}, alive_ids={alive_ids}, "
+                f"last_status={last_status_str} [{stale_str}]). "
+                f"Diagnostic stats below this point reflect planning only; "
+                f"execution will not run until robot reconnects.",
+                flush=True,
+            )
+            self._last_offline_warn_time = now
+            if self._diag is not None and context == "plan()":
+                # Only count "offline_during_plan" events — periodic warns
+                # outside planning are noise for the summary aggregate.
+                self._diag.record_connectivity({
+                    "event": "offline_during_plan",
+                    "online": False,
+                    "alive_ids": alive_ids,
+                    "ap_connected": ap_connected,
+                    "context": context,
+                })
+
+        return online
+
+    # State for pairing subgoal_start / subgoal_end records via the recorder.
+    # We track only the most recent active subgoal_id since the executor only
+    # ever has one active subgoal at a time.
+    _active_subgoal_id: int = 0
+    _active_subgoal_type: str = "unknown"
+
+    def _record_subgoal_start(self, subgoal, obs: Observation) -> None:
+        # No-op when diagnostics is disabled.
+        if self._diag is None:
+            return
+        try:
+            if isinstance(subgoal, PushSubgoal):
+                obj = obs.objects.get(subgoal.object_id)
+                obj_pose = [obj.x, obj.y, obj.theta] if obj is not None else None
+                payload = {
+                    "type": "push",
+                    "object_id": subgoal.object_id,
+                    "edge_idx": subgoal.edge_idx,
+                    "push_steps": subgoal.push_steps,
+                    "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                    "dispatched_object_pose_cm": obj_pose,
+                }
+                self._active_subgoal_type = "push"
+            elif isinstance(subgoal, NavigateSubgoal):
+                payload = {
+                    "type": "navigate",
+                    "target_cm": [subgoal.x, subgoal.y],
+                    "target_theta_deg": subgoal.theta,
+                    "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                }
+                self._active_subgoal_type = "navigate"
+            else:
+                payload = {
+                    "type": type(subgoal).__name__,
+                    "repr": repr(subgoal),
+                    "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                }
+                self._active_subgoal_type = "other"
+            self._active_subgoal_id = self._diag.record_subgoal_start(payload)
+        except Exception as exc:
+            print(f"[DIAG] record_subgoal_start failed: {exc!r}", flush=True)
+            self._active_subgoal_id = 0
+
+    def _record_subgoal_done(self, obs: Observation, failed: bool) -> None:
+        # No-op when diagnostics is disabled OR there's no open subgoal record.
+        if self._diag is None or self._active_subgoal_id == 0:
+            return
+        try:
+            outcome = {
+                "outcome": "failed" if failed else "success",
+                "completed_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+            }
+            self._diag.record_subgoal_end(self._active_subgoal_id, outcome)
+        except Exception as exc:
+            print(f"[DIAG] record_subgoal_end failed: {exc!r}", flush=True)
+
+        # When the closed subgoal was a push, also emit a push record from the
+        # controller's tracked state (Δpose, stuck flag, etc.).
+        if self._active_subgoal_type == "push":
+            try:
+                push_controller = self._controllers.get("push")
+                if push_controller is not None and hasattr(push_controller, "get_last_push_summary"):
+                    summary = push_controller.get_last_push_summary(obs)
+                    if summary is not None:
+                        # Tag with the subgoal_id for cross-reference.
+                        summary["subgoal_id"] = self._active_subgoal_id
+                        self._diag.record_push(summary)
+            except Exception as exc:
+                print(f"[DIAG] record_push failed: {exc!r}", flush=True)
+
+        # Clear active subgoal marker.
+        self._active_subgoal_id = 0
+        self._active_subgoal_type = "unknown"
+
+    def _log_subgoal_dispatch(self, subgoal, obs: Observation) -> None:
+        """Print a one-line summary when a subgoal is dispatched to the executor."""
+        if isinstance(subgoal, PushSubgoal):
+            obj = obs.objects.get(subgoal.object_id)
+            obj_desc = (
+                f"obj '{subgoal.object_id}' at ({obj.x:.1f},{obj.y:.1f},θ={obj.theta:.1f}°)"
+                if obj is not None else f"obj '{subgoal.object_id}' (NOT IN OBS)"
+            )
+            print(
+                f"[Subgoal] --> DISPATCH PUSH: {obj_desc}, edge={subgoal.edge_idx}, "
+                f"push_steps={subgoal.push_steps}, "
+                f"robot at ({obs.robot_x:.1f},{obs.robot_y:.1f},θ={obs.robot_theta:.1f}°)"
+            )
+        elif isinstance(subgoal, NavigateSubgoal):
+            theta_part = f" θ={subgoal.theta:.1f}°" if subgoal.theta is not None else ""
+            print(
+                f"[Subgoal] --> DISPATCH NAVIGATE: target=({subgoal.x:.1f},{subgoal.y:.1f}){theta_part}, "
+                f"robot at ({obs.robot_x:.1f},{obs.robot_y:.1f},θ={obs.robot_theta:.1f}°)"
+            )
+        else:
+            print(f"[Subgoal] --> DISPATCH {type(subgoal).__name__}: {subgoal!r}")
+
+    def _confirm_subgoal(self, subgoal, obs: Observation) -> str:
+        """Block on stdin until user confirms, skips, or aborts the subgoal.
+
+        Returns one of: "execute", "skip", "abort".
+        """
+        print("\n" + "=" * 60)
+        print("[Confirm] Next subgoal:")
+        if isinstance(subgoal, PushSubgoal):
+            print(f"  type:       PUSH")
+            print(f"  object:     {subgoal.object_id}")
+            print(f"  edge_idx:   {subgoal.edge_idx}")
+            print(f"  push_steps: {subgoal.push_steps}")
+            obj = obs.objects.get(subgoal.object_id)
+            if obj is not None:
+                print(f"  object at:  ({obj.x:.1f}, {obj.y:.1f}) theta={obj.theta:.1f}°")
+        elif isinstance(subgoal, NavigateSubgoal):
+            print(f"  type:       NAVIGATE")
+            print(f"  target:     ({subgoal.x:.1f}, {subgoal.y:.1f})"
+                  + (f" theta={subgoal.theta:.1f}°" if subgoal.theta is not None else ""))
+        else:
+            print(f"  type:       {type(subgoal).__name__}")
+            print(f"  repr:       {subgoal!r}")
+        print(f"  robot at:   ({obs.robot_x:.1f}, {obs.robot_y:.1f}) theta={obs.robot_theta:.1f}°")
+        print("=" * 60)
+        try:
+            response = input("[Confirm] ENTER=execute, s=skip (blacklist), q=abort: ").strip().lower()
+        except EOFError:
+            response = ""
+        if response == "q":
+            return "abort"
+        if response == "s":
+            return "skip"
+        return "execute"
 
     # --- Event handlers ---
 

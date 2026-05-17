@@ -526,6 +526,11 @@ def run_interactive_mode(args):
         pause_after_load=args.pause,
         ml_goal_model_path=args.ml_goal_model_path,
         ml_device=args.ml_device,
+        ml_samples=args.ml_samples,
+        ml_num_steps=args.ml_num_steps,
+        ml_sampler_method=args.ml_sampler_method,
+        max_planning_retries=args.max_planning_retries,
+        max_replan_attempts=args.max_replan_attempts,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
@@ -547,7 +552,12 @@ def run_interactive_mode(args):
         dry_run=args.dry_run,
         quit_on_complete=True,
         camera_service_address=getattr(args, "camera_service", None),
+        step_confirm=args.step_confirm,
     )
+
+    # Thread diagnostics through to the runtime (no-op if not enabled).
+    runtime_config.diagnostics_recorder = getattr(args, "_diagnostics_recorder", None)
+    runtime_config.capture_scene = bool(getattr(args, "capture_scene", False))
 
     print("\n  Starting robot execution...")
     print("  Press ESCAPE to abort")
@@ -667,6 +677,11 @@ def run_automatic_mode(args):
         pause_after_load=args.pause,
         ml_goal_model_path=args.ml_goal_model_path,
         ml_device=args.ml_device,
+        ml_samples=args.ml_samples,
+        ml_num_steps=args.ml_num_steps,
+        ml_sampler_method=args.ml_sampler_method,
+        max_planning_retries=args.max_planning_retries,
+        max_replan_attempts=args.max_replan_attempts,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
@@ -694,6 +709,7 @@ def run_automatic_mode(args):
             planner=planner,
             initial_speed=args.speed,
             quit_on_complete=not args.no_quit,
+            step_confirm=args.step_confirm,
         )
     else:
         runtime_config = RuntimeConfig(
@@ -703,7 +719,12 @@ def run_automatic_mode(args):
             dry_run=args.dry_run,
             quit_on_complete=not args.no_quit,
             camera_service_address=getattr(args, "camera_service", None),
+            step_confirm=args.step_confirm,
         )
+
+    # Thread diagnostics through to the runtime (no-op if not enabled).
+    runtime_config.diagnostics_recorder = getattr(args, "_diagnostics_recorder", None)
+    runtime_config.capture_scene = bool(getattr(args, "capture_scene", False))
 
     # Run
     print("\nStarting NAMO execution...")
@@ -809,10 +830,28 @@ def main():
         help="PyTorch device for ML model (default: cuda)",
     )
     parser.add_argument(
+        "--ml-samples",
+        type=int,
+        default=None,
+        help="Number of diffusion samples per inference call (default: 32)",
+    )
+    parser.add_argument(
+        "--ml-num-steps",
+        type=int,
+        default=None,
+        help="Number of denoising / integration steps (default: 20)",
+    )
+    parser.add_argument(
+        "--ml-sampler-method",
+        type=str,
+        default=None,
+        help="Sampler method: ddpm/ddim (diffusion) or euler/midpoint/rk4/dopri5 (flow matching)",
+    )
+    parser.add_argument(
         "--max-chain-depth",
         type=int,
-        default=1,
-        help="Maximum chain depth for multi-push solutions (default: 1)",
+        default=2,
+        help="Maximum chain depth for multi-push solutions (default: 2)",
     )
     parser.add_argument(
         "--allow-collisions",
@@ -851,6 +890,21 @@ def main():
         default=10,
         help="Goal samples per region for validation (default: 10)",
     )
+    parser.add_argument(
+        "--max-planning-retries",
+        type=int,
+        default=5,
+        help=("Max retries per plan() call with different shuffle seeds when "
+              "the planner returns NO SUBGOALS (default: 5). Lower to fail "
+              "faster when planning is genuinely impossible."),
+    )
+    parser.add_argument(
+        "--max-replan-attempts",
+        type=int,
+        default=20,
+        help=("Max replans for the same failed subgoal before giving up "
+              "(default: 20). Lower to abort a stuck push sequence faster."),
+    )
 
     # Execution options
     parser.add_argument(
@@ -867,6 +921,14 @@ def main():
         "--dry-run",
         action="store_true",
         help="Don't send commands to robot (real mode only)",
+    )
+    parser.add_argument(
+        "--step-confirm",
+        action="store_true",
+        help=(
+            "Pause for stdin confirmation before each subgoal dispatch. "
+            "ENTER executes, 's' skips and blacklists the push, 'q' aborts the run."
+        ),
     )
 
     # Debugging
@@ -893,6 +955,34 @@ def main():
     )
 
     # Simulation options
+    # Diagnostics flags. When --diag-path is set, the run produces a directory
+    # of structured outputs (config/summary JSON + JSONL event streams + tee'd
+    # run.log + optional scene snapshots). See robot_control/diagnostics/.
+    parser.add_argument(
+        "--diag-path",
+        type=str,
+        default=None,
+        help="Root directory for diagnostics output. Enables diagnostics when set.",
+    )
+    parser.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help=("Subdir name under --diag-path. Supports placeholders: "
+              "{timestamp} {date} {time} {epoch} {strategy} {algorithm} "
+              "{goal} {mode} {git}. Slashes create nested subdirs. Required "
+              "if --diag-path is set."),
+    )
+    parser.add_argument(
+        "--capture-scene",
+        action="store_true",
+        help="Save scene snapshots (jpg + json + xml) at run start and end.",
+    )
+    parser.add_argument(
+        "--allow-overwrite",
+        action="store_true",
+        help="Allow --diag-path/--run-name to overwrite an existing directory.",
+    )
     parser.add_argument(
         "--speed",
         type=float,
@@ -902,14 +992,72 @@ def main():
 
     args = parser.parse_args()
 
-    # Interactive mode requires real robot config
-    if args.interactive:
-        if not args.config:
-            print("Error: --interactive mode requires --config for real robot")
-            return 1
-        return run_interactive_mode(args)
-    else:
-        return run_automatic_mode(args)
+    # Bootstrap diagnostics before any real work — installs Tee on stdout/
+    # stderr so all subsequent prints land in run.log, and writes config.json
+    # capturing the pre-run state. Returns (None, None) if --diag-path unset.
+    sys.path.insert(0, str(Path(__file__).parent))
+    from _diag_setup import bootstrap_diagnostics  # type: ignore
+    recorder, log_file = bootstrap_diagnostics(args)
+    args._diagnostics_recorder = recorder  # stashed for downstream helpers
+
+    try:
+        # Interactive mode requires real robot config
+        if args.interactive:
+            if not args.config:
+                print("Error: --interactive mode requires --config for real robot")
+                return 1
+            return run_interactive_mode(args)
+        else:
+            return run_automatic_mode(args)
+    finally:
+        # Best-effort summary write + cleanup. Anything that goes wrong here
+        # must not mask the original return code.
+        try:
+            if recorder is not None and recorder.enabled:
+                _write_run_summary(args, recorder)
+                recorder.close()
+        except Exception as exc:
+            print(f"[DIAG] ⚠️ summary write failed: {exc!r}", flush=True)
+        if log_file is not None:
+            try:
+                log_file.flush()
+                log_file.close()
+            except Exception:
+                pass
+
+
+def _write_run_summary(args, recorder):
+    """Fallback summary writer — only fires if the Runtime didn't already
+    write one (e.g. crashed before reaching its finally block). Runtime's
+    summary is richer; this one is a bare-bones marker that the run
+    existed and exited abnormally.
+    """
+    if recorder is None or not recorder.enabled:
+        return
+    summary_path = recorder.root / "summary.json"
+    if summary_path.exists():
+        # Runtime wrote a richer summary already. Don't overwrite.
+        return
+
+    import datetime as _dt
+    import time as _time
+
+    now = _time.time()
+    payload = {
+        "run_name": recorder.root.name,
+        "outcome": "crashed",
+        "outcome_reason": "runtime did not write summary (probable crash before finally)",
+        "ended_at_epoch": now,
+        "ended_at_utc": _dt.datetime.fromtimestamp(now, tz=_dt.timezone.utc)
+                          .isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "mode": "sim" if getattr(args, "sim", False) or not getattr(args, "config", None) else "real",
+        "strategy": getattr(args, "strategy", None),
+        "algorithm": getattr(args, "algorithm", None),
+        "goal_target_cm": list(args.goal) if getattr(args, "goal", None) else None,
+        "totals": dict(recorder.totals),
+        "scene_capture": {},
+    }
+    recorder.write_summary(payload)
 
 
 if __name__ == "__main__":

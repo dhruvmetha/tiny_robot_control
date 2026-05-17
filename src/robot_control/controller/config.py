@@ -36,7 +36,7 @@ class PushConfig:
     standoff_multiplier: float = 0.5  # standoff = multiplier * robot_size
     wheel_deadband: float = 0.05
     lookahead_ratio: float = 0.3
-    push_steps: int = 75  # control ticks per NAMO push step (~2.5 seconds at 30Hz)
+    push_steps: int = 50  # control ticks per NAMO push step (~1.67 seconds at 30Hz)
     dynamic_direction: bool = True  # update push direction every step vs fix at start
 
     # Approach phase parameters
@@ -61,6 +61,14 @@ class PushConfig:
     retreat_max_dist: float = 15.0  # cm, max search distance
     retreat_tolerance: float = 2.0  # cm, how close to target before done
     retreat_steer_gain: float = 0.3  # steering correction gain while reversing
+
+    # Stuck-detection thresholds: a completed push is considered FAILED if the
+    # object's translation AND rotation are both below these thresholds. This
+    # flows up through did_fail() → notify_subgoal_done(failed=True) → planner
+    # blacklist for the (object_id, edge_idx) pair. Prevents the planner from
+    # re-proposing primitives that physically don't work on real hardware.
+    min_push_displacement_cm: float = 2.0
+    min_push_rotation_deg: float = 15.0
 
     # Debug visualization
     show_wavefront: bool = False  # Show wavefront image after each push
@@ -103,7 +111,7 @@ class ControllerConfigs:
                 standoff_multiplier=push_data.get("standoff_multiplier", 0.5),
                 wheel_deadband=push_data.get("wheel_deadband", 0.05),
                 lookahead_ratio=push_data.get("lookahead_ratio", 0.3),
-                push_steps=push_data.get("push_steps", 75),
+                push_steps=push_data.get("push_steps", 50),
                 dynamic_direction=push_data.get("dynamic_direction", True),
                 approach_skip_distance=push_data.get("approach_skip_distance", 3.0),
                 approach_skip_angle=push_data.get("approach_skip_angle", 30.0),
@@ -117,6 +125,8 @@ class ControllerConfigs:
                 retreat_max_dist=push_data.get("retreat_max_dist", 15.0),
                 retreat_tolerance=push_data.get("retreat_tolerance", 2.0),
                 retreat_steer_gain=push_data.get("retreat_steer_gain", 0.3),
+                min_push_displacement_cm=push_data.get("min_push_displacement_cm", 2.0),
+                min_push_rotation_deg=push_data.get("min_push_rotation_deg", 15.0),
                 show_wavefront=push_data.get("show_wavefront", False),
             ),
         )

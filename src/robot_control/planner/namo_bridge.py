@@ -13,7 +13,7 @@ import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from robot_control.camera.workspace import WORKSPACE_HEIGHT_CM, WORKSPACE_WIDTH_CM
 from robot_control.core.types import Observation, PushSubgoal
@@ -127,6 +127,11 @@ class NAMOPlanBridge:
         # Timing from last plan_from_xml() call
         self.last_search_time_ms: float = 0.0
 
+        # Algorithm-specific diagnostics from the last plan() call. Populated
+        # whenever the planner attaches stats to its PlannerResult. Consumed
+        # by NAMOPlanner to render a diagnostic failure summary.
+        self.last_algorithm_stats: Optional[Dict[str, Any]] = None
+
     def _setup_namo_path(self) -> None:
         """Add namo_cpp python paths to sys.path."""
         # Find namo_cpp relative to this file
@@ -166,7 +171,7 @@ class NAMOPlanBridge:
         robot_goal_cm: Tuple[float, float],
         algorithm: str = "full_namo",
         goal_strategy: str = "primitive",
-        max_chain_depth: int = 1,
+        max_chain_depth: int = 2,
         allow_collisions: bool = True,
         frontier_beam_width: int = 10000,
         chain_link_cost: int = 11,
@@ -226,6 +231,13 @@ class NAMOPlanBridge:
             service = self._get_planning_service()
             service.preload_goal_model(goal_strategy, **kwargs)
 
+            # Real-robot execution: enable region-opener early exit once a single
+            # candidate object yields a successful opening for a neighbor. The outer
+            # FullNAMOPlanner handles the next region on the path, so additional
+            # candidates per neighbor are pure waste at execution time. Callers can
+            # override via kwargs.
+            kwargs.setdefault("region_early_exit_on_first_success", True)
+
             # Run planning
             result = service.plan_from_xml(
                 xml_path=xml_path,
@@ -242,6 +254,7 @@ class NAMOPlanBridge:
             )
 
             self.last_search_time_ms = result.search_time_ms
+            self.last_algorithm_stats = getattr(result, "algorithm_stats", None)
 
             if self._verbose:
                 print(

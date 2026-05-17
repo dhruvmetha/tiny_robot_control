@@ -397,5 +397,25 @@ class Window(QMainWindow):
         return self._app.exec()
 
     def close_window(self) -> None:
-        """Programmatically close the window."""
-        self.close()
+        """Programmatically close the window. Thread-safe: uses
+        QApplication.quit() (documented thread-safe) instead of calling
+        widget methods cross-thread, which is undefined behaviour in Qt.
+
+        FIXME(known-issue): This is only PARTIALLY thread-safe in practice.
+        See robot_control/KNOWN_ISSUES.md §1. The caller (runtime.py's
+        control loop) mutates GUI widgets just before this method, which
+        leaves the GUI event queue in a state where the deferred quit
+        event never gets processed on long runs. The diagnostics
+        summary.json then never gets written. A proper fix is to switch
+        to QTimer.singleShot(0, self.close) here AND have the caller
+        stop touching widgets cross-thread.
+        """
+        # quit() is one of the few Qt methods explicitly documented as
+        # thread-safe — it posts a deferred event to the GUI thread that
+        # tells QApplication.exec() to return.
+        try:
+            self._app.quit()
+        except Exception:
+            # Fall back to direct close as a last resort — better to risk
+            # the cross-thread issue than not shut down at all.
+            self.close()

@@ -182,6 +182,42 @@ class NavigationController(Controller):
         # Obstacle visualization (stored when navigate_to is called)
         self._obstacles: List[ObstacleTuple] = []
 
+        # Diagnostic state for logging
+        self._logged_state: Optional[NavigationState] = None
+        self._state_entered_at: float = time.time()
+        self._state_tick_count: int = 0
+        self._stall_warning_issued: bool = False
+
+    def _log_state_transition(self, new_state: "NavigationState", obs: Optional[Observation] = None, note: str = "") -> None:
+        """Print a one-line state transition with relevant diagnostic context."""
+        if self._logged_state == new_state:
+            return
+        prev = self._logged_state.value if self._logged_state is not None else "-"
+        ctx_parts = []
+        if obs is not None:
+            ctx_parts.append(f"pose=({obs.robot_x:.1f},{obs.robot_y:.1f},θ={obs.robot_theta:.1f}°)")
+        if new_state == NavigationState.PRE_ROTATING and self._pre_rotation_target is not None:
+            ctx_parts.append(f"pre_target_θ={self._pre_rotation_target:.1f}°")
+            if obs is not None:
+                he = _wrap_to_180(self._pre_rotation_target - obs.robot_theta)
+                ctx_parts.append(f"heading_err={he:+.1f}°")
+        if new_state == NavigationState.POST_ROTATING and self._target_theta is not None:
+            ctx_parts.append(f"goal_θ={self._target_theta:.1f}°")
+            if obs is not None:
+                he = _wrap_to_180(self._target_theta - obs.robot_theta)
+                ctx_parts.append(f"heading_err={he:+.1f}°")
+        if new_state == NavigationState.FOLLOWING and self._planned_path:
+            ctx_parts.append(f"path_waypoints={len(self._planned_path)}")
+            final = self._planned_path[-1]
+            ctx_parts.append(f"final_wp=({final[0]:.1f},{final[1]:.1f})")
+        ctx = " " + " ".join(ctx_parts) if ctx_parts else ""
+        suffix = f" — {note}" if note else ""
+        print(f"[NAV] state {prev} -> {new_state.value}{ctx}{suffix}")
+        self._logged_state = new_state
+        self._state_entered_at = time.time()
+        self._state_tick_count = 0
+        self._stall_warning_issued = False
+
     @property
     def state(self) -> NavigationState:
         """Current navigation state."""
@@ -226,6 +262,13 @@ class NavigationController(Controller):
         # Store obstacles for visualization
         self._obstacles = obstacles
 
+        print(
+            f"[NAV] navigate_to: goal=({goal_x:.1f},{goal_y:.1f})"
+            + (f" θ={goal_theta:.1f}°" if goal_theta is not None else " θ=any")
+            + f", from=({current_pos[0]:.1f},{current_pos[1]:.1f}), "
+            f"obstacles={len(obstacles)}"
+        )
+
         # Plan path
         raw_path = self._planner.plan(current_pos, (goal_x, goal_y), obstacles)
 
@@ -235,7 +278,12 @@ class NavigationController(Controller):
 
         if not path or len(path) < 2:
             # Planning failed or trivial path
+            print(
+                f"[NAV] !! navigate_to FAILED: planner returned {len(raw_path) if raw_path else 0} "
+                f"raw points, {len(path)} after dedup. Treating as IDLE."
+            )
             self._state = NavigationState.IDLE
+            self._logged_state = NavigationState.IDLE
             return False
 
         self._planned_path = path
@@ -255,10 +303,17 @@ class NavigationController(Controller):
 
         if first_target is None:
             # All waypoints are near current position - already at goal
+            print(
+                f"[NAV] navigate_to: already at goal "
+                f"(all {len(path)} waypoints within {min_dist_threshold:.1f}cm of robot). "
+                f"Skipping FOLLOWING."
+            )
             if goal_theta is not None:
                 self._state = NavigationState.POST_ROTATING
+                self._logged_state = None
             else:
                 self._state = NavigationState.FINISHED
+                self._logged_state = None
             return True
 
         # Calculate angle to first target
@@ -304,6 +359,30 @@ class NavigationController(Controller):
 
     def step(self, obs: Observation, subgoal: Subgoal) -> Action:
         """Compute action given observation."""
+        # Surface state transitions and run periodic stall checks
+        self._log_state_transition(self._state, obs)
+        self._state_tick_count += 1
+        # Stall warning: if we've been in PRE/POST_ROTATING for >150 ticks (~5s) without
+        # transitioning, the robot is likely oscillating around heading tolerance.
+        if (
+            not self._stall_warning_issued
+            and self._state_tick_count >= 150
+            and self._state in (NavigationState.PRE_ROTATING, NavigationState.POST_ROTATING, NavigationState.ROTATING)
+        ):
+            target_theta = (
+                self._pre_rotation_target if self._state == NavigationState.PRE_ROTATING
+                else self._target_theta
+            )
+            if target_theta is not None:
+                he = _wrap_to_180(target_theta - obs.robot_theta)
+                print(
+                    f"[NAV] !! STALL: stuck in {self._state.value} for "
+                    f"{self._state_tick_count} ticks, target_θ={target_theta:.1f}°, "
+                    f"current_θ={obs.robot_theta:.1f}°, heading_err={he:+.1f}°. "
+                    f"Likely cause: rotation tolerance / stable-hold not converging."
+                )
+                self._stall_warning_issued = True
+
         if self._state == NavigationState.IDLE:
             return Action.stop()
 

@@ -193,6 +193,13 @@ class PushController(Controller):
         self._retreat_target: Optional[Point] = None
         self._retreat_is_backward: bool = False
 
+        # Push outcome telemetry: object pose at PUSHING entry, for Δ reporting at PUSH COMPLETE
+        self._push_start_obj_pose: Optional[Tuple[float, float, float]] = None
+        self._push_start_robot_pose: Optional[Tuple[float, float, float]] = None
+        # Stuck flag: set at PUSH COMPLETE if Δobject < thresholds. Reported via
+        # did_fail() so the upstream blacklist gets the (object_id, edge_idx) entry.
+        self._push_movement_inadequate: bool = False
+
         # Visualization
         self._target_point: Optional[Point] = None
         self._object_pose: Optional[ObjectPose] = None
@@ -378,6 +385,16 @@ class PushController(Controller):
         """Advance toward object to close gap before pushing."""
         # Check if advance is complete
         if self._advance_step_count >= self._push_config.advance_steps:
+            # Capture pre-push poses for outcome reporting at PUSH COMPLETE
+            self._push_start_obj_pose = (obj.x, obj.y, obj.theta)
+            self._push_start_robot_pose = (obs.robot_x, obs.robot_y, obs.robot_theta)
+            print(
+                f"[PUSH] >>> PUSHING start: obj '{subgoal.object_id}' at "
+                f"({obj.x:.1f},{obj.y:.1f},θ={obj.theta:.1f}°), "
+                f"robot at ({obs.robot_x:.1f},{obs.robot_y:.1f},θ={obs.robot_theta:.1f}°), "
+                f"edge={subgoal.edge_idx}, push_steps={subgoal.push_steps} "
+                f"({subgoal.push_steps * self._push_config.push_steps} ticks)"
+            )
             self._state = PushState.PUSHING
             return self._handle_pushing(obs, obj, subgoal)
 
@@ -903,8 +920,50 @@ class PushController(Controller):
         return False
 
     def did_fail(self) -> bool:
-        """Check if push failed (approach unreachable, nav failed, etc.)."""
-        return self._state == PushState.FAILED
+        """Check if push failed.
+
+        Failure modes:
+        - state == FAILED: approach unreachable, navigation planning failed, etc.
+        - _push_movement_inadequate: push completed but object barely moved
+          (below min_push_displacement_cm AND min_push_rotation_deg thresholds).
+          The robot still retreats normally, but did_fail returns True so the
+          upstream planner blacklists (object_id, edge_idx).
+        """
+        return self._state == PushState.FAILED or self._push_movement_inadequate
+
+    def get_last_push_summary(self, post_obs: "Observation") -> Optional[Dict[str, object]]:
+        """Return a structured summary of the most recently completed push,
+        or None if no push has run yet / required state is missing.
+
+        Used by the diagnostics pipeline to write one record per physical
+        push (pushes.jsonl). Reads from already-tracked controller state —
+        does not duplicate the inadequate-movement detection logic.
+        """
+        sub = self._current_subgoal
+        if sub is None or self._push_start_obj_pose is None:
+            return None
+        obj_now = post_obs.objects.get(getattr(sub, "object_id", None)) if post_obs else None
+        if obj_now is None:
+            return None
+        dx = obj_now.x - self._push_start_obj_pose[0]
+        dy = obj_now.y - self._push_start_obj_pose[1]
+        dtheta_deg = obj_now.theta - self._push_start_obj_pose[2]
+        # Wrap dtheta to [-180, 180] for stability.
+        dtheta_deg = ((dtheta_deg + 180.0) % 360.0) - 180.0
+        disp = math.hypot(dx, dy)
+        return {
+            "object_id": getattr(sub, "object_id", None),
+            "expected_edge": getattr(sub, "edge_idx", None),
+            "expected_push_steps": getattr(sub, "push_steps", None),
+            "object_pose_before": list(self._push_start_obj_pose),
+            "object_pose_after": [obj_now.x, obj_now.y, obj_now.theta],
+            "delta_pos_cm": [dx, dy],
+            "delta_pos_magnitude_cm": disp,
+            "delta_theta_deg": dtheta_deg,
+            "stuck": bool(self._push_movement_inadequate),
+            "stuck_threshold_cm": self._push_config.min_push_displacement_cm,
+            "stuck_threshold_deg": self._push_config.min_push_rotation_deg,
+        }
 
     def _print_wavefront_status(self, obs: Observation, show: bool = False) -> None:
         """Print wavefront status at end of push for debugging.
@@ -918,6 +977,35 @@ class PushController(Controller):
 
         print(f"\n[PUSH] ========== PUSH COMPLETE ==========")
         print(f"[PUSH] Robot: ({obs.robot_x:.1f}, {obs.robot_y:.1f}) theta={obs.robot_theta:.1f}°")
+
+        # Object displacement summary (vs. PUSHING start pose)
+        sub = self._current_subgoal
+        if sub is not None and self._push_start_obj_pose is not None:
+            obj_now = obs.objects.get(sub.object_id) if hasattr(sub, "object_id") else None
+            if obj_now is not None:
+                dx = obj_now.x - self._push_start_obj_pose[0]
+                dy = obj_now.y - self._push_start_obj_pose[1]
+                dtheta = _wrap_to_pi(math.radians(obj_now.theta - self._push_start_obj_pose[2]))
+                dtheta_deg = math.degrees(dtheta)
+                displacement_cm = math.hypot(dx, dy)
+                print(
+                    f"[PUSH] Δobject '{sub.object_id}': "
+                    f"Δpos=({dx:+.2f},{dy:+.2f}) |Δ|={displacement_cm:.2f}cm, "
+                    f"Δθ={dtheta_deg:+.2f}°"
+                )
+                # Stuck detection: mark push as FAILED (for upstream blacklist) if
+                # the object moved less than the configured thresholds. Robot still
+                # retreats normally to clear the area; did_fail() returns True so
+                # notify_subgoal_done(failed=True) → blacklist entry added.
+                min_disp = self._push_config.min_push_displacement_cm
+                min_rot = self._push_config.min_push_rotation_deg
+                if displacement_cm < min_disp and abs(dtheta_deg) < min_rot:
+                    print(
+                        f"[PUSH] !! STUCK: object moved {displacement_cm:.2f}cm "
+                        f"(<{min_disp}cm) AND rotated {dtheta_deg:.2f}° "
+                        f"(<{min_rot}°). Marking subgoal as FAILED for blacklist."
+                    )
+                    self._push_movement_inadequate = True
 
         # Build wavefront and check positions
         wavefront = self._build_wavefront(obs)
@@ -966,6 +1054,11 @@ class PushController(Controller):
         # Reset retreat state
         self._retreat_target = None
         self._retreat_is_backward = False
+
+        # Reset push outcome telemetry
+        self._push_start_obj_pose = None
+        self._push_start_robot_pose = None
+        self._push_movement_inadequate = False
 
         # Reset follow path controller
         self._follow_path_controller.reset()

@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import signal
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -131,6 +132,13 @@ def main():
     socket.bind(bind_addr)
     print(f"[CameraService] ZMQ PUB bound to {bind_addr}")
 
+    # Setup ZMQ REP socket for on-demand frame requests (diagnostics).
+    # Clients send b"vis" or b"raw"; we respond with JPEG-encoded bytes.
+    frame_socket = ctx.socket(zmq.REP)
+    frame_bind_addr = f"tcp://*:{args.port + 1}"
+    frame_socket.bind(frame_bind_addr)
+    print(f"[CameraService] ZMQ REP (frame requests) bound to {frame_bind_addr}")
+
     # Create camera + observer (standard in-process PyPubSub pipeline)
     camera = CameraSensorNode(camera_config)
     observer = ArucoObserver(observer_config)
@@ -196,9 +204,61 @@ def main():
         ctx.term()
         return 1
 
+    # Background thread that serves on-demand frame requests over the REP
+    # socket. We poll with a short timeout instead of blocking forever, so
+    # signal-driven shutdown still works promptly.
+    import cv2 as _cv2
+
+    def _frame_request_loop() -> None:
+        poller = zmq.Poller()
+        poller.register(frame_socket, zmq.POLLIN)
+        while running:
+            try:
+                events = dict(poller.poll(timeout=200))  # ms
+            except zmq.ZMQError:
+                # Context terminated under us during shutdown.
+                break
+            if frame_socket not in events:
+                continue
+            try:
+                kind = frame_socket.recv(flags=zmq.NOBLOCK)
+            except zmq.Again:
+                continue
+            except zmq.ZMQError:
+                break
+            try:
+                kind_str = kind.decode("utf-8", errors="ignore").strip().lower() or "vis"
+                if kind_str == "raw":
+                    frame = camera.get_frame()
+                else:
+                    frame = observer.get_vis_frame()
+                    if frame is None:
+                        frame = camera.get_frame()
+                if frame is None:
+                    frame_socket.send(b"")  # Empty reply signals "no frame available"
+                    continue
+                ok, buf = _cv2.imencode(".jpg", frame,
+                                        [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+                payload = buf.tobytes() if ok else b""
+                frame_socket.send(payload)
+            except Exception as exc:
+                # Ensure REP socket state machine stays balanced (must always
+                # reply after a recv). Send empty bytes on any failure.
+                try:
+                    frame_socket.send(b"")
+                except Exception:
+                    pass
+                print(f"[CameraService] frame request error: {exc!r}", flush=True)
+
+    frame_thread = threading.Thread(
+        target=_frame_request_loop, name="CameraService-FrameReq", daemon=True
+    )
+    frame_thread.start()
+
     elapsed_startup = time.time() - start_time
     print(f"[CameraService] Ready in {elapsed_startup:.1f}s")
     print(f"[CameraService] Clients connect to tcp://localhost:{args.port}")
+    print(f"[CameraService] Frame requests: tcp://localhost:{args.port + 1} (REQ→REP)")
     if args.show:
         print("[CameraService] Showing monitoring window (press 'q' to quit)")
 
@@ -224,6 +284,14 @@ def main():
         pub.unsubscribe(on_observation, Topics.SENSOR_VISION)
         observer.stop()
         camera.stop()
+        # Give the frame-request thread a moment to notice `running=False`
+        # before tearing down its socket and the context.
+        if frame_thread.is_alive():
+            frame_thread.join(timeout=1.0)
+        try:
+            frame_socket.close(linger=0)
+        except Exception:
+            pass
         socket.close(linger=0)
         ctx.term()
         elapsed_total = time.time() - start_time

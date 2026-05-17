@@ -27,6 +27,27 @@ from robot_control.core.topics import Topics
 from robot_control.core.types import ObjectPose, Observation
 
 
+def _estimate_pose_single_markers(corners, marker_length, K, D):
+    # Drop-in replacement for cv2.aruco.estimatePoseSingleMarkers (removed in OpenCV 4.7+).
+    # Returns rvecs and tvecs in the same shape (N, 1, 3) the old API used.
+    half = marker_length / 2.0
+    obj_pts = np.array([
+        [-half,  half, 0.0],
+        [ half,  half, 0.0],
+        [ half, -half, 0.0],
+        [-half, -half, 0.0],
+    ], dtype=np.float32)
+    n = len(corners)
+    rvecs = np.zeros((n, 1, 3), dtype=np.float64)
+    tvecs = np.zeros((n, 1, 3), dtype=np.float64)
+    for i, c in enumerate(corners):
+        img_pts = c.reshape(4, 2).astype(np.float32)
+        _, rvec, tvec = cv2.solvePnP(obj_pts, img_pts, K, D, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+        rvecs[i, 0, :] = rvec.flatten()
+        tvecs[i, 0, :] = tvec.flatten()
+    return rvecs, tvecs, None
+
+
 @dataclass
 class ObjectDefinition:
     """Definition of an object detected via ArUco marker."""
@@ -446,7 +467,7 @@ class ArucoObserver:
             if mid != self._config.robot_marker_id:
                 continue
 
-            rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+            rvecs, tvecs, _ = _estimate_pose_single_markers(
                 [corners[i]], self._robot_marker_len_m, self._K, self._D
             )
             rvec, tvec = rvecs[0, 0, :], tvecs[0, 0, :]
@@ -491,7 +512,7 @@ class ArucoObserver:
         objects: Dict[str, ObjectPose] = {}
         goal_pos: Optional[Tuple[float, float]] = None
 
-        rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+        rvecs, tvecs, _ = _estimate_pose_single_markers(
             corners, self._object_marker_len_m, self._K, self._D
         )
 
@@ -557,11 +578,16 @@ class ArucoObserver:
     # -------------------------
 
     def _draw_workspace_boundary(self, frame: np.ndarray) -> None:
+        # Subtract ORIGIN_OFFSET so the drawn box is anchored at world (0, 0),
+        # not at marker 8. With offset = (ox, oy), marker 8 lives at world
+        # (ox, oy); to draw the box around world (0,0)..(W,H), its corners in
+        # marker frame are shifted by (-ox, -oy).
+        ox, oy = ORIGIN_OFFSET_CM
         boundary_cm = np.array([
-            [0, 0, 0],
-            [0, WORKSPACE_HEIGHT_CM, 0],
-            [WORKSPACE_WIDTH_CM, WORKSPACE_HEIGHT_CM, 0],
-            [WORKSPACE_WIDTH_CM, 0, 0]
+            [-ox,                          -oy,                          0],
+            [-ox,                          WORKSPACE_HEIGHT_CM - oy,     0],
+            [WORKSPACE_WIDTH_CM - ox,      WORKSPACE_HEIGHT_CM - oy,     0],
+            [WORKSPACE_WIDTH_CM - ox,      -oy,                          0],
         ], dtype=np.float32)
         img_pts, _ = cv2.projectPoints(
             boundary_cm / 100.0, self._rvec_ws, self._tvec_ws, self._K, self._D

@@ -20,6 +20,36 @@ from robot_control.planner.namo_bridge import NAMOPlanBridge
 from robot_control.planner.wavefront_path_planner import WavefrontPathPlanner
 
 
+# Keys from the planner's algorithm_stats dict that are safe to serialize to
+# JSON for the diagnostics recorder. Excludes raw fields like `attempt_results`
+# and `all_solutions` which carry C++ Action objects that can't be JSON-encoded.
+_DIAG_SAFE_STAT_KEYS = frozenset({
+    "total_primitives_attempted",
+    "rejection_breakdown",
+    "successful_openings",
+    "total_attempts",
+    "iterations",
+    "total_pushes",
+    "regions_opened",
+})
+
+
+def _filter_algorithm_stats_for_diagnostics(stats: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Return a JSON-safe subset of the planner's algorithm_stats dict."""
+    if not stats:
+        return {}
+    out: Dict[str, Any] = {}
+    for k, v in stats.items():
+        if k not in _DIAG_SAFE_STAT_KEYS:
+            continue
+        # Coerce common non-serializable types defensively.
+        if isinstance(v, (list, tuple)):
+            out[k] = [str(x) if not isinstance(x, (str, int, float, bool, type(None))) else x for x in v]
+        else:
+            out[k] = v
+    return out
+
+
 class NAMOPlanner(Planner):
     """Planner that uses NAMO for push manipulation planning.
 
@@ -53,7 +83,7 @@ class NAMOPlanner(Planner):
         scale_factor: float = 6.0,
         primitive_data_dir: str = "data",
         replan_on_completion: bool = True,
-        max_chain_depth: int = 1,
+        max_chain_depth: int = 2,
         allow_collisions: bool = True,
         frontier_beam_width: int = 10000,
         chain_link_cost: int = 11,
@@ -68,6 +98,12 @@ class NAMOPlanner(Planner):
         # ML goal model
         ml_goal_model_path: Optional[str] = None,
         ml_device: str = "cuda",
+        ml_samples: Optional[int] = None,
+        ml_num_steps: Optional[int] = None,
+        ml_sampler_method: Optional[str] = None,
+        # Retry budgets — see [Runtime] section in run_namo.py docstring.
+        max_planning_retries: int = 5,
+        max_replan_attempts: int = 20,
         # Workspace config for reachability checking (must match navigation planner)
         workspace_width_cm: float = 70.0,
         workspace_height_cm: float = 55.0,
@@ -130,6 +166,9 @@ class NAMOPlanner(Planner):
         self._shuffle_seed = shuffle_seed
         self._ml_goal_model_path = ml_goal_model_path
         self._ml_device = ml_device
+        self._ml_samples = ml_samples
+        self._ml_num_steps = ml_num_steps
+        self._ml_sampler_method = ml_sampler_method
         self._verbose = verbose
 
         # Create bridge for NAMO planning
@@ -172,12 +211,12 @@ class NAMOPlanner(Planner):
         self._plan_count: int = 0
 
         # Retry state for unreachable approach positions
-        self._max_replan_attempts: int = 5  # Max replans before giving up
+        self._max_replan_attempts: int = int(max_replan_attempts)
         self._replan_attempt: int = 0  # Current replan attempt count
         self._failed_subgoal: Optional[PushSubgoal] = None  # Track which subgoal failed
 
         # Retry state for planning failures (no solution found)
-        self._max_planning_retries: int = 5  # Retry with different seeds
+        self._max_planning_retries: int = int(max_planning_retries)
 
         # Failed-push blacklist (failure feedback to the planner).
         # Each entry is (object_id, edge_idx) in real-world (robot_control)
@@ -186,6 +225,45 @@ class NAMOPlanner(Planner):
         # a blacklisted pair before returning. Cleared on reset(); persists
         # across replans within a single planning episode.
         self._failed_pushes: Set[Tuple[str, int]] = set()
+
+        # Diagnostics — wired from the Runtime via set_diagnostics_recorder().
+        # When recorder is None, all hooks are no-ops.
+        self._diag = None  # type: Optional[Any]
+        self._latest_xml_path: Optional[str] = None  # set by dump_scene_xml()
+
+    # -------------------------------------------------------------- diagnostics
+
+    def set_diagnostics_recorder(self, recorder) -> None:
+        """Attach a DiagnosticsRecorder so plan() calls emit record_plan."""
+        self._diag = recorder
+
+    def dump_scene_xml(self, obs: Observation, output_path) -> Optional[str]:
+        """Generate and write the MuJoCo XML representation of the current
+        observation to output_path WITHOUT running planning. Returns the
+        written path on success, or None on failure.
+
+        Used by the diagnostics pipeline to capture scene_before.xml and
+        scene_after.xml — both fully reproducible scene snapshots compatible
+        with namo_cpp's replay tooling.
+        """
+        try:
+            xml_content = self._bridge._generate_xml(obs, self._robot_goal_cm)
+        except Exception as exc:
+            print(f"[NAMOPlanner] dump_scene_xml: _generate_xml failed: {exc!r}",
+                  flush=True)
+            return None
+        if xml_content is None:
+            return None
+        try:
+            output_path = str(output_path)
+            with open(output_path, "w") as f:
+                f.write(xml_content)
+            self._latest_xml_path = output_path
+            return output_path
+        except Exception as exc:
+            print(f"[NAMOPlanner] dump_scene_xml: write failed: {exc!r}",
+                  flush=True)
+            return None
 
     def plan(self, obs: Observation) -> Optional[Subgoal]:
         """Generate next subgoal from current observation.
@@ -304,6 +382,19 @@ class NAMOPlanner(Planner):
         # Success - reset replan counter
         self._replan_attempt = 0
         self._failed_subgoal = None
+
+        # Reset the push blacklist on success. World state has changed
+        # (object moved, robot moved), so previously failed (object, edge)
+        # pairs may now be viable. The blacklist key is in object body frame,
+        # which becomes a different world-frame approach as objects rotate.
+        # Cost of re-trying is just planning time; cost of staying blacklisted
+        # locks the planner out of valid solutions.
+        if self._failed_pushes:
+            print(
+                f"[NAMOPlanner] Resetting blacklist of {len(self._failed_pushes)} "
+                f"entry/entries after successful push (world state changed)"
+            )
+            self._failed_pushes.clear()
 
         self._current_idx += 1
         remaining = len(self._subgoals) - self._current_idx
@@ -471,6 +562,12 @@ class NAMOPlanner(Planner):
         self._plan_generated = True
         max_retries = self._max_planning_retries
 
+        # Aggregate diagnostic stats across all attempts so the failure
+        # message can show a real breakdown of why pushes were rejected,
+        # instead of a canned "possible causes" list.
+        aggregate_rejections: Dict[str, int] = {}
+        aggregate_primitives_attempted = 0
+
         for attempt in range(max_retries):
             # Compute shuffle seed: combine replan attempt (execution retry)
             # with planning attempt (no-solution retry) for maximum variation
@@ -502,6 +599,12 @@ class NAMOPlanner(Planner):
                 if self._ml_goal_model_path:
                     extra_kwargs["ml_goal_model_path"] = self._ml_goal_model_path
                     extra_kwargs["ml_device"] = self._ml_device
+                    if self._ml_samples is not None:
+                        extra_kwargs["ml_samples"] = self._ml_samples
+                    if self._ml_num_steps is not None:
+                        extra_kwargs["ml_num_steps"] = self._ml_num_steps
+                    if self._ml_sampler_method is not None:
+                        extra_kwargs["ml_sampler_method"] = self._ml_sampler_method
 
                 subgoals = self._bridge.plan(
                     observation=obs,
@@ -526,6 +629,51 @@ class NAMOPlanner(Planner):
                     f"{self._bridge.last_search_time_ms:.0f}ms, "
                     f"cumulative: {self._total_planning_ms:.0f}ms"
                 )
+
+                # Aggregate diagnostic stats from this attempt (best-effort —
+                # missing keys are normal for non-region-opening planners).
+                _stats = self._bridge.last_algorithm_stats or {}
+                _attempt_breakdown = _stats.get("rejection_breakdown") or {}
+                for _k, _v in _attempt_breakdown.items():
+                    aggregate_rejections[_k] = aggregate_rejections.get(_k, 0) + int(_v)
+                aggregate_primitives_attempted += int(_stats.get("total_primitives_attempted", 0))
+
+                # Forward this attempt to the diagnostics recorder (no-op when
+                # recorder is None). One JSONL line per planning attempt — the
+                # recorder assigns a plan_id, we contribute the structured fields.
+                # algorithm_stats is filtered to JSON-safe summary fields only;
+                # raw fields like `attempt_results` carry C++ Action objects that
+                # can't be pickled or JSON-serialized.
+                if self._diag is not None:
+                    try:
+                        first_subgoal = None
+                        if subgoals:
+                            sg0 = subgoals[0]
+                            first_subgoal = {
+                                "object_id": getattr(sg0, "object_id", None),
+                                "edge_idx": getattr(sg0, "edge_idx", None),
+                                "push_steps": getattr(sg0, "push_steps", None),
+                            }
+                        safe_stats = _filter_algorithm_stats_for_diagnostics(_stats)
+                        self._diag.record_plan({
+                            "attempt_index": attempt + 1,
+                            "attempt_seed": effective_seed,
+                            "search_time_ms": self._bridge.last_search_time_ms,
+                            "cumulative_ms": self._total_planning_ms,
+                            "success": bool(subgoals),
+                            "subgoals_returned": len(subgoals) if subgoals else 0,
+                            "first_subgoal": first_subgoal,
+                            "blacklist_size_before": len(self._failed_pushes),
+                            "algorithm_stats": safe_stats,
+                            "robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                            "object_poses_cm": {
+                                name: [o.x, o.y, o.theta]
+                                for name, o in obs.objects.items()
+                            },
+                        })
+                    except Exception as _e:
+                        # Diagnostics must never break the planner.
+                        print(f"[DIAG] record_plan failed: {_e!r}", flush=True)
 
                 if subgoals:
                     if self._execution_mode == "mpc":
@@ -571,14 +719,49 @@ class NAMOPlanner(Planner):
                     import traceback
                     traceback.print_exc()
 
-        # All retries exhausted
+        # All retries exhausted — print a real diagnostic breakdown of why
+        # the planner rejected every push it considered. Counts are aggregated
+        # across all retry attempts in this plan() call.
         print(
             f"[NAMOPlanner] All {max_retries} planning attempts failed"
         )
-        print("[NAMOPlanner]   Possible causes:")
-        print("[NAMOPlanner]   - No feasible push found for any edge/depth")
-        print("[NAMOPlanner]   - Sim2real discrepancy (sim thinks goal reachable)")
-        print("[NAMOPlanner]   - Objects too tightly packed for primitives")
+        # Reminder to correlate with robot connectivity state. Planning runs
+        # in sim regardless of robot state, but if the robot is offline,
+        # execution can't happen — and a perception/state drift while the
+        # robot is dead may make planning look impossible when it isn't.
+        print(
+            "[NAMOPlanner]   (planning is sim-only; check Runtime '🔌 Robot ... OFFLINE' "
+            "lines above to verify the robot was online during this attempt)"
+        )
+        if aggregate_primitives_attempted == 0 and not aggregate_rejections:
+            # No diagnostic data — likely a non-region-opening planner or a hard error.
+            print("[NAMOPlanner]   (no diagnostic data available from planner)")
+        else:
+            print(
+                f"[NAMOPlanner]   {aggregate_primitives_attempted} primitives enumerated "
+                f"across {max_retries} attempts; breakdown:"
+            )
+            # Categorize the keys so the output reads top-down by severity.
+            outcome_order = [
+                ("executed_in_sim", "pushes simulated"),
+                ("push_opened_region", "successfully opened region (but plan rejected — check chain logic)"),
+                ("push_did_not_open_region", "push ran but didn't open the target region"),
+                ("edge_unreachable", "edge approach pose unreachable (robot can't get to push position)"),
+                ("controller_stuck", "controller stuck mid-push (object resisted motion)"),
+                ("push_collided_with_wall", "push trajectory collided with a wall"),
+                ("env_step_exception", "env.step() raised an exception"),
+                ("skipped_edge_blacklisted_deeper", "skipped (edge previously stuck at shallower depth)"),
+                ("skipped_edge_already_solved", "skipped (edge already opened a region this skill)"),
+            ]
+            printed_keys: Set[str] = set()
+            for key, label in outcome_order:
+                if key in aggregate_rejections:
+                    print(f"[NAMOPlanner]     {aggregate_rejections[key]:>6}  {label}")
+                    printed_keys.add(key)
+            # Surface any unknown keys we didn't categorize (e.g. failure_type_N).
+            for key, count in sorted(aggregate_rejections.items()):
+                if key not in printed_keys:
+                    print(f"[NAMOPlanner]     {count:>6}  {key}")
         self._planning_failed = True
         self._subgoals = []
         self._current_idx = 0
