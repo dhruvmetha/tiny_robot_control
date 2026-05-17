@@ -39,9 +39,8 @@ class WavefrontPlanner:
     """
 
     # Grid cell values
+    OBSTACLE = -1
     FREE = 0
-    OBSTACLE = 1
-    VISITED = 2
 
     def __init__(self, config: Optional[WavefrontConfig] = None):
         self._config = config or WavefrontConfig()
@@ -70,7 +69,7 @@ class WavefrontPlanner:
         self._height = int(math.ceil((y_max - y_min) / res))
 
         # Initialize grid as free
-        self._grid = np.zeros((self._height, self._width), dtype=np.uint8)
+        self._grid = np.zeros((self._height, self._width), dtype=np.int8)
 
         # Total inflation = robot radius + margin
         inflation = self._config.robot_radius + self._config.inflation_margin

@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from robot_control.controller.base import Controller
 from robot_control.core.types import Action, Observation, Subgoal, WorkspaceConfig
+from robot_control.utils.robot_geometry import robot_diagonal_cm
 
 Point = Tuple[float, float]
 
@@ -129,7 +130,7 @@ class FollowPathController(Controller):
         self._config = config
 
         # Size baseline
-        self._car_size = max(config.car_width, config.car_height)
+        self._car_size = robot_diagonal_cm(config.car_width, config.car_height)
 
         # Parameters
         self._max_point_gap_ratio = max(1e-4, float(max_point_gap_ratio))
@@ -242,7 +243,7 @@ class FollowPathController(Controller):
 
     def set_path(self, path: List[Point]) -> None:
         """Set a new path to follow."""
-        self._car_size = max(self._config.car_width, self._config.car_height)
+        self._car_size = robot_diagonal_cm(self._config.car_width, self._config.car_height)
 
         self._path_raw = list(path)
         max_step = self._max_point_gap_ratio * self._car_size
@@ -329,7 +330,7 @@ class FollowPathController(Controller):
         robot_y = obs.robot_y
         robot_theta = obs.robot_theta
 
-        self._car_size = max(self._config.car_width, self._config.car_height)
+        self._car_size = robot_diagonal_cm(self._config.car_width, self._config.car_height)
         wheel_base = self._config.wheel_base
 
         # Check if reached goal

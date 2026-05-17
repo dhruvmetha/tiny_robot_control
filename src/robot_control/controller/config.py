@@ -14,7 +14,7 @@ class NavigationConfig:
     max_speed: float = 0.3
     pre_rotation_skip_angle: float = 45.0  # degrees
     robot_geometry_scale: float = 1.0  # RVG robot inflation (1.0 = half robot size)
-    goal_tolerance_ratio: float = 0.5  # goal_tolerance = ratio * car_size
+    goal_tolerance_ratio: float = 0.5  # goal_tolerance = ratio * robot_diagonal
     planner: str = "wavefront"  # "wavefront" or "rvg"
     wavefront_debug_dir: Optional[str] = None  # Save wavefront images to this directory
     obstacle_proximity_distance_cm: float = 2.0  # cm - cost falloff distance from obstacles
@@ -33,7 +33,7 @@ class PushConfig:
     """Configuration for PushController."""
 
     max_speed: float = 0.3
-    standoff_multiplier: float = 0.5  # standoff = multiplier * robot_size
+    standoff_multiplier: float = 0.5  # standoff = multiplier * robot_diagonal
     wheel_deadband: float = 0.05
     lookahead_ratio: float = 0.3
     push_steps: int = 75  # control ticks per NAMO push step (~2.5 seconds at 30Hz)
