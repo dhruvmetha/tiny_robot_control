@@ -43,7 +43,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 from robot_control import Runtime, RuntimeConfig, SimConfig
+from robot_control.core.object_defs import ObjectDef
 from robot_control.planner import NAMOPlanner
+from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
 
 
 def find_namo_config() -> str:
@@ -93,16 +95,7 @@ def get_namo_paths() -> Tuple[Path, Path, Path]:
 
 def setup_namo_imports():
     """Setup Python path for NAMO imports."""
-    _, namo_root, _ = get_namo_paths()
-    namo_cpp_python = namo_root / "namo_cpp" / "python"
-
-    if str(namo_cpp_python) not in sys.path:
-        sys.path.insert(0, str(namo_cpp_python))
-
-    # Add build directory
-    for build_dir in namo_root.glob("namo_cpp/build_python_mjxrl_*"):
-        if build_dir.is_dir() and str(build_dir) not in sys.path:
-            sys.path.insert(0, str(build_dir))
+    load_canonical_namo_rl(Path(__file__).resolve())
 
 
 def load_camera_config(config_path: str, objects_path: str):
@@ -680,8 +673,15 @@ def run_automatic_mode(args):
             y=10,
             theta=0,
             objects={
-                "box_1": (25, 30, 0, 8, 8),
-                "box_2": (35, 40, 45, 8, 8),
+                # SimConfig objects are (x_cm, y_cm, theta_deg)
+                "box_1": (25, 30, 0),
+                "box_2": (35, 40, 45),
+            },
+            # Provide geometry for synthetic simulation objects so XML generation
+            # never emits zero-sized geoms during NAMO planning.
+            object_defs={
+                "box_1": ObjectDef(name="box_1", width=8.0, depth=8.0, height=4.0, is_static=False),
+                "box_2": ObjectDef(name="box_2", width=8.0, depth=8.0, height=4.0, is_static=False),
             },
         )
 
@@ -691,6 +691,7 @@ def run_automatic_mode(args):
             planner=planner,
             initial_speed=args.speed,
             quit_on_complete=not args.no_quit,
+            show_gui=not args.headless,
         )
     else:
         runtime_config = RuntimeConfig(
@@ -700,6 +701,8 @@ def run_automatic_mode(args):
             dry_run=args.dry_run,
             quit_on_complete=not args.no_quit,
             camera_service_address=getattr(args, "camera_service", None),
+            show_gui=not args.headless,
+            show_camera=not args.headless,
         )
 
     # Run
@@ -848,6 +851,11 @@ def main():
         help="Don't quit when plan completes",
     )
     parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run without GUI window (useful for server/headless execution)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Don't send commands to robot (real mode only)",
@@ -885,6 +893,12 @@ def main():
     )
 
     args = parser.parse_args()
+
+    try:
+        setup_namo_imports()
+    except Exception as exc:
+        print(f"Error: {exc}")
+        return 1
 
     # Interactive mode requires real robot config
     if args.interactive:

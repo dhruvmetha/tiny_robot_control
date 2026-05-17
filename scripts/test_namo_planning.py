@@ -22,18 +22,14 @@ import sys
 import tempfile
 from pathlib import Path
 
-# Add namo_cpp paths
-script_dir = Path(__file__).parent
-robot_control_dir = script_dir.parent
-namo_root = robot_control_dir.parent
-namo_cpp_python = namo_root / "namo_cpp" / "python"
-sys.path.insert(0, str(namo_cpp_python))
+from robot_control.planner.namo_binding_loader import (
+    load_canonical_namo_rl,
+    resolve_namo_root,
+)
 
-# Find and add build directory
-for build_dir in namo_root.glob("namo_cpp/build_python_mjxrl_*"):
-    if build_dir.is_dir():
-        sys.path.insert(0, str(build_dir))
-        break
+script_path = Path(__file__).resolve()
+namo_root = resolve_namo_root(script_path)
+_, _, canonical_build = load_canonical_namo_rl(script_path)
 
 
 def run_planning_with_visualization(
@@ -48,6 +44,15 @@ def run_planning_with_visualization(
     import namo_rl
     from namo.core import PlannerConfig
     from namo.planners.opening import RegionOpeningPlanner
+
+    loaded = Path(getattr(namo_rl, "__file__", "")).resolve()
+    if canonical_build not in loaded.parents:
+        raise RuntimeError(
+            "Loaded namo_rl from non-canonical path.\n"
+            f"  loaded:   {loaded}\n"
+            f"  expected: {canonical_build}\n"
+            "Fix PYTHONPATH so namo_cpp/build_python is first."
+        )
 
     print(f"\n{'='*60}")
     print("NAMO Planning Test")
