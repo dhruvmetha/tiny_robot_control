@@ -957,27 +957,15 @@ class Runtime:
                                 if hasattr(self._env, "stop_robot"):
                                     self._env.stop_robot()
 
-                        # Quit if configured to do so.
-                        #
-                        # FIXME(known-issue): This auto-quit path is racy. See
-                        # robot_control/KNOWN_ISSUES.md §1. We are calling
-                        # GUI methods (update, set_status, update_drawings)
-                        # from the control thread, then asking QApplication
-                        # to quit from the same non-GUI thread. On long runs
-                        # the GUI event queue gets wedged and quit() never
-                        # processes — _window.run() blocks forever, run()'s
-                        # finally never fires, and summary.json/scene_after
-                        # are missing. Diagnostics JSONL is still intact
-                        # (line-buffered) but the run looks like it hung
-                        # at "Shutting down". Likely fix: drop the GUI
-                        # update calls below (window is about to close
-                        # anyway) and switch close_window() to
-                        # QTimer.singleShot(0, self.close).
+                        # Quit if configured to do so. The display updates
+                        # above on the per-tick path keep the canvas live;
+                        # we deliberately do NOT post another batch of them
+                        # here. Those extra queued events used to crowd out
+                        # the quit signal on long runs, leaving _window.run()
+                        # blocked in app.exec() and run()'s finally unrun
+                        # — meaning summary.json, success_chain.json, and
+                        # success_sim_replay.mp4 silently never landed.
                         if self._config.quit_on_complete:
-                            if self._window:
-                                self._window.update(obs)
-                                self._window.set_status(status)
-                                self._window.update_drawings(drawings)
                             print("[Runtime] Shutting down")
                             self._running = False
                             if self._window is not None:

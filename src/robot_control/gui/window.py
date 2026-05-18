@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Callable, Dict, Optional
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -397,25 +397,20 @@ class Window(QMainWindow):
         return self._app.exec()
 
     def close_window(self) -> None:
-        """Programmatically close the window. Thread-safe: uses
-        QApplication.quit() (documented thread-safe) instead of calling
-        widget methods cross-thread, which is undefined behaviour in Qt.
+        """Programmatically close the window from any thread.
 
-        FIXME(known-issue): This is only PARTIALLY thread-safe in practice.
-        See robot_control/KNOWN_ISSUES.md §1. The caller (runtime.py's
-        control loop) mutates GUI widgets just before this method, which
-        leaves the GUI event queue in a state where the deferred quit
-        event never gets processed on long runs. The diagnostics
-        summary.json then never gets written. A proper fix is to switch
-        to QTimer.singleShot(0, self.close) here AND have the caller
-        stop touching widgets cross-thread.
+        Schedules self.close() on the GUI thread via QTimer.singleShot(0).
+        Going through the normal close path (closeEvent → window hidden →
+        last-window-closed → app exit) is more robust than a raw
+        QApplication.quit() — earlier code used quit() and would
+        occasionally hang on long runs when other queued events crowded it
+        out, leaving run()'s finally unrun.
         """
-        # quit() is one of the few Qt methods explicitly documented as
-        # thread-safe — it posts a deferred event to the GUI thread that
-        # tells QApplication.exec() to return.
         try:
-            self._app.quit()
+            QTimer.singleShot(0, self.close)
         except Exception:
-            # Fall back to direct close as a last resort — better to risk
-            # the cross-thread issue than not shut down at all.
-            self.close()
+            # Last-resort fallback: ask the app to exit directly.
+            try:
+                self._app.quit()
+            except Exception:
+                self.close()
