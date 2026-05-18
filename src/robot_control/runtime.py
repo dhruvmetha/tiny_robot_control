@@ -156,6 +156,7 @@ class RuntimeConfig:
     # recorder's directory. When recorder is None, every call site is a no-op.
     diagnostics_recorder: Optional[object] = None  # DiagnosticsRecorder, but kept loose-typed to avoid circular import
     capture_scene: bool = False                    # If True, recorder captures scene_before/scene_after
+    capture_sim_success: bool = False              # If True, on success write success_chain.json + sim replay MP4 (fail/abort → partial_chain.json only)
 
 
 class Runtime:
@@ -233,6 +234,14 @@ class Runtime:
         # All recorder methods are no-ops when recorder is None or disabled.
         self._diag = config.diagnostics_recorder
         self._capture_scene = config.capture_scene
+        self._capture_sim_success = config.capture_sim_success
+        # Sim-success replay state. The chain is appended on each successful
+        # push subgoal; the start XML is captured once when the runtime starts.
+        # Push-meta is stashed at dispatch so _record_subgoal_done can append
+        # without needing the original subgoal object.
+        self._sim_success_chain: List[Dict[str, Any]] = []
+        self._sim_replay_start_xml: Optional[str] = None
+        self._pending_push_meta: Optional[Dict[str, Any]] = None
         self._started_at_epoch: Optional[float] = None
         self._ended_at_epoch: Optional[float] = None
         self._offline_total_sec: float = 0.0
@@ -247,6 +256,9 @@ class Runtime:
         # Begin diagnostics timeline.
         self._started_at_epoch = time.time()
         scene_before = self._capture_scene_snapshot("before")
+        # Sim-success replay needs a starting XML snapshot. Capture it once
+        # here, independent of --capture-scene / --record-video.
+        self._capture_sim_replay_start_xml()
 
         outcome = "unknown"
         outcome_reason = "no signal recorded"
@@ -284,6 +296,10 @@ class Runtime:
                 self._write_summary(outcome, outcome_reason, scene_before, scene_after)
             except Exception as _exc:
                 print(f"[Runtime] summary write raised: {_exc!r}", flush=True)
+            try:
+                self._write_sim_success_artifacts(outcome)
+            except Exception as _exc:
+                print(f"[Runtime] sim-success write raised: {_exc!r}", flush=True)
             self._shutdown()
 
     def start(self) -> None:
@@ -1161,6 +1177,110 @@ class Runtime:
         # save_scene copies/writes everything atomically and logs errors.
         return self._diag.save_scene(when, jpg_bytes, json_payload, xml_source)
 
+    # ---------------------------------------------------- sim-success capture
+
+    def _capture_sim_replay_start_xml(self) -> None:
+        # Persist a single XML snapshot of the scene as it stands at runtime
+        # start. _write_sim_success_artifacts feeds this into a headless
+        # RLEnvironment when the real run succeeds.
+        if not self._capture_sim_success:
+            return
+        if self._diag is None or not self._diag.enabled or self._planner is None:
+            return
+        if not hasattr(self._planner, "dump_scene_xml"):
+            return
+
+        obs = None
+        try:
+            if self._world is not None:
+                obs = self._world.get()
+        except Exception:
+            obs = None
+        if obs is None:
+            print("[Runtime] sim-success: no observation at start; skipping start XML",
+                  flush=True)
+            return
+
+        try:
+            from pathlib import Path as _Path
+            xml_path = _Path(self._diag.root) / "sim_replay_start.xml"
+            written = self._planner.dump_scene_xml(obs, str(xml_path))
+            self._sim_replay_start_xml = written if written else None
+            if self._sim_replay_start_xml:
+                print(f"[Runtime] sim-success: start XML → {self._sim_replay_start_xml}",
+                      flush=True)
+        except Exception as exc:
+            print(f"[Runtime] sim-success: start XML dump failed: {exc!r}", flush=True)
+
+    def _write_sim_success_artifacts(self, outcome: str) -> None:
+        # On success: write success_chain.json and (separately) trigger the
+        # sim replay → MP4. On fail/abort/crashed: write partial_chain.json
+        # only. Anything that goes wrong here is best-effort — never raises.
+        if not self._capture_sim_success:
+            return
+        if self._diag is None or not self._diag.enabled:
+            return
+
+        from pathlib import Path as _Path
+        import json as _json
+
+        diag_root = _Path(self._diag.root)
+        is_success = (outcome == "success")
+        chain_filename = "success_chain.json" if is_success else "partial_chain.json"
+        chain_path = diag_root / chain_filename
+
+        payload = {
+            "outcome": outcome,
+            "start_xml": (
+                _Path(self._sim_replay_start_xml).name
+                if self._sim_replay_start_xml else None
+            ),
+            "chain": self._sim_success_chain,
+        }
+        try:
+            chain_path.write_text(_json.dumps(payload, indent=2))
+            print(f"[Runtime] sim-success: chain ({len(self._sim_success_chain)} "
+                  f"push(es)) → {chain_path}", flush=True)
+        except Exception as exc:
+            print(f"[Runtime] sim-success: writing {chain_filename} failed: {exc!r}",
+                  flush=True)
+            return
+
+        if not is_success:
+            return
+
+        # Replay only fires on success. Skip if we never captured a start XML
+        # or never executed any pushes.
+        if self._sim_replay_start_xml is None:
+            print("[Runtime] sim-success: no start XML captured; skipping replay",
+                  flush=True)
+            return
+        if not self._sim_success_chain:
+            print("[Runtime] sim-success: empty chain; skipping replay", flush=True)
+            return
+
+        try:
+            from robot_control.diagnostics.sim_replay import render_chain_to_mp4
+            mp4_path = diag_root / "success_sim_replay.mp4"
+            # NAMOPlanner threads its YAML through NAMOPlanBridge, which
+            # writes an "effective" overlaid config — that's the one RLEnv
+            # should load so sim and real share the same wavefront tuning.
+            bridge = getattr(self._planner, "_bridge", None)
+            namo_config_path = (
+                str(getattr(bridge, "_effective_namo_config_path", "")) or None
+                if bridge is not None else None
+            )
+            workspace_cfg = self._workspace_config
+            render_chain_to_mp4(
+                start_xml=self._sim_replay_start_xml,
+                namo_config=namo_config_path,
+                chain=self._sim_success_chain,
+                output_mp4=str(mp4_path),
+                workspace=workspace_cfg,
+            )
+        except Exception as exc:
+            print(f"[Runtime] sim-success: replay → MP4 failed: {exc!r}", flush=True)
+
     def _determine_outcome(self) -> Tuple[str, str]:
         # Best-effort: read terminal state from the planner. Three signals:
         #   1. Planner reported "planning failed" (no plan possible) → failure
@@ -1433,6 +1553,19 @@ class Runtime:
     _active_subgoal_type: str = "unknown"
 
     def _record_subgoal_start(self, subgoal, obs: Observation) -> None:
+        # Stash push metadata up-front so _record_subgoal_done can append to
+        # the sim-success chain on success without needing the original
+        # subgoal object. Independent of diagnostics being enabled.
+        if isinstance(subgoal, PushSubgoal):
+            self._pending_push_meta = {
+                "object_id": subgoal.object_id,
+                "edge_idx": subgoal.edge_idx,
+                "push_steps": subgoal.push_steps,
+                "depth": subgoal.push_steps - 1,
+            }
+        else:
+            self._pending_push_meta = None
+
         # No-op when diagnostics is disabled.
         if self._diag is None:
             return
@@ -1470,6 +1603,14 @@ class Runtime:
             self._active_subgoal_id = 0
 
     def _record_subgoal_done(self, obs: Observation, failed: bool) -> None:
+        # Append successful pushes to the sim-success chain. We do this
+        # regardless of whether diagnostics is enabled — the chain only gets
+        # written out at run-end if _capture_sim_success is on, and the
+        # bookkeeping cost is negligible.
+        if not failed and self._pending_push_meta is not None:
+            self._sim_success_chain.append(dict(self._pending_push_meta))
+        self._pending_push_meta = None
+
         # No-op when diagnostics is disabled OR there's no open subgoal record.
         if self._diag is None or self._active_subgoal_id == 0:
             return

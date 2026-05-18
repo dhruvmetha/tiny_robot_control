@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -61,6 +62,12 @@ class CameraRecorder:
         self._is_recording = False
         self._subscribed = False
 
+        # Frames arrive on the pubsub publisher thread; start/stop are driven
+        # from the camera_service REP thread. cv2.VideoWriter is not
+        # thread-safe — write() concurrent with release() segfaults the
+        # underlying encoder. This lock serialises every touch of _writer.
+        self._lock = threading.Lock()
+
     @property
     def is_recording(self) -> bool:
         """Check if currently recording."""
@@ -86,40 +93,45 @@ class CameraRecorder:
     def unsubscribe(self) -> None:
         """Unsubscribe from camera frames."""
         if self._subscribed:
-            # Stop recording if active
-            if self._is_recording:
-                self.stop()
+            # Unsubscribe FIRST so no further _on_frame deliveries are in
+            # flight, then stop the (now-quiet) writer. The previous order
+            # (stop, then unsubscribe) left a small window where a frame
+            # delivery could re-enter _on_frame after release().
             pub.unsubscribe(self._on_frame, Topics.CAMERA_BGR_RAW)
             self._subscribed = False
+            if self._is_recording:
+                self.stop()
             print("[CameraRecorder] Unsubscribed")
 
     def _on_frame(self, frame: np.ndarray, timestamp: float) -> None:
         """Handle incoming camera frame."""
-        if not self._is_recording:
-            return
-
         if frame is None:
             return
 
-        # Initialize writer on first frame
-        if self._writer is None:
-            h, w = frame.shape[:2]
-            fourcc = cv2.VideoWriter_fourcc(*self._codec)
-            self._writer = cv2.VideoWriter(
-                str(self._output_path),
-                fourcc,
-                self._fps,
-                (w, h),
-            )
-
-            if not self._writer.isOpened():
-                print(f"[CameraRecorder] Failed to open video writer: {self._output_path}")
-                self._is_recording = False
+        # Hold the lock for the whole write — stop() must not be able to
+        # call release() between our None-check and write(frame).
+        with self._lock:
+            if not self._is_recording:
                 return
 
-        # Write frame
-        self._writer.write(frame)
-        self._frame_count += 1
+            # Initialize writer on first frame
+            if self._writer is None:
+                h, w = frame.shape[:2]
+                fourcc = cv2.VideoWriter_fourcc(*self._codec)
+                self._writer = cv2.VideoWriter(
+                    str(self._output_path),
+                    fourcc,
+                    self._fps,
+                    (w, h),
+                )
+
+                if not self._writer.isOpened():
+                    print(f"[CameraRecorder] Failed to open video writer: {self._output_path}")
+                    self._is_recording = False
+                    return
+
+            self._writer.write(frame)
+            self._frame_count += 1
 
     def start(self, filename: Optional[str] = None) -> str:
         """
@@ -132,29 +144,29 @@ class CameraRecorder:
         Returns:
             Path to the output file
         """
-        if self._is_recording:
-            print("[CameraRecorder] Already recording, stopping previous...")
-            self.stop()
-
-        # Create output directory
+        # mkdir doesn't need the lock and may do IO; do it outside.
         self._output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Generate filename
         if filename is None:
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            filename = timestamp
-
-        # Use .avi for XVID, .mp4 for H.264/other codecs
+            filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         ext = ".avi" if self._codec.upper() == "XVID" else ".mp4"
-        self._output_path = self._output_dir / f"{filename}{ext}"
-        self._frame_count = 0
-        self._is_recording = True
+        new_path = self._output_dir / f"{filename}{ext}"
 
-        # Writer will be initialized on first frame (need frame size)
-        self._writer = None
+        with self._lock:
+            if self._is_recording:
+                # Inline the stop logic under the same lock so callers don't
+                # observe a "not recording → recording" gap during restart.
+                print("[CameraRecorder] Already recording, stopping previous...")
+                self._stop_locked()
 
-        print(f"[CameraRecorder] Recording started: {self._output_path}")
-        return str(self._output_path)
+            self._output_path = new_path
+            self._frame_count = 0
+            self._is_recording = True
+            # Writer initialised lazily on first frame (need frame size).
+            self._writer = None
+
+        print(f"[CameraRecorder] Recording started: {new_path}")
+        return str(new_path)
 
     def stop(self) -> Optional[str]:
         """
@@ -163,12 +175,18 @@ class CameraRecorder:
         Returns:
             Path to the saved video file, or None if not recording
         """
+        with self._lock:
+            return self._stop_locked()
+
+    def _stop_locked(self) -> Optional[str]:
+        # Must be called with self._lock held. Releases the writer and
+        # resets recording state. The lock is what makes this safe against
+        # _on_frame mid-write — release() and write() cannot interleave.
         if not self._is_recording:
             return None
 
         output_path = self._output_path
 
-        # Release writer
         if self._writer is not None:
             self._writer.release()
             self._writer = None
@@ -180,7 +198,6 @@ class CameraRecorder:
             print(f"[CameraRecorder] Recording saved: {output_path}")
             print(f"  Frames: {self._frame_count}, Duration: {duration:.1f}s")
         else:
-            # Remove empty file
             if output_path and output_path.exists():
                 output_path.unlink()
             print("[CameraRecorder] Recording stopped (no frames captured)")

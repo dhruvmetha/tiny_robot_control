@@ -48,6 +48,11 @@ from robot_control.planner import NAMOPlanner
 from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
 
 
+# Sentinel for --record-video when passed with no value. Resolved to
+# <diag-root>/recordings/ after diagnostics bootstrap.
+_RECORD_VIDEO_DEFAULT_SENTINEL = "__USE_DIAG_PATH__"
+
+
 def find_namo_config() -> str:
     """Find NAMO config file relative to this script."""
     script_dir = Path(__file__).parent
@@ -556,6 +561,7 @@ def run_interactive_mode(args):
     # Thread diagnostics through to the runtime (no-op if not enabled).
     runtime_config.diagnostics_recorder = getattr(args, "_diagnostics_recorder", None)
     runtime_config.capture_scene = bool(getattr(args, "capture_scene", False))
+    runtime_config.capture_sim_success = bool(getattr(args, "capture_sim_success", False))
 
     print("\n  Starting robot execution...")
     print("  Press ESCAPE to abort")
@@ -740,6 +746,7 @@ def run_automatic_mode(args):
     # Thread diagnostics through to the runtime (no-op if not enabled).
     runtime_config.diagnostics_recorder = getattr(args, "_diagnostics_recorder", None)
     runtime_config.capture_scene = bool(getattr(args, "capture_scene", False))
+    runtime_config.capture_sim_success = bool(getattr(args, "capture_sim_success", False))
 
     # Run
     print("\nStarting NAMO execution...")
@@ -787,11 +794,15 @@ def main():
     parser.add_argument(
         "--record-video",
         type=str,
+        nargs="?",
         default=None,
+        const=_RECORD_VIDEO_DEFAULT_SENTINEL,
         metavar="DIR",
-        help="Ask the --camera-service to record video to DIR for the duration "
-             "of this run_namo session. Requires --camera-service; the service "
-             "writes the MP4 itself (it has the frames). Also writes per-subgoal "
+        help="Ask the --camera-service to record video for the duration of "
+             "this run_namo session. Pass with no value to default to "
+             "<diag-path>/<run-name>/recordings/ (requires --diag-path); "
+             "pass with an explicit DIR to override. Requires --camera-service; "
+             "the service writes the MP4 itself. Also writes per-subgoal "
              "meta JSON + XML snapshots for sim replay.",
     )
     # Goal specification
@@ -1033,6 +1044,14 @@ def main():
         help="Save scene snapshots (jpg + json + xml) at run start and end.",
     )
     parser.add_argument(
+        "--capture-sim-success",
+        action="store_true",
+        help="On a successful real run, record the executed push chain in "
+             "sim. Writes success_chain.json + success_sim_replay.mp4 under "
+             "the diag root. On fail/abort, writes partial_chain.json only "
+             "(no sim replay). Requires --diag-path.",
+    )
+    parser.add_argument(
         "--allow-overwrite",
         action="store_true",
         help="Allow --diag-path/--run-name to overwrite an existing directory.",
@@ -1068,6 +1087,21 @@ def main():
     from _diag_setup import bootstrap_diagnostics  # type: ignore
     recorder, log_file = bootstrap_diagnostics(args)
     args._diagnostics_recorder = recorder  # stashed for downstream helpers
+
+    # Resolve --record-video and --capture-sim-success against the diag root.
+    # Both flags can default to subpaths under <diag-path>/<run-name>/ when
+    # the user passes them bare; without --diag-path that's an error.
+    diag_root = recorder.root if (recorder is not None and recorder.enabled) else None
+    if getattr(args, "record_video", None) == _RECORD_VIDEO_DEFAULT_SENTINEL:
+        if diag_root is None:
+            print("Error: --record-video with no DIR requires --diag-path "
+                  "to be set (or pass an explicit DIR).")
+            return 1
+        args.record_video = str(diag_root / "recordings")
+    if getattr(args, "capture_sim_success", False) and diag_root is None:
+        print("Error: --capture-sim-success requires --diag-path to be set "
+              "(sim replay artifacts are written under the diag root).")
+        return 1
 
     try:
         try:
