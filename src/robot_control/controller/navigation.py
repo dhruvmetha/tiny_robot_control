@@ -15,7 +15,7 @@ from robot_control.controller.base import Controller
 from robot_control.controller.config import NavigationConfig
 from robot_control.controller.follow_path import FollowPathController
 from robot_control.core.types import Action, Observation, Subgoal, WorkspaceConfig
-from robot_control.utils.robot_geometry import robot_diagonal_cm
+from robot_control.utils.robot_geometry import effective_robot_size_cm
 
 # Protocol for path planners - both RVGPlanner and WavefrontPathPlanner implement this
 from typing import Protocol, runtime_checkable
@@ -160,7 +160,7 @@ class NavigationController(Controller):
         self._max_speed = max_speed if max_speed is not None else self._nav_config.max_speed
 
         # Path follower (delegated)
-        car_size = robot_diagonal_cm(config.car_width, config.car_height)
+        car_size = effective_robot_size_cm(config.car_width, config.car_height)
         self._path_follower = FollowPathController(
             config,
             max_speed=self._max_speed,
@@ -274,7 +274,7 @@ class NavigationController(Controller):
         raw_path = self._planner.plan(current_pos, (goal_x, goal_y), obstacles)
 
         # Filter duplicate points (RVG returns duplicates at start/end)
-        car_size = robot_diagonal_cm(self._config.car_width, self._config.car_height)
+        car_size = effective_robot_size_cm(self._config.car_width, self._config.car_height)
         path = _filter_duplicate_points(raw_path, min_dist=0.1 * car_size)
 
         if not path or len(path) < 2:
@@ -293,7 +293,7 @@ class NavigationController(Controller):
         # Find first waypoint that's different from current position
         # RVG returns duplicate points at start/end for rotational waypoints
         first_target = None
-        car_size = robot_diagonal_cm(self._config.car_width, self._config.car_height)
+        car_size = effective_robot_size_cm(self._config.car_width, self._config.car_height)
         min_dist_threshold = 0.5 * car_size  # Half of robot size
         for pt in path:
             dx = pt[0] - current_pos[0]

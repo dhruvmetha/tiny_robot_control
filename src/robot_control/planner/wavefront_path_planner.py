@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple
 
 from robot_control.utils.wavefront_inflation_config import get_wavefront_inflation_config
 from robot_control.utils.wavefront import WavefrontPlanner, WavefrontConfig
-from robot_control.utils.robot_geometry import rotation_safe_radius_m_from_cm
+from robot_control.utils.robot_geometry import effective_robot_radius_m_from_cm
 
 Point = Tuple[float, float]
 ObstacleTuple = Tuple[float, float, float, float, float]  # (x, y, theta_deg, width, depth)
@@ -58,8 +58,13 @@ class WavefrontPathPlanner:
         self._height_m = workspace_height / 100.0
         self._resolution_m = resolution_cm / 100.0
 
-        # Rotation-safe radius from full extents (robot can rotate in place).
-        self._robot_radius_m = rotation_safe_radius_m_from_cm(robot_width, robot_height)
+        # Inflation radius in meters from runtime robot footprint.
+        # See robot_geometry.effective_robot_radius_m_from_cm for the formula.
+        # The C++ planner uses the same formula in
+        # `namo_cpp/include/wavefront/goal_tolerance_utils.hpp`
+        # (`compute_rotation_safe_robot_radius_m`) so runtime and planner
+        # wavefronts agree on which corridors are passable.
+        self._robot_radius_m = effective_robot_radius_m_from_cm(robot_width, robot_height)
 
         # Obstacle proximity cost parameters (convert to meters)
         self._obstacle_proximity_distance_m = obstacle_proximity_distance_cm / 100.0

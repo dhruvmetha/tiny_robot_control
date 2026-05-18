@@ -26,7 +26,7 @@ from robot_control.planner.namo_binding_loader import (
 )
 from robot_control.utils import NAMOXMLGenerator
 from robot_control.utils.robot_geometry import (
-    rotation_safe_radius_cm,
+    effective_robot_radius_cm,
     scaled_half_extents_m_from_full_extents_cm,
 )
 
@@ -124,7 +124,9 @@ class NAMOPlanBridge:
         self._object_mapping = ObjectMapping()
 
         # Rotation-safe circular radius from full extents.
-        robot_radius_cm = rotation_safe_radius_cm(robot_width_cm, robot_height_cm)
+        # Robot inflation radius used when generating MuJoCo XML (sphere geom
+        # for the robot body). See robot_geometry.effective_robot_radius_cm.
+        robot_radius_cm = effective_robot_radius_cm(robot_width_cm, robot_height_cm)
         self._xml_generator = NAMOXMLGenerator(
             scale_factor=scale_factor,
             robot_radius_cm=robot_radius_cm,

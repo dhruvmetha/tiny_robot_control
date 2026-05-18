@@ -16,6 +16,7 @@ import cv2
 import numpy as np
 
 from robot_control.core.types import Observation, WorkspaceConfig
+from robot_control.utils.robot_geometry import effective_robot_radius_cm
 
 
 # Tunable constants — kept small here rather than threaded through args.
@@ -93,7 +94,7 @@ def render_top_down(
 
     # 4) Robot — body + heading arrow.
     rx, ry = cm_to_px(observation.robot_x, observation.robot_y)
-    body_radius = int(max(workspace.car_width, workspace.car_height) / 2 * _PX_PER_CM)
+    body_radius = int(effective_robot_radius_cm(workspace.car_width, workspace.car_height) * _PX_PER_CM)
     cv2.circle(img, (rx, ry), body_radius, _ROBOT_BODY, thickness=-1)
     cv2.circle(img, (rx, ry), body_radius, _ROBOT_HEADING, thickness=2)
     # Heading indicator: arrow from robot center along its theta.
