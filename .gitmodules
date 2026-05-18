@@ -1,0 +1,4 @@
+[submodule "src/robot_control/controller/motion_planner/rvg"]
+	path = src/robot_control/controller/motion_planner/rvg
+	url = https://github.com/arc-l/rvg.git
+	branch = main
