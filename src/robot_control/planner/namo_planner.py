@@ -17,7 +17,6 @@ from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 from robot_control.core.types import NavigateSubgoal, Observation, PushSubgoal, Subgoal
 from robot_control.planner.base import Planner
 from robot_control.planner.namo_bridge import NAMOPlanBridge
-from robot_control.planner.wavefront_path_planner import WavefrontPathPlanner
 
 
 # Keys from the planner's algorithm_stats dict that are safe to serialize to
@@ -184,17 +183,8 @@ class NAMOPlanner(Planner):
             robot_height_cm=robot_height_cm,
         )
 
-        # Create wavefront planner for reachability checks
-        # Uses same dimensions as navigation planner for consistency
-        self._reachability_planner = WavefrontPathPlanner(
-            workspace_width=workspace_width_cm,
-            workspace_height=workspace_height_cm,
-            robot_width=robot_width_cm,
-            robot_height=robot_height_cm,
-            debug_dir="output_dump/wavefront" if verbose else None,
-        )
-        if verbose:
-            print(f"[NAMOPlanner] Reachability planner: {workspace_width_cm}x{workspace_height_cm}cm workspace")
+        # Cached summary from unified C++ reachability query
+        self._last_reachability_summary: Optional[Dict[str, Any]] = None
 
         # Subgoal queue state
         self._subgoals: List[PushSubgoal] = []
@@ -518,7 +508,7 @@ class NAMOPlanner(Planner):
     def _is_goal_reachable(self, obs: Observation) -> bool:
         """Check if robot can reach goal without pushing any objects.
 
-        Uses wavefront-based path planning to determine reachability.
+        Uses unified C++ wavefront reachability from NAMO bindings.
 
         Args:
             obs: Current observation with robot and object positions
@@ -526,30 +516,24 @@ class NAMOPlanner(Planner):
         Returns:
             True if a collision-free path to goal exists
         """
-        # Build obstacle list from ALL objects (both static and movable)
-        # Static walls block the path just like movable objects
-        obstacles = []
-        for name, obj in obs.objects.items():
-            if obj.width > 0 and obj.depth > 0:
-                obstacles.append((
-                    obj.x,
-                    obj.y,
-                    obj.theta,
-                    obj.width,
-                    obj.depth,
-                ))
-
-        # Plan path from robot to goal
-        path = self._reachability_planner.plan(
-            start=(obs.robot_x, obs.robot_y),
-            goal=self._robot_goal_cm,
-            obstacles=obstacles,
+        summary = self._bridge.analyze_reachability(
+            observation=obs,
+            robot_goal_cm=self._robot_goal_cm,
+            analysis_mode=False,
         )
+        self._last_reachability_summary = summary
+        reachable = bool(summary.get("goal_reachable", False))
 
-        reachable = len(path) > 0
         if self._verbose:
             status = "REACHABLE" if reachable else "BLOCKED"
-            print(f"[NAMOPlanner] Goal reachability: {status}")
+            obj_summary = summary.get("objects", {})
+            reachable_objects = sum(1 for s in obj_summary.values() if s.get("reachable", False))
+            print(
+                f"[NAMOPlanner] Goal reachability: {status} "
+                f"(reachable_objects={reachable_objects}/{len(obj_summary)})"
+            )
+            if summary.get("error_message"):
+                print(f"[NAMOPlanner] Reachability error: {summary['error_message']}")
 
         return reachable
 
