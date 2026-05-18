@@ -9,15 +9,26 @@ Handles:
 
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+import yaml
 
 from robot_control.camera.workspace import WORKSPACE_HEIGHT_CM, WORKSPACE_WIDTH_CM
 from robot_control.core.types import Observation, PushSubgoal
+from robot_control.planner.namo_binding_loader import (
+    ensure_namo_cpp_paths,
+    load_canonical_namo_rl,
+)
 from robot_control.utils import NAMOXMLGenerator
+from robot_control.utils.robot_geometry import (
+    rotation_safe_radius_cm,
+    scaled_half_extents_m_from_full_extents_cm,
+)
 
 
 @dataclass
@@ -97,6 +108,9 @@ class NAMOPlanBridge:
         self._debug_xml_path = debug_xml_path
         self._enable_viewer = enable_viewer
         self._pause_after_load = pause_after_load
+        self._robot_width_cm = float(robot_width_cm)
+        self._robot_height_cm = float(robot_height_cm)
+        self._generated_config_path: Optional[Path] = None
 
         # Compute absolute path for primitive_data_dir
         if primitive_data_dir is None:
@@ -109,14 +123,21 @@ class NAMOPlanBridge:
 
         self._object_mapping = ObjectMapping()
 
-        # Use max(width, height)/2 as robot radius for sphere approximation
-        robot_radius_cm = max(robot_width_cm, robot_height_cm) / 2.0
+        # Rotation-safe circular radius from full extents.
+        robot_radius_cm = rotation_safe_radius_cm(robot_width_cm, robot_height_cm)
         self._xml_generator = NAMOXMLGenerator(
             scale_factor=scale_factor,
             robot_radius_cm=robot_radius_cm,
         )
         if verbose:
-            print(f"[NAMOBridge] Robot size: {robot_width_cm}x{robot_height_cm}cm -> radius={robot_radius_cm}cm")
+            print(
+                f"[NAMOBridge] Robot size: {robot_width_cm}x{robot_height_cm}cm "
+                f"-> rotation-safe radius={robot_radius_cm:.3f}cm"
+            )
+
+        # Align namo_cpp planning.robot_size (half-extents, meters in scaled frame)
+        # to runtime robot dimensions so C++ wavefront inflation matches robot_control.
+        self._effective_namo_config_path = self._build_effective_namo_config()
 
         # Ensure namo_cpp python path is available
         self._setup_namo_path()
@@ -127,32 +148,90 @@ class NAMOPlanBridge:
         # Timing from last plan_from_xml() call
         self.last_search_time_ms: float = 0.0
 
+    def __del__(self) -> None:
+        self._cleanup_generated_config()
+
+    def _cleanup_generated_config(self) -> None:
+        if self._generated_config_path is None:
+            return
+        try:
+            self._generated_config_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        self._generated_config_path = None
+
+    def _resolve_namo_config_path(self, path_str: str) -> Path:
+        path = Path(path_str)
+        if path.exists():
+            return path.resolve()
+
+        bridge_path = Path(__file__).resolve()
+        namo_root = bridge_path.parents[4]
+        candidate = namo_root / path_str
+        if candidate.exists():
+            return candidate.resolve()
+
+        candidate2 = namo_root / "namo_cpp" / path_str
+        if candidate2.exists():
+            return candidate2.resolve()
+
+        return path
+
+    def _build_effective_namo_config(self) -> str:
+        source_path = self._resolve_namo_config_path(self._namo_config_path)
+        if not source_path.exists():
+            if self._verbose:
+                print(f"[NAMOBridge] Config not found, using raw path: {self._namo_config_path}")
+            return self._namo_config_path
+
+        try:
+            with open(source_path, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+
+            planning = cfg.setdefault("planning", {})
+            half_x_m, half_y_m = scaled_half_extents_m_from_full_extents_cm(
+                self._robot_width_cm,
+                self._robot_height_cm,
+                self._scale_factor,
+            )
+            planning["robot_size"] = [half_x_m, half_y_m]
+
+            fd, tmp_path = tempfile.mkstemp(
+                prefix="namo_config_runtime_",
+                suffix=".yaml",
+            )
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                yaml.safe_dump(cfg, f, sort_keys=False)
+            self._generated_config_path = Path(tmp_path)
+
+            if self._verbose:
+                print(
+                    f"[NAMOBridge] Runtime config override: planning.robot_size="
+                    f"[{half_x_m:.6f}, {half_y_m:.6f}] m (half-extents, scaled)"
+                )
+                print(f"[NAMOBridge] Effective NAMO config: {self._generated_config_path}")
+
+            return str(self._generated_config_path)
+        except Exception as e:
+            if self._verbose:
+                print(f"[NAMOBridge] Failed to build runtime config override: {e}")
+            return str(source_path)
+
     def _setup_namo_path(self) -> None:
         """Add namo_cpp python paths to sys.path."""
-        # Find namo_cpp relative to this file
-        # robot_control/src/robot_control/planner/namo_bridge.py
-        # -> namo/robot_control/src/robot_control/planner
-        # -> namo/namo_cpp/python
-        bridge_path = Path(__file__).resolve()
-        namo_root = bridge_path.parents[4]  # namo/
-        namo_cpp_python = namo_root / "namo_cpp" / "python"
+        ensure_namo_cpp_paths(Path(__file__).resolve())
 
-        if str(namo_cpp_python) not in sys.path:
-            sys.path.insert(0, str(namo_cpp_python))
-
-        # Also add build directory for namo_rl module
-        # Look for build_python_mjxrl_* directories
-        for build_dir in namo_root.glob("namo_cpp/build_python_mjxrl_*"):
-            if build_dir.is_dir() and str(build_dir) not in sys.path:
-                sys.path.insert(0, str(build_dir))
+    def _assert_canonical_namo_rl_import(self) -> None:
+        load_canonical_namo_rl(Path(__file__).resolve())
 
     def _get_planning_service(self):
         """Lazy import and create planning service."""
         if self._planning_service is None:
+            self._assert_canonical_namo_rl_import()
             from namo.services import NAMOPlanningService
 
             self._planning_service = NAMOPlanningService(
-                config_path=self._namo_config_path,
+                config_path=self._effective_namo_config_path,
                 primitive_data_dir=self._primitive_data_dir,
                 verbose=self._verbose,
                 enable_viewer=self._enable_viewer,
@@ -206,7 +285,6 @@ class NAMOPlanBridge:
 
         # Change to namo_cpp directory so relative paths in config work
         # (e.g., motion_primitives_file: "data/motion_primitives_15.dat")
-        import os
         bridge_path = Path(__file__).resolve()
         namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
         original_cwd = os.getcwd()
@@ -253,6 +331,55 @@ class NAMOPlanBridge:
             os.chdir(original_cwd)
 
             # Clean up temp file (unless debug path was provided)
+            if self._debug_xml_path is None:
+                try:
+                    Path(xml_path).unlink()
+                except OSError:
+                    pass
+
+    def analyze_reachability(
+        self,
+        observation: Observation,
+        robot_goal_cm: Tuple[float, float],
+        analysis_mode: bool = False,
+    ) -> Dict[str, Any]:
+        """Compute unified C++ reachability summary for the current observation."""
+        xml_content = self._generate_xml(observation, robot_goal_cm)
+        if xml_content is None:
+            return {
+                "goal_reachable": False,
+                "analysis_mode": analysis_mode,
+                "objects": {},
+                "error_message": "Failed to generate XML",
+            }
+
+        xml_path = self._write_xml(xml_content)
+        if xml_path is None:
+            return {
+                "goal_reachable": False,
+                "analysis_mode": analysis_mode,
+                "objects": {},
+                "error_message": "Failed to write XML",
+            }
+
+        bridge_path = Path(__file__).resolve()
+        namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
+        original_cwd = os.getcwd()
+        os.chdir(str(namo_cpp_dir))
+
+        try:
+            goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
+            service = self._get_planning_service()
+            summary = service.analyze_reachability_from_xml(
+                xml_path=xml_path,
+                robot_goal=(goal_sim[0], goal_sim[1], 0.0),
+                analysis_mode=analysis_mode,
+            )
+            if self._verbose and summary.get("error_message"):
+                print(f"[NAMOBridge] Reachability error: {summary['error_message']}")
+            return summary
+        finally:
+            os.chdir(original_cwd)
             if self._debug_xml_path is None:
                 try:
                     Path(xml_path).unlink()
