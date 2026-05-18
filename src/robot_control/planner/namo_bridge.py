@@ -316,6 +316,21 @@ class NAMOPlanBridge:
             # override via kwargs.
             kwargs.setdefault("region_early_exit_on_first_success", True)
 
+            # Forward the runtime's failed-push blacklist into the planner so it
+            # skips those edges from the start, instead of relying on the
+            # post-hoc filter below to throw away whole plans. Keys must use
+            # the planner's SIM object naming, not the runtime's real naming.
+            if failed_pushes:
+                external_blacklist: Dict[str, Set[int]] = {}
+                for real_id, edge_idx in failed_pushes:
+                    sim_id = self._object_mapping.get_sim_name(real_id)
+                    external_blacklist.setdefault(sim_id, set()).add(int(edge_idx))
+                existing = kwargs.get("external_edge_blacklist") or {}
+                merged: Dict[str, Set[int]] = {k: set(v) for k, v in existing.items()}
+                for k, edges in external_blacklist.items():
+                    merged.setdefault(k, set()).update(edges)
+                kwargs["external_edge_blacklist"] = merged
+
             # Run planning
             result = service.plan_from_xml(
                 xml_path=xml_path,

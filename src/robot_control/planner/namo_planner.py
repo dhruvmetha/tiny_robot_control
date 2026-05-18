@@ -90,6 +90,7 @@ class NAMOPlanner(Planner):
         goals_per_region: int = 10,
         shuffle_edges: bool = True,
         shuffle_seed: Optional[int] = None,
+        rollout_samples_per_state: Optional[int] = None,
         verbose: bool = False,
         debug_xml_path: Optional[str] = None,
         enable_viewer: bool = False,
@@ -163,6 +164,7 @@ class NAMOPlanner(Planner):
         self._goals_per_region = goals_per_region
         self._shuffle_edges = shuffle_edges
         self._shuffle_seed = shuffle_seed
+        self._rollout_samples_per_state = rollout_samples_per_state
         self._ml_goal_model_path = ml_goal_model_path
         self._ml_device = ml_device
         self._ml_samples = ml_samples
@@ -580,6 +582,8 @@ class NAMOPlanner(Planner):
                     "shuffle_edges": self._shuffle_edges,
                     "shuffle_seed": effective_seed,
                 }
+                if self._rollout_samples_per_state is not None:
+                    extra_kwargs["rollout_samples_per_state"] = self._rollout_samples_per_state
                 if self._ml_goal_model_path:
                     extra_kwargs["ml_goal_model_path"] = self._ml_goal_model_path
                     extra_kwargs["ml_device"] = self._ml_device

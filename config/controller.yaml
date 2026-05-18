@@ -3,7 +3,7 @@
 
 # Navigation controller
 navigation:
-  max_speed: 0.3
+  max_speed: 0.3                 # CAN be overridden by --nav-speed
   pre_rotation_skip_angle: 45.0  # degrees - skip pre-rotation if heading error < this
   robot_geometry_scale: 1.0      # RVG robot inflation (1.0 = half robot size, matches wavefront)
   goal_tolerance_ratio: 0.2      # goal_tolerance = ratio * car_size
@@ -21,7 +21,7 @@ navigation:
 
 # Push controller
 push:
-  max_speed: 0.6
+  max_speed: 0.5                 # CAN be overridden by --push-speed
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size

@@ -6,3 +6,4 @@ output_dump/
 *.mp4
 *.pdf
 .claude/
+recordings/

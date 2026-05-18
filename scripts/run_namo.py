@@ -524,6 +524,8 @@ def run_interactive_mode(args):
         ml_sampler_method=args.ml_sampler_method,
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
+        shuffle_edges=not args.no_shuffle_edges,
+        rollout_samples_per_state=args.rollout_samples_per_state,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
@@ -545,6 +547,9 @@ def run_interactive_mode(args):
         dry_run=args.dry_run,
         quit_on_complete=True,
         camera_service_address=getattr(args, "camera_service", None),
+        record_video_dir=getattr(args, "record_video", None),
+        nav_speed_override=args.nav_speed,
+        push_speed_override=args.push_speed,
         step_confirm=args.step_confirm,
     )
 
@@ -675,6 +680,8 @@ def run_automatic_mode(args):
         ml_sampler_method=args.ml_sampler_method,
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
+        shuffle_edges=not args.no_shuffle_edges,
+        rollout_samples_per_state=args.rollout_samples_per_state,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
@@ -708,6 +715,8 @@ def run_automatic_mode(args):
             sim_config=sim_config,
             planner=planner,
             initial_speed=args.speed,
+            nav_speed_override=args.nav_speed,
+            push_speed_override=args.push_speed,
             quit_on_complete=not args.no_quit,
             step_confirm=args.step_confirm,
             show_gui=not args.headless,
@@ -720,6 +729,9 @@ def run_automatic_mode(args):
             dry_run=args.dry_run,
             quit_on_complete=not args.no_quit,
             camera_service_address=getattr(args, "camera_service", None),
+            record_video_dir=getattr(args, "record_video", None),
+            nav_speed_override=args.nav_speed,
+            push_speed_override=args.push_speed,
             step_confirm=args.step_confirm,
             show_gui=not args.headless,
             show_camera=not args.headless,
@@ -772,6 +784,16 @@ def main():
         help="ZMQ address of camera service (e.g. tcp://localhost:5556). "
              "Skips local camera creation.",
     )
+    parser.add_argument(
+        "--record-video",
+        type=str,
+        default=None,
+        metavar="DIR",
+        help="Ask the --camera-service to record video to DIR for the duration "
+             "of this run_namo session. Requires --camera-service; the service "
+             "writes the MP4 itself (it has the frames). Also writes per-subgoal "
+             "meta JSON + XML snapshots for sim replay.",
+    )
     # Goal specification
     parser.add_argument(
         "--goal", "-g",
@@ -818,7 +840,25 @@ def main():
         "--strategy",
         type=str,
         default="primitive",
-        help="Goal strategy (default: primitive)",
+        help=(
+            "Goal strategy (default: primitive). Options: "
+            "'primitive' (exhaustive depth-first enumeration of 600 primitive "
+            "slots per state), 'ml_primitive'/'ml' (ML-scored primitives first, "
+            "primitives as fallback), 'random_rollout'/'random' (random ordering "
+            "of primitives, optional thinning via --rollout-samples-per-state), "
+            "'geometric' (geometric transport heuristic)."
+        ),
+    )
+    parser.add_argument(
+        "--rollout-samples-per-state",
+        type=int,
+        default=None,
+        help=(
+            "For --strategy random_rollout: cap on candidates per state "
+            "(default: None = use all ~600 primitives in random order). "
+            "Smaller values give thinner trials and faster planning per call, "
+            "at the cost of less per-state coverage."
+        ),
     )
     parser.add_argument(
         "--ml-goal-model-path",
@@ -900,6 +940,12 @@ def main():
         help=("Max retries per plan() call with different shuffle seeds when "
               "the planner returns NO SUBGOALS (default: 5). Lower to fail "
               "faster when planning is genuinely impossible."),
+    )
+    parser.add_argument(
+        "--no-shuffle-edges",
+        action="store_true",
+        help=("Disable edge-ordering randomization in the planner. Pushes "
+              "are enumerated in a fixed deterministic order."),
     )
     parser.add_argument(
         "--max-replan-attempts",
@@ -995,7 +1041,22 @@ def main():
         "--speed",
         type=float,
         default=0.3,
-        help="Max speed (0-1, default: 0.3)",
+        help="Max speed for keyboard/follow-path controllers (0-1, default: 0.3). "
+             "Does NOT override navigation/push speeds — use --nav-speed/--push-speed for those.",
+    )
+    parser.add_argument(
+        "--nav-speed",
+        type=float,
+        default=None,
+        help="Override max speed for navigation controller (0-1). "
+             "If unset, uses navigation.max_speed from controller.yaml.",
+    )
+    parser.add_argument(
+        "--push-speed",
+        type=float,
+        default=None,
+        help="Override max speed for push controller (0-1). "
+             "If unset, uses push.max_speed from controller.yaml.",
     )
 
     args = parser.parse_args()

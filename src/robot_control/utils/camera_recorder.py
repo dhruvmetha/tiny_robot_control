@@ -39,7 +39,7 @@ class CameraRecorder:
         self,
         output_dir: str = "recordings",
         fps: float = 30.0,
-        codec: str = "avc1",
+        codec: str = "mp4v",
     ):
         """
         Initialize camera recorder.
@@ -47,7 +47,9 @@ class CameraRecorder:
         Args:
             output_dir: Directory to save recordings
             fps: Frames per second for output video
-            codec: FourCC codec (default: avc1 for H.264 MP4)
+            codec: FourCC codec (default: mp4v — software MPEG-4 encoder,
+                works without hardware acceleration. Use 'avc1' if your
+                machine has a working H.264 encoder for smaller files.)
         """
         self._output_dir = Path(output_dir)
         self._fps = fps

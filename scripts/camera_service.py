@@ -36,6 +36,7 @@ from robot_control.core.serialization import obs_to_bytes
 from robot_control.core.topics import Topics
 from robot_control.core.types import Observation
 from robot_control.nodes import CameraConfig, CameraSensorNode
+from robot_control.utils.camera_recorder import CameraRecorder
 
 
 def load_camera_config(config_path: str, objects_path: str):
@@ -204,9 +205,22 @@ def main():
         ctx.term()
         return 1
 
+    # Video recorder — subscribes to in-process Topics.CAMERA_BGR_RAW
+    # published by CameraSensorNode. Inactive until a `record_start:<dir>`
+    # command arrives on the REP socket (frame_socket).
+    recorder = CameraRecorder(output_dir="recordings", fps=30.0)
+    recorder.subscribe()
+
     # Background thread that serves on-demand frame requests over the REP
     # socket. We poll with a short timeout instead of blocking forever, so
     # signal-driven shutdown still works promptly.
+    #
+    # Supported commands (request payload as utf-8):
+    #   "vis"                              → JPEG of observer's annotated frame
+    #   "raw"                              → JPEG of camera's raw frame
+    #   "record_start:<out_dir>[:filename]" → start recording; reply is utf-8 MP4 path
+    #                                          (filename is without extension)
+    #   "record_stop"                       → stop recording; reply is utf-8 finalized path
     import cv2 as _cv2
 
     def _frame_request_loop() -> None:
@@ -227,8 +241,36 @@ def main():
             except zmq.ZMQError:
                 break
             try:
-                kind_str = kind.decode("utf-8", errors="ignore").strip().lower() or "vis"
-                if kind_str == "raw":
+                kind_str = kind.decode("utf-8", errors="ignore").strip() or "vis"
+
+                # Recording control commands
+                if kind_str.startswith("record_start"):
+                    # Format: "record_start" | "record_start:<dir>" |
+                    #         "record_start:<dir>:<filename>"
+                    parts = kind_str.split(":", 2)
+                    out_dir = parts[1].strip() if len(parts) > 1 and parts[1].strip() else "recordings"
+                    filename = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+                    recorder._output_dir = Path(out_dir)
+                    try:
+                        path = recorder.start(filename=filename)
+                        frame_socket.send(path.encode("utf-8"))
+                    except Exception as exc:
+                        print(f"[CameraService] record_start failed: {exc!r}", flush=True)
+                        frame_socket.send(b"")
+                    continue
+
+                if kind_str == "record_stop":
+                    try:
+                        path = recorder.stop()
+                        frame_socket.send((path or "").encode("utf-8"))
+                    except Exception as exc:
+                        print(f"[CameraService] record_stop failed: {exc!r}", flush=True)
+                        frame_socket.send(b"")
+                    continue
+
+                # Frame snapshot commands (existing)
+                kind_lower = kind_str.lower()
+                if kind_lower == "raw":
                     frame = camera.get_frame()
                 else:
                     frame = observer.get_vis_frame()
@@ -281,6 +323,7 @@ def main():
                 time.sleep(0.1)
     finally:
         # Cleanup
+        recorder.unsubscribe()  # finalizes any in-progress recording
         pub.unsubscribe(on_observation, Topics.SENSOR_VISION)
         observer.stop()
         camera.stop()

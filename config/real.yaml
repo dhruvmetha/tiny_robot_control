@@ -3,7 +3,7 @@
 
 # Camera settings
 camera:
-  device: 4
+  device: 5      # RealSense color stream (/dev/video5, YUYV). Other RealSense devices: video0=depth(Z16), video2=IR(greyscale), video1/3/6=metadata.
   resolution: "720p"
   fps: 60
   # Path to camera calibration file (camera matrix K and distortion D)
@@ -19,8 +19,11 @@ robot:
   marker_id: 1
   marker_size_mm: 36.0
   # Robot dimensions in cm (for 2D footprint / planner)
-  width_cm: 6   # side-to-side
-  height_cm: 6 # front-to-back (depth)
+  # 7×7 robot footprint (0.5 cm safety buffer over physical 6×6 cm).
+  # The wavefront uses rotation-safe radius √(3.5²+3.5²) ≈ 4.95 cm.
+  # Must stay in sync with namo_cpp robot_size config = [0.21, 0.21].
+  width_cm: 7   # side-to-side
+  height_cm: 7  # front-to-back (depth)
   # Offset from marker center to wheel center [x_cm, y_cm] in marker-local coords
   # Use if the ArUco marker is not placed at the robot's center of rotation
   # Positive x = forward, positive y = left

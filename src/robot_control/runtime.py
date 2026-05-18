@@ -131,6 +131,16 @@ class RuntimeConfig:
     # Remote camera service (ZMQ address, e.g. "tcp://localhost:5556")
     camera_service_address: Optional[str] = None
 
+    # If set, ask the remote camera_service to record video to this directory
+    # for the duration of this runtime session. Requires camera_service_address.
+    record_video_dir: Optional[str] = None
+
+    # Optional overrides for navigation/push max_speed. If None, the
+    # respective controller falls back to its YAML config value
+    # (controller.yaml: navigation.max_speed / push.max_speed).
+    nav_speed_override: Optional[float] = None
+    push_speed_override: Optional[float] = None
+
     # Control options
     initial_controller: str = "keyboard"
     initial_speed: float = 0.3
@@ -193,6 +203,10 @@ class Runtime:
         self._observer: Optional[ArucoObserver] = None
         self._recorder: Optional[CameraRecorder] = None
         self._remote_observer: Optional[RemoteObserverNode] = None
+        self._remote_recorder: Optional["RemoteRecordClient"] = None
+        self._record_session_dir: Optional[str] = None
+        self._record_subgoal_index: int = 0
+        self._record_active: bool = False
         self._world: Optional[WorldState] = None
         self._coordinator: Optional[ControlCoordinator] = None
         self._window: Optional[Window] = None
@@ -532,28 +546,40 @@ class Runtime:
                 robot_geometry_scale=controller_configs.navigation.robot_geometry_scale,
             )
 
-        # Create keyboard controller
+        # Create keyboard controller (interactive control — uses --speed)
         keyboard = KeyboardController(max_speed=self._config.initial_speed)
 
-        # Create navigation controller (used by push controller for approach phase)
+        # Create navigation controller (used by push controller for approach phase).
+        # Pass nav_speed_override if user set --nav-speed; else use YAML
+        # navigation.max_speed.
         navigation = NavigationController(
             self._workspace_config,
             planner,
             nav_config=controller_configs.navigation,
-            max_speed=self._config.initial_speed,
+            max_speed=self._config.nav_speed_override,
         )
 
-        # Create follow path controller
+        # Create follow path controller (uses --speed as a starting value;
+        # gets overridden when a push hands it a planned path)
         follow_path = FollowPathController(
             self._workspace_config, max_speed=self._config.initial_speed
         )
 
-        # Create push controller with navigation controller for approach phase
+        # Create push controller with navigation controller for approach phase.
+        # Pass push_speed_override if user set --push-speed; else use YAML
+        # push.max_speed.
         push = PushController(
             self._workspace_config,
             nav_controller=navigation,
             push_config=controller_configs.push,
-            max_speed=self._config.initial_speed,
+            max_speed=self._config.push_speed_override,
+        )
+
+        # Confirm what speeds are actually in effect (useful when debugging
+        # whether --nav-speed/--push-speed or YAML defaults are winning).
+        print(
+            f"[Runtime] Speeds in effect: nav={navigation.max_speed:.2f}, "
+            f"push={push.max_speed:.2f}, keyboard/follow_path={self._config.initial_speed:.2f}"
         )
 
         return {
@@ -703,6 +729,66 @@ class Runtime:
         else:
             self._start_real()
 
+        # If a remote camera_service is available and recording is requested,
+        # initialize the RemoteRecordClient. Actual start/stop is bracketed
+        # around each subgoal dispatch in _video_subgoal_start/_done so that
+        # each push produces its own MP4 inside a per-session subdirectory.
+        # Also writes a session.json + per-subgoal JSON/XML for replay.
+        if (
+            self._config.record_video_dir
+            and self._config.camera_service_address
+        ):
+            try:
+                from robot_control.nodes.remote_record_client import RemoteRecordClient
+                from datetime import datetime as _dt
+                from pathlib import Path as _Path
+                import json as _json
+
+                self._remote_recorder = RemoteRecordClient(
+                    self._config.camera_service_address
+                )
+                # Per-session subdir under the user-provided base dir.
+                session_tag = _dt.now().strftime("%Y-%m-%d_%H-%M-%S")
+                self._record_session_dir = str(
+                    _Path(self._config.record_video_dir) / f"session_{session_tag}"
+                )
+                _Path(self._record_session_dir).mkdir(parents=True, exist_ok=True)
+                self._record_subgoal_index = 0
+
+                robot_goal = None
+                if self._planner is not None and hasattr(self._planner, "_robot_goal_cm"):
+                    rg = getattr(self._planner, "_robot_goal_cm", None)
+                    if rg is not None:
+                        robot_goal = list(rg)
+                session_meta = {
+                    "session_tag": session_tag,
+                    "started_at": _dt.now().isoformat(),
+                    "camera_service_address": self._config.camera_service_address,
+                    "robot_goal_cm": robot_goal,
+                    "mode": self._config.mode,
+                    "config_path": self._config.config_path,
+                }
+                try:
+                    (_Path(self._record_session_dir) / "session.json").write_text(
+                        _json.dumps(session_meta, indent=2)
+                    )
+                except Exception as exc:
+                    print(f"[Runtime] Could not write session.json: {exc!r}")
+
+                print(
+                    f"[Runtime] Per-subgoal video + meta will write to "
+                    f"{self._record_session_dir}"
+                )
+            except Exception as exc:
+                print(f"[Runtime] Could not init remote video recording: {exc!r}")
+                self._remote_recorder = None
+                self._record_session_dir = None
+        elif self._config.record_video_dir and not self._config.camera_service_address:
+            print(
+                "[Runtime] --record-video requested but no --camera-service set; "
+                "video recording requires the camera_service."
+            )
+
         # Attach the diagnostics recorder to the planner so plan() emissions
         # appear in plans.jsonl. We do this AFTER _start_*() so the planner
         # is fully initialised.
@@ -798,6 +884,15 @@ class Runtime:
 
     def _shutdown_real(self) -> None:
         """Shutdown real robot components."""
+        if self._remote_recorder is not None:
+            try:
+                if self._record_active:
+                    self._remote_recorder.stop()
+                    self._record_active = False
+                self._remote_recorder.close()
+            except Exception as exc:
+                print(f"[Runtime] Error stopping remote video recording: {exc!r}")
+            self._remote_recorder = None
         if self._recorder:
             self._recorder.unsubscribe()
         if not self._config.dry_run and self._env:
@@ -923,6 +1018,7 @@ class Runtime:
                 # Mirror to diagnostics recorder (subgoal lifecycle close +
                 # push-physics record). All hooks are no-ops if disabled.
                 self._record_subgoal_done(obs, failed=failed)
+                self._video_subgoal_done(obs, failed=failed)  # finalize MP4 + meta
                 self._planner.notify_subgoal_done(obs, failed=failed)
                 self._subgoal_start_time = None
 
@@ -946,6 +1042,7 @@ class Runtime:
                         return Action.stop(), self._planner.get_drawings(), "Skipped by user"
                 self._log_subgoal_dispatch(subgoal, obs)
                 self._record_subgoal_start(subgoal, obs)
+                self._video_subgoal_start(subgoal, obs)  # start MP4 + write meta
                 self._subgoal_start_time = time.time()
                 self._executor.set_subgoal(subgoal, obs)
             else:
@@ -1402,6 +1499,115 @@ class Runtime:
         # Clear active subgoal marker.
         self._active_subgoal_id = 0
         self._active_subgoal_type = "unknown"
+
+    # --- Video recording + meta capture: per-subgoal bracket ---
+
+    @staticmethod
+    def _subgoal_tag(subgoal) -> str:
+        """Filename tag describing this subgoal (used by both video and meta)."""
+        if isinstance(subgoal, PushSubgoal):
+            return f"push_{subgoal.object_id}_e{subgoal.edge_idx}_s{subgoal.push_steps}"
+        if isinstance(subgoal, NavigateSubgoal):
+            return "navigate"
+        return type(subgoal).__name__.lower()
+
+    def _video_subgoal_start(self, subgoal, obs: Observation = None) -> None:
+        """Start a new MP4 clip for this subgoal + write meta JSON + XML snapshot."""
+        if self._record_session_dir is None:
+            return
+        self._record_subgoal_index += 1
+        tag = self._subgoal_tag(subgoal)
+        base = f"subgoal_{self._record_subgoal_index:03d}_{tag}"
+
+        if self._remote_recorder is not None:
+            try:
+                path = self._remote_recorder.start(self._record_session_dir, filename=base)
+                self._record_active = path is not None
+            except Exception as exc:
+                print(f"[Runtime] _video_subgoal_start (video) failed: {exc!r}", flush=True)
+                self._record_active = False
+        else:
+            self._record_active = False
+
+        if obs is None:
+            return
+        try:
+            from pathlib import Path as _Path
+            from datetime import datetime as _dt
+            import json as _json
+
+            session_dir = _Path(self._record_session_dir)
+            xml_path = session_dir / f"{base}.xml"
+            written_xml = None
+            if self._planner is not None and hasattr(self._planner, "dump_scene_xml"):
+                try:
+                    written_xml = self._planner.dump_scene_xml(obs, str(xml_path))
+                except Exception as exc:
+                    print(f"[Runtime] dump_scene_xml failed for {base}: {exc!r}", flush=True)
+
+            meta = {
+                "subgoal_index": self._record_subgoal_index,
+                "tag": tag,
+                "timestamp": _dt.now().isoformat(),
+                "video_path": f"{base}.mp4" if self._record_active else None,
+                "xml_path": f"{base}.xml" if written_xml else None,
+                "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                "dispatched_object_poses_cm": {
+                    name: [o.x, o.y, o.theta] for name, o in obs.objects.items()
+                },
+            }
+            if isinstance(subgoal, PushSubgoal):
+                meta.update({
+                    "type": "push",
+                    "object_id": subgoal.object_id,
+                    "edge_idx": subgoal.edge_idx,
+                    "push_steps": subgoal.push_steps,
+                })
+            elif isinstance(subgoal, NavigateSubgoal):
+                meta.update({
+                    "type": "navigate",
+                    "target_x_cm": subgoal.x,
+                    "target_y_cm": subgoal.y,
+                    "target_theta_deg": subgoal.theta,
+                })
+            else:
+                meta["type"] = type(subgoal).__name__
+
+            (session_dir / f"{base}.json").write_text(_json.dumps(meta, indent=2))
+        except Exception as exc:
+            print(f"[Runtime] _video_subgoal_start (meta) failed: {exc!r}", flush=True)
+
+    def _video_subgoal_done(self, obs: Observation = None, failed: bool = False) -> None:
+        """Stop the current MP4 clip + append outcome to per-subgoal meta JSON."""
+        if self._remote_recorder is not None and self._record_active:
+            try:
+                self._remote_recorder.stop()
+            except Exception as exc:
+                print(f"[Runtime] _video_subgoal_done (video) failed: {exc!r}", flush=True)
+            finally:
+                self._record_active = False
+
+        if obs is None or self._record_session_dir is None or self._record_subgoal_index == 0:
+            return
+        try:
+            from pathlib import Path as _Path
+            import json as _json
+
+            session_dir = _Path(self._record_session_dir)
+            prefix = f"subgoal_{self._record_subgoal_index:03d}_"
+            matches = sorted(session_dir.glob(f"{prefix}*.json"))
+            if not matches:
+                return
+            meta_path = matches[-1]
+            meta = _json.loads(meta_path.read_text())
+            meta["outcome"] = "failed" if failed else "success"
+            meta["completed_robot_pose_cm"] = [obs.robot_x, obs.robot_y, obs.robot_theta]
+            meta["completed_object_poses_cm"] = {
+                name: [o.x, o.y, o.theta] for name, o in obs.objects.items()
+            }
+            meta_path.write_text(_json.dumps(meta, indent=2))
+        except Exception as exc:
+            print(f"[Runtime] _video_subgoal_done (meta) failed: {exc!r}", flush=True)
 
     def _log_subgoal_dispatch(self, subgoal, obs: Observation) -> None:
         """Print a one-line summary when a subgoal is dispatched to the executor."""
