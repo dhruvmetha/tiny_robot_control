@@ -106,6 +106,18 @@ class NAMOXMLGenerator:
     MIN_SEPARATION_BASE = 0.005
     COLLISION_EXTRA_MARGIN = 0.08
 
+    # Velocity-actuator parameters for the holonomic robot's slide joints.
+    # Match the inline values in namo_cpp/data/*.xml so captured-from-real
+    # scenes have identical actuator semantics to the canonical sim scenes.
+    # Values rationale (see namo/velocity_actuator_experiment_log.md):
+    #   kv=50         : empirical — tracks commanded velocity tightly without overshoot
+    #   ctrlrange=0.5 : caps commanded velocity at 0.5 m/s (sim units)
+    #   forcerange=20 : actuator can apply up to 20 N to track its velocity target;
+    #                    real-motor-saturation analog preventing infinite acceleration
+    ACTUATOR_KV = "50"
+    ACTUATOR_CTRLRANGE = "-0.5 0.5"
+    ACTUATOR_FORCERANGE = "-20 20"
+
     def __init__(
         self,
         scale_factor: float = 1.0,
@@ -319,14 +331,17 @@ class NAMOXMLGenerator:
                       rgba="0 1 0 0.5",
                       pos=f"{goal.x} {goal.y} 0.0")
 
-        # Actuator
+        # Actuator: MuJoCo <velocity> on each slide joint. Tracks the
+        # commanded velocity inside the solver (no phase lag). See class
+        # constants above for parameter rationale.
         actuator = ET.SubElement(root, "actuator")
-        ET.SubElement(actuator, "motor",
-                      name="actuator_x", joint="joint_x",
-                      gear="1", ctrlrange="-1 1")
-        ET.SubElement(actuator, "motor",
-                      name="actuator_y", joint="joint_y",
-                      gear="1", ctrlrange="-1 1")
+        for axis in ("x", "y"):
+            ET.SubElement(actuator, "velocity",
+                          name=f"actuator_{axis}",
+                          joint=f"joint_{axis}",
+                          kv=self.ACTUATOR_KV,
+                          ctrlrange=self.ACTUATOR_CTRLRANGE,
+                          forcerange=self.ACTUATOR_FORCERANGE)
 
         # Pretty print
         xml_str = ET.tostring(root, encoding="unicode")
