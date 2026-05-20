@@ -284,6 +284,11 @@ class NAMOPlanBridge:
         Returns:
             List of PushSubgoals to execute
         """
+        # Reset planning-time telemetry on entry so early-return failure paths
+        # don't leave a stale value from a previous successful call. The success
+        # path overwrites this at line ~351 after the service call. BUG-019.
+        self.last_search_time_ms = 0.0
+
         # Generate XML and object mapping
         xml_content = self._generate_xml(observation, robot_goal_cm)
         if xml_content is None:
@@ -525,6 +530,9 @@ class NAMOPlanBridge:
         # Write to temp file
         try:
             fd, path = tempfile.mkstemp(suffix=".xml", prefix="namo_env_")
+            # Close the descriptor immediately; we re-open `path` by name below.
+            # Leaving `fd` open here leaks one FD per call (BUG-018).
+            os.close(fd)
             with open(path, "w") as f:
                 f.write(xml_content)
             return path

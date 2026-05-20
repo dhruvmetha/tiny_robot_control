@@ -231,6 +231,95 @@ class WavefrontPlanner:
             return False
         return self._grid[gj, gi] == self.FREE
 
+    # Named constants for trapped-start recovery — keep in sync with the
+    # C++ side. See `apply_trapped_start_recovery` docstring.
+    _TRAPPED_DILATION_RADIUS_CELLS: int = 2  # → 5×5 block (matches C++ clear_radius=2)
+
+    def apply_trapped_start_recovery(self, start: Tuple[float, float]) -> None:
+        """Mutate the grid so the wavefront BFS/Dijkstra can escape a
+        blocked start position — same policy as the C++ wavefront.
+
+        Mirrors `WavefrontPlanner::recompute_wavefront` in
+        `namo_cpp/src/wavefront/wavefront_planner.cpp:303-380`. If you
+        change behavior here you MUST change it on the C++ side too;
+        otherwise NAMOPlanner._is_goal_reachable (C++ wavefront) and
+        WavefrontPathPlanner (Python wavefront) will disagree about
+        reachability — exactly the 2026-05-19 incident.
+
+        Why this exists:
+          After a push, the robot frequently ends up inside its own
+          inflated footprint. A naive "find nearest free cell" fallback
+          can land in a disconnected pocket of free space (different
+          connected component than the goal) — the path planner then
+          gives up even though the goal is genuinely reachable. The C++
+          policy avoids this by mutating the grid so the original start
+          cell becomes part of the goal's connected component (as long
+          as any free neighbor exists).
+
+        Policy:
+          1. If start cell is already FREE → no-op.
+          2. Inspect 8-neighbors:
+               - If at least one neighbor is FREE → clear_radius = 0;
+                 only the start cell itself is forced to FREE. BFS will
+                 then expand through whichever free neighbor leads to
+                 the goal's component.
+               - If all 8 neighbors are OBSTACLE → clear_radius = 2;
+                 the full 5×5 block centered on start is forced to FREE.
+                 This is the "robot fully buried" recovery path.
+          3. After mutation, rebuild the proximity-cost grid so Dijkstra
+             sees the new free cells correctly.
+
+        Args:
+            start: (x, y) start position in METERS (world coordinates).
+        """
+        if self._grid is None:
+            return
+
+        start_gi, start_gj = self._world_to_grid(start[0], start[1])
+
+        # Out of bounds → nothing to do; planner will reject as invalid.
+        if not (0 <= start_gi < self._width and 0 <= start_gj < self._height):
+            return
+
+        # Already free → no-op (matches C++: the dilation branch only
+        # runs when the start cell is the seed of recompute_wavefront,
+        # which is unconditional, but the *mutation* only matters when
+        # the cell is occupied).
+        if self._grid[start_gj, start_gi] == self.FREE:
+            return
+
+        # Are any 8-neighbors free?
+        is_trapped = True
+        for dj in (-1, 0, 1):
+            for di in (-1, 0, 1):
+                if di == 0 and dj == 0:
+                    continue
+                ni, nj = start_gi + di, start_gj + dj
+                if 0 <= ni < self._width and 0 <= nj < self._height:
+                    if self._grid[nj, ni] != self.OBSTACLE:
+                        is_trapped = False
+                        break
+            if not is_trapped:
+                break
+
+        clear_radius = self._TRAPPED_DILATION_RADIUS_CELLS if is_trapped else 0
+
+        # Force-clear the (2*radius+1)×(2*radius+1) block to FREE.
+        for dj in range(-clear_radius, clear_radius + 1):
+            for di in range(-clear_radius, clear_radius + 1):
+                ni, nj = start_gi + di, start_gj + dj
+                if 0 <= ni < self._width and 0 <= nj < self._height:
+                    self._grid[nj, ni] = self.FREE
+
+        # Always force the start cell itself to FREE (the C++ side also
+        # unconditionally enqueues the start; we encode that by ensuring
+        # the cell is traversable).
+        self._grid[start_gj, start_gi] = self.FREE
+
+        # Proximity-cost grid is stale after grid mutation. Cheap to
+        # rebuild (O(H*W) BFS) and keeps Dijkstra honest.
+        self._build_cost_grid()
+
     def find_nearest_free(
         self,
         x: float,
@@ -292,8 +381,11 @@ class WavefrontPlanner:
         """Convert world coords to grid indices."""
         x_min, _, y_min, _ = self._bounds
         res = self._config.resolution
-        gi = int((x - x_min) / res)
-        gj = int((y - y_min) / res)
+        # Use floor (not int truncation) so coords just below x_min/y_min map
+        # to negative indices, not into cell 0. int(-0.1) == 0, floor(-0.1) == -1.
+        # BUG-010.
+        gi = math.floor((x - x_min) / res)
+        gj = math.floor((y - y_min) / res)
         return gi, gj
 
     def _grid_to_world(self, gi: int, gj: int) -> Tuple[float, float]:
@@ -596,6 +688,14 @@ class WavefrontPlanner:
         """
         if self._grid is None:
             return []
+
+        # Unconditionally run trapped-start recovery so this entry point
+        # matches the C++ `recompute_wavefront` semantics (single entry,
+        # recovery baked in). If the caller already invoked recovery,
+        # this is a no-op because the start cell is FREE. See
+        # `apply_trapped_start_recovery` docstring + the cross-referenced
+        # namo_cpp source.
+        self.apply_trapped_start_recovery(start)
 
         # Convert world to grid coordinates
         start_gi, start_gj = self._world_to_grid(start[0], start[1])
