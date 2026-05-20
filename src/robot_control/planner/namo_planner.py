@@ -109,6 +109,8 @@ class NAMOPlanner(Planner):
         workspace_height_cm: float = 55.0,
         robot_width_cm: float = 8.0,
         robot_height_cm: float = 10.0,
+        # Robot body model for the planning simulator
+        robot_model: str = "sphere",
     ):
         """Initialize the NAMO planner.
 
@@ -183,6 +185,7 @@ class NAMOPlanner(Planner):
             pause_after_load=pause_after_load,
             robot_width_cm=robot_width_cm,
             robot_height_cm=robot_height_cm,
+            robot_model=robot_model,
         )
 
         # Cached summary from unified C++ reachability query

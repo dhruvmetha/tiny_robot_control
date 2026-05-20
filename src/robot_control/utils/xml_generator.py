@@ -122,6 +122,7 @@ class NAMOXMLGenerator:
         self,
         scale_factor: float = 1.0,
         robot_radius_cm: Optional[float] = None,
+        robot_model: str = "sphere",
     ):
         """Initialize generator with optional scale factor.
 
@@ -131,7 +132,24 @@ class NAMOXMLGenerator:
                           Physics parameters (mass, friction) remain unchanged.
             robot_radius_cm: Robot radius in cm. If None, uses ROBOT_RADIUS_BASE (3cm).
                             For rectangular robots, use the rotation-safe diagonal radius.
+            robot_model: Which robot body to emit. "sphere" inlines a slide-joint
+                          sphere geom (the holonomic planner robot). "car" embeds
+                          the diff-drive little_car body via <include>. Only
+                          "sphere" is functional today; "car" raises until the
+                          car-primitive follow-up phase lands.
         """
+        if robot_model not in ("sphere", "car"):
+            raise ValueError(
+                f"robot_model must be 'sphere' or 'car', got {robot_model!r}"
+            )
+        if robot_model == "car":
+            raise NotImplementedError(
+                "robot_model='car' is reserved for the car-primitive follow-up "
+                "phase. Re-run with --robot-model sphere or wait for the "
+                "follow-up commit that ships car motion primitives. See "
+                "SCALE_UNIFICATION_PLAN.md Phase 12."
+            )
+        self._robot_model = robot_model
         self.scale_factor = scale_factor
 
         # Use provided robot radius or default

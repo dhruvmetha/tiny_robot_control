@@ -87,6 +87,7 @@ class NAMOPlanBridge:
         pause_after_load: bool = False,
         robot_width_cm: float = 6.0,
         robot_height_cm: float = 6.0,
+        robot_model: str = "sphere",
     ):
         """Initialize the NAMO bridge.
 
@@ -101,6 +102,11 @@ class NAMOPlanBridge:
             pause_after_load: Pause for user input after loading XML (for inspection)
             robot_width_cm: Robot width in cm (for XML generation)
             robot_height_cm: Robot height in cm (for XML generation)
+            robot_model: Robot body to embed in the generated XML
+                ("sphere" = holonomic point robot, current behavior;
+                 "car" = diff-drive little_car body, reserved for the
+                 car-primitive follow-up phase — raises NotImplementedError
+                 today).
         """
         self._namo_config_path = namo_config_path
         self._scale_factor = scale_factor
@@ -110,6 +116,7 @@ class NAMOPlanBridge:
         self._pause_after_load = pause_after_load
         self._robot_width_cm = float(robot_width_cm)
         self._robot_height_cm = float(robot_height_cm)
+        self._robot_model = robot_model
         self._generated_config_path: Optional[Path] = None
 
         # Compute absolute path for primitive_data_dir
@@ -130,6 +137,7 @@ class NAMOPlanBridge:
         self._xml_generator = NAMOXMLGenerator(
             scale_factor=scale_factor,
             robot_radius_cm=robot_radius_cm,
+            robot_model=robot_model,
         )
         if verbose:
             print(

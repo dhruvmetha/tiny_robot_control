@@ -509,7 +509,7 @@ def run_interactive_mode(args):
         algorithm=args.algorithm,
         execution_mode=args.execution_mode,
         goal_strategy=args.strategy,
-        scale_factor=6.0,
+        scale_factor=args.scale_factor,
         primitive_data_dir=primitive_data_dir,
         replan_on_completion=not args.no_replan,
         max_chain_depth=args.max_chain_depth,
@@ -536,6 +536,7 @@ def run_interactive_mode(args):
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
         robot_width_cm=robot_width_cm,
         robot_height_cm=robot_height_cm,
+        robot_model=args.robot_model,
     )
 
     print("\n  NAMOPlanner will:")
@@ -666,7 +667,7 @@ def run_automatic_mode(args):
         algorithm=args.algorithm,
         execution_mode=args.execution_mode,
         goal_strategy=args.strategy,
-        scale_factor=6.0,
+        scale_factor=args.scale_factor,
         primitive_data_dir=primitive_data_dir,
         replan_on_completion=not args.no_replan,
         max_chain_depth=args.max_chain_depth,
@@ -693,6 +694,7 @@ def run_automatic_mode(args):
         workspace_height_cm=WORKSPACE_HEIGHT_CM,
         robot_width_cm=robot_width_cm,
         robot_height_cm=robot_height_cm,
+        robot_model=args.robot_model,
     )
 
     # Create runtime config
@@ -827,6 +829,30 @@ def main():
         type=str,
         default=None,
         help="Path to NAMO config YAML",
+    )
+    parser.add_argument(
+        "--scale-factor",
+        type=float,
+        default=6.0,
+        help=(
+            "Multiplier from real cm to MuJoCo simulation units (default: 6.0). "
+            "Real workspace ~ 50 cm => sim workspace ~ 3 m at scale 6.0. "
+            "Eventually flipped to 1.0 once 1×-scale primitives and configs "
+            "are in place; see SCALE_UNIFICATION_PLAN.md."
+        ),
+    )
+    parser.add_argument(
+        "--robot-model",
+        type=str,
+        default="sphere",
+        choices=["sphere", "car"],
+        help=(
+            "Robot body model for the planning simulator (default: sphere). "
+            "'sphere' = holonomic point robot (current behavior, fast search). "
+            "'car' = diff-drive little_car body (more sim-to-real fidelity); "
+            "reserved for the car-primitive follow-up phase — currently "
+            "errors out with NotImplementedError. Same physical size in both."
+        ),
     )
     parser.add_argument(
         "--algorithm",
