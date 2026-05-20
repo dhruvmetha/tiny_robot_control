@@ -30,7 +30,7 @@ push:
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
-  push_steps: 22                # ~0.73 s per NAMO push step at 30 Hz, matches sim's 0.75 s (was 50)
+  push_steps: 26                # ~0.90 s per NAMO push step at 30 Hz (was 25 → 0.83 s; sim is 0.75 s)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 
   # Approach phase parameters
