@@ -42,6 +42,10 @@ class PushConfig:
     # Approach phase parameters
     approach_skip_distance: float = 3.0  # cm
     approach_skip_angle: float = 30.0  # degrees
+    # Watchdog: max ticks to spend in APPROACHING before declaring the nav
+    # wedged and transitioning to FAILED. 180 ticks ≈ 6 s at 30 Hz, ~3× a
+    # nominal 2 s approach on hardware. BUG-025.
+    max_approach_steps: int = 180
 
     # Edge point generation (matches namo_cpp)
     # 1 = legacy (4 edges), 3 = standard (12 edges), 15 = high-res (60 edges)
@@ -115,6 +119,7 @@ class ControllerConfigs:
                 dynamic_direction=push_data.get("dynamic_direction", True),
                 approach_skip_distance=push_data.get("approach_skip_distance", 3.0),
                 approach_skip_angle=push_data.get("approach_skip_angle", 30.0),
+                max_approach_steps=push_data.get("max_approach_steps", 180),
                 points_per_face=push_data.get("points_per_face", 1),
                 advance_speed=push_data.get("advance_speed", 0.15),
                 advance_steps=push_data.get("advance_steps", 30),

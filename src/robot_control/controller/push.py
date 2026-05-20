@@ -187,6 +187,7 @@ class PushController(Controller):
         self._step_count = 0
         self._advance_step_count = 0
         self._retreat_step_count = 0
+        self._approach_step_count = 0  # BUG-025 watchdog
         self._current_subgoal: Optional[PushSubgoal] = None
 
         # Approach phase state
@@ -364,6 +365,7 @@ class PushController(Controller):
             return Action.stop()
 
         self._state = PushState.APPROACHING
+        self._approach_step_count = 0
         return self._nav_controller.step(obs, None)
 
     def _handle_approaching(
@@ -382,6 +384,20 @@ class PushController(Controller):
             self._state = PushState.ADVANCING
             self._advance_step_count = 0
             return self._handle_advancing(obs, obj, subgoal)
+
+        # Watchdog: nav neither finished nor explicitly failed within the
+        # budget — assume wedged and bail out so the planner can blacklist
+        # this (object, edge) and replan with a different edge. BUG-025.
+        self._approach_step_count += 1
+        if self._approach_step_count >= self._push_config.max_approach_steps:
+            print(
+                f"[PUSH] APPROACHING watchdog tripped after "
+                f"{self._approach_step_count} ticks "
+                f"(limit {self._push_config.max_approach_steps}); "
+                f"transitioning to FAILED"
+            )
+            self._state = PushState.FAILED
+            return Action.stop()
 
         # Continue navigation
         return self._nav_controller.step(obs, None)
@@ -1061,6 +1077,7 @@ class PushController(Controller):
         self._step_count = 0
         self._advance_step_count = 0
         self._retreat_step_count = 0
+        self._approach_step_count = 0
         self._current_subgoal = None
         self._approach_position = None
         self._approach_orientation = None
@@ -1102,7 +1119,10 @@ class PushController(Controller):
                 return f"RETREATING (step {self._retreat_step_count})"
             return f"RETREATING ({self._retreat_step_count}/{self._push_config.retreat_steps})"
         if self._state == PushState.APPROACHING:
-            return "APPROACHING"
+            return (
+                f"APPROACHING ({self._approach_step_count}/"
+                f"{self._push_config.max_approach_steps})"
+            )
         if self._state == PushState.FAILED:
             return "PUSH FAILED"
         return self._state.value
