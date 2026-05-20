@@ -53,24 +53,34 @@ from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
 _RECORD_VIDEO_DEFAULT_SENTINEL = "__USE_DIAG_PATH__"
 
 
-def find_namo_config() -> str:
-    """Find NAMO config file relative to this script."""
+def find_namo_config(scale_factor: float = 6.0) -> str:
+    """Find NAMO config file relative to this script.
+
+    Picks the 1×-scale variant when scale_factor == 1.0, otherwise the
+    legacy 6×-scale config. Both are sphere-robot configs; --robot-model
+    car routes to a different path entirely (handled by caller).
+    """
+    if abs(scale_factor - 1.0) < 1e-9:
+        config_name = "namo_config_complete_skill15_1x.yaml"
+    else:
+        config_name = "namo_config_complete_skill15.yaml"
+
     script_dir = Path(__file__).parent
     robot_control_dir = script_dir.parent
 
     # Try relative to robot_control
-    namo_config = robot_control_dir.parent / "namo_cpp" / "config" / "namo_config_complete_skill15.yaml"
+    namo_config = robot_control_dir.parent / "namo_cpp" / "config" / config_name
     if namo_config.exists():
         return str(namo_config)
 
     # Try from workspace root
     workspace_root = robot_control_dir.parent
-    namo_config = workspace_root / "namo_cpp" / "config" / "namo_config_complete_skill15.yaml"
+    namo_config = workspace_root / "namo_cpp" / "config" / config_name
     if namo_config.exists():
         return str(namo_config)
 
     raise FileNotFoundError(
-        "Could not find namo_config_complete_skill15.yaml. "
+        f"Could not find {config_name}. "
         "Please specify --namo-config path."
     )
 
@@ -480,8 +490,8 @@ def run_interactive_mode(args):
     print("STEP 3: Execute with NAMOPlanner")
     print("=" * 60)
 
-    # Find NAMO config
-    namo_config_path = args.namo_config if args.namo_config else find_namo_config()
+    # Find NAMO config (1× or 6× variant, based on --scale-factor)
+    namo_config_path = args.namo_config if args.namo_config else find_namo_config(args.scale_factor)
     primitive_data_dir = find_primitive_data_dir()
 
     # Get workspace and robot dimensions for reachability checking
@@ -615,7 +625,7 @@ def run_automatic_mode(args):
         namo_config_path = args.namo_config
     else:
         try:
-            namo_config_path = find_namo_config()
+            namo_config_path = find_namo_config(args.scale_factor)
         except FileNotFoundError as e:
             print(f"Error: {e}")
             return 1
