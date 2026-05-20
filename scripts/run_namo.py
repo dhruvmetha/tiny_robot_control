@@ -843,12 +843,13 @@ def main():
     parser.add_argument(
         "--scale-factor",
         type=float,
-        default=6.0,
+        default=1.0,
         help=(
-            "Multiplier from real cm to MuJoCo simulation units (default: 6.0). "
-            "Real workspace ~ 50 cm => sim workspace ~ 3 m at scale 6.0. "
-            "Eventually flipped to 1.0 once 1×-scale primitives and configs "
-            "are in place; see SCALE_UNIFICATION_PLAN.md."
+            "Multiplier from real cm to MuJoCo simulation units (default: 1.0). "
+            "1.0 keeps the planner in real-world meters/cm (production path). "
+            "Pass 6.0 to use the legacy 6×-scaled config + primitives for "
+            "regression or fallback. The scale picks which namo config and "
+            "primitive .dat set get loaded; see SCALE_UNIFICATION_PLAN.md."
         ),
     )
     parser.add_argument(

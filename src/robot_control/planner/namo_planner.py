@@ -79,7 +79,7 @@ class NAMOPlanner(Planner):
         algorithm: str = "full_namo",
         execution_mode: Literal["open_loop", "mpc"] = "mpc",
         goal_strategy: str = "primitive",
-        scale_factor: float = 6.0,
+        scale_factor: float = 1.0,
         primitive_data_dir: str = "data",
         replan_on_completion: bool = True,
         max_chain_depth: int = 2,

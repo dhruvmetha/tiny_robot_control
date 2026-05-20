@@ -79,7 +79,7 @@ class NAMOPlanBridge:
     def __init__(
         self,
         namo_config_path: str,
-        scale_factor: float = 6.0,
+        scale_factor: float = 1.0,
         primitive_data_dir: Optional[str] = None,
         verbose: bool = False,
         debug_xml_path: Optional[str] = None,
@@ -93,7 +93,8 @@ class NAMOPlanBridge:
 
         Args:
             namo_config_path: Path to NAMO config YAML
-            scale_factor: Scale factor for simulation (6.0 = 2.5cm -> 15cm robot)
+            scale_factor: Scale factor for simulation (1.0 = real meters/cm,
+                production path; 6.0 = legacy 6×-scaled mode)
             primitive_data_dir: Directory containing motion primitive data.
                                If None, uses namo_cpp/data/ (auto-detected).
             verbose: Enable verbose logging
