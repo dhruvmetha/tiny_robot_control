@@ -123,48 +123,55 @@ class WavefrontPathPlanner:
         start_m = (start[0] / 100.0, start[1] / 100.0)
         goal_m = (goal[0] / 100.0, goal[1] / 100.0)
 
-        # If start is blocked (e.g., robot close to object after pushing),
-        # find nearest free cell and use that as actual start
-        actual_start_m = start_m
-        if not planner.is_free(start_m[0], start_m[1]):
-            nearest_free = planner.find_nearest_free(start_m[0], start_m[1])
-            if nearest_free is not None:
-                print(f"[WavefrontPathPlanner] Start blocked, using nearest free: "
-                      f"({start_m[0]*100:.1f}, {start_m[1]*100:.1f}) -> "
-                      f"({nearest_free[0]*100:.1f}, {nearest_free[1]*100:.1f}) cm")
-                actual_start_m = nearest_free
-            else:
-                print(f"[WavefrontPathPlanner] Start blocked and no free cell found nearby")
+        # Trapped-start recovery — matches the C++ wavefront policy so
+        # NAMOPlanner._is_goal_reachable (C++) and this planner (Python)
+        # agree on whether a path exists. See
+        # WavefrontPlanner.apply_trapped_start_recovery for the spec and
+        # cross-reference to namo_cpp.
+        was_blocked = not planner.is_free(start_m[0], start_m[1])
+        if was_blocked:
+            planner.apply_trapped_start_recovery(start_m)
+            now_free = planner.is_free(start_m[0], start_m[1])
+            print(
+                f"[WavefrontPathPlanner] Start blocked at "
+                f"({start_m[0]*100:.1f}, {start_m[1]*100:.1f}) cm — "
+                f"applied trapped-start recovery (now {'FREE' if now_free else 'BLOCKED'})"
+            )
 
-        # Plan path
-        path_m = planner.plan(actual_start_m, goal_m)
+        # Plan path from the original start. Recovery mutated the grid
+        # so the start cell is now valid by construction.
+        path_m = planner.plan(start_m, goal_m)
 
         # Store for external access
         self._last_planner = planner
         self._last_path_m = path_m
         self._plan_count += 1
 
-        # Save debug image if debug_dir is set (use actual_start_m for visualization)
         if self._debug_dir:
-            self._save_debug_image(planner, actual_start_m, goal_m, path_m)
+            self._save_debug_image(planner, start_m, goal_m, path_m)
 
         if not path_m:
-            # Debug: explain why planning failed
             start_free = planner.is_free(start_m[0], start_m[1])
-            actual_start_free = planner.is_free(actual_start_m[0], actual_start_m[1])
             goal_free = planner.is_free(goal_m[0], goal_m[1])
             print(f"[WavefrontPathPlanner] Path planning FAILED")
-            print(f"  Start: ({start[0]:.1f}, {start[1]:.1f}) cm -> {'FREE' if start_free else 'BLOCKED'}")
-            if actual_start_m != start_m:
-                print(f"  Actual start: ({actual_start_m[0]*100:.1f}, {actual_start_m[1]*100:.1f}) cm -> {'FREE' if actual_start_free else 'BLOCKED'}")
+            print(
+                f"  Start: ({start[0]:.1f}, {start[1]:.1f}) cm -> "
+                f"{'FREE' if start_free else 'BLOCKED (recovery insufficient)'}"
+            )
             print(f"  Goal:  ({goal[0]:.1f}, {goal[1]:.1f}) cm -> {'FREE' if goal_free else 'BLOCKED'}")
             print(f"  Obstacles: {len(obstacles)}")
-            if not actual_start_free:
-                print(f"  [!] No free start position found - cannot start navigation")
+            if not start_free:
+                print(
+                    f"  [!] Start cell could not be recovered — robot may be "
+                    f"completely buried or off-grid"
+                )
             elif not goal_free:
                 print(f"  [!] Goal position is BLOCKED - target unreachable")
             else:
-                print(f"  [!] Both positions free but no path exists - obstacles block all routes")
+                print(
+                    f"  [!] Start and goal are in disconnected components — "
+                    f"obstacles partition the workspace"
+                )
             return []
 
         # Convert path back to cm
