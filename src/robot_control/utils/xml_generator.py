@@ -90,7 +90,7 @@ class NAMOXMLGenerator:
     # Object parameters (real robot scale - will be multiplied by scale_factor)
     OBJECT_HEIGHT_BASE = 0.025  # 2.5cm half-height (5cm total)
     OBJECT_MASS = 0.1
-    OBJECT_FRICTION = "0.5 0.1 0.1"
+    OBJECT_FRICTION = "0 0.1 0.1"
     OBJECT_COLOR = "1 1 0 1"  # yellow
 
     # Wall parameters (real robot scale - will be multiplied by scale_factor)
@@ -543,25 +543,35 @@ class NAMOXMLGenerator:
         if planner.is_free(robot.x, robot.y):
             return robot
 
-        # Robot is too close to objects - find nearest free cell as BFS start
-        nearest = planner.find_nearest_free(robot.x, robot.y)
-        if nearest is None:
-            print(f"\n[WARNING] Robot at ({robot.x*100:.1f}, {robot.y*100:.1f}) cm - no free space found!")
+        # Robot is in an inflated-obstacle cell. The previous behavior was
+        # find_nearest_free → get_random_reachable_cell, which is Euclidean-
+        # nearest and can land in a free cell in a *different* connected
+        # component (i.e. on the other side of an obstacle). That produced a
+        # planner that said "goal REACHABLE" because the virtual robot was
+        # in the goal's region, but the real robot at its actual position
+        # could not navigate to the goal because the regions were disconnected.
+        # See run log 2026-05-20 002529 for the failure mode.
+        #
+        # Replace with apply_trapped_start_recovery: same approach the C++
+        # wavefront uses. It clears cells around the robot's real position
+        # so the BFS can escape via free neighbors. Robot stays where it is;
+        # no cross-component teleport.
+        planner.apply_trapped_start_recovery((robot.x, robot.y))
+        if planner.is_free(robot.x, robot.y):
+            print(
+                f"\n[Trapped-start recovery] Robot at "
+                f"({robot.x*100:.1f}, {robot.y*100:.1f}) cm was in an inflated-"
+                f"obstacle cell; cleared local cells so the planner can BFS "
+                f"from here. Position unchanged.\n"
+            )
             return robot
 
-        # Place robot randomly in region reachable from nearest free position
-        result = planner.get_random_reachable_cell(nearest)
-        if result is not None:
-            new_x, new_y = result
-            dist = math.sqrt((new_x - robot.x)**2 + (new_y - robot.y)**2)
-            print(f"\n[RANDOM PLACEMENT]")
-            print(f"  Robot too close to obstacles - placing randomly in reachable region")
-            print(f"  Original position: ({robot.x*100:.1f}, {robot.y*100:.1f}) cm")
-            print(f"  New position:      ({new_x*100:.1f}, {new_y*100:.1f}) cm")
-            print(f"  Moved by:          {dist*100:.1f} cm\n")
-            return RobotSpec(x=new_x, y=new_y)
-
-        print(f"\n[WARNING] Could not find reachable region from robot position!")
+        print(
+            f"\n[WARNING] Robot at ({robot.x*100:.1f}, {robot.y*100:.1f}) cm — "
+            f"deeply trapped, even local recovery didn't help. Planner may "
+            f"report goal as unreachable from here, which will force another "
+            f"push to clear the way.\n"
+        )
         return robot
 
     def save(self, xml_str: str, filepath: str) -> None:
