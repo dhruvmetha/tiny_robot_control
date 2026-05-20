@@ -226,11 +226,31 @@ class NAMOPlanner(Planner):
         self._diag = None  # type: Optional[Any]
         self._latest_xml_path: Optional[str] = None  # set by dump_scene_xml()
 
+        # Per-plan sim-success capture. When set by the Runtime (only when
+        # --capture-sim-success is enabled), every plan() call that returns
+        # at least one PushSubgoal invokes this callback with the bridge's
+        # plan-time XML content and the push chain — the callback is then
+        # responsible for writing artifacts and rendering MP4s. None means
+        # no-op; the planner doesn't care what the callback does.
+        self._sim_capture_callback = None  # type: Optional[Any]
+
     # -------------------------------------------------------------- diagnostics
 
     def set_diagnostics_recorder(self, recorder) -> None:
         """Attach a DiagnosticsRecorder so plan() calls emit record_plan."""
         self._diag = recorder
+
+    def set_sim_capture_callback(self, callback) -> None:
+        """Attach a callback invoked once per successful (non-empty) plan.
+
+        Callback signature:
+            callback(xml_content: str, push_chain: list[dict], attempt_index: int) -> None
+
+        Each ``push_chain`` entry has keys: object_id, edge_idx, push_steps, depth.
+        Exceptions raised by the callback are caught and logged so a misbehaving
+        sim-capture sink never breaks planning.
+        """
+        self._sim_capture_callback = callback
 
     def dump_scene_xml(self, obs: Observation, output_path) -> Optional[str]:
         """Generate and write the MuJoCo XML representation of the current
@@ -665,6 +685,49 @@ class NAMOPlanner(Planner):
                     except Exception as _e:
                         # Diagnostics must never break the planner.
                         print(f"[DIAG] record_plan failed: {_e!r}", flush=True)
+
+                # Per-plan sim-success capture. Fires on every plan() call
+                # that returned at least one push (planner's sim search
+                # succeeded), independent of whether the real robot will go
+                # on to execute it successfully. Each plan therefore lands as
+                # its own (xml, chain.json, replay.mp4) triple — no
+                # dependence on the run-end finally block, which the
+                # PyQt-viewer path notoriously fails to reach.
+                if self._sim_capture_callback is not None and subgoals:
+                    push_chain: List[Dict[str, Any]] = []
+                    # PushSubgoal.object_id holds the *real-robot* object name
+                    # (obj_4 etc., per NAMOPlanBridge._convert_to_subgoals).
+                    # The replay XML uses the *sim* names (obstacle_2_movable),
+                    # so without translation env.step() returns "Action not
+                    # applicable" and the post-push frame is identical to the
+                    # pre-push frame. Look up the sim name from the bridge's
+                    # mapping table and store both in the chain JSON so the
+                    # file is self-describing.
+                    obj_map = getattr(self._bridge, "_object_mapping", None)
+                    for sg in subgoals:
+                        if isinstance(sg, PushSubgoal):
+                            sim_object_id = (
+                                obj_map.get_sim_name(sg.object_id)
+                                if obj_map is not None else sg.object_id
+                            )
+                            push_chain.append({
+                                "object_id": sg.object_id,
+                                "sim_object_id": sim_object_id,
+                                "edge_idx": sg.edge_idx,
+                                "push_steps": sg.push_steps,
+                                "depth": sg.push_steps - 1,
+                            })
+                    if push_chain:
+                        try:
+                            xml_content = getattr(self._bridge, "last_xml_content", None)
+                            if xml_content is not None:
+                                self._sim_capture_callback(
+                                    xml_content=xml_content,
+                                    push_chain=push_chain,
+                                    attempt_index=attempt + 1,
+                                )
+                        except Exception as _e:
+                            print(f"[DIAG] sim-capture callback failed: {_e!r}", flush=True)
 
                 if subgoals:
                     if self._execution_mode == "mpc":
