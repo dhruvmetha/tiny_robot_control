@@ -242,6 +242,11 @@ class Runtime:
         self._sim_success_chain: List[Dict[str, Any]] = []
         self._sim_replay_start_xml: Optional[str] = None
         self._pending_push_meta: Optional[Dict[str, Any]] = None
+        # Per-plan sim-success capture counter. Incremented every time the
+        # planner-side callback fires (i.e. every plan() with at least one
+        # PushSubgoal). Drives the sequential plan_NNN_*.{xml,json,mp4} naming
+        # under <diag-root>/sim_replays/.
+        self._sim_plan_capture_count: int = 0
         self._started_at_epoch: Optional[float] = None
         self._ended_at_epoch: Optional[float] = None
         self._offline_total_sec: float = 0.0
@@ -815,6 +820,24 @@ class Runtime:
                 # Older planner type without diagnostics support — skip silently.
                 pass
 
+        # Per-plan sim-success capture. With --capture-sim-success on, every
+        # plan() that returns at least one push triggers an inline
+        # (xml, chain.json, replay.mp4) dump under <diag-root>/sim_replays/.
+        # This is independent of whether the real robot succeeds — useful
+        # when the run-end finally block doesn't fire (e.g., the PyQt-viewer
+        # event loop stays parked on close), since artifacts land per-plan
+        # rather than only at run end.
+        if (
+            self._capture_sim_success
+            and self._diag is not None
+            and self._diag.enabled
+            and self._planner is not None
+        ):
+            try:
+                self._planner.set_sim_capture_callback(self._capture_plan_replay)
+            except AttributeError:
+                pass
+
         # Run an initial connectivity check so the user sees the robot's
         # state in the log immediately — instead of waiting for the first
         # plan() call to surface it. In real mode this is critical since
@@ -1268,6 +1291,121 @@ class Runtime:
             )
         except Exception as exc:
             print(f"[Runtime] sim-success: replay → MP4 failed: {exc!r}", flush=True)
+
+    def _capture_plan_replay(
+        self,
+        *,
+        xml_content: str,
+        push_chain: List[Dict[str, Any]],
+        attempt_index: int,
+    ) -> None:
+        """Per-plan sim-success capture — installed on the planner.
+
+        Called from inside ``NAMOPlanner.plan()`` immediately after a plan
+        with at least one PushSubgoal is produced. Writes
+        ``<diag-root>/sim_replays/plan_NNN_start.xml``,
+        ``plan_NNN_chain.json``, and renders ``plan_NNN_replay.mp4`` via
+        :func:`sim_replay.render_chain_to_mp4`.
+
+        Errors are caught and logged — sim-capture is best-effort and must
+        never break planning.
+        """
+        if self._diag is None or not self._diag.enabled:
+            return
+        if not push_chain:
+            return
+
+        self._sim_plan_capture_count += 1
+        plan_idx = self._sim_plan_capture_count
+
+        from pathlib import Path as _Path
+        import json as _json
+
+        diag_root = _Path(self._diag.root)
+        out_dir = diag_root / "sim_replays"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Zero-padded so files sort lexicographically (matches up to 999 plans
+        # per run, which is well above what we observe in practice).
+        prefix = f"plan_{plan_idx:03d}"
+        xml_path = out_dir / f"{prefix}_start.xml"
+        chain_path = out_dir / f"{prefix}_chain.json"
+        mp4_path = out_dir / f"{prefix}_replay.mp4"
+
+        try:
+            xml_path.write_text(xml_content)
+        except Exception as exc:
+            print(f"[Runtime] per-plan capture: writing {xml_path.name} failed: {exc!r}",
+                  flush=True)
+            return
+
+        payload = {
+            "plan_index": plan_idx,
+            "attempt_index": attempt_index,
+            "start_xml": xml_path.name,
+            "chain": push_chain,
+        }
+        try:
+            chain_path.write_text(_json.dumps(payload, indent=2))
+        except Exception as exc:
+            print(f"[Runtime] per-plan capture: writing {chain_path.name} failed: {exc!r}",
+                  flush=True)
+            return
+
+        # Render MP4 inline. The C++ RLEnvironment resolves motion-primitive
+        # paths in the namo config (e.g., "data/motion_primitives_1x.dat")
+        # relative to the *current working directory*, so we have to chdir
+        # into namo_cpp/ for the duration of the render — same workaround
+        # NAMOPlanBridge.plan() uses (see namo_bridge.py around line 318).
+        # Without this the ctor raises "Motion primitives missing for shape
+        # 'square': expected data/motion_primitives_1x_square.dat".
+        import os as _os
+        from pathlib import Path as _Path2
+
+        mp4_written: Optional[str] = None
+        try:
+            from robot_control.diagnostics.sim_replay import render_chain_to_mp4
+            bridge = getattr(self._planner, "_bridge", None)
+            namo_config_path = (
+                str(getattr(bridge, "_effective_namo_config_path", "")) or None
+                if bridge is not None else None
+            )
+
+            namo_cpp_dir = _Path2(__file__).resolve().parents[3] / "namo_cpp"
+            prev_cwd = _os.getcwd()
+            try:
+                if namo_cpp_dir.is_dir():
+                    _os.chdir(str(namo_cpp_dir))
+                mp4_written = render_chain_to_mp4(
+                    start_xml=str(xml_path),
+                    namo_config=namo_config_path,
+                    chain=push_chain,
+                    output_mp4=str(mp4_path),
+                    workspace=self._workspace_config,
+                )
+            finally:
+                _os.chdir(prev_cwd)
+        except Exception as exc:
+            print(f"[Runtime] per-plan capture: replay → {mp4_path.name} raised: {exc!r}",
+                  flush=True)
+            return
+
+        if mp4_written is None:
+            # render_chain_to_mp4 logs its own [sim_replay] error line and
+            # returns None on failure; surface that as a plan-level failure
+            # so the user knows the MP4 didn't land even though XML+JSON did.
+            print(
+                f"[Runtime] sim-success per-plan: plan #{plan_idx} "
+                f"({len(push_chain)} push(es)) XML+JSON written but MP4 render "
+                f"failed (see [sim_replay] line above) → {out_dir}/",
+                flush=True,
+            )
+            return
+
+        print(
+            f"[Runtime] sim-success per-plan: plan #{plan_idx} ({len(push_chain)} "
+            f"push(es)) → {out_dir}/", flush=True
+        )
 
     def _determine_outcome(self) -> Tuple[str, str]:
         # Best-effort: read terminal state from the planner. Three signals:
