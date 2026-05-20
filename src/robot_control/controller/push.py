@@ -385,19 +385,13 @@ class PushController(Controller):
             self._advance_step_count = 0
             return self._handle_advancing(obs, obj, subgoal)
 
-        # Watchdog: nav neither finished nor explicitly failed within the
-        # budget — assume wedged and bail out so the planner can blacklist
-        # this (object, edge) and replan with a different edge. BUG-025.
+        # Watchdog disabled per request 2026-05-20: BUG-025's APPROACHING
+        # timeout (180 ticks ≈ 6 s) was tripping on slow-but-progressing nav
+        # — e.g., a 175° in-place rotation followed by a 10 cm drive can
+        # legitimately exceed 6 s. The deadlock case BUG-025 was guarding
+        # against is rarer than the false-trip case. Counter still tracked
+        # for get_status() display only; no longer compared to a limit.
         self._approach_step_count += 1
-        if self._approach_step_count >= self._push_config.max_approach_steps:
-            print(
-                f"[PUSH] APPROACHING watchdog tripped after "
-                f"{self._approach_step_count} ticks "
-                f"(limit {self._push_config.max_approach_steps}); "
-                f"transitioning to FAILED"
-            )
-            self._state = PushState.FAILED
-            return Action.stop()
 
         # Continue navigation
         return self._nav_controller.step(obs, None)
