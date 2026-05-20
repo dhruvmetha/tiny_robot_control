@@ -20,12 +20,17 @@ navigation:
   wheel_deadband: 0.05           # motor deadband threshold
 
 # Push controller
+# Aligned to sim: sim runs each NAMO push step for 0.75 s at 0.05 m/s (5 cm/s).
+# Was push_steps=50 (~1.67 s) and max_speed=0.5 — about 2.2× longer and 10×
+# faster than what the primitive .dat values were generated under, so the
+# real robot used to overshoot sim predictions badly. Setting both to sim
+# values makes primitive predictions actually match real-robot behavior.
 push:
-  max_speed: 0.5                 # CAN be overridden by --push-speed
+  max_speed: 0.05                # 5 cm/s — matches sim push_velocity (was 0.5)
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
-  push_steps: 50                # control ticks per push UNIT (~1.67s at 30Hz)
+  push_steps: 22                # ~0.73 s per NAMO push step at 30 Hz, matches sim's 0.75 s (was 50)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 
   # Approach phase parameters
