@@ -164,6 +164,12 @@ class NAMOPlanBridge:
         # by NAMOPlanner to render a diagnostic failure summary.
         self.last_algorithm_stats: Optional[Dict[str, Any]] = None
 
+        # XML content of the scene fed to the planner in the most recent plan()
+        # call. Held in memory (not the temp file, which is deleted on
+        # plan()-exit) so the per-plan sim-success capture in NAMOPlanner can
+        # snapshot it as the start-of-replay scene. None until the first plan.
+        self.last_xml_content: Optional[str] = None
+
     def __del__(self) -> None:
         self._cleanup_generated_config()
 
@@ -304,6 +310,11 @@ class NAMOPlanBridge:
             if self._verbose:
                 print("[NAMOBridge] Failed to generate XML")
             return []
+
+        # Cache content so the per-plan sim-success capture (in NAMOPlanner)
+        # can snapshot the scene that produced this plan, even after the temp
+        # file is unlinked below.
+        self.last_xml_content = xml_content
 
         # Write XML to temp file
         xml_path = self._write_xml(xml_content)
