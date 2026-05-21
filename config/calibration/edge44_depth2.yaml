@@ -1,0 +1,17 @@
+# Tick-count calibration for edge 44 (right face center, sample 7), depth 2.
+# push_steps=3 = 3 NAMO units per trial. Sweep happens by editing
+# config/controller.yaml: push.push_steps between runs (current value: 26).
+#
+# ONE trial per invocation: re-run this same spec 10 times with a different
+# --run-name each time (trial1, trial2, ...). Use --no-reset-check so the
+# push fires from wherever the object currently is.
+#
+# obstacle_target is set at session start but ignored when --no-reset-check
+# is passed. Push direction is +Y in world (~270° object theta). Expected
+# travel ~6 cm (extrapolated: depth-6 mean 14.5 cm / 7 * 3).
+
+obstacle_target: [19.66, 19.93]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {edge_idx: 44, push_steps: 3}

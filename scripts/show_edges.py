@@ -50,11 +50,45 @@ _FACE_COLOURS = {
 }
 
 
+# ----------------------------------------------------------- object_sizes loader
+
+def _load_object_sizes(objects_path: str):
+    """Load objects.yaml → name → ObjectSizeInfo dict.
+
+    Mirrors what Runtime._setup() builds from observer_config.object_defs.
+    Skips entries marked type: goal (those don't have a physical extent).
+    """
+    from robot_control.nodes.remote_observer import ObjectSizeInfo
+
+    path = Path(objects_path)
+    if not path.exists():
+        print(
+            f"[show_edges] WARN: {objects_path} not found — objects will draw "
+            "with width=0/depth=0 (invisible).",
+            file=sys.stderr,
+        )
+        return {}
+    data = yaml.safe_load(path.read_text()) or {}
+    sizes: Dict[str, "ObjectSizeInfo"] = {}
+    for name, obj in (data.get("objects") or {}).items():
+        if obj.get("type") == "goal":
+            continue
+        shape = obj.get("shape", {})
+        sizes[name] = ObjectSizeInfo(
+            width=float(shape.get("width", 0.0)),
+            depth=float(shape.get("depth", 0.0)),
+            height=float(shape.get("height", 0.0)),
+            is_static=(obj.get("type") == "static"),
+        )
+    return sizes
+
+
 # ----------------------------------------------------------------- live capture
 
 def capture_live_observation(
     config_path: str,
     camera_service: str,
+    objects_path: str,
     stable_secs: float = 1.5,
 ) -> Observation:
     """Connect to the camera_service, wait for one stable observation, return it.
@@ -63,12 +97,20 @@ def capture_live_observation(
     couple of frames and return whatever the observer's latest is. The
     camera_service publishes Observations directly so we don't need ArUco
     code here.
+
+    ``objects_path`` is required: RemoteObserverNode only fills in
+    width/depth/height when given an ``object_sizes`` map. Without it,
+    every movable arrives at width=0/depth=0 and draws as an invisible
+    zero-area rectangle (same trap Runtime._setup() avoids by loading
+    objects.yaml itself).
     """
-    from robot_control.nodes.remote_observer import RemoteObserverNode
+    from robot_control.nodes.remote_observer import RemoteObserverNode, ObjectSizeInfo
+
+    object_sizes = _load_object_sizes(objects_path)
 
     print(f"[show_edges] Connecting to camera_service at {camera_service} ...",
           flush=True)
-    observer = RemoteObserverNode(address=camera_service)
+    observer = RemoteObserverNode(address=camera_service, object_sizes=object_sizes)
     if not observer.start():
         raise RuntimeError(
             f"Failed to connect to camera_service at {camera_service}. "
@@ -227,8 +269,14 @@ def draw_scene(
     standoff_cm: float,
     show_indices_for: Optional[List[str]],
     label_every: int,
+    selected_edges: Optional[set],
 ) -> None:
-    """Draw workspace + objects + edge labels onto ``ax``."""
+    """Draw workspace + objects + edge labels onto ``ax``.
+
+    ``selected_edges``: if a set of ints, only those edge indices are drawn
+    (dot + label), and they're rendered larger since we have room. If None,
+    every edge is drawn and ``label_every`` controls thinning.
+    """
     # Workspace boundary
     ax.add_patch(mpatches.Rectangle(
         (0, 0), workspace_w, workspace_h,
@@ -255,17 +303,39 @@ def draw_scene(
             continue
 
         edge_points = generate_edge_points(obj, standoff_cm, points_per_face)
+        # With a small selected set we have room to draw big, readable
+        # markers + labels. Otherwise fall back to the dense layout.
+        if selected_edges is not None:
+            marker_sz, font_sz, off = 9, 13, (5, 5)
+        else:
+            marker_sz, font_sz, off = 4, 7, (3, 3)
         for ep in edge_points:
-            if ep.edge_idx % label_every != 0:
+            if selected_edges is not None:
+                if ep.edge_idx not in selected_edges:
+                    continue
+            elif ep.edge_idx % label_every != 0:
                 continue
             colour = _FACE_COLOURS.get(ep.face_idx, "black")
+            # The labelled dot is offset OUT from the object face by
+            # standoff_cm (room for the robot footprint). Draw a line from
+            # the dot inward to the actual contact point on the face so
+            # the visual mapping is unambiguous — same idea as the
+            # primitive overlays in run_namo's viewer.
+            dx = ep.mid_point[0] - ep.position[0]
+            dy = ep.mid_point[1] - ep.position[1]
+            dist = math.hypot(dx, dy)
+            if dist > 1e-6:
+                fx = ep.position[0] + standoff_cm * dx / dist
+                fy = ep.position[1] + standoff_cm * dy / dist
+                ax.plot([ep.position[0], fx], [ep.position[1], fy],
+                        color=colour, linewidth=1.5, alpha=0.8, zorder=5)
             ax.plot(ep.position[0], ep.position[1], marker="o",
-                    color=colour, markersize=4, zorder=6)
+                    color=colour, markersize=marker_sz, zorder=6)
             ax.annotate(
                 str(ep.edge_idx),
                 xy=(ep.position[0], ep.position[1]),
-                xytext=(3, 3), textcoords="offset points",
-                fontsize=7, color=colour, zorder=7,
+                xytext=off, textcoords="offset points",
+                fontsize=font_sz, fontweight="bold", color=colour, zorder=7,
             )
 
     # Robot
@@ -318,7 +388,7 @@ def _rotated_box_patch(obj: ObjectPose) -> mpatches.Rectangle:
         obj.depth, obj.width,
         angle=obj.theta,
         rotation_point="center",
-        linewidth=1.2,
+        linewidth=2.5,
     )
     return rect
 
@@ -334,6 +404,11 @@ def parse_args() -> argparse.Namespace:
         "--camera-service", default=None,
         help="ZMQ address of the camera_service (e.g. tcp://localhost:5556). "
              "Required with --config.",
+    )
+    p.add_argument(
+        "--objects", default="config/objects.yaml",
+        help="Path to objects.yaml — used to populate width/depth on incoming "
+             "observations (default: config/objects.yaml, matches Runtime).",
     )
     p.add_argument(
         "--output", "-o", default="/tmp/edges.png",
@@ -353,7 +428,13 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--label-every", type=int, default=1,
-        help="Label every N-th edge (default 1 = every edge). Use e.g. 5 to thin the labels.",
+        help="Label every N-th edge (default 1 = every edge). Use e.g. 5 to thin "
+             "the labels. Ignored unless --edges all is passed.",
+    )
+    p.add_argument(
+        "--edges", nargs="+", default=["1", "16", "31", "46"],
+        help="Edge indices to label (default: 1 16 31 46 — one per face). "
+             "Pass 'all' to draw every edge (then --label-every controls thinning).",
     )
     p.add_argument(
         "--only", nargs="+", default=None,
@@ -370,7 +451,7 @@ def main() -> int:
             print("Error: --camera-service is required with --config", file=sys.stderr)
             return 2
         try:
-            obs = capture_live_observation(args.config, args.camera_service)
+            obs = capture_live_observation(args.config, args.camera_service, args.objects)
         except Exception as exc:
             print(f"[show_edges] Live capture failed: {exc}", file=sys.stderr)
             return 1
@@ -384,6 +465,20 @@ def main() -> int:
     workspace_w = WORKSPACE_WIDTH_CM
     workspace_h = WORKSPACE_HEIGHT_CM
 
+    # Resolve --edges: 'all' (case-insensitive) disables filtering and falls
+    # back to --label-every. Anything else is parsed as an int list.
+    if len(args.edges) == 1 and args.edges[0].lower() == "all":
+        selected_edges: Optional[set] = None
+    else:
+        try:
+            selected_edges = {int(e) for e in args.edges}
+        except ValueError:
+            print(
+                f"Error: --edges must be integers or the literal 'all'; got {args.edges}",
+                file=sys.stderr,
+            )
+            return 2
+
     fig, ax = plt.subplots(figsize=(workspace_w / 6.0, workspace_h / 6.0), dpi=120)
     draw_scene(
         ax=ax,
@@ -394,6 +489,7 @@ def main() -> int:
         standoff_cm=args.standoff,
         show_indices_for=args.only,
         label_every=max(1, args.label_every),
+        selected_edges=selected_edges,
     )
     fig.tight_layout()
 

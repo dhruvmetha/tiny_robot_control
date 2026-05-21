@@ -196,11 +196,18 @@ class TrialListPlanner(Planner):
         obstacle_target_xy: tuple,
         reset_tolerance_cm: float,
         lock_filter: Optional["MarkerLockFilter"] = None,
+        skip_reset: bool = False,
     ) -> None:
         self._trials = trials
         self._idx = 0
         self._obstacle_target = obstacle_target_xy
         self._reset_tolerance = reset_tolerance_cm
+        # When True, ``_wait_for_obstacle_reset`` does not block on a
+        # tolerance check or prompt the operator. The push fires from
+        # wherever the object currently is. Δpose is still meaningful
+        # because ``pushes.jsonl`` records ``object_pose_before`` and
+        # ``object_pose_after`` (both include θ).
+        self._skip_reset = skip_reset
         # Cache the auto-detected object id so we don't re-prompt the camera
         # every trial when the spec doesn't pin one explicitly.
         self._auto_object_id: Optional[str] = None
@@ -349,7 +356,20 @@ class TrialListPlanner(Planner):
         Reprints obstacle position at 1Hz while waiting. Robot can be
         anywhere — the push skill's APPROACHING phase handles navigating
         to the contact point from wherever the robot is parked.
+
+        When ``skip_reset`` is True, this just fetches one fresh obs,
+        prints the recorded start pose for the log, and returns.
         """
+        if self._skip_reset:
+            latest = self._fresh_obs(obs)
+            obj = latest.objects.get(object_id)
+            if obj is not None:
+                print(
+                    f"  [skip_reset] start pose: ({obj.x:.2f}, {obj.y:.2f}) "
+                    f"θ={obj.theta:.2f}°. pushing..."
+                )
+            return latest
+
         target_x, target_y = self._obstacle_target
         latest = obs
         while True:
@@ -477,6 +497,15 @@ def parse_args() -> argparse.Namespace:
         help="Don't send wheel commands. Useful for testing the prompt loop "
              "without a robot.",
     )
+    p.add_argument(
+        "--no-reset-check",
+        action="store_true",
+        help="Skip the obstacle-target tolerance check. Push fires from "
+             "wherever the object currently is. pushes.jsonl records "
+             "object_pose_before (with θ) so per-trial Δpose is still "
+             "meaningful — operator no longer needs to slide the object "
+             "back to a fixed target between trials.",
+    )
     return p.parse_args()
 
 
@@ -515,6 +544,7 @@ def main() -> int:
         obstacle_target_xy=(float(obstacle_target[0]), float(obstacle_target[1])),
         reset_tolerance_cm=reset_tolerance,
         lock_filter=lock_filter,
+        skip_reset=args.no_reset_check,
     )
 
     # Build a Runtime exactly the way run_namo does for real mode. The only

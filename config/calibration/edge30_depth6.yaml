@@ -1,0 +1,16 @@
+# Tick-count calibration for edge 30 (right face CORNER, sample 0), depth 6.
+# push_steps=7 = 7 NAMO units per trial.
+#
+# Edge 30 is the right-face corner. Push direction is edge→center: diagonal
+# (~+0.91 X, ~+0.41 Y in world frame with object at ~270°). Expect more
+# rotation than a center-face push (edge 44) because the contact is off the
+# object's center of mass.
+#
+# ONE trial per invocation: re-run with --no-reset-check and bumped trial
+# number. obstacle_target ignored when --no-reset-check is set.
+
+obstacle_target: [18.03, 21.99]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {edge_idx: 30, push_steps: 7}

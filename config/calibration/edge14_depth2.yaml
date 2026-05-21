@@ -1,0 +1,14 @@
+# Tick-count calibration for edge 14 (top face center, sample 7), depth 2.
+# push_steps=3 = 3 NAMO units per trial.
+#
+# Object at θ≈180°, so "top face" (object frame +Y) maps to world -Y →
+# push direction (edge → center) is +Y in world. Center-face push.
+#
+# ONE trial per invocation: re-run with --no-reset-check and bumped trial
+# number. obstacle_target ignored when --no-reset-check is set.
+
+obstacle_target: [19.64, 23.89]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {edge_idx: 14, push_steps: 3}
