@@ -1,0 +1,119 @@
+# Trial spec for scripts/collect_real_primitives.py.
+#
+# 60 trials, 20 distinct edges, 3 depths per edge (random order from {1,3,5}).
+# Coverage:
+#   - All 8 corner edges: 0, 1, 28, 29, 30, 31, 58, 59
+#     (sample 0 and sample 14 on each of the 4 faces — each physical corner
+#     of the rectangle is approached from BOTH adjacent faces, giving two
+#     different push directions for the same contact point).
+#   - 12 random non-corner edges across the 4 faces (seed=42).
+#
+# edge_idx layout (points_per_face=15):
+#   0..29  top/bot pairs (even=top/+Y, odd=bot/-Y), sample = idx // 2
+#   30..59 right/left pairs (even within=right/+X, odd=left/-X), sample = (idx-30) // 2
+#   Push direction is edge → object mid (toward the opposite face).
+
+obstacle_target: [25.0, 35.0]
+reset_tolerance_cm: 3.0
+
+trials:
+
+  # edge 0 (top sample 0 [CORNER])
+  - {edge_idx:  0, push_steps:  3}
+  - {edge_idx:  0, push_steps:  1}
+  - {edge_idx:  0, push_steps:  5}
+
+  # edge 1 (bot sample 0 [CORNER])
+  - {edge_idx:  1, push_steps:  1}
+  - {edge_idx:  1, push_steps:  5}
+  - {edge_idx:  1, push_steps:  3}
+
+  # edge 3 (bot sample 1)
+  - {edge_idx:  3, push_steps:  5}
+  - {edge_idx:  3, push_steps:  1}
+  - {edge_idx:  3, push_steps:  3}
+
+  # edge 7 (bot sample 3)
+  - {edge_idx:  7, push_steps:  5}
+  - {edge_idx:  7, push_steps:  3}
+  - {edge_idx:  7, push_steps:  1}
+
+  # edge 8 (top sample 4)
+  - {edge_idx:  8, push_steps:  3}
+  - {edge_idx:  8, push_steps:  5}
+  - {edge_idx:  8, push_steps:  1}
+
+  # edge 9 (bot sample 4)
+  - {edge_idx:  9, push_steps:  1}
+  - {edge_idx:  9, push_steps:  3}
+  - {edge_idx:  9, push_steps:  5}
+
+  # edge 10 (top sample 5)
+  - {edge_idx: 10, push_steps:  3}
+  - {edge_idx: 10, push_steps:  1}
+  - {edge_idx: 10, push_steps:  5}
+
+  # edge 16 (top sample 8)
+  - {edge_idx: 16, push_steps:  3}
+  - {edge_idx: 16, push_steps:  1}
+  - {edge_idx: 16, push_steps:  5}
+
+  # edge 17 (bot sample 8)
+  - {edge_idx: 17, push_steps:  3}
+  - {edge_idx: 17, push_steps:  1}
+  - {edge_idx: 17, push_steps:  5}
+
+  # edge 19 (bot sample 9)
+  - {edge_idx: 19, push_steps:  3}
+  - {edge_idx: 19, push_steps:  5}
+  - {edge_idx: 19, push_steps:  1}
+
+  # edge 28 (top sample 14 [CORNER])
+  - {edge_idx: 28, push_steps:  5}
+  - {edge_idx: 28, push_steps:  3}
+  - {edge_idx: 28, push_steps:  1}
+
+  # edge 29 (bot sample 14 [CORNER])
+  - {edge_idx: 29, push_steps:  3}
+  - {edge_idx: 29, push_steps:  1}
+  - {edge_idx: 29, push_steps:  5}
+
+  # edge 30 (right sample 0 [CORNER])
+  - {edge_idx: 30, push_steps:  5}
+  - {edge_idx: 30, push_steps:  3}
+  - {edge_idx: 30, push_steps:  1}
+
+  # edge 31 (left sample 0 [CORNER])
+  - {edge_idx: 31, push_steps:  5}
+  - {edge_idx: 31, push_steps:  1}
+  - {edge_idx: 31, push_steps:  3}
+
+  # edge 40 (right sample 5)
+  - {edge_idx: 40, push_steps:  5}
+  - {edge_idx: 40, push_steps:  1}
+  - {edge_idx: 40, push_steps:  3}
+
+  # edge 43 (left sample 6)
+  - {edge_idx: 43, push_steps:  1}
+  - {edge_idx: 43, push_steps:  5}
+  - {edge_idx: 43, push_steps:  3}
+
+  # edge 46 (right sample 8)
+  - {edge_idx: 46, push_steps:  3}
+  - {edge_idx: 46, push_steps:  5}
+  - {edge_idx: 46, push_steps:  1}
+
+  # edge 53 (left sample 11)
+  - {edge_idx: 53, push_steps:  5}
+  - {edge_idx: 53, push_steps:  3}
+  - {edge_idx: 53, push_steps:  1}
+
+  # edge 58 (right sample 14 [CORNER])
+  - {edge_idx: 58, push_steps:  3}
+  - {edge_idx: 58, push_steps:  5}
+  - {edge_idx: 58, push_steps:  1}
+
+  # edge 59 (left sample 14 [CORNER])
+  - {edge_idx: 59, push_steps:  5}
+  - {edge_idx: 59, push_steps:  3}
+  - {edge_idx: 59, push_steps:  1}

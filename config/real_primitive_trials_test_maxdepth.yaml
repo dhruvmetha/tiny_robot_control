@@ -1,0 +1,16 @@
+# Smoke test: max-depth push from one edge per face.
+# Use this before committing to the full 60-trial run to check that:
+#   - push_steps=5 actually completes without the robot drifting off
+#   - retreat / next-trial transition is clean at max push length
+#   - obstacle stays in frame after a 5-step push from each face
+#
+# 4 trials, one per face (top / bot / right / left), all at max depth (5).
+
+obstacle_target: [25.0, 35.0]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {edge_idx:  6, push_steps: 5}    # top face (+Y), push south
+  - {edge_idx:  7, push_steps: 5}    # bottom face (-Y), push north
+  - {edge_idx: 40, push_steps: 5}    # right face (+X), push west
+  - {edge_idx: 43, push_steps: 5}    # left face (-X), push east

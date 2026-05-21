@@ -26,7 +26,7 @@ navigation:
 # real robot used to overshoot sim predictions badly. Setting both to sim
 # values makes primitive predictions actually match real-robot behavior.
 push:
-  max_speed: 0.05                # 5 cm/s — matches sim push_velocity (was 0.5)
+  max_speed: 0.2                 # Normalized wheel PWM ∈ [0, 1]. 0.2 = 20% PWM (was 0.05).
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
