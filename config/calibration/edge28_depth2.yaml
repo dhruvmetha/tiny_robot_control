@@ -1,0 +1,17 @@
+# Tick-count calibration for obj_1 (marker_id=5, 15x7x4 cm) — edge 28, depth 2.
+# push_steps=3 = 3 NAMO units per trial.
+#
+# Edge 28 is the top-face corner at the +depth end (sample 14). At the
+# captured θ (~180°), push direction is a diagonal: ~+0.41 X, ~+0.91 Y in
+# world frame. Corner contact — expect rotation alongside translation.
+#
+# object_id pinned to obj_1.
+#
+# ONE trial per invocation: re-run with --no-reset-check and bumped trial
+# number. obstacle_target ignored when --no-reset-check is set.
+
+obstacle_target: [19.79, 23.89]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {object_id: obj_1, edge_idx: 28, push_steps: 3}

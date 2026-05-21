@@ -1,0 +1,17 @@
+# Tick-count calibration for obj_4 (marker_id=8, 12x7.5x5 cm) — edge 15, depth 9.
+# push_steps=10 = 10 NAMO units per trial.
+#
+# Edge 15 is the bottom-face center (sample 7). Push direction is edge→center.
+# At the captured θ (~0°), that maps to ~pure +Y in world frame. Center-face
+# push — expect mostly translation with small Δθ.
+#
+# object_id pinned to obj_4.
+#
+# ONE trial per invocation: re-run with --no-reset-check and bumped trial
+# number. obstacle_target ignored when --no-reset-check is set.
+
+obstacle_target: [19.26, 22.52]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {object_id: obj_4, edge_idx: 15, push_steps: 10}

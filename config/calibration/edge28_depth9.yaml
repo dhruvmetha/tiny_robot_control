@@ -1,0 +1,16 @@
+# Tick-count calibration for edge 28 (top face CORNER, sample 14), depth 9.
+# push_steps=10 = 10 NAMO units per trial.
+#
+# Edge 28 is the top-face corner at the +depth end. Push direction is
+# edge→center, a diagonal (~+0.43 X, ~+0.90 Y in world with object at
+# ~180°). Corner contact, so expect more rotation per unit translation
+# than the center-face pushes (edges 14, 44).
+#
+# ONE trial per invocation: re-run with --no-reset-check and bumped trial
+# number. obstacle_target ignored when --no-reset-check is set.
+
+obstacle_target: [19.52, 23.92]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {edge_idx: 28, push_steps: 10}

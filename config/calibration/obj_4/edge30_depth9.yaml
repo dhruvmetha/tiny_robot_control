@@ -1,0 +1,18 @@
+# Tick-count calibration for obj_4 (marker_id=8, 12x7.5x5 cm) — edge 30, depth 9.
+# push_steps=10 = 10 NAMO units per trial.
+#
+# Edge 30 is the right-face corner (sample 0). Push direction is edge→center,
+# a diagonal: ~+0.79 X, ~+0.62 Y in world frame at the captured θ. Corner
+# contact, so expect significant rotation alongside translation.
+#
+# object_id pinned to obj_4 so the script doesn't auto-detect anything else
+# if a stray marker drifts into view.
+#
+# ONE trial per invocation: re-run with --no-reset-check and bumped trial
+# number. obstacle_target ignored when --no-reset-check is set.
+
+obstacle_target: [16.84, 20.73]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {object_id: obj_4, edge_idx: 30, push_steps: 10}
