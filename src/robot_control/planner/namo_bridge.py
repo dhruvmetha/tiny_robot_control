@@ -88,6 +88,7 @@ class NAMOPlanBridge:
         robot_width_cm: float = 6.0,
         robot_height_cm: float = 6.0,
         robot_model: str = "sphere",
+        manual_primitives_file: Optional[str] = None,
     ):
         """Initialize the NAMO bridge.
 
@@ -119,6 +120,11 @@ class NAMOPlanBridge:
         self._robot_height_cm = float(robot_height_cm)
         self._robot_model = robot_model
         self._generated_config_path: Optional[Path] = None
+        # Path to a YAML file listing manual primitives (object_id, edge_idx,
+        # push_steps) to try when goal_strategy == "manual_primitives".
+        # Validated lazily at plan()-time so the bridge can still be
+        # constructed for non-manual strategies even when this is None.
+        self._manual_primitives_file = manual_primitives_file
 
         # Compute absolute path for primitive_data_dir
         if primitive_data_dir is None:
@@ -320,6 +326,26 @@ class NAMOPlanBridge:
         xml_path = self._write_xml(xml_content)
         if xml_path is None:
             return []
+
+        # Manual-primitives strategy: bypass the C++ planner entirely.
+        # Load a YAML file of (object_id, edge_idx, push_steps) entries,
+        # apply them in sequence against a fresh RLEnvironment built from
+        # the same XML, and return PushSubgoals only if the post-chain
+        # state has the robot goal reachable. Failure → empty list (the
+        # runtime treats this as "planning failed" and aborts the run).
+        if goal_strategy == "manual_primitives":
+            try:
+                return self._simulate_manual_chain(
+                    xml_path=xml_path,
+                    robot_goal_cm=robot_goal_cm,
+                )
+            finally:
+                # Clean up temp XML (same pattern as the normal plan path).
+                if self._debug_xml_path is None:
+                    try:
+                        Path(xml_path).unlink()
+                    except OSError:
+                        pass
 
         # Change to namo_cpp directory so relative paths in config work
         # (e.g., motion_primitives_file: "data/motion_primitives_15.dat")
@@ -592,6 +618,229 @@ class NAMOPlanBridge:
             )
 
         return subgoals
+
+    def _simulate_manual_chain(
+        self,
+        xml_path: str,
+        robot_goal_cm: Tuple[float, float],
+    ) -> List[PushSubgoal]:
+        """Apply a YAML-specified push chain in sim and return subgoals on success.
+
+        The YAML schema:
+
+            primitives:
+              - object_id: obj_4
+                edge_idx: 19
+                push_steps: 9
+              - object_id: obj_4
+                edge_idx: 23
+                push_steps: 2
+
+        Each entry: ``object_id`` (real-robot name; we resolve the sim name
+        via the bridge's object mapping), ``edge_idx`` (0..59 for
+        points_per_face=15), and ``push_steps`` (>=1; ``depth = push_steps - 1``
+        is what the C++ side wants on the Action object).
+
+        Behaviour: build a fresh RLEnvironment from ``xml_path``, mirror the
+        planner-side ``set_collision_checking(False)`` so wall contacts don't
+        abort the primitive, ``env.step()`` each entry in order, then check
+        ``env.is_robot_goal_reachable()``. If reachable, return the chain
+        translated to PushSubgoals. If not reachable (or any step raises),
+        return ``[]`` — the runtime sees that as "planning failed".
+
+        Returns the chain only on full sim verification; the real robot
+        never sees the chain unless sim approves.
+        """
+        if not self._manual_primitives_file:
+            print(
+                "[NAMOBridge] manual_primitives strategy requires "
+                "--manual-primitives-file but no path was supplied",
+                flush=True,
+            )
+            return []
+
+        path = Path(self._manual_primitives_file)
+        if not path.exists():
+            print(
+                f"[NAMOBridge] manual_primitives_file not found: {path}",
+                flush=True,
+            )
+            return []
+
+        try:
+            doc = yaml.safe_load(path.read_text()) or {}
+        except yaml.YAMLError as exc:
+            print(
+                f"[NAMOBridge] manual_primitives_file YAML parse failed: {exc!r}",
+                flush=True,
+            )
+            return []
+
+        entries = doc.get("primitives", [])
+        if not isinstance(entries, list) or not entries:
+            print(
+                f"[NAMOBridge] manual_primitives_file has no 'primitives' list: {path}",
+                flush=True,
+            )
+            return []
+
+        # Construct a fresh sim env. Same chdir trick the rest of the bridge
+        # uses so the C++ side resolves "data/motion_primitives_*.dat".
+        bridge_path = Path(__file__).resolve()
+        namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
+        original_cwd = os.getcwd()
+        os.chdir(str(namo_cpp_dir))
+
+        try:
+            from namo_binding_loader import load_canonical_namo_rl  # type: ignore
+        except ImportError:
+            # Use the same loader path the rest of the bridge already imports.
+            from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
+
+        try:
+            namo_rl, _, _ = load_canonical_namo_rl(bridge_path)
+        except Exception as exc:
+            os.chdir(original_cwd)
+            print(
+                f"[NAMOBridge] manual_primitives: failed to load namo_rl: {exc!r}",
+                flush=True,
+            )
+            return []
+
+        try:
+            env = namo_rl.RLEnvironment(
+                xml_path,
+                self._effective_namo_config_path,
+                False,
+            )
+        except Exception as exc:
+            os.chdir(original_cwd)
+            print(
+                f"[NAMOBridge] manual_primitives: RLEnvironment ctor failed: {exc!r}",
+                flush=True,
+            )
+            return []
+
+        # Mirror the planner-side region_allow_collisions=true behaviour so
+        # wall contact during the manual chain doesn't abort the primitive.
+        try:
+            env.set_collision_checking(False)
+        except Exception:
+            pass
+
+        # The C++ env needs the robot goal set for is_robot_goal_reachable()
+        # to return anything meaningful. Convert real-cm → sim coordinates.
+        try:
+            goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
+            env.set_robot_goal(goal_sim[0], goal_sim[1], 0.0)
+        except Exception as exc:
+            os.chdir(original_cwd)
+            print(
+                f"[NAMOBridge] manual_primitives: set_robot_goal failed: {exc!r}",
+                flush=True,
+            )
+            return []
+
+        print(
+            f"[NAMOBridge] manual_primitives: simulating {len(entries)} entries "
+            f"from {path.name}",
+            flush=True,
+        )
+
+        # Step through each entry, building the parallel PushSubgoal list as
+        # we go. Bail out on any malformed entry or step exception.
+        subgoals: List[PushSubgoal] = []
+        for idx, entry in enumerate(entries, start=1):
+            try:
+                real_object_id = str(entry["object_id"])
+                edge_idx = int(entry["edge_idx"])
+                push_steps = int(entry["push_steps"])
+            except (KeyError, TypeError, ValueError) as exc:
+                os.chdir(original_cwd)
+                print(
+                    f"[NAMOBridge] manual_primitives: entry {idx} malformed "
+                    f"({entry!r}): {exc!r}",
+                    flush=True,
+                )
+                return []
+            if push_steps < 1:
+                os.chdir(original_cwd)
+                print(
+                    f"[NAMOBridge] manual_primitives: entry {idx} has "
+                    f"push_steps={push_steps} (must be >= 1)",
+                    flush=True,
+                )
+                return []
+
+            sim_object_id = self._object_mapping.get_sim_name(real_object_id)
+            action = namo_rl.Action()
+            action.object_id = sim_object_id
+            action.edge_idx = edge_idx
+            action.depth = push_steps - 1
+            action.x = 0.0
+            action.y = 0.0
+            action.theta = 0.0
+
+            try:
+                step_result = env.step(action)
+            except Exception as exc:
+                os.chdir(original_cwd)
+                print(
+                    f"[NAMOBridge] manual_primitives: entry {idx} "
+                    f"({real_object_id}→{sim_object_id} e{edge_idx} "
+                    f"steps={push_steps}) raised: {exc!r}",
+                    flush=True,
+                )
+                return []
+
+            info = getattr(step_result, "info", {}) or {}
+            failure_reason = info.get("failure_reason", "")
+            print(
+                f"[NAMOBridge] manual_primitives: entry {idx} "
+                f"({real_object_id} e{edge_idx} steps={push_steps}) "
+                f"→ done={step_result.done}, reward={step_result.reward}, "
+                f"failure_reason={failure_reason!r}",
+                flush=True,
+            )
+
+            subgoals.append(
+                PushSubgoal(
+                    object_id=real_object_id,
+                    edge_idx=edge_idx,
+                    push_steps=push_steps,
+                )
+            )
+
+        # Final reachability check — only return the chain if the sim says
+        # the goal is reachable post-chain.
+        try:
+            goal_reachable = bool(env.is_robot_goal_reachable())
+        except Exception as exc:
+            os.chdir(original_cwd)
+            print(
+                f"[NAMOBridge] manual_primitives: is_robot_goal_reachable raised: {exc!r}",
+                flush=True,
+            )
+            return []
+        finally:
+            os.chdir(original_cwd)
+
+        if goal_reachable:
+            print(
+                f"[NAMOBridge] manual_primitives: SIM VERIFIED — goal is "
+                f"reachable after {len(subgoals)} push(es); dispatching chain "
+                f"to real robot",
+                flush=True,
+            )
+            return subgoals
+
+        print(
+            f"[NAMOBridge] manual_primitives: SIM REJECTED — goal NOT reachable "
+            f"after {len(subgoals)} push(es); returning empty plan (real robot "
+            f"will NOT execute)",
+            flush=True,
+        )
+        return []
 
     def get_object_mapping(self) -> ObjectMapping:
         """Get the current object ID mapping."""

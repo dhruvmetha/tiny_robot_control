@@ -547,6 +547,7 @@ def run_interactive_mode(args):
         robot_width_cm=robot_width_cm,
         robot_height_cm=robot_height_cm,
         robot_model=args.robot_model,
+        manual_primitives_file=args.manual_primitives_file,
     )
 
     print("\n  NAMOPlanner will:")
@@ -705,6 +706,7 @@ def run_automatic_mode(args):
         robot_width_cm=robot_width_cm,
         robot_height_cm=robot_height_cm,
         robot_model=args.robot_model,
+        manual_primitives_file=args.manual_primitives_file,
     )
 
     # Create runtime config
@@ -894,7 +896,32 @@ def main():
             "slots per state), 'ml_primitive'/'ml' (ML-scored primitives first, "
             "primitives as fallback), 'random_rollout'/'random' (random ordering "
             "of primitives, optional thinning via --rollout-samples-per-state), "
-            "'geometric' (geometric transport heuristic)."
+            "'geometric' (geometric transport heuristic), 'manual_primitives' "
+            "(read a hand-authored (object_id, edge_idx, push_steps) sequence "
+            "from --manual-primitives-file, verify in sim, dispatch to real "
+            "robot only on sim success — forces --execution-mode open_loop)."
+        ),
+    )
+    parser.add_argument(
+        "--manual-primitives-file",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help=(
+            "Path to a YAML file listing manual primitives to try when "
+            "--strategy manual_primitives is set. Schema:\n"
+            "  primitives:\n"
+            "    - object_id: obj_4\n"
+            "      edge_idx: 19\n"
+            "      push_steps: 9\n"
+            "    - object_id: obj_4\n"
+            "      edge_idx: 23\n"
+            "      push_steps: 2\n"
+            "Each entry: real-robot object id, edge index 0..(4*points_per_face-1) "
+            "(0..59 with default points_per_face=15), and push_steps >= 1 "
+            "(depth = push_steps - 1). The bridge applies the chain in a fresh "
+            "RLEnvironment and dispatches to the real robot only if the post-"
+            "chain state has the robot goal reachable."
         ),
     )
     parser.add_argument(

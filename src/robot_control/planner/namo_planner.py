@@ -111,6 +111,9 @@ class NAMOPlanner(Planner):
         robot_height_cm: float = 10.0,
         # Robot body model for the planning simulator
         robot_model: str = "sphere",
+        # Path to manual primitive sequence YAML, only meaningful when
+        # goal_strategy == "manual_primitives".
+        manual_primitives_file: Optional[str] = None,
     ):
         """Initialize the NAMO planner.
 
@@ -153,10 +156,31 @@ class NAMOPlanner(Planner):
                 f"execution_mode must be 'open_loop' or 'mpc', got {execution_mode!r}"
             )
 
+        # The manual_primitives strategy returns the entire user-specified
+        # chain in a single bridge.plan() call after sim-verifying it. If
+        # the runtime were in MPC mode it'd discard everything but the first
+        # push and replan — which immediately re-runs the same sim
+        # verification, almost certainly with the same result (or worse,
+        # if intermediate state drifted). Force open_loop so the chain
+        # dispatches as a single block.
+        if goal_strategy == "manual_primitives" and execution_mode != "open_loop":
+            print(
+                f"[NAMOPlanner] manual_primitives strategy requires open_loop "
+                f"execution; overriding execution_mode {execution_mode!r} → 'open_loop'",
+                flush=True,
+            )
+            execution_mode = "open_loop"
+
+        if goal_strategy == "manual_primitives" and not manual_primitives_file:
+            raise ValueError(
+                "goal_strategy='manual_primitives' requires --manual-primitives-file"
+            )
+
         self._robot_goal_cm = robot_goal_cm
         self._algorithm = algorithm
         self._execution_mode = execution_mode
         self._goal_strategy = goal_strategy
+        self._manual_primitives_file = manual_primitives_file
         self._replan_on_completion = replan_on_completion
         self._max_chain_depth = max_chain_depth
         self._allow_collisions = allow_collisions
@@ -186,6 +210,7 @@ class NAMOPlanner(Planner):
             robot_width_cm=robot_width_cm,
             robot_height_cm=robot_height_cm,
             robot_model=robot_model,
+            manual_primitives_file=manual_primitives_file,
         )
 
         # Cached summary from unified C++ reachability query

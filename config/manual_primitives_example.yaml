@@ -1,0 +1,38 @@
+# Manual primitives — hand-authored push chain for run_namo.
+#
+# How to use:
+#   python scripts/run_namo.py --strategy manual_primitives \
+#       --manual-primitives-file config/manual_primitives_example.yaml \
+#       <other args>
+#
+# Semantics:
+#   - The bridge applies these primitives in order against a fresh sim
+#     env (built from the same XML the planner would have seen).
+#   - After running them all, the bridge checks env.is_robot_goal_reachable().
+#   - If reachable, the chain is dispatched to the real robot in open-loop
+#     mode (no MPC re-verification mid-chain).
+#   - If not reachable, the chain is rejected — real robot does not execute.
+#
+# Field reference:
+#   object_id  : real-robot object name (the ones you see in [DIAG] /
+#                subgoals.jsonl, e.g. obj_4). The bridge resolves the sim
+#                name via its internal mapping.
+#   edge_idx   : 0..(4 * points_per_face - 1). With production
+#                points_per_face = 15 that's 0..59. Edge ordering and
+#                geometry are defined by
+#                robot_control/src/robot_control/controller/edge_points.py
+#                (a Python mirror of namo_cpp's
+#                generate_rectangular_edge_points).
+#   push_steps : >= 1. depth = push_steps - 1 is what the C++ side
+#                stores on the Action. Roughly:
+#                  push_steps = 1 -> tiny nudge
+#                  push_steps = 5 -> ~5x the unit-depth displacement
+#                  push_steps = 10 -> deepest pre-built primitive
+
+primitives:
+  - object_id: obj_4
+    edge_idx: 19
+    push_steps: 9
+  - object_id: obj_4
+    edge_idx: 23
+    push_steps: 2
