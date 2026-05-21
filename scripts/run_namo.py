@@ -53,14 +53,30 @@ from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
 _RECORD_VIDEO_DEFAULT_SENTINEL = "__USE_DIAG_PATH__"
 
 
-def find_namo_config(scale_factor: float = 6.0) -> str:
+def find_namo_config(scale_factor: float = 6.0, robot_model: str = "sphere") -> str:
     """Find NAMO config file relative to this script.
 
-    Picks the 1×-scale variant when scale_factor == 1.0, otherwise the
-    legacy 6×-scale config. Both are sphere-robot configs; --robot-model
-    car routes to a different path entirely (handled by caller).
+    Picks the config based on (scale_factor, robot_model):
+      sphere + 1×   → namo_config_complete_skill15_1x.yaml
+      sphere + 6×   → namo_config_complete_skill15.yaml  (legacy)
+      car    + 1×   → namo_config_complete_skill15_car_1x.yaml
+      car    + 6×   → unsupported (only the 1× car primitives exist)
+
+    The car config sets robot_type: diff_drive so the C++ side instantiates
+    DiffDriveAdapter, and points to the car-specific motion_primitives_1x_car
+    .dat files. Mixing sphere config with --robot-model car would load
+    sphere primitives — useless for car physics.
     """
-    if abs(scale_factor - 1.0) < 1e-9:
+    one_x = abs(scale_factor - 1.0) < 1e-9
+    if robot_model == "car":
+        if not one_x:
+            raise ValueError(
+                f"--robot-model car only supports --scale-factor 1.0 today "
+                f"(got {scale_factor}); the 6× car primitive set was not "
+                f"generated."
+            )
+        config_name = "namo_config_complete_skill15_car_1x.yaml"
+    elif one_x:
         config_name = "namo_config_complete_skill15_1x.yaml"
     else:
         config_name = "namo_config_complete_skill15.yaml"
@@ -491,7 +507,11 @@ def run_interactive_mode(args):
     print("=" * 60)
 
     # Find NAMO config (1× or 6× variant, based on --scale-factor)
-    namo_config_path = args.namo_config if args.namo_config else find_namo_config(args.scale_factor)
+    namo_config_path = (
+        args.namo_config
+        if args.namo_config
+        else find_namo_config(args.scale_factor, args.robot_model)
+    )
     primitive_data_dir = find_primitive_data_dir()
 
     # Get workspace and robot dimensions for reachability checking
@@ -626,7 +646,7 @@ def run_automatic_mode(args):
         namo_config_path = args.namo_config
     else:
         try:
-            namo_config_path = find_namo_config(args.scale_factor)
+            namo_config_path = find_namo_config(args.scale_factor, args.robot_model)
         except FileNotFoundError as e:
             print(f"Error: {e}")
             return 1
@@ -861,10 +881,11 @@ def main():
         choices=["sphere", "car"],
         help=(
             "Robot body model for the planning simulator (default: sphere). "
-            "'sphere' = holonomic point robot (current behavior, fast search). "
-            "'car' = diff-drive little_car body (more sim-to-real fidelity); "
-            "reserved for the car-primitive follow-up phase — currently "
-            "errors out with NotImplementedError. Same physical size in both."
+            "'sphere' = holonomic point robot (fast search, current default). "
+            "'car' = diff-drive little_car body (matches real-robot physics; "
+            "requires --scale-factor 1.0 and the 1x_car primitive set under "
+            "namo_cpp/data/motion_primitives_1x_car_{square,wide,tall}.dat). "
+            "Same physical 7 cm footprint in both."
         ),
     )
     parser.add_argument(

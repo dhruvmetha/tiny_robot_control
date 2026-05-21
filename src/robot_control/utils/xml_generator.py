@@ -142,14 +142,45 @@ class NAMOXMLGenerator:
             raise ValueError(
                 f"robot_model must be 'sphere' or 'car', got {robot_model!r}"
             )
-        if robot_model == "car":
-            raise NotImplementedError(
-                "robot_model='car' is reserved for the car-primitive follow-up "
-                "phase. Re-run with --robot-model sphere or wait for the "
-                "follow-up commit that ships car motion primitives. See "
-                "SCALE_UNIFICATION_PLAN.md Phase 12."
-            )
         self._robot_model = robot_model
+
+        # Resolve the absolute path to little_car.xml once at construction
+        # time. We use an absolute path because the generated planning XML
+        # ends up in a tempfile (/tmp/namo_env_*.xml) and a relative
+        # <include> would resolve from /tmp.
+        #
+        # The car body inside little_car.xml fixes the freejoint spawn at
+        # (0, 0, 0.01) — we can't override that through a top-level
+        # <include>. The planning_service handles this by constructing the
+        # env with skip_warmup=True, calling env.set_robot_pose() to
+        # teleport to the live observation pose, then calling env.warm_up()
+        # so the 3 physics ticks integrate from the correct starting state
+        # instead of from inside whatever obstacle happens to be at the
+        # workspace origin.
+        self._car_xml_abs_path: Optional[str] = None
+        if robot_model == "car":
+            # Anchor: namo_cpp/test_xml/little-car-modeling-package/assets/
+            # mjcf/little_car.xml relative to this repo's workspace root.
+            from pathlib import Path as _P
+            here = _P(__file__).resolve()
+            # …/robot_control/src/robot_control/utils/xml_generator.py
+            workspace_root = here.parents[4]
+            candidate = (
+                workspace_root
+                / "namo_cpp"
+                / "test_xml"
+                / "little-car-modeling-package"
+                / "assets"
+                / "mjcf"
+                / "little_car.xml"
+            )
+            if not candidate.exists():
+                raise FileNotFoundError(
+                    f"robot_model='car' requires little_car.xml at "
+                    f"{candidate}, but the file is not there. Check the "
+                    f"namo_cpp submodule is checked out."
+                )
+            self._car_xml_abs_path = str(candidate)
         self.scale_factor = scale_factor
 
         # Use provided robot radius or default
@@ -283,11 +314,21 @@ class NAMOXMLGenerator:
         """
         root = ET.Element("mujoco", model="generated_environment")
 
-        # Option
-        ET.SubElement(root, "option",
-                      timestep="0.01",
-                      integrator="RK4",
-                      cone="elliptic")
+        # Option block. Sphere uses RK4 at 10 ms — classic NAMO setting.
+        # Car needs implicitfast + smaller timestep + more solver iterations
+        # to keep wheel-floor contact stable through pushes. Matches the
+        # namo_cpp/data/nominal_primitive_scene_*_1x_car.xml option block.
+        if self._robot_model == "car":
+            ET.SubElement(root, "option",
+                          cone="elliptic",
+                          integrator="implicitfast",
+                          iterations="100",
+                          timestep="0.002")
+        else:
+            ET.SubElement(root, "option",
+                          timestep="0.01",
+                          integrator="RK4",
+                          cone="elliptic")
 
         # Default
         default = ET.SubElement(root, "default")
@@ -312,6 +353,15 @@ class NAMOXMLGenerator:
         ET.SubElement(asset, "material",
                       name="robot", rgba="1.0 1.0 0.0 1.0")
 
+        # Car body: <include> at TOP LEVEL (not inside worldbody). The
+        # included file carries a <compiler> element which MuJoCo only
+        # accepts as a model-level child — a worldbody-nested include
+        # errors out with "Schema violation: unrecognized element
+        # compiler". The car body itself ends up inside worldbody after
+        # MuJoCo merges the include.
+        if self._robot_model == "car":
+            ET.SubElement(root, "include", file=self._car_xml_abs_path)
+
         # Worldbody
         worldbody = ET.SubElement(root, "worldbody")
 
@@ -334,8 +384,14 @@ class NAMOXMLGenerator:
         # Store resolved robot position for later access
         self._last_robot_pos = (robot.x, robot.y)
 
-        # Robot
-        self._add_robot(worldbody, robot)
+        # Robot. Sphere is emitted inline here with the resolved pose baked
+        # into the geom's pos= attribute. Car is included at top level above
+        # (its body lives inside little_car.xml with a fixed spawn pos), and
+        # the planning_service teleports it to (robot.x, robot.y) after env
+        # construction — before warm_up runs — so the physics warm-up sees
+        # the correct starting state.
+        if self._robot_model == "sphere":
+            self._add_robot(worldbody, robot)
 
         # Objects
         for name, obj in objects.items():
@@ -349,17 +405,19 @@ class NAMOXMLGenerator:
                       rgba="0 1 0 0.5",
                       pos=f"{goal.x} {goal.y} 0.0")
 
-        # Actuator: MuJoCo <velocity> on each slide joint. Tracks the
-        # commanded velocity inside the solver (no phase lag). See class
-        # constants above for parameter rationale.
-        actuator = ET.SubElement(root, "actuator")
-        for axis in ("x", "y"):
-            ET.SubElement(actuator, "velocity",
-                          name=f"actuator_{axis}",
-                          joint=f"joint_{axis}",
-                          kv=self.ACTUATOR_KV,
-                          ctrlrange=self.ACTUATOR_CTRLRANGE,
-                          forcerange=self.ACTUATOR_FORCERANGE)
+        # Actuator block. Sphere needs <velocity> actuators on its slide
+        # joints. Car's wheel actuators come from little_car.xml's own
+        # <actuator> block (merged in via <include>), so we emit nothing
+        # extra here for car.
+        if self._robot_model == "sphere":
+            actuator = ET.SubElement(root, "actuator")
+            for axis in ("x", "y"):
+                ET.SubElement(actuator, "velocity",
+                              name=f"actuator_{axis}",
+                              joint=f"joint_{axis}",
+                              kv=self.ACTUATOR_KV,
+                              ctrlrange=self.ACTUATOR_CTRLRANGE,
+                              forcerange=self.ACTUATOR_FORCERANGE)
 
         # Pretty print
         xml_str = ET.tostring(root, encoding="unicode")

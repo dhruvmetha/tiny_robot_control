@@ -9,6 +9,7 @@ Handles:
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 import tempfile
@@ -104,11 +105,16 @@ class NAMOPlanBridge:
             pause_after_load: Pause for user input after loading XML (for inspection)
             robot_width_cm: Robot width in cm (for XML generation)
             robot_height_cm: Robot height in cm (for XML generation)
-            robot_model: Robot body to embed in the generated XML
-                ("sphere" = holonomic point robot, current behavior;
-                 "car" = diff-drive little_car body, reserved for the
-                 car-primitive follow-up phase — raises NotImplementedError
-                 today).
+            robot_model: Robot body to embed in the generated XML.
+                "sphere" = holonomic point robot (legacy default).
+                "car" = diff-drive little_car body. Requires the matching
+                namo config (namo_config_complete_skill15_car_1x.yaml) to
+                pick up car primitives — handled by run_namo's
+                find_namo_config(robot_model="car"). When car, the bridge
+                also passes starting_robot_pose to plan_from_xml so the
+                env teleports to the live observation pose before physics
+                warmup runs (little_car.xml's fixed spawn would otherwise
+                cause the warmup to integrate from inside an obstacle).
         """
         self._namo_config_path = namo_config_path
         self._scale_factor = scale_factor
@@ -384,6 +390,20 @@ class NAMOPlanBridge:
                     merged.setdefault(k, set()).update(edges)
                 kwargs["external_edge_blacklist"] = merged
 
+            # Robot starting pose in sim meters + radians. Only matters
+            # for the car body — the sphere XML bakes pose into the geom
+            # and the planning_service's defer-warmup branch is a no-op
+            # without this arg. We always pass it for car so the env
+            # constructor skips its 3-tick warm-up, the service teleports
+            # to this pose, then warms up cleanly from the right state.
+            starting_robot_pose: Optional[Tuple[float, float, float]] = None
+            if self._robot_model == "car":
+                rx_m, ry_m = self._cm_to_sim(
+                    float(observation.robot_x), float(observation.robot_y)
+                )
+                rtheta_rad = math.radians(float(observation.robot_theta))
+                starting_robot_pose = (rx_m, ry_m, rtheta_rad)
+
             # Run planning
             result = service.plan_from_xml(
                 xml_path=xml_path,
@@ -396,6 +416,7 @@ class NAMOPlanBridge:
                 chain_link_cost=chain_link_cost,
                 selection_strategy=selection_strategy,
                 goals_per_region=goals_per_region,
+                starting_robot_pose=starting_robot_pose,
                 **kwargs,
             )
 
