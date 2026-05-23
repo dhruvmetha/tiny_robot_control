@@ -90,14 +90,22 @@ class NAMOXMLGenerator:
     # Object parameters (real robot scale - will be multiplied by scale_factor)
     OBJECT_HEIGHT_BASE = 0.025  # 2.5cm half-height (5cm total)
     OBJECT_MASS = 0.1
-    OBJECT_FRICTION = "0 0.1 0.1"
+    OBJECT_FRICTION = "1 0.005 0.0001"   # Exact match to movable obstacle friction in
+                                          # namo_cpp/data/nominal_primitive_scene_*_1x_car.xml.
+                                          # Was "0 0.1 0.1" (frictionless slide, high torsional/rolling)
+                                          # → runtime planning sim disagreed with the primitive DB.
     OBJECT_COLOR = "1 1 0 1"  # yellow
 
     # Wall parameters (real robot scale - will be multiplied by scale_factor)
     WALL_THICKNESS_BASE = 0.01  # 1cm half-thickness (2cm total)
     WALL_HEIGHT_BASE = 0.05  # 5cm half-height (10cm total)
     WALL_COLOR = "0.800000011920929 0.800000011920929 0.800000011920929 1.0"
-    STATIC_FRICTION = "100000 100000 100000"
+    STATIC_FRICTION = "1 0.005 0.0001"   # Matches namo_cpp primitive scene walls, which have
+                                          # no explicit friction attribute → MuJoCo defaults
+                                          # (1, 0.005, 0.0001). Was "100000 100000 100000" — walls
+                                          # don't move (no joint) so the magnitude is cosmetic, but
+                                          # contact dynamics during wall-grazing differ; matching
+                                          # exactly keeps planner-sim and primitive-sim in lockstep.
 
     # Floor friction
     FLOOR_FRICTION = "0.5 0.005 0.001"
@@ -511,12 +519,23 @@ class NAMOXMLGenerator:
         half_height = obj.half_height if obj.half_height > 0 else self.OBJECT_HEIGHT
         z_pos = half_height  # center is at half-height above ground
 
+        # Use quaternion instead of euler. Euler angles are subject to MuJoCo's
+        # <compiler angle="..."> setting (degree vs radian). When the car body
+        # is <include>d via little_car.xml, the included file declares
+        # angle="radian" and that setting wins model-wide — making the parent's
+        # euler="0 0 9.58" attributes get interpreted as 9.58 *radians*,
+        # rotating objects by ~180° vs the intended 9.58°. Quaternions are
+        # unit-free, immune to this.
+        theta_rad = math.radians(obj.theta)
+        qw = math.cos(theta_rad / 2.0)
+        qz = math.sin(theta_rad / 2.0)
+
         if obj.is_static:
             # Static object (wall) - no joint, gray color, very high friction
             ET.SubElement(obj_body, "geom",
                           name=name, condim="4",
                           pos=f"{obj.x} {obj.y} {z_pos}",
-                          euler=f"0 0 {obj.theta}",
+                          quat=f"{qw} 0 0 {qz}",
                           friction=self.STATIC_FRICTION,
                           rgba=self.WALL_COLOR,
                           size=f"{obj.half_width} {obj.half_depth} {half_height}",
@@ -526,7 +545,7 @@ class NAMOXMLGenerator:
             ET.SubElement(obj_body, "geom",
                           name=name, condim="4",
                           pos=f"{obj.x} {obj.y} {z_pos}",
-                          euler=f"0 0 {obj.theta}",
+                          quat=f"{qw} 0 0 {qz}",
                           friction=self.OBJECT_FRICTION,
                           rgba=self.OBJECT_COLOR,
                           size=f"{obj.half_width} {obj.half_depth} {half_height}",
