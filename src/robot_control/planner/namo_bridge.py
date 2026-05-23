@@ -500,10 +500,29 @@ class NAMOPlanBridge:
         try:
             goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
             service = self._get_planning_service()
+
+            # Same pose-conversion pattern as bridge.plan(): the car body
+            # spawns at little_car.xml's fixed pos, so reachability has to
+            # be computed AFTER teleporting to the observation pose. Without
+            # this, _is_goal_reachable always answers from the XML spawn
+            # (typically (0,0)) and the planner never sees "goal reachable"
+            # after a successful push — it falls into NAMO planning, which
+            # short-circuits with 0 actions because the goal IS reachable
+            # from the actual pose, and the run aborts as "all attempts
+            # failed". Sphere XMLs bake pose into the geom; skip.
+            starting_robot_pose: Optional[Tuple[float, float, float]] = None
+            if self._robot_model == "car":
+                rx_m, ry_m = self._cm_to_sim(
+                    float(observation.robot_x), float(observation.robot_y)
+                )
+                rtheta_rad = math.radians(float(observation.robot_theta))
+                starting_robot_pose = (rx_m, ry_m, rtheta_rad)
+
             summary = service.analyze_reachability_from_xml(
                 xml_path=xml_path,
                 robot_goal=(goal_sim[0], goal_sim[1], 0.0),
                 analysis_mode=analysis_mode,
+                starting_robot_pose=starting_robot_pose,
             )
             if self._verbose and summary.get("error_message"):
                 print(f"[NAMOBridge] Reachability error: {summary['error_message']}")
