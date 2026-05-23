@@ -85,14 +85,38 @@ def main():
 
     sim_name = "obstacle_1_movable"
     bounds = env.get_world_bounds()
-    obj_info = env.get_object_info()
-    obj4_pose_m = (obj_info[sim_name].get("pos_x", 0.04707),
-                   obj_info[sim_name].get("pos_y", 0.27035))
+    obs = env.get_observation()
+
+    # CRITICAL: use the *current* MuJoCo pose, not the input pose.
+    # warm_up() runs 3 physics steps; the object can drift slightly.
+    obj4_pose_key = sim_name + "_pose" if (sim_name + "_pose") in obs else sim_name
+    robot_pose_key = "robot_pose" if "robot_pose" in obs else "robot"
+    obj4_live = obs.get(obj4_pose_key)
+    robot_live = obs.get(robot_pose_key)
 
     print(f"=== env state ===")
     print(f"  world bounds:        {bounds}")
-    print(f"  robot pose (cm):     ({rx*100:.2f}, {ry*100:.2f})")
-    print(f"  obstacle_1_movable info: {obj_info.get(sim_name)}")
+    print(f"  obs keys:            {sorted(obs.keys())}")
+    print(f"  robot input (cm):    ({rx*100:.4f}, {ry*100:.4f})")
+    print(f"  robot live (m,rad):  {robot_live}")
+    print(f"  obj_4 input (cm):    ({OBJECTS_CM['obj_4'][0]:.4f}, "
+          f"{OBJECTS_CM['obj_4'][1]:.4f}, θ={OBJECTS_CM['obj_4'][2]:.4f}°)")
+    print(f"  obj_4 live (m,rad):  {obj4_live}")
+    if obj4_live is None:
+        print("  [ERROR] obj_4 not found in observation; aborting")
+        return
+
+    # Build a "live" obj_4 description so cpp_edge_world matches what
+    # C++ generate_rectangular_edge_points actually computes.
+    live_obj4 = (
+        obj4_live[0] * 100,           # x cm
+        obj4_live[1] * 100,           # y cm
+        math.degrees(obj4_live[2]),   # theta deg
+        OBJECTS_CM["obj_4"][3],       # width cm (immutable)
+        OBJECTS_CM["obj_4"][4],       # depth cm (immutable)
+        OBJECTS_CM["obj_4"][5],
+        OBJECTS_CM["obj_4"][6],
+    )
 
     # Test 1: determinism — call get_reachable_edges TWICE in a row, no other ops
     print(f"\n=== Test 1: get_reachable_edges determinism ===")
@@ -102,15 +126,22 @@ def main():
     print(f"  call 2: {e2}")
     print(f"  match:  {e1 == e2}")
 
-    # Test 2: probe is_robot_goal_reachable at each "claimed reachable" edge
+    # Test 2: probe is_robot_goal_reachable at each "claimed reachable" edge.
+    # Use the LIVE obj_4 pose (post-warmup) — matches what get_reachable_edges saw.
     print(f"\n=== Test 2: cross-check each reachable edge with is_robot_goal_reachable ===")
+    print(f"  Using LIVE obj_4 pose for edge math (post warm_up MuJoCo state)")
     print(f"  {'edge':>4}  {'world (cm)':>20}  {'goal_reachable':>15}  {'in_get_edges':>13}")
-    for ei in e1:
-        wx, wy = cpp_edge_world(OBJECTS_CM["obj_4"], ei)
+    # Probe also a few NOT-in-edges as sanity
+    probe_set = list(e1) + [ei for ei in (1, 3, 5, 30, 31, 32) if ei not in e1]
+    for ei in probe_set:
+        wx, wy = cpp_edge_world(live_obj4, ei)
         env.set_robot_pose(rx, ry, math.radians(ROBOT_POSE_CM[2]))
         env.set_robot_goal(wx, wy, 0.0)
         gr = env.is_robot_goal_reachable()
-        print(f"  {ei:>4}  ({wx*100:>7.2f}, {wy*100:>7.2f})   {str(gr):>15}  {'True':>13}")
+        in_e1 = ei in e1
+        flag = "" if (gr == in_e1) else "  ← MISMATCH"
+        print(f"  {ei:>4}  ({wx*100:>7.2f}, {wy*100:>7.2f})   {str(gr):>15}  "
+              f"{str(in_e1):>13}{flag}")
 
     # Test 3: call get_reachable_edges ONE MORE TIME after the probe loop
     e3 = sorted(env.get_reachable_edges(sim_name))
@@ -119,56 +150,19 @@ def main():
     print(f"  post-probe: {e3}")
     print(f"  drift:      {set(e1) ^ set(e3)}")
 
-    # Test 4: Independent Python wavefront recomputation
-    print(f"\n=== Test 4: pure-Python wavefront recomputation ===")
-    # Match C++ inflation: robot_radius=max(hx,hy)=0.035, tier1_margin=0.005
-    res = 0.005
-    cfg = WavefrontConfig(resolution=res, robot_radius=0.035, inflation_margin=0.005)
-    wf = WavefrontPlanner(cfg)
-    # Match what C++ get_environment_bounds returns: include padding + robot pos
-    py_obj_data = {}
-    for name, (x, y, th, w, d, _, is_static) in OBJECTS_CM.items():
-        hx = d / 200.0  # depth -> X half-extent (cm/200)
-        hy = w / 200.0  # width -> Y half-extent
-        py_obj_data[name] = (x / 100, y / 100, hx, hy, th)
-    # Boundary walls (matching xml_generator placement)
-    wt = 0.01
-    walls_outer = (-wt, WS_BOUNDS_CM[1] / 100 + wt,
-                   -wt, WS_BOUNDS_CM[3] / 100 + wt)
-    py_obj_data["wall_1"] = (walls_outer[0], (walls_outer[2] + walls_outer[3]) / 2,
-                              wt, (walls_outer[3] - walls_outer[2]) / 2 + wt, 0)
-    py_obj_data["wall_2"] = (walls_outer[1], (walls_outer[2] + walls_outer[3]) / 2,
-                              wt, (walls_outer[3] - walls_outer[2]) / 2 + wt, 0)
-    py_obj_data["wall_3"] = ((walls_outer[0] + walls_outer[1]) / 2, walls_outer[2],
-                              (walls_outer[1] - walls_outer[0]) / 2, wt, 0)
-    py_obj_data["wall_4"] = ((walls_outer[0] + walls_outer[1]) / 2, walls_outer[3],
-                              (walls_outer[1] - walls_outer[0]) / 2, wt, 0)
-    # Use bounds matching C++ for fair comparison
-    py_bounds = (bounds[0], bounds[1], bounds[2], bounds[3])
-    wf.build_grid(py_bounds, py_obj_data)
-    # Run reachability BFS from robot pose
-    wf.compute_reachability((rx, ry))
-
-    print(f"  grid_shape (W,H):     {wf._grid.shape}")
-    print(f"  cells with value=1:   {(wf._grid == 1).sum() if hasattr(wf, '_grid') else 'n/a'}")
-    print(f"  cells with value=-1:  {(wf._grid == -1).sum() if hasattr(wf, '_grid') else 'n/a'}")
-    print(f"  cells with value=0:   {(wf._grid == 0).sum() if hasattr(wf, '_grid') else 'n/a'}")
-
-    # Compare edge points
-    print(f"\n  Per-edge comparison (Python independent wavefront vs C++ get_reachable_edges):")
-    print(f"  {'edge':>4}  {'world (cm)':>20}  {'py_cell_val':>11}  {'in_cpp_edges':>13}")
-    for ei in sorted(set(e1) | set(range(0, 22, 2)) | {30, 31, 55, 57, 59}):
-        wx, wy = cpp_edge_world(OBJECTS_CM["obj_4"], ei)
-        # Query Python wavefront
-        try:
-            free = wf.is_free(wx, wy)
-            # Also query reachability
-            reachable = wf.is_reachable(wx, wy) if hasattr(wf, "is_reachable") else None
-            val = "1" if reachable else ("0 (free,unreach)" if free else "-1 (obstacle)")
-        except Exception as e:
-            val = f"err:{e}"
-        in_cpp = ei in e1
-        print(f"  {ei:>4}  ({wx*100:>7.2f}, {wy*100:>7.2f})   {val:>11}  {str(in_cpp):>13}")
+    # Summary
+    matches = sum(1 for ei in probe_set
+                  if (env.is_robot_goal_reachable.__self__ is env) and True)
+    print(f"\n=== Summary ===")
+    print(f"  Total claimed-reachable edges: {len(e1)}")
+    print(f"  Edge math used LIVE obj_4 pose: {live_obj4[:3]}")
+    if obj4_live[0] * 100 == OBJECTS_CM['obj_4'][0] and obj4_live[1] * 100 == OBJECTS_CM['obj_4'][1]:
+        print(f"  Live pose matches input pose exactly (no drift).")
+    else:
+        dx = obj4_live[0] * 100 - OBJECTS_CM['obj_4'][0]
+        dy = obj4_live[1] * 100 - OBJECTS_CM['obj_4'][1]
+        dth = math.degrees(obj4_live[2]) - OBJECTS_CM['obj_4'][2]
+        print(f"  Drift: dx={dx:+.4f}cm dy={dy:+.4f}cm dθ={dth:+.4f}°")
 
 
 if __name__ == "__main__":
