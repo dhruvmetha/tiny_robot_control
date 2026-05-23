@@ -31,7 +31,9 @@ Approach Phase:
 
 from __future__ import annotations
 
+import json
 import math
+import os
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
@@ -249,27 +251,42 @@ class PushController(Controller):
             self._state = PushState.COMPUTING_APPROACH
 
         if self._state == PushState.COMPUTING_APPROACH:
-            return self._handle_computing_approach(obs, obj, subgoal)
+            action = self._handle_computing_approach(obs, obj, subgoal)
+        elif self._state == PushState.APPROACHING:
+            action = self._handle_approaching(obs, obj, subgoal)
+        elif self._state == PushState.ADVANCING:
+            action = self._handle_advancing(obs, obj, subgoal)
+        elif self._state == PushState.PUSHING:
+            action = self._handle_pushing(obs, obj, subgoal)
+        elif self._state == PushState.RETREATING:
+            action = self._handle_retreating(obs)
+        elif self._state == PushState.FINISHED:
+            action = Action.stop()
+        elif self._state == PushState.FAILED:
+            action = Action.stop()
+        else:
+            action = Action.stop()
 
-        if self._state == PushState.APPROACHING:
-            return self._handle_approaching(obs, obj, subgoal)
-
-        if self._state == PushState.ADVANCING:
-            return self._handle_advancing(obs, obj, subgoal)
-
-        if self._state == PushState.PUSHING:
-            return self._handle_pushing(obs, obj, subgoal)
-
-        if self._state == PushState.RETREATING:
-            return self._handle_retreating(obs)
-
-        if self._state == PushState.FINISHED:
-            return Action.stop()
-
-        if self._state == PushState.FAILED:
-            return Action.stop()
-
-        return Action.stop()
+        # Per-tick action log across ALL push-state phases. Enabled via
+        # NAMO_PUSH_WHEEL_LOG=<path>. Use this to diagnose "robot is slow
+        # during the push" — the `state` field tells you whether the slow
+        # phase is APPROACHING (Nav handing back the action), PUSHING
+        # (our FollowPathController), RETREATING, etc.
+        log_path = os.getenv("NAMO_PUSH_WHEEL_LOG")
+        if log_path:
+            if not hasattr(self, "_wheel_log_t0_global"):
+                self._wheel_log_t0_global = float(obs.timestamp)
+            t_rel = float(obs.timestamp) - self._wheel_log_t0_global
+            mode = str(self._follow_path_controller.metadata.get("mode", ""))
+            with open(log_path, "a") as f:
+                f.write(json.dumps({
+                    "t_s": t_rel,
+                    "left_cmd": float(action.left_speed),
+                    "right_cmd": float(action.right_speed),
+                    "mode": mode,
+                    "state": self._state.value,
+                }) + "\n")
+        return action
 
     def _handle_computing_approach(
         self, obs: Observation, obj: ObjectPose, subgoal: PushSubgoal
