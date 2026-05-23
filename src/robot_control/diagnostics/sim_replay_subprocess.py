@@ -45,10 +45,9 @@ os.environ["NAMO_QPOS_DUMP"] = _QPOS_PATH
 _WIDTH = 1280
 _HEIGHT = 720
 _FPS = 30
-# Sim integrator runs at 0.01 s/tick = 100 Hz. Stride 3 → ~33 frames per
-# physical second; played at 30 fps, that's ~1.1× sim time. Good balance
-# of clarity and file size for a 5-10 s push.
-_DEFAULT_STRIDE = 3
+# Stride is derived from the loaded model's timestep so the MP4 plays at
+# 1× wall-clock — sphere uses 0.01s/tick (stride≈3), car uses 0.002s/tick
+# (stride≈17). Same pattern as namo_cpp/scripts/render_qpos_dump.py.
 # Camera padding factor — lookat distance = workspace_extent_m * this.
 _CAMERA_DISTANCE_FACTOR = 1.6
 
@@ -173,9 +172,6 @@ def main() -> int:
         )
         return 1
 
-    stride = max(1, _DEFAULT_STRIDE)
-    qpos_frames = qpos_frames[::stride]
-
     # MuJoCo rendering ----------------------------------------------------
     import mujoco
     import cv2
@@ -191,6 +187,11 @@ def main() -> int:
             flush=True,
         )
         return 1
+
+    # Stride = ticks per video frame so playback is 1× wall-clock. Read the
+    # timestep off the loaded model (car: 0.002s → 17, sphere: 0.01s → 3).
+    stride = max(1, int(round((1.0 / _FPS) / model.opt.timestep)))
+    qpos_frames = qpos_frames[::stride]
 
     bounds = env.get_world_bounds()
     cx = 0.5 * (bounds[0] + bounds[1])
