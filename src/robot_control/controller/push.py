@@ -310,7 +310,20 @@ class PushController(Controller):
         angle_error_deg = math.degrees(angle_error)
 
         if dist_to_approach < self._push_config.approach_skip_distance and angle_error_deg < self._push_config.approach_skip_angle:
-            # Already at approach position, skip to pushing
+            # Already at approach position, skip to pushing.
+            # Capture pre-push poses here too — _handle_advancing normally sets
+            # them at line 423-424, but we're bypassing ADVANCING entirely. Without
+            # this, _push_start_obj_pose stays None and the PUSH COMPLETE block
+            # silently skips the Δobject log + the stuck check + the pushes.jsonl
+            # record (push.py:987, 1027).
+            self._push_start_obj_pose = (obj.x, obj.y, obj.theta)
+            self._push_start_robot_pose = (obs.robot_x, obs.robot_y, obs.robot_theta)
+            print(
+                f"[PUSH] >>> PUSHING start (skip-approach): obj '{subgoal.object_id}' at "
+                f"({obj.x:.1f},{obj.y:.1f},θ={obj.theta:.1f}°), "
+                f"robot at ({obs.robot_x:.1f},{obs.robot_y:.1f},θ={obs.robot_theta:.1f}°), "
+                f"edge={subgoal.edge_idx}, push_steps={subgoal.push_steps}"
+            )
             self._state = PushState.PUSHING
             return self._handle_pushing(obs, obj, subgoal)
 
