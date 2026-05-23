@@ -61,6 +61,12 @@ class CameraRecorder:
         self._frame_count = 0
         self._is_recording = False
         self._subscribed = False
+        # Wall-clock anchor for the current recording — set from the first
+        # frame's timestamp in _on_frame. Used to slot incoming frames into
+        # fixed 1/_fps bins so the output container's declared fps matches
+        # real elapsed time regardless of the camera publisher's actual
+        # delivery rate (which is ~15/s in practice, not the configured 60).
+        self._start_timestamp: Optional[float] = None
 
         # Frames arrive on the pubsub publisher thread; start/stop are driven
         # from the camera_service REP thread. cv2.VideoWriter is not
@@ -130,8 +136,18 @@ class CameraRecorder:
                     self._is_recording = False
                     return
 
-            self._writer.write(frame)
-            self._frame_count += 1
+            # Real-time pacing: slot this frame into the 1/_fps grid anchored
+            # on the first frame's timestamp. When the source is slower than
+            # _fps the while-loop duplicates `frame` to fill the gap; when
+            # the source is faster than _fps, slot < _frame_count and the
+            # loop body never runs (frame is dropped). Net effect: the MP4's
+            # declared _fps matches real elapsed time.
+            if self._start_timestamp is None:
+                self._start_timestamp = timestamp
+            slot = int((timestamp - self._start_timestamp) * self._fps)
+            while self._frame_count <= slot:
+                self._writer.write(frame)
+                self._frame_count += 1
 
     def start(self, filename: Optional[str] = None) -> str:
         """
@@ -161,6 +177,7 @@ class CameraRecorder:
 
             self._output_path = new_path
             self._frame_count = 0
+            self._start_timestamp = None
             self._is_recording = True
             # Writer initialised lazily on first frame (need frame size).
             self._writer = None
