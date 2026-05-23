@@ -5,6 +5,12 @@ Usage:
     python scripts/test_interactive.py              # Simulation
     python scripts/test_interactive.py --real       # Real robot
     python scripts/test_interactive.py --real --dry-run  # Real vision, no motors
+
+    # Share the camera with a running camera_service (so the camera doesn't
+    # have to be released first):
+    python scripts/test_interactive.py --real \\
+        --config config/real.yaml \\
+        --camera-service tcp://localhost:5556
 """
 
 import argparse
@@ -19,6 +25,16 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Real mode: vision only, no motor commands")
     parser.add_argument("--config", type=str, default="config/real.yaml", help="Real mode: config path")
     parser.add_argument("--port", type=str, default=None, help="Real mode: serial port override")
+    parser.add_argument(
+        "--camera-service",
+        type=str,
+        default=None,
+        metavar="ADDRESS",
+        help="Real mode: ZMQ address of a running camera_service "
+             "(e.g. tcp://localhost:5556). When set, this script subscribes "
+             "to that service instead of opening the camera itself — so it "
+             "can run alongside `camera_service.py --show`.",
+    )
     args = parser.parse_args()
 
     if args.real:
@@ -28,8 +44,11 @@ def main():
             serial_port=args.port,
             dry_run=args.dry_run,
             initial_speed=args.speed,
+            camera_service_address=args.camera_service,
         )
         mode_str = "Real Robot" + (" (dry-run)" if args.dry_run else "")
+        if args.camera_service:
+            mode_str += f" + camera_service @ {args.camera_service}"
     else:
         config = RuntimeConfig(
             mode="sim",
