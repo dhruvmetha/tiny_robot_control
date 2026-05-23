@@ -88,12 +88,24 @@ def render_chain_to_mp4(
     ]
 
     try:
-        # capture_output=False so the subprocess's [sim_replay_subprocess]
-        # log lines surface directly into the parent run.log (the Tee on
-        # stdout/stderr inherits to children). Inherit the parent's CWD —
-        # callers chdir into namo_cpp/ before invoking, so motion-primitive
-        # paths in the config resolve.
-        proc = subprocess.run(args, check=False)
+        # Capture stdout/stderr and re-emit via print() so the subprocess's
+        # log lines flow through the parent's Tee into run.log. Inheriting
+        # fds doesn't work for that path: Tee.fileno() returns the tty fd,
+        # so subprocess.run() with the default inheritance bypasses the
+        # Tee and only the terminal sees the lines. Inherit the parent's
+        # CWD — callers chdir into namo_cpp/ before invoking, so
+        # motion-primitive paths in the config resolve.
+        proc = subprocess.run(
+            args,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        if proc.stdout:
+            # Strip trailing newline so print()'s newline doesn't double up.
+            for line in proc.stdout.splitlines():
+                print(line, flush=True)
     except Exception as exc:
         print(f"[sim_replay] subprocess raised: {exc!r}", flush=True)
         return None
