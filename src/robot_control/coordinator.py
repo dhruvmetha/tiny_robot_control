@@ -50,9 +50,20 @@ class ControlCoordinator:
         self._quit_handler: Optional[Callable[[], None]] = None
         self._emergency_stop_handler: Optional[Callable[[], None]] = None
 
-        # Apply initial speed
-        for ctrl in controllers.values():
-            if hasattr(ctrl, "set_speed"):
+        # Apply initial speed ONLY to "speed-preset" controllers (the ones
+        # whose max_speed is the user-facing slider value): keyboard and the
+        # standalone follow_path controller. PushController and
+        # NavigationController have their OWN config-loaded max_speed
+        # (controller.yaml: push.max_speed / navigation.max_speed); stomping
+        # them with the keyboard slider's `initial_speed` (default 0.3) was a
+        # silent bug — production push/nav ran at 0.3 PWM even when YAML
+        # said 0.4, because this loop overrode the construction-time value
+        # immediately after Runtime built them. See trace: coordinator.py
+        # stomps push.set_speed(0.3) → push._follow_path_controller._max_speed
+        # = 0.3 → wheel commands capped at 0.30 (not 0.40).
+        _SPEED_PRESET_CONTROLLERS = {"keyboard", "follow_path"}
+        for name, ctrl in controllers.items():
+            if name in _SPEED_PRESET_CONTROLLERS and hasattr(ctrl, "set_speed"):
                 ctrl.set_speed(initial_speed)
 
     def bind_to_window(self, window: Window) -> None:
@@ -194,9 +205,13 @@ class ControlCoordinator:
                     self._speed = preset
                     break
 
-        # Apply to all controllers
-        for ctrl in self._controllers.values():
-            if hasattr(ctrl, "set_speed"):
+        # Apply to speed-preset controllers only (keyboard / follow_path).
+        # Push and navigation keep their YAML-configured max_speed; the
+        # speed-slider is for the manual / keyboard path. (Same fix as
+        # in __init__; see the comment there for the bug history.)
+        _SPEED_PRESET_CONTROLLERS = {"keyboard", "follow_path"}
+        for name, ctrl in self._controllers.items():
+            if name in _SPEED_PRESET_CONTROLLERS and hasattr(ctrl, "set_speed"):
                 ctrl.set_speed(self._speed)
 
         if self._window:
