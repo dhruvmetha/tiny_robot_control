@@ -3,7 +3,7 @@
 
 # Navigation controller
 navigation:
-  max_speed: 0.3                 # CAN be overridden by --nav-speed
+  max_speed: 0.4                 # CAN be overridden by --nav-speed. Aligned with push.max_speed.
   pre_rotation_skip_angle: 45.0  # degrees - skip pre-rotation if heading error < this
   robot_geometry_scale: 1.0      # RVG robot inflation (1.0 = half robot size, matches wavefront)
   goal_tolerance_ratio: 0.2      # goal_tolerance = ratio * car_size
@@ -26,7 +26,11 @@ navigation:
 # real robot used to overshoot sim predictions badly. Setting both to sim
 # values makes primitive predictions actually match real-robot behavior.
 push:
-  max_speed: 0.2                 # Normalized wheel PWM ∈ [0, 1]. 0.2 = 20% PWM (was 0.05).
+  max_speed: 0.4                 # Normalized wheel PWM ∈ [0, 1]. Was 0.2 (stiction
+                                 # band) → 0.3 → 0.4. At 0.4 firmware delivers
+                                 # 34.8%/40% to the wheels (RIGHT_GAIN=0.87 trim) —
+                                 # both well above stiction. Drift was ~3° / 3 s
+                                 # in last test, acceptable.
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 0.3           # lookahead as fraction of object size
