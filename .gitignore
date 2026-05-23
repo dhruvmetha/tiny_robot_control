@@ -9,3 +9,4 @@ output_dump/
 recordings/
 /calibration/
 /chassis_calibration/
+MUJOCO_LOG.TXT
