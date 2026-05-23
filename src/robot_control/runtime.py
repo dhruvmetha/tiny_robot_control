@@ -117,6 +117,26 @@ class RuntimeConfig:
     # Simulation config (uses defaults if None)
     sim_config: Optional["SimConfig"] = None
 
+    # Path to a MuJoCo XML. When set in sim mode, Runtime uses MujocoSimEnv
+    # (full MuJoCo physics, supports object contact) instead of the default
+    # micromvp SimEnv (diff-drive kinematics only — robot drives through
+    # obstacles). The XML must follow the car convention produced by
+    # ``capture_to_xml.py --robot-model car``.
+    mujoco_xml: Optional[str] = None
+    # If True (and mujoco_xml is set), spawn a passive ``mujoco.viewer`` so
+    # the physics are visible live. Independent of ``show_gui`` (which
+    # toggles the micromvp PyQt window).
+    mujoco_viewer: bool = False
+    # Starting robot pose in workspace cm ``(x, y, theta_deg)``. Used to
+    # teleport the car at MujocoSimEnv construction; required when the XML
+    # is a captured car-format scene because little_car.xml bakes a
+    # (0, 0) spawn that doesn't match the captured scene.
+    mujoco_starting_robot_pose_cm: Optional[Tuple[float, float, float]] = None
+    # If set, MujocoSimEnv writes an MP4 of the sim run to this path. Same
+    # camera framing as ``sim_replay_subprocess`` so the video is comparable.
+    # Independent of ``mujoco_viewer``.
+    mujoco_video_path: Optional[str] = None
+
     # Real robot config paths
     config_path: str = "config/real.yaml"
     objects_path: str = "config/objects.yaml"
@@ -387,6 +407,26 @@ class Runtime:
             raise RuntimeError(
                 "Simulation not available. Check that SimEnv can be imported."
             )
+
+        # MuJoCo-backed sim branch: takes the captured car XML and drives
+        # mj_step directly. Picked when the user passed --mujoco-xml so the
+        # push controllers see real contact physics. The workspace
+        # dimensions still come from sim_config (or defaults) because the
+        # XML's <option> doesn't carry workspace bounds.
+        if self._config.mujoco_xml:
+            from robot_control.environment.mujoco_sim import MujocoSimEnv
+            sim_config = self._config.sim_config or SimConfig()
+            self._workspace_config = sim_config.workspace_config
+            self._env = MujocoSimEnv(
+                self._config.mujoco_xml,
+                viewer=self._config.mujoco_viewer,
+                starting_robot_pose_cm=self._config.mujoco_starting_robot_pose_cm,
+                record_video_path=self._config.mujoco_video_path,
+            )
+            self._sensor = SimSensorNode(self._env, rate=self._config.frequency)
+            self._world = WorldState()
+            self._controllers = self._create_controllers()
+            return
 
         # Use provided config or defaults
         sim_config = self._config.sim_config or SimConfig(
