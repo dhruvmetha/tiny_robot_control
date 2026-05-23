@@ -8,3 +8,4 @@ output_dump/
 .claude/
 recordings/
 /calibration/
+/chassis_calibration/
