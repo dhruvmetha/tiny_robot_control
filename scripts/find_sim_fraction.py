@@ -114,7 +114,7 @@ SIM_WHEEL_BASE_CM = 7.5
 # tuning knobs in steady-state straight cruise, so the resulting
 # calibration still applies cleanly to push_tracker_max_speed in
 # production.
-SIM_LOOKAHEAD_RATIO = 0.5
+SIM_LOOKAHEAD_RATIO = 1.0
 SIM_GOAL_TOLERANCE_RATIO = 0.2
 
 # Pre-push settle ticks — matches namo_push_controller.cpp:504

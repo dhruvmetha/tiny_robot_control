@@ -33,7 +33,10 @@ push:
                                  # in last test, acceptable.
   standoff_multiplier: 0.6       # standoff = multiplier * robot_size
   wheel_deadband: 0.05           # motor deadband threshold
-  lookahead_ratio: 0.3           # lookahead as fraction of object size
+  lookahead_ratio: 1.0           # lookahead as fraction of robot car_size. Was 0.3 — short
+                                 # lookahead amplifies camera-heading-noise into PP curvature
+                                 # corrections; 1.0 matches the Tier-1 PP calibration setting
+                                 # which produced clean (no-wiggle) tracking.
   push_steps: 26                # ~0.90 s per NAMO push step at 30 Hz (was 25 → 0.83 s; sim is 0.75 s)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 

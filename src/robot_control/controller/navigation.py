@@ -165,6 +165,12 @@ class NavigationController(Controller):
             config,
             max_speed=self._max_speed,
             goal_tolerance=self._nav_config.goal_tolerance_ratio * car_size,
+            # 1.0 × car_size lookahead (vs FollowPathController class default
+            # 0.5×). Matches PushController and the Tier-1 PP calibration so
+            # every use of FollowPathController on the real robot has the
+            # same noise sensitivity. Was implicit 0.5× — short enough that
+            # camera-heading-noise produced visible PP wiggle / speed loss.
+            lookahead_distance=1.0 * car_size,
         )
 
         # State machine
