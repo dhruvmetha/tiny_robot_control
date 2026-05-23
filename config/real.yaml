@@ -3,7 +3,7 @@
 
 # Camera settings
 camera:
-  device: 5      # RealSense color stream (/dev/video5, YUYV). Other RealSense devices: video0=depth(Z16), video2=IR(greyscale), video1/3/6=metadata.
+  device: 4      # RealSense color stream (/dev/video4, YUYV). Other RealSense devices: video0=depth(Z16), video2=IR(greyscale), video1/3/6=metadata. NOTE: index can shift across reboots/replug — verify with `v4l2-ctl --list-formats-ext -d /dev/videoN`.
   resolution: "720p"
   fps: 60
   # Path to camera calibration file (camera matrix K and distortion D)
