@@ -73,10 +73,12 @@ def load_config(config_path: str, objects_path: str = None):
         # Fallback to legacy format in real.yaml
         for name, obj_config in config.get("objects", {}).items():
             marker_id = obj_config["marker_id"]
+            obj_type = obj_config.get("type", "movable")
             size = obj_config.get("size_mm", [50, 50])
             object_defs[name] = ObjectDefinition(
                 marker_id=marker_id,
-                is_static=False,
+                is_static=(obj_type == "static"),
+                is_goal=(obj_type == "goal"),
                 width_cm=size[0] / 10.0,
                 depth_cm=size[1] / 10.0,
                 height_cm=5.0,
@@ -105,6 +107,66 @@ def load_config(config_path: str, objects_path: str = None):
     )
 
     return camera_config, observer_config
+
+
+def _capture_from_camera_service(
+    camera_service: str,
+    objects_path: str,
+    timeout_s: float = 10.0,
+    stable_secs: float = 1.5,
+):
+    """Pull one stable Observation from a running camera_service via ZMQ.
+
+    Mirrors ``show_edges.capture_live_observation`` so we don't double-open
+    the physical camera when camera_service already owns ``/dev/video``.
+
+    Returns the Observation, or None on failure (errors are printed; never
+    raised).
+    """
+    from robot_control.nodes.remote_observer import RemoteObserverNode, ObjectSizeInfo
+
+    # Load object sizes — RemoteObserverNode only fills width/depth/height
+    # when given a size map (otherwise movables come back with zeros).
+    object_sizes: Dict[str, ObjectSizeInfo] = {}
+    objects_path_obj = Path(objects_path)
+    if objects_path_obj.exists():
+        with open(objects_path_obj, "r") as f:
+            data = yaml.safe_load(f) or {}
+        for name, obj in (data.get("objects") or {}).items():
+            obj_type = obj.get("type", "movable")
+            if obj_type == "goal":
+                continue
+            shape = obj.get("shape", {})
+            object_sizes[name] = ObjectSizeInfo(
+                width=float(shape.get("width", 0.0)),
+                depth=float(shape.get("depth", 0.0)),
+                height=float(shape.get("height", 0.0)),
+                is_static=(obj_type == "static"),
+            )
+
+    print(f"Connecting to camera_service at {camera_service} ...", flush=True)
+    observer = RemoteObserverNode(address=camera_service, object_sizes=object_sizes)
+    if not observer.start():
+        print(f"Failed to connect to camera_service at {camera_service}. "
+              "Is it running?")
+        return None
+    try:
+        deadline = time.time() + timeout_s
+        obs = None
+        while time.time() < deadline:
+            obs = observer.get()
+            if obs is not None:
+                break
+            time.sleep(0.1)
+        if obs is None:
+            print(f"camera_service published no observation within {timeout_s:.0f}s.")
+            return None
+        # Soak briefly so the returned Observation isn't a transient first frame.
+        time.sleep(stable_secs)
+        obs = observer.get()
+        return obs
+    finally:
+        observer.stop()
 
 
 def main():
@@ -151,6 +213,23 @@ def main():
         default=6.0,
         help="Scale factor for simulation (6.0 = real 2.5cm robot -> sim 15cm robot)"
     )
+    parser.add_argument(
+        "--camera-service",
+        type=str,
+        default=None,
+        metavar="ADDRESS",
+        help="ZMQ address of a running camera_service (e.g. tcp://localhost:5556). "
+             "When set, /dev/video is not opened and observations are pulled from "
+             "the service instead. Implies --auto; no GUI is shown.",
+    )
+    parser.add_argument(
+        "--robot-model",
+        choices=("sphere", "car"),
+        default="sphere",
+        help="Which robot body to embed in the generated XML. 'car' emits "
+             "the diff-drive little_car body and requires pairing with the "
+             "car namo_config (e.g. namo_config_complete_skill15_car_1x.yaml).",
+    )
     args = parser.parse_args()
 
     # Load config
@@ -160,88 +239,98 @@ def main():
         print(f"Loading config from {config_path}")
         if objects_path.exists():
             print(f"Loading objects from {objects_path}")
-        camera_config, observer_config = load_config(str(config_path), str(objects_path))
+
+    # Remote path: pull a single Observation from a running camera_service
+    # over ZMQ, then jump straight to XML generation. No camera open, no GUI.
+    if args.camera_service:
+        last_obs = _capture_from_camera_service(args.camera_service, str(objects_path))
+        if last_obs is None:
+            return
+        captured = True
     else:
-        print(f"Config not found: {config_path}, using defaults")
-        camera_config = CameraConfig()
-        observer_config = ObserverConfig()
+        if config_path.exists():
+            camera_config, observer_config = load_config(str(config_path), str(objects_path))
+        else:
+            print(f"Config not found: {config_path}, using defaults")
+            camera_config = CameraConfig()
+            observer_config = ObserverConfig()
 
-    # Start camera
-    print("\nStarting camera...")
-    camera = CameraSensorNode(camera_config)
-    if not camera.start():
-        print("Failed to start camera!")
-        return
+        # Start camera
+        print("\nStarting camera...")
+        camera = CameraSensorNode(camera_config)
+        if not camera.start():
+            print("Failed to start camera!")
+            return
 
-    # Start observer
-    print("Starting ArUco observer...")
-    observer = ArucoObserver(observer_config)
-    if not observer.start():
-        print("Failed to start observer!")
-        camera.stop()
-        return
+        # Start observer
+        print("Starting ArUco observer...")
+        observer = ArucoObserver(observer_config)
+        if not observer.start():
+            print("Failed to start observer!")
+            camera.stop()
+            return
 
-    print("\n" + "=" * 50)
-    print("Waiting for stable detection...")
-    print("Press 'c' to capture, 'q' to quit")
-    print("=" * 50)
+        print("\n" + "=" * 50)
+        print("Waiting for stable detection...")
+        print("Press 'c' to capture, 'q' to quit")
+        print("=" * 50)
 
-    cv2.namedWindow("Capture", cv2.WINDOW_NORMAL)
+        cv2.namedWindow("Capture", cv2.WINDOW_NORMAL)
 
-    stable_count = 0
-    last_obs = None
-    captured = False
+        stable_count = 0
+        last_obs = None
+        captured = False
 
-    try:
-        while not captured:
-            vis = observer.get_vis_frame()
-            if vis is not None:
-                # Add instructions
-                cv2.putText(vis, "Press 'c' to capture, 'q' to quit",
-                           (10, vis.shape[0] - 20),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-                cv2.imshow("Capture", vis)
+        try:
+            while not captured:
+                vis = observer.get_vis_frame()
+                if vis is not None:
+                    # Add instructions
+                    cv2.putText(vis, "Press 'c' to capture, 'q' to quit",
+                               (10, vis.shape[0] - 20),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    cv2.imshow("Capture", vis)
 
-            obs = observer.get()
-            if obs is not None:
-                # Check stability
-                if last_obs is not None:
-                    dx = abs(obs.robot_x - last_obs.robot_x)
-                    dy = abs(obs.robot_y - last_obs.robot_y)
-                    if dx < 1.0 and dy < 1.0:  # Less than 1cm movement
-                        stable_count += 1
-                    else:
-                        stable_count = 0
-                last_obs = obs
+                obs = observer.get()
+                if obs is not None:
+                    # Check stability
+                    if last_obs is not None:
+                        dx = abs(obs.robot_x - last_obs.robot_x)
+                        dy = abs(obs.robot_y - last_obs.robot_y)
+                        if dx < 1.0 and dy < 1.0:  # Less than 1cm movement
+                            stable_count += 1
+                        else:
+                            stable_count = 0
+                    last_obs = obs
 
-                goal_str = f"({obs.goal_x:.1f}, {obs.goal_y:.1f})" if obs.goal_x is not None else "N/A"
-                print(f"\rRobot: ({obs.robot_x:.1f}, {obs.robot_y:.1f}) @ {obs.robot_theta:.1f}° | "
-                      f"Objects: {len(obs.objects)} | Goal: {goal_str} | Stable: {stable_count}/{args.stable_frames}  ",
-                      end="", flush=True)
+                    goal_str = f"({obs.goal_x:.1f}, {obs.goal_y:.1f})" if obs.goal_x is not None else "N/A"
+                    print(f"\rRobot: ({obs.robot_x:.1f}, {obs.robot_y:.1f}) @ {obs.robot_theta:.1f}° | "
+                          f"Objects: {len(obs.objects)} | Goal: {goal_str} | Stable: {stable_count}/{args.stable_frames}  ",
+                          end="", flush=True)
 
-            # Auto-capture mode
-            if args.auto and stable_count >= args.stable_frames:
-                captured = True
-                print("\n\nAuto-capturing...")
-                break
+                # Auto-capture mode
+                if args.auto and stable_count >= args.stable_frames:
+                    captured = True
+                    print("\n\nAuto-capturing...")
+                    break
 
-            key = cv2.waitKey(30) & 0xFF
-            if key == ord('q') or key == 27:
-                print("\n\nCancelled.")
-                break
-            elif key == ord('c') and obs is not None:
-                captured = True
-                print("\n\nCapturing...")
+                key = cv2.waitKey(30) & 0xFF
+                if key == ord('q') or key == 27:
+                    print("\n\nCancelled.")
+                    break
+                elif key == ord('c') and obs is not None:
+                    captured = True
+                    print("\n\nCapturing...")
 
-            time.sleep(0.01)
+                time.sleep(0.01)
 
-    except KeyboardInterrupt:
-        print("\n\nInterrupted.")
+        except KeyboardInterrupt:
+            print("\n\nInterrupted.")
 
-    finally:
-        cv2.destroyAllWindows()
-        observer.stop()
-        camera.stop()
+        finally:
+            cv2.destroyAllWindows()
+            observer.stop()
+            camera.stop()
 
     if not captured or last_obs is None:
         print("No valid observation captured.")
@@ -275,7 +364,7 @@ def main():
         # (x_cm, y_cm, theta_deg, width_cm, depth_cm, height_cm, is_static)
         objects[name] = (obj.x, obj.y, obj.theta, obj.width, obj.depth, obj.height, obj.is_static)
 
-    generator = NAMOXMLGenerator(scale_factor=args.scale_factor)
+    generator = NAMOXMLGenerator(scale_factor=args.scale_factor, robot_model=args.robot_model)
     xml_str = generator.from_observation(
         robot_x_cm=last_obs.robot_x,
         robot_y_cm=last_obs.robot_y,

@@ -70,6 +70,7 @@ def load_camera_config(config_path: str, objects_path: str):
             # Camera only needs marker mapping + offsets, not physical sizes
             object_defs[name] = ObjectDefinition(
                 marker_id=obj_cfg["marker_id"],
+                is_static=(obj_type == "static"),
                 is_goal=(obj_type == "goal"),
                 marker_offset_x_cm=offset.get("x", 0.0),
                 marker_offset_y_cm=offset.get("y", 0.0),
