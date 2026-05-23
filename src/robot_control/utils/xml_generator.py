@@ -454,6 +454,7 @@ class NAMOXMLGenerator:
         ET.SubElement(walls_body, "geom",
                       name="wall_1", condim="4",
                       pos=f"{bounds.x_min - t} {y_center} {self.WALL_HEIGHT}",
+                      friction=self.STATIC_FRICTION,
                       rgba=self.WALL_COLOR,
                       size=f"{t} {y_extent + 2*t} {self.WALL_HEIGHT}",
                       type="box")
@@ -462,6 +463,7 @@ class NAMOXMLGenerator:
         ET.SubElement(walls_body, "geom",
                       name="wall_2", condim="4",
                       pos=f"{bounds.x_max + t} {y_center} {self.WALL_HEIGHT}",
+                      friction=self.STATIC_FRICTION,
                       rgba=self.WALL_COLOR,
                       size=f"{t} {y_extent + 2*t} {self.WALL_HEIGHT}",
                       type="box")
@@ -470,6 +472,7 @@ class NAMOXMLGenerator:
         ET.SubElement(walls_body, "geom",
                       name="wall_3", condim="4",
                       pos=f"{x_center} {bounds.y_min - t} {self.WALL_HEIGHT}",
+                      friction=self.STATIC_FRICTION,
                       rgba=self.WALL_COLOR,
                       size=f"{x_extent} {t} {self.WALL_HEIGHT}",
                       type="box")
@@ -478,6 +481,7 @@ class NAMOXMLGenerator:
         ET.SubElement(walls_body, "geom",
                       name="wall_4", condim="4",
                       pos=f"{x_center} {bounds.y_max + t} {self.WALL_HEIGHT}",
+                      friction=self.STATIC_FRICTION,
                       rgba=self.WALL_COLOR,
                       size=f"{x_extent} {t} {self.WALL_HEIGHT}",
                       type="box")
@@ -488,6 +492,7 @@ class NAMOXMLGenerator:
                 ET.SubElement(walls_body, "geom",
                               name=f"wall_{i}", condim="4",
                               pos=f"{x} {y} {self.WALL_HEIGHT}",
+                              friction=self.STATIC_FRICTION,
                               rgba=self.WALL_COLOR,
                               size=f"{hw} {hd} {self.WALL_HEIGHT}",
                               type="box")
