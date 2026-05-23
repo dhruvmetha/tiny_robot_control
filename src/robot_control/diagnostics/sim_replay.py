@@ -35,6 +35,7 @@ def render_chain_to_mp4(
     fps: int = 30,
     width: int = 1280,
     height: int = 720,
+    starting_robot_pose_sim: Optional[tuple] = None,
 ) -> Optional[str]:
     """Render ``chain`` from ``start_xml`` to ``output_mp4`` as a continuous MP4.
 
@@ -60,7 +61,10 @@ def render_chain_to_mp4(
 
     # Hand the chain to the subprocess via a temp JSON. Direct argv passing
     # is fragile when the chain has nested dicts; a file is portable.
-    chain_payload = {"chain": chain}
+    chain_payload: Dict[str, Any] = {"chain": chain}
+    if starting_robot_pose_sim is not None:
+        # [x_m, y_m, theta_rad] — fed straight to env.set_robot_pose().
+        chain_payload["starting_robot_pose_sim"] = list(starting_robot_pose_sim)
     fd, chain_path = tempfile.mkstemp(suffix=".json", prefix="sim_replay_chain_")
     try:
         with os.fdopen(fd, "w") as f:

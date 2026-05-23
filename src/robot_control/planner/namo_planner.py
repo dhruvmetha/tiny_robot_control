@@ -269,7 +269,17 @@ class NAMOPlanner(Planner):
         """Attach a callback invoked once per successful (non-empty) plan.
 
         Callback signature:
-            callback(xml_content: str, push_chain: list[dict], attempt_index: int) -> None
+            callback(
+                xml_content: str,
+                push_chain: list[dict],
+                attempt_index: int,
+                starting_robot_pose_sim: tuple[float, float, float],
+            ) -> None
+
+        ``starting_robot_pose_sim`` is (x_m, y_m, theta_rad) in sim units —
+        feed straight to env.set_robot_pose() in the replay env so the car
+        body (which spawns at little_car.xml's fixed pos) is teleported to
+        the captured planner state before pushes execute.
 
         Each ``push_chain`` entry has keys: object_id, edge_idx, push_steps, depth.
         Exceptions raised by the callback are caught and logged so a misbehaving
@@ -746,10 +756,20 @@ class NAMOPlanner(Planner):
                         try:
                             xml_content = getattr(self._bridge, "last_xml_content", None)
                             if xml_content is not None:
+                                # Convert observation pose (cm + deg) to sim
+                                # units (m + rad) the same way the bridge
+                                # does for the planning service. Replay env
+                                # uses these for set_robot_pose().
+                                import math as _math
+                                rx_m, ry_m = self._bridge._cm_to_sim(
+                                    float(obs.robot_x), float(obs.robot_y)
+                                )
+                                rtheta_rad = _math.radians(float(obs.robot_theta))
                                 self._sim_capture_callback(
                                     xml_content=xml_content,
                                     push_chain=push_chain,
                                     attempt_index=attempt + 1,
+                                    starting_robot_pose_sim=(rx_m, ry_m, rtheta_rad),
                                 )
                         except Exception as _e:
                             print(f"[DIAG] sim-capture callback failed: {_e!r}", flush=True)

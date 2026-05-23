@@ -104,14 +104,37 @@ def main() -> int:
         print("[sim_replay_subprocess] empty chain; nothing to render", flush=True)
         return 1
 
+    # Optional starting robot pose in sim units (meters + radians). Required
+    # for the car robot — its body lives inside little_car.xml with a freejoint
+    # spawn pos that can't be parameterized through a top-level <include>, so
+    # the replay env starts the car at the spawn pos baked into the XML. The
+    # production planning path (NAMOPlanningService) teleports via
+    # set_robot_pose after construction; we mirror that here. Sphere XMLs bake
+    # the pose into the geom and don't need this — chain.json will omit the
+    # field for sphere runs.
+    starting_robot_pose_sim = chain_doc.get("starting_robot_pose_sim")
+
     from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
     namo_rl, _, _ = load_canonical_namo_rl(Path(__file__))
 
+    defer_warmup = starting_robot_pose_sim is not None
     try:
-        env = namo_rl.RLEnvironment(xml_path, namo_config, False)
+        env = namo_rl.RLEnvironment(xml_path, namo_config, False, defer_warmup)
     except Exception as exc:
         print(f"[sim_replay_subprocess] RLEnvironment ctor failed: {exc!r}", flush=True)
         return 1
+
+    if defer_warmup:
+        try:
+            env.set_robot_pose(*starting_robot_pose_sim)
+            env.warm_up()
+        except Exception as exc:
+            print(
+                f"[sim_replay_subprocess] set_robot_pose/warm_up failed: {exc!r} "
+                f"(pose={starting_robot_pose_sim})",
+                flush=True,
+            )
+            return 1
 
     # Mirror the planner-side setting so the push primitive doesn't abort
     # on wall contact and the qpos dump captures the full chain motion.

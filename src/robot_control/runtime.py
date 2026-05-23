@@ -241,6 +241,10 @@ class Runtime:
         # without needing the original subgoal object.
         self._sim_success_chain: List[Dict[str, Any]] = []
         self._sim_replay_start_xml: Optional[str] = None
+        # Pose (x_m, y_m, theta_rad) the replay env must teleport to before
+        # stepping. Captured at start alongside the start XML, used by
+        # _write_sim_success_artifacts when handing the chain to MuJoCo.
+        self._sim_replay_start_pose_sim: Optional[Tuple[float, float, float]] = None
         self._pending_push_meta: Optional[Dict[str, Any]] = None
         # Per-plan sim-success capture counter. Incremented every time the
         # planner-side callback fires (i.e. every plan() with at least one
@@ -1220,6 +1224,24 @@ class Runtime:
             if self._sim_replay_start_xml:
                 print(f"[Runtime] sim-success: start XML → {self._sim_replay_start_xml}",
                       flush=True)
+
+                # Stash the start pose in sim units so the success-replay
+                # MP4 can teleport the car before stepping (car XMLs don't
+                # bake pose into the included little_car.xml). Convert via
+                # the bridge's cm→sim helper so we match planning_service's
+                # set_robot_pose call exactly.
+                bridge = getattr(self._planner, "_bridge", None)
+                if bridge is not None and hasattr(bridge, "_cm_to_sim"):
+                    try:
+                        import math as _math
+                        rx_m, ry_m = bridge._cm_to_sim(
+                            float(obs.robot_x), float(obs.robot_y)
+                        )
+                        rtheta_rad = _math.radians(float(obs.robot_theta))
+                        self._sim_replay_start_pose_sim = (rx_m, ry_m, rtheta_rad)
+                    except Exception as exc:
+                        print(f"[Runtime] sim-success: start pose conversion "
+                              f"failed: {exc!r}", flush=True)
         except Exception as exc:
             print(f"[Runtime] sim-success: start XML dump failed: {exc!r}", flush=True)
 
@@ -1247,6 +1269,13 @@ class Runtime:
                 if self._sim_replay_start_xml else None
             ),
             "chain": self._sim_success_chain,
+            # [x_m, y_m, theta_rad] used by sim_replay_subprocess to
+            # teleport the car before stepping. Null for sphere or when
+            # no start observation was available.
+            "starting_robot_pose_sim": (
+                list(self._sim_replay_start_pose_sim)
+                if self._sim_replay_start_pose_sim is not None else None
+            ),
         }
         try:
             chain_path.write_text(_json.dumps(payload, indent=2))
@@ -1288,6 +1317,7 @@ class Runtime:
                 chain=self._sim_success_chain,
                 output_mp4=str(mp4_path),
                 workspace=workspace_cfg,
+                starting_robot_pose_sim=self._sim_replay_start_pose_sim,
             )
         except Exception as exc:
             print(f"[Runtime] sim-success: replay → MP4 failed: {exc!r}", flush=True)
@@ -1298,6 +1328,7 @@ class Runtime:
         xml_content: str,
         push_chain: List[Dict[str, Any]],
         attempt_index: int,
+        starting_robot_pose_sim: Tuple[float, float, float],
     ) -> None:
         """Per-plan sim-success capture — installed on the planner.
 
@@ -1344,6 +1375,10 @@ class Runtime:
             "attempt_index": attempt_index,
             "start_xml": xml_path.name,
             "chain": push_chain,
+            # [x_m, y_m, theta_rad] — the pose the replay env teleports the
+            # car to before stepping. Captured here because car XMLs don't
+            # bake the robot pose (see little_car.xml freejoint spawn).
+            "starting_robot_pose_sim": list(starting_robot_pose_sim),
         }
         try:
             chain_path.write_text(_json.dumps(payload, indent=2))
@@ -1382,6 +1417,7 @@ class Runtime:
                     chain=push_chain,
                     output_mp4=str(mp4_path),
                     workspace=self._workspace_config,
+                    starting_robot_pose_sim=starting_robot_pose_sim,
                 )
             finally:
                 _os.chdir(prev_cwd)
