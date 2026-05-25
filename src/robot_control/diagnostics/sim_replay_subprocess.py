@@ -632,13 +632,52 @@ def main() -> int:
             action.y = 0.0
             action.theta = 0.0
             try:
-                env.step(action)
+                step_result = env.step(action)
             except Exception as exc:
                 print(
                     f"[sim_replay_subprocess] step {idx} raised: {exc!r}",
                     flush=True,
                 )
                 return 1
+            # env.step() returns StepResult{done, reward, info} even when the
+            # skill logically rejects (e.g. "Requested edge N not reachable" at
+            # namo_push_skill.cpp:170). `done` is the success bit
+            # (rl_env.cpp:278 sets done = result.success). Previously the
+            # return value was discarded and the chain plowed past silent
+            # failures from a state the downstream pushes weren't expecting.
+            # Stop the chain on the first logical failure so the artifact set
+            # reflects what actually ran, not a half-evolved scene.
+            if not step_result.done:
+                reason = (step_result.info or {}).get(
+                    "failure_reason", "unspecified"
+                )
+                print(
+                    f"[sim_replay_subprocess] step {idx} "
+                    f"(object={action.object_id} edge={action.edge_idx} "
+                    f"depth={action.depth}) FAILED: {reason}. "
+                    f"Halting chain (remaining {len(chain) - idx} step(s) skipped).",
+                    flush=True,
+                )
+                # Copy whatever the qpos dump has so far into the artifact
+                # dir before bailing. The successful pushes before this one
+                # already dumped frames; preserving them lets the caller
+                # render a final_scene PNG of the failure state instead of
+                # losing all visual context. _QPOS_PATH itself is unlinked
+                # at process exit (line 788), so without this copy the dump
+                # disappears.
+                if artifact_dir is not None and Path(_QPOS_PATH).exists():
+                    try:
+                        artifact_dir.mkdir(parents=True, exist_ok=True)
+                        shutil.copyfile(
+                            _QPOS_PATH, artifact_dir / "qpos_dump_full.txt"
+                        )
+                    except Exception as exc:
+                        print(
+                            f"[sim_replay_subprocess] WARN: failed to copy "
+                            f"qpos dump on failure: {exc!r}",
+                            flush=True,
+                        )
+                return 2
     finally:
         if saved_stderr_fd is not None:
             try:
