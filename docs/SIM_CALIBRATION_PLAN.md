@@ -26,15 +26,30 @@ Implementation status as of 2026-05-25:
 - `execute_sim_push` still drives the C++ `NAMOPushController` path through
   `env.step(action)`, so the push itself is exercised through the same sim
   replay code path we trust elsewhere.
-- Tier 1 (`push_tracker_max_speed`) was calibrated against PWM-0.4 straight-
-  line pure-pursuit data via `scripts/find_sim_fraction.py` and the recommended
-  value (≈0.054) is now baked into the canonical car YAML.
+- **Tier 1 (`push_tracker_max_speed = 0.05357`)** — calibrated against
+  PWM-0.4 straight-line pure-pursuit data via `scripts/find_sim_fraction.py`.
+  Applied in `namo_config_complete_skill15_car_1x.yaml:112`. Re-validated
+  on 2026-05-25 (sim 5.123 vs real 5.125 cm/s; |Δ| = 0.002 cm/s vs
+  ε = 0.010 cm/s — well within threshold).
+- **Tier 2 (`control_steps_per_push = 347`)** — calibrated against
+  `push_calibration/obj_1/` via `scripts/tune_control_steps.py
+  --exclude-edges 59` (corner-of-face outliers deferred to Tier 3).
+  Bisection converged in 6 iterations with mean signed gap −0.16 cm
+  vs ε = 0.625 cm. Applied in `namo_config_complete_skill15_car_1x.yaml:79`
+  (was 482). See §12.
 - `kCarWheelMaxSpeedMs` is **locked at 1.0** and is no longer a tuning knob.
   It's a multiplicative scale redundant with `push_tracker_max_speed`; the
   former Stage-2 sweep has been retired to avoid overparameterization.
-- Real-vs-sim diff is `scripts/diff_real_vs_sim.py`, which reads matched
-  `tier2_push_trials/<tag>/` bundles from both sides and computes the
-  four-component pose-gap loss (object xy + θ, robot xy + heading θ).
+- Wheel `forcerange` was investigated as a Tier 2 candidate and rejected.
+  A full bisection across [0.1, 1.5] Nm showed the actuator never saturates
+  for these pushes — signed gap stayed flat at +10.6 cm across all 7
+  iterations. The 10 cm sim/real gap was a *push duration* problem
+  (control_steps_per_push), not a torque problem.
+- Real-vs-sim diff is `scripts/diff_real_vs_sim.py`, which walks the
+  `push_calibration/<obj>/edge<E>/depth<D>/` tree and computes the
+  object-pose gap (object xy + θ only; robot pose is reported but not
+  in the loss). Reads `pushes.jsonl` directly — `tier2_push_trials/`
+  is NOT required.
 - The deleted `MujocoSimEnv` Python path is gone — sim now dispatches through
   the C++ executor exclusively (matches what the planner uses internally).
 
@@ -546,12 +561,14 @@ python scripts/diff_real_vs_sim.py \
 
 See §12 for the loss formula and how to use the report.
 
-### `tune_forcerange.py` (not yet written)
+### `tune_control_steps.py`
 
-The auto-tuner that wraps the §12 sweep. Patches `little_car.xml`,
-runs `execute_sim_push` for every push at each candidate `forcerange`,
-calls `diff_real_vs_sim`, reads `headline_loss_cm`, picks the winner.
-Restores the XML on exit. See §12.7.
+The Tier 2 auto-tuner. Bisects `control_steps_per_push` in the YAML
+config to minimize the sim/real object-pose gap. See §12 for the
+algorithm and §12.7 for the CLI. Restores the YAML on exit.
+
+An earlier `tune_forcerange.py` was written, run, and found ineffective
+(see §12.5) — removed in favor of this one.
 
 ---
 
@@ -786,41 +803,64 @@ Restores the XML on exit. See §12.7.
 ## 12. Tuning algorithm — single-knob Tier 2 sweep
 
 **Direction**: real is the fixed ground truth; sim is what we tune to
-match. The pipeline is `execute_real_push` (once) →
-`execute_sim_push --from-real-run` (per push) → `diff_real_vs_sim`
-(per candidate parameter value).
+match. The pipeline is `execute_real_push` (per leaf, multiple trials)
+→ `execute_sim_push --from-real-run` (one sim run per leaf) →
+`diff_real_vs_sim` (tree-walk) → `tune_control_steps.py` (binary
+search).
 
 ### 12.1 The knobs, current status
 
 | # | Knob | Type | Status | Current value | Effect |
 |---|------|------|--------|---------------|--------|
-| 1 | `skill.push_tracker_max_speed` | YAML | **Locked (Tier 1 done)** | ≈0.054 (was 0.3) | Scales the wheel-velocity command. Calibrated against PWM-0.4 straight-line pure-pursuit real data via `find_sim_fraction.py`. Don't sweep again unless you re-collect free-drive data. |
-| 2 | `kCarWheelMaxSpeedMs` | C++ `constexpr` | **Locked at 1.0** | 1.0 m/s (`namo_push_controller.cpp:22`) | PWM-to-chassis-m/s mapping. Multiplicatively redundant with knob 1; pinning it eliminates one degree of freedom. Don't tune. |
-| 3 | Wheel `forcerange` | XML (`little_car.xml:65-71`) | **Tier 2 — the tuning target** | ±0.5 Nm (symmetric) | Motor saturation torque. The single physically meaningful knob for *push-under-load* dynamics. Wheel saturates here when contact forces spike — exactly the regime Tier 1 doesn't see. |
-| 4 | Wheel `kv` | XML | Secondary | 0.75 | Velocity-tracking gain. Affects transients (how fast the wheel reaches the setpoint), not steady-state push. Only sweep if `forcerange` doesn't move the loss. |
-| 5 | Floor/obstacle friction | XML (per-scene) | Last resort | floor 0.5/0.005/0.001, obstacle 1/0.005/0.0001 | Contact dynamics. Two parameters (floor + obstacle), so not a clean single-knob sweep. Only reach for it if knobs 3 + 4 both fail. |
+| 1 | `skill.push_tracker_max_speed` | YAML | **Tier 1 — calibrated** | **0.05357** (was 0.3) | Scales the wheel-velocity command. Calibrated against PWM-0.4 straight-line pure-pursuit real data via `find_sim_fraction.py`. Re-validated 2026-05-25: sim 5.123 vs real 5.125 cm/s, well within ε=0.010. |
+| 2 | `kCarWheelMaxSpeedMs` | C++ `constexpr` | **Locked at 1.0** | 1.0 m/s (`namo_push_controller.cpp:26`) | PWM-to-chassis-m/s mapping. Multiplicatively redundant with knob 1; pinning it eliminates one degree of freedom. Don't tune. |
+| 3 | `skill.control_steps_per_push` | YAML | **Tier 2 — calibrated** | **347** ticks (was 482) | Physics ticks per NAMO push step (= push duration in sim). Tuned via `tune_control_steps.py` with edge59 excluded; bisection converged in 6 iters at signed gap −0.16 cm vs ε=0.625 cm. |
+| 4 | Wheel `forcerange` | XML (`little_car.xml:65-71`) | **Investigated, ineffective** | ±0.5 Nm (untouched) | Was the original Tier 2 candidate. A full bisection across [0.1, 1.5] Nm showed flat signed gap (+10.6 cm constant) — the actuator never saturates for these pushes, so forcerange can't close the gap. See §12.5. |
+| 5 | Wheel `kv` | XML | Reserve (Tier 3 candidate) | 0.75 | Velocity-tracking gain. Affects transients. Only sweep if depth-9 residuals at the calibrated `control_steps_per_push` warrant it. |
+| 6 | Floor/obstacle friction | XML (per-scene) | Reserve (Tier 3 candidate) | floor 0.5/0.005/0.001, obstacle 1/0.005/0.0001 | Contact dynamics. Likely culprit for edge59 corner-of-face slip and depth-9 outliers (see §12.5). Two parameters, so not a clean single-knob sweep — group them by surface and tune together if reached. |
 
-### 12.2 Tier 2 — 1-D sweep over `forcerange`
+### 12.2 Tier 2 — binary search over `control_steps_per_push`
 
-**Setup:**
-1. Collect one real run with N pushes via `execute_real_push.py` on a
-   set of representative `(object, edge, depth)` trials.
-2. The Tier 2 sweep varies wheel `forcerange` symmetrically; the sweep
-   variable is the half-range, e.g. `f ∈ {0.25, 0.35, 0.50, 0.65, 0.80}`
-   Nm. Edit `little_car.xml:65-71` to set both wheels (left + right)
-   to `forcerange="-f f"`.
-3. For each candidate `f`:
-    - Patch the XML.
-    - For each push index `0..N-1`: run
-      `execute_sim_push.py --from-real-run <real_run> --push-index N
-      --diag-path <sim_parent>/f_<f> --run-name push_<N>`.
-    - Run `diff_real_vs_sim.py --real <real_run> --sim <sim_parent>/f_<f>`.
-    - Read `_aggregate.json["headline_loss_cm"]` from the diff output.
-4. Pick the `f` minimizing the headline loss.
+**Setup**: real data is collected once per `(object, edge, depth)`
+leaf, multiple trials per leaf (3 typical). The tree looks like:
 
-Each candidate evaluation = N sim pushes + one diff. With ~20 pushes
-per real run and ~5 candidate values, one full sweep is ~100 sim
-pushes, which the C++ executor runs in single-digit minutes.
+```
+push_calibration/<obj>/edge<E>/depth<D>/
+  ├── trial1/ trial2/ trial3/    (real pushes)
+  └── sim/                       (overwritten by tune_control_steps each iter)
+```
+
+Per iteration of `scripts/tune_control_steps.py`:
+
+1. Patch `namo_config_complete_skill15_car_1x.yaml` to set
+   `control_steps_per_push: X` (X is integer).
+2. For each leaf with real trials, run
+   `execute_sim_push --no-video --from-real-run <leaf>/trial1
+    --push-index 0 --diag-path <leaf> --run-name sim --allow-overwrite`.
+3. Run `diff_real_vs_sim --root <object_root>`.
+4. Read `_aggregate.json["headline_loss_cm"]` (object pose only — see §12.3).
+5. Compute the *signed direction signal* (see §12.4) and update the
+   bracket.
+
+Bisection runs until `|mean_signed_gap| ≤ ε` (data-driven, see §12.4)
+or the bracket narrows below 5 ticks or `--max-iters` is hit. YAML is
+restored at exit. After convergence, a final pass re-runs sim **with
+video** at the recommended X and a final canonical diff lands in
+`<root>/diff/`.
+
+**Result, 2026-05-25:** `control_steps_per_push = 347` (= 0.694 s
+per NAMO push step). Bisection converged in 6 iterations:
+
+| iter | X | s/step | signed_gap | L_headline |
+|---:|---:|---:|---:|---:|
+| 1 | 515 | 1.030 | +9.35 | 22.89 |
+| 2 | 272 | 0.544 | −4.25 (crossed 0) | 18.94 |
+| 3 | 393 | 0.786 | +2.40 | 17.88 |
+| 4 | 332 | 0.664 | −0.97 | 17.39 |
+| 5 | 362 | 0.724 | +0.66 | 17.31 |
+| 6 | **347** | **0.694** | **−0.16 ✓** | 17.24 |
+
+With `--exclude-edges 59` (corner-of-face outliers deferred to Tier 3).
 
 ### 12.3 Loss function (`diff_real_vs_sim.py`)
 
@@ -857,93 +897,119 @@ Robot pose gap **is still reported** in the per-field stats table and
 the per-trial CSV — it's useful for diagnosing *why* a gap exists
 (see §12.4) — it just doesn't drive tuning decisions.
 
-**Pairing:** trials are joined on `(object_id, expected_edge,
-expected_push_steps)`, with `push_start_obs_timestamp` order as a
-tiebreaker for repeated triples. Subgoal IDs are **not** used — the
-unit of analysis for Tier 2 is the push, not the subgoal lifecycle.
-Sim always writes `subgoal_id=1` by construction (one-push-per-
-invocation), so a subgoal-id join would never work anyway.
+**Pairing:** `diff_real_vs_sim.py` walks the
+`<root>/edge<E>/depth<D>/` tree. Per leaf it pairs the leaf's real
+trials (1..N) with its single sim trial. Sim is deterministic, so one
+sim trial per leaf is sufficient. Subgoal IDs are **not** used — sim
+always writes `subgoal_id=1` by construction (one-push-per-invocation).
 
-### 12.4 Reading the report
+### 12.4 The bisection signal (`tune_control_steps.py`)
 
-`diff_real_vs_sim.py` writes:
-
-```
-<real_run>/diff_vs_<sim_basename>/
-├── _per_trial.csv      one row per matched trial × gap field
-├── _aggregate.json     per-field stats + L breakdown
-├── _unmatched.json     trials present on only one side
-├── comparison.md       human-readable headline + worst-5 trials
-└── _plots/             scatter sim Δ vs real Δ for each pose component (matplotlib-gated)
-```
-
-The headline in `comparison.md` is the loss `L`, plus the
-four-component breakdown. The "worst-5 trials" table flags individual
-outliers — useful when one bad push is pulling the mean up
-disproportionately.
-
-**Decision rule from the breakdown:**
-
-| Dominant component | Likely cause | Knob to reach for |
-|---|---|---|
-| `object_xy_cm` | Translation under push: contact friction or wheel saturation | `forcerange` (Tier 2), then obstacle friction |
-| `object_theta_deg` | Spin under contact: contact-point geometry, slip | obstacle friction; structural — won't yield to `forcerange` alone |
-| `robot_xy_cm` | Robot trajectory diverges during the push: wheel slippage or contact reaction | floor friction; wheel `kv` |
-| `robot_theta_deg` | Robot heading drift: differential wheel response | wheel `kv`; structural |
-
-### 12.5 When Tier 2 stops helping
-
-If sweeping `forcerange` across [0.25, 0.80] Nm doesn't change `L` by
-more than ~10% of its current value, the wheel actuator isn't
-saturating during these pushes — the gap is somewhere else. Common
-candidates, in increasing order of "willing to touch":
-1. Friction (floor and/or obstacle) — directly affects how an object
-   slides under contact.
-2. Wheel `kv` — affects how fast the velocity setpoint is reached;
-   matters for short pushes where the transient is a non-trivial
-   fraction of the trial.
-3. Contact geometry — the box approximation may not match the real
-   object's effective shape. Last resort; requires geometric
-   re-modeling.
-
-Use the per-component breakdown above to pick which one to try.
-
-### 12.6 Why a 1-D sweep, not Bayesian optimization or grid
-
-We're searching one continuous parameter with cheap evaluations
-(single-digit minutes). A linear sweep of 5–7 values gives the whole
-loss curve, not just the extremum. The curve shape tells you whether
-the loss is smooth (a clean minimum to bracket) or noisy (Tier 2
-isn't the right knob and you should stop sweeping and read the
-component breakdown). That diagnostic value is more important than
-the speedup from Bayesian optimization.
-
-If a finer grid is needed, refine with Nelder-Mead around the best
-grid point (~10 extra evaluations). Don't bother with `scipy.minimize`
-machinery before the grid sweep shows the curve has a clean shape.
-
-### 12.7 Tooling — `tune_forcerange.py` (future)
-
-The auto-tuner script that wraps the above sweep is not yet written.
-The intended interface:
+`diff_real_vs_sim` outputs the unsigned headline `L`. For bisection we
+need a *signed* signal that tells us which way to update the bracket.
+Per leaf:
 
 ```
-python scripts/tune_forcerange.py \
-    --real <real_run_dir> \
-    --xml little_car.xml \
-    --grid 0.25,0.35,0.50,0.65,0.80 \
-    [--out-dir tuning/]
+push_dir       = unit vector of mean(real Δobject) across the leaf's real trials
+real_mean_proj = dot(mean(real Δobject), push_dir)        (cm along the push axis)
+sim_proj       = dot(sim Δobject, push_dir)
+signed_gap_leaf = sim_proj − real_mean_proj
+mean_signed_gap = mean over leaves of signed_gap_leaf
 ```
 
-For each `f` in the grid:
-1. Patch `little_car.xml` to `forcerange="-f f"` on both wheel actuators.
-2. Re-run `execute_sim_push --from-real-run` for every push in `<real_run_dir>`.
-3. Run `diff_real_vs_sim` and read `headline_loss_cm`.
-4. Restore the XML at exit.
+Positive ⇒ sim pushed *farther* than real along the intended direction ⇒
+push duration too long ⇒ reduce `control_steps_per_push`.
 
-Output: `tuning/_grid_loss.csv` (f, L, per-component breakdown),
-`tuning/_grid_loss.png` (loss curve), and a final recommendation line
-naming the best `f`. Implement when needed.
+Convergence threshold ε is data-driven, mirroring Tier 1:
+
+```
+SE_leaf  = std(real_projs) / √n         (within-leaf standard error)
+mean_SE  = mean over non-excluded leaves of SE_leaf
+ε        = eps_multiplier · mean_SE     (default eps_multiplier = 2.0)
+```
+
+So we stop when sim is within "noise" of real's mean. Override with
+`--epsilon X` if you want a different threshold.
+
+The `--exclude-edges` flag drops named edges (e.g. `--exclude-edges 59`
+for the corner-of-face outliers) from BOTH the signal and ε. Sim still
+runs for those leaves so the diff report has complete data; only the
+bisection steering changes.
+
+### 12.5 Why `forcerange` didn't work (and `control_steps_per_push` did)
+
+Initial Tier 2 hypothesis was wheel `forcerange` — the actuator
+saturation torque. Full bisection across [0.1, 1.5] Nm showed the
+signed gap stayed at **+10.6 cm constant** across all 7 iterations.
+That's the signature of the unsaturated regime — the actuator never
+hits its torque limit, so changing the limit changes nothing. The
+wheel reaches its commanded velocity regardless.
+
+The real source of the 10 cm gap was **push duration**, not torque:
+each NAMO push step ran for 0.964 s in sim (482 ticks × 0.002 s/tick)
+when it should have run for 0.694 s. Calibrating `control_steps_per_push`
+brought the average gap from +10.6 cm to −0.16 cm in 6 iterations.
+
+The lesson encoded in the §12.1 knob table: forcerange is in the
+"investigated, ineffective" row. Don't repeat the sweep unless the
+push regime changes (heavier object, higher friction, different
+controller settings — any of which might push the actuator into
+saturation).
+
+### 12.6 Why binary search, not grid or Bayesian opt
+
+We're searching one parameter with cheap evaluations (~25 s for 11
+leaves with `--no-video`). Binary search converges in 6 iterations
+log₂((U−L)/MIN_BRACKET) ≈ log₂(970/5) ≈ 8 — and our signed signal is
+monotone in the parameter under the calibrated regime, so bisection
+is the natural fit.
+
+Bayesian optimization wins when evaluations are expensive (minutes
+each) or the function is non-monotone. Neither applies here. Grid
+search wins when you want the whole loss curve. Bisection gives you
+the convergence point cheapest.
+
+### 12.7 Tooling — `tune_control_steps.py` (implemented)
+
+The auto-tuner that wraps the above is `scripts/tune_control_steps.py`.
+
+```
+python scripts/tune_control_steps.py \
+    --root push_calibration/obj_1 \
+    --yaml namo_cpp/config/namo_config_complete_skill15_car_1x.yaml \
+    [--bracket-low 30] [--bracket-high 1000] \
+    [--eps-multiplier 2.0 | --epsilon X] \
+    [--max-iters 10] \
+    [--exclude-edges 59] \
+    [--skip-final-video]
+```
+
+Per iteration:
+1. Patch the YAML to `control_steps_per_push: X` (regex preserves the
+   trailing comment).
+2. For each leaf with real trials, run `execute_sim_push --no-video
+   --from-real-run <leaf>/trial1 --push-index 0 --diag-path <leaf>
+   --run-name sim --allow-overwrite`. Overwrites `<leaf>/sim/`.
+3. Run `diff_real_vs_sim --root <root>`.
+4. Read `headline_loss_cm`; reload tree; compute signed gap.
+5. Update bracket and check convergence.
+
+After convergence: re-patch YAML to the recommended X, re-run sim WITH
+video for every leaf (final-pass MP4s land in `<leaf>/sim/sim_push.mp4`),
+and run the final canonical diff.
+
+YAML is saved at entry and restored at exit (try/finally + SIGINT/
+SIGTERM handlers).
+
+Output:
+- `<root>/tune_control_steps/tune_summary.json` — per-iteration history
+  including per-leaf signed gaps.
+- `<root>/tune_control_steps/<yaml>.tune_backup` — original YAML for
+  manual recovery if needed.
+
+To **apply** the calibrated value, manually edit the YAML's
+`control_steps_per_push` line to match. The tuner doesn't silently
+overwrite the canonical config.
 
 ---
 
