@@ -1,0 +1,10 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge45/depth6/sim
+
+[Trapped-start recovery] Robot at (22.4, 12.0) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[rewind] wrote /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge45/depth6/sim/rewind_scene.xml  robot=(22.42,12.01) obj_1=21.56,21.26,θ=93.1° (push_index=0, subgoal_id=1, scene=recorded mid_obs)
+[rewind] sim starts at: robot=(22.422568894596935, 12.010398632398534, 93.86828870893902)  object=obj_1 pose=(21.562973006673253, 21.260247731556692, 93.13116987810253)  edge=45 depth=6 push_index=0 subgoal_id=1
+[exec-sim-push] pre-teleport to edge point: (21.98, 13.57) cm, θ=93.13° (standoff 4.2 cm from face)
+[exec-sim-push] dispatching to C++ NAMOPushController via render_chain_to_mp4: xml=/home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge45/depth6/sim/rewind_scene.xml chain=[{'object_id': 'obj_1', 'sim_object_id': 'obstacle_1_movable', 'edge_idx': 45, 'push_steps': 7, 'depth': 6}] start_pose_sim=(0.21983562605946644, 0.13571743040202003, 1.6254455506070549) namo_config=namo_config_complete_skill15_car_1x.yaml
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge45/depth6/sim/sim_push.mp4 (2629 frames @ 30 fps, stride=17)

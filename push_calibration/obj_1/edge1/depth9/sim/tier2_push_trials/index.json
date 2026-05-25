@@ -1,0 +1,25 @@
+{
+  "exported_trial_count": 1,
+  "source": "sim",
+  "source_files": {
+    "pushes": "pushes.jsonl",
+    "subgoals": "subgoals.jsonl",
+    "mid_obs": "mid_obs.jsonl",
+    "wheel_commands": "wheel_commands.jsonl"
+  },
+  "trials": [
+    {
+      "trial_dir": "tier2_push_trials/trial_001_subgoal_001_obj_1_e1_s10",
+      "subgoal_id": 1,
+      "object_id": "obj_1",
+      "expected_edge": 1,
+      "expected_push_steps": 10,
+      "n_pose_samples": 3470,
+      "n_command_samples": 3470,
+      "forward_cruise_cm_s": 3.0518350496953377,
+      "linear_fit_speed_cm_s": 3.0784940313144977,
+      "omega_fit_deg_s": 0.35620169061550444,
+      "stuck": false
+    }
+  ]
+}

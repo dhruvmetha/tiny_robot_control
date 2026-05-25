@@ -1,0 +1,83 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge1/depth2/trial3
+[tier2] wheel commands will be logged to /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge1/depth2/trial3/wheel_commands.jsonl
+[collect] 1 trial(s) loaded from push_calibration/obj_1/edge1/depth2/spec.yaml
+[collect] obstacle_target = (25.0, 35.0) cm  reset_tolerance = 3.0 cm
+[mid-obs] logging every camera observation → /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge1/depth2/trial3/mid_obs.jsonl
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[fresh] planner.attach_obs_source(world.get) wired
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[Runtime] Per-subgoal video + meta will write to /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge1/depth2/trial3/recordings/session_2026-05-25_13-56-33
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! ROBOT 1 OFFLINE at startup !!
+!!   ap_connected=True, alive_ids=[], last_status=0.5s ago [fresh]
+!!   Planning will run (sim-only), but the robot CANNOT execute.
+!!   Restart the robot or check the camera_service serial link.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+=== Trial 1/1 === object=obj_1 edge_idx=1 push_steps=3
+  [skip_reset] start pose: (20.78, 25.67) θ=2.71°. pushing...
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (20.8,25.7,θ=2.7°), edge=1, push_steps=3, robot at (21.7,8.8,θ=94.8°)
+[DIAG] subgoal #1 start recorded
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge1/depth2/trial3/recordings/session_2026-05-25_13-56-33/subgoal_001_push_obj_1_e1_s3.mp4
+[PUSH]   Original edge: (17.8, 13.8)
+[PUSH]   Validated:     (17.9, 13.3)
+[PUSH] Starting navigation: robot=(21.7,8.8) → approach=(17.9,13.3)
+[NAV] navigate_to: goal=(17.9,13.3) θ=92.7°, from=(21.7,8.8), obstacles=1
+[Diagnostics] ⚠️ scene_before.xml capture failed: no xml source path provided
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed: 0.3
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260525_135634_001.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state - -> PRE_ROTATING pose=(21.7,8.8,θ=94.8°) pre_target_θ=135.2° heading_err=+40.4°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(21.7,8.9,θ=94.8°) path_waypoints=9 final_wp=(17.8,12.8)
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[NAV] state FOLLOWING -> POST_ROTATING pose=(18.9,12.4,θ=145.6°) goal_θ=92.7° heading_err=-52.9°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (20.8,25.7,θ=2.7°), robot at (18.5,12.5,θ=92.6°), edge=1, push_steps=3 (78 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(20.8,25.7) theta=2.7° size=(15x7.0)
+[PUSH DEBUG] Edge 1: face=1 sample=0
+[PUSH DEBUG] Theoretical: edge_pt (17.8,13.8) → mid_pt (17.3,25.5)
+[PUSH DEBUG] Actual line: (18.5,12.5) → (17.9,24.2)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.3, 20.8) theta=91.3°
+[PUSH] Δobject 'obj_1': Δpos=(+1.18,+5.60) |Δ|=5.72cm, Δθ=-12.31°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_1': (22.0, 31.3) theta=350.4° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.1cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260525_135641.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260525_135641.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (16.7, 16.1) [BACKWARD]
+[PUSH] Retreat timeout after 200 steps
+[Subgoal] <-- DONE (SUCCESS) after 13.6s, robot now at (18.0,20.7,θ=69.2°)
+[DIAG] subgoal #1 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_1, Δ=6.37cm, stuck=False)
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge1/depth2/trial3/recordings/session_2026-05-25_13-56-33/subgoal_001_push_obj_1_e1_s3.mp4
+[Runtime] Plan complete - stopping robot
+[Runtime] Shutting down

@@ -1,0 +1,66 @@
+{
+  "trial_kind": "straight",
+  "source": "sim",
+  "left_cmd": 0.05357,
+  "right_cmd": 0.05357,
+  "cmd_units": "fraction",
+  "duration_s": 2.08,
+  "started_at_utc_iso": "2026-05-25T20:37:18.619172Z",
+  "n_samples": 1041,
+  "real_meta": null,
+  "sim_meta": {
+    "controller": "NAMOPushController",
+    "push_state": "PUSHING",
+    "subgoal_id": 1,
+    "object_id": "obj_1",
+    "edge_idx": 45,
+    "push_steps": 3,
+    "max_speed": 0.05357,
+    "lookahead_distance_cm": 7.000000000000001,
+    "dynamic_direction": false,
+    "path_start_cm": [
+      24.75,
+      15.75
+    ],
+    "path_end_cm": [
+      24.4007,
+      73.74889999999999
+    ],
+    "path_unit_vec": [
+      -0.006022418795347336,
+      0.9999818650714889
+    ],
+    "start_pose_cm_deg": [
+      24.7499,
+      15.7612,
+      90.34510080521272
+    ],
+    "end_pose_cm_deg": [
+      24.6977,
+      24.387700000000002,
+      90.41972961474863
+    ],
+    "stuck": false,
+    "phase_timestamps": {
+      "dispatched_obs_timestamp": 0.2,
+      "push_start_obs_timestamp": 0.2,
+      "push_end_obs_timestamp": 2.2800000000000002,
+      "completed_obs_timestamp": 2.2800000000000002
+    },
+    "phase_durations_s": {
+      "approach_plus_advance": 0.0,
+      "pushing": 2.08,
+      "retreat": 0.0,
+      "subgoal_total": 2.08
+    },
+    "namo_config": "/home/dhruv/projects_dhruv/namo/namo_cpp/config/namo_config_complete_skill15_car_1x.yaml",
+    "output_mp4": "/home/dhruv/projects_dhruv/namo/robot_control/push_calibration/obj_1/edge45/depth2/sim/sim_push.mp4",
+    "sim_object_id": "obstacle_1_movable",
+    "wheel_radius_m": 0.015,
+    "k_car_wheel_max_speed_ms": 1.0,
+    "control_steps_per_push": 347,
+    "push_tracker_max_speed": 0.05357,
+    "pre_settle_steps": 100,
+    "post_settle_steps": 100
+  }
+}

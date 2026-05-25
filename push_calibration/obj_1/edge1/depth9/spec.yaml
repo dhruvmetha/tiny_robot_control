@@ -1,0 +1,5 @@
+# 1 push @ edge_idx=1, depth=9 (push_steps=10) on obj_1.
+# Used with --no-reset-check; start pose recorded.
+# Rerun this leaf 3x (trial1, trial2, trial3) to collect repeats.
+trials:
+  - {object_id: obj_1, edge_idx: 1, depth: 9}
