@@ -2022,7 +2022,14 @@ class Runtime:
             print(f"Robot ID: {self._real_env_config.robot_id}")
             print(f"Dry run: {self._config.dry_run}")
 
-        print(f"Speed: {self._coordinator.current_speed}")
+        if self._planner:
+            nav = self._controllers.get("navigation")
+            push = self._controllers.get("push")
+            nav_s = f"{nav.max_speed:.2f}" if nav is not None else "?"
+            push_s = f"{push.max_speed:.2f}" if push is not None else "?"
+            print(f"Speed (autonomous): nav={nav_s}, push={push_s}")
+        else:
+            print(f"Speed (manual): {self._coordinator.current_speed}")
         print("=" * 50)
         if self._planner:
             print("Running in autonomous mode")
