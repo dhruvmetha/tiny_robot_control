@@ -134,6 +134,36 @@ def _geom_half_extents_cm(mujoco, model, geom_name: str) -> Optional[Tuple[float
     )
 
 
+# Mirrors namo_push_controller.cpp:12 (kPushLookaheadRatio). If that constant
+# changes on the C++ side, update this to match.
+PUSH_LOOKAHEAD_RATIO = 1.0
+
+
+def _car_size_m(mujoco, model) -> float:
+    """Bounding-box max dimension of the diff-drive car chassis, in meters.
+
+    Mirrors namo_push_controller.cpp:59-63:
+        car_size = max(full_width, full_height) over the chassis geoms.
+
+    Walks the front/rear chassis collision geoms (canonical names from
+    little_car.xml). Falls back to 0.07 m (the 7-cm production car) if
+    neither is present.
+    """
+    xs: List[float] = []
+    ys: List[float] = []
+    for name in ("front_chassis_collision", "rear_chassis_collision"):
+        geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, name)
+        if geom_id < 0:
+            continue
+        pos = model.geom_pos[geom_id]
+        size = model.geom_size[geom_id]
+        xs.extend([float(pos[0] - size[0]), float(pos[0] + size[0])])
+        ys.extend([float(pos[1] - size[1]), float(pos[1] + size[1])])
+    if not xs or not ys:
+        return 0.07
+    return max(max(xs) - min(xs), max(ys) - min(ys))
+
+
 def _display_name_for_sim_object(sim_name: str) -> str:
     match = re.fullmatch(r"obstacle_(\d+)_movable", sim_name)
     if match:
@@ -289,7 +319,7 @@ def _write_calibration_artifacts(
     control_steps_per_push = int(skill_knobs.get("control_steps_per_push", 0) or 0)
 
     timestep_s = float(model.opt.timestep)
-    lookahead_distance_cm = 0.5 * 100.0 * max(0.07, 0.07)
+    lookahead_distance_cm = PUSH_LOOKAHEAD_RATIO * _car_size_m(mujoco, model) * 100.0
 
     nav_log_path = artifact_dir / "cxx_nav_raw.log"
     initial_push_start_ts = 0.0
