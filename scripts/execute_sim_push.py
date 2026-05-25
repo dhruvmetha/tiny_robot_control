@@ -203,6 +203,145 @@ def _load_real_run_state(run_dir: Path, push_index: int = 0) -> dict:
     }
 
 
+def _load_initial_scene_state(run_dir: Path) -> dict:
+    """Read the first scene-bearing frame of mid_obs.jsonl from a real run.
+
+    Unlike :func:`_load_real_run_state`, this does not need pushes.jsonl or
+    subgoals.jsonl — it captures the scene at the moment ArUco started
+    publishing observations, which is the natural "initial state" of a real
+    execution. Used by the --trial-spec mode where we want to start sim from
+    the same scene the real run started from (not from a specific push's
+    pre-state).
+    """
+    mid_obs_path = run_dir / "mid_obs.jsonl"
+    if not mid_obs_path.exists():
+        raise FileNotFoundError(
+            f"{mid_obs_path} not found — --trial-spec mode reads the initial "
+            "scene from the matching execute_real_push run."
+        )
+    mid_obs = _load_jsonl(mid_obs_path)
+    if not mid_obs:
+        raise RuntimeError(f"{mid_obs_path} has no records")
+
+    initial_rec = None
+    for rec in mid_obs:
+        objects = rec.get("objects")
+        if isinstance(objects, dict) and objects:
+            initial_rec = rec
+            break
+    if initial_rec is None:
+        raise RuntimeError(
+            f"{mid_obs_path} has no frames with a populated 'objects' field — "
+            "real-side ArUco may not have detected anything"
+        )
+
+    robot_pose = None
+    for key in ("robot_pose_cm_deg", "robot_pose_cm"):
+        val = initial_rec.get(key)
+        if isinstance(val, list) and len(val) >= 2:
+            robot_pose = (
+                float(val[0]),
+                float(val[1]),
+                float(val[2]) if len(val) >= 3 else 0.0,
+            )
+            break
+    if robot_pose is None:
+        raise RuntimeError(
+            f"first mid_obs frame in {mid_obs_path} lacks a robot pose field "
+            "(robot_pose_cm_deg / robot_pose_cm)"
+        )
+
+    return {
+        "robot_pose": robot_pose,                           # (x_cm, y_cm, θ_deg)
+        "scene_objects": initial_rec["objects"],
+        "goal_cm": (
+            tuple(initial_rec["goal_cm"])
+            if isinstance(initial_rec.get("goal_cm"), list)
+            and len(initial_rec.get("goal_cm")) >= 2
+            else None
+        ),
+        "scene_obs_timestamp": _safe_float(initial_rec.get("observation_timestamp")),
+    }
+
+
+def _build_initial_scene_xml(
+    scene_state: dict,
+    real_yaml_path: Path,
+    output_xml: Path,
+) -> dict:
+    """Write a car XML for the initial scene; return obj_N -> sim_object_id map.
+
+    Sibling of :func:`_build_rewind_xml`, but without the pushed-object
+    pose override. Used by --trial-spec mode where the whole chain runs from
+    the recorded *initial* scene, and per-push positions evolve in sim
+    physics rather than being seeded from real-side pushes.jsonl.
+
+    The mapping reflects how NAMOXMLGenerator.from_observation renames keys:
+    the N-th movable in iteration order becomes ``obstacle_N_movable`` (and
+    the N-th static becomes ``wall_{4+N}``). We iterate in the same sorted
+    order :func:`_object_sort_key` produces (obj_N sorted by N first, then
+    wall_N), so the mapping is deterministic and matches the generated XML.
+    """
+    recorded_scene_objects = scene_state.get("scene_objects")
+    if not isinstance(recorded_scene_objects, dict) or not recorded_scene_objects:
+        raise RuntimeError("scene_state has no scene_objects payload")
+
+    objects: dict = {}
+    obj_to_sim_id: dict = {}
+    movable_count = 0
+    for name in sorted(recorded_scene_objects.keys(), key=_object_sort_key):
+        o = recorded_scene_objects[name]
+        if not isinstance(o, dict):
+            continue
+        is_static = bool(o.get("is_static", False))
+        objects[name] = (
+            float(o["x_cm"]),
+            float(o["y_cm"]),
+            float(o["theta_deg"]),
+            float(o["width_cm"]),
+            float(o["depth_cm"]),
+            float(o["height_cm"]),
+            is_static,
+        )
+        if not is_static:
+            movable_count += 1
+            obj_to_sim_id[name] = f"obstacle_{movable_count}_movable"
+
+    rx, ry, _ = scene_state["robot_pose"]
+
+    ws_data = yaml.safe_load(real_yaml_path.read_text()) if real_yaml_path.exists() else {}
+    ws_cfg = (ws_data.get("workspace") or {}) if ws_data else {}
+    workspace_w = float(ws_cfg.get("width_cm", 49.0))
+    workspace_h = float(ws_cfg.get("height_cm", 77.5))
+
+    goal_cm = scene_state.get("goal_cm")
+    if isinstance(goal_cm, tuple) and len(goal_cm) >= 2:
+        goal_x = float(goal_cm[0])
+        goal_y = float(goal_cm[1])
+    else:
+        goal_x = workspace_w - 5 if rx < workspace_w / 2 else 5
+        goal_y = workspace_h - 5 if ry < workspace_h / 2 else 5
+
+    gen = NAMOXMLGenerator(scale_factor=1.0, robot_model="car")
+    xml_str = gen.from_observation(
+        robot_x_cm=rx,
+        robot_y_cm=ry,
+        objects=objects,
+        goal_x_cm=goal_x,
+        goal_y_cm=goal_y,
+        workspace_bounds_cm=(0.0, workspace_w, 0.0, workspace_h),
+    )
+    gen.save(xml_str, str(output_xml))
+
+    print(
+        f"[initial-scene] wrote {output_xml}  robot=({rx:.2f},{ry:.2f}) "
+        f"movables={list(obj_to_sim_id.keys())} "
+        f"-> sim={list(obj_to_sim_id.values())}",
+        flush=True,
+    )
+    return obj_to_sim_id
+
+
 def _build_rewind_xml(
     real_state: dict,
     real_yaml_path: Path,
@@ -271,6 +410,207 @@ def _build_rewind_xml(
         f"scene={scene_source})",
         flush=True,
     )
+
+
+def _compute_edge_starting_pose_sim(
+    scene_state: dict,
+    object_id: str,
+    edge_idx: int,
+) -> Tuple[float, float, float]:
+    """Return (x_m, y_m, θ_rad) of the edge-point teleport pose for a push.
+
+    Same standoff / points-per-face the C++ NAMOPushSkill uses internally
+    (points_per_face=15, standoff = 0.6 * effective_robot_size(7,7) = 3.6 cm).
+    Pre-teleporting the car here means the C++ wavefront reachability check
+    starts from a free cell — see the long comment in the single-push branch
+    of :func:`main` for why this matters.
+    """
+    import math as _math
+    from robot_control.utils.robot_geometry import effective_robot_size_cm
+    from robot_control.core.types import ObjectPose
+
+    scene_objects = scene_state.get("scene_objects") or {}
+    o = scene_objects.get(object_id)
+    if not isinstance(o, dict):
+        raise KeyError(
+            f"object {object_id!r} not in scene_state.scene_objects "
+            f"(have {list(scene_objects.keys())})"
+        )
+    obj_pose = ObjectPose(
+        x=float(o["x_cm"]),
+        y=float(o["y_cm"]),
+        theta=float(o["theta_deg"]),
+        width=float(o["width_cm"]),
+        depth=float(o["depth_cm"]),
+        height=float(o["height_cm"]),
+        is_static=False,
+    )
+    car_size_cm = effective_robot_size_cm(7.0, 7.0)
+    standoff_cm = 0.6 * car_size_cm
+    ep = get_edge_point(obj_pose, int(edge_idx), standoff_cm, 15)
+    return (
+        float(ep.position[0]) / 100.0,
+        float(ep.position[1]) / 100.0,
+        _math.radians(float(ep.approach_theta)),
+    )
+
+
+def _build_chain_from_trial_spec(
+    trials: list,
+    obj_to_sim_id: dict,
+) -> list:
+    """Validate trials + resolve obj_N -> sim_object_id; return chain payload."""
+    movables = list(obj_to_sim_id.keys())
+    chain: list = []
+    for i, trial in enumerate(trials, start=1):
+        if not isinstance(trial, dict):
+            raise ValueError(f"trial {i} is not a mapping: {trial!r}")
+        obj_id = trial.get("object_id")
+        if not obj_id:
+            if len(movables) == 1:
+                obj_id = movables[0]
+            else:
+                raise ValueError(
+                    f"trial {i} omits object_id but scene has "
+                    f"{len(movables)} movables {movables}; pin one explicitly"
+                )
+        if obj_id not in obj_to_sim_id:
+            raise ValueError(
+                f"trial {i} object_id={obj_id!r} not in scene movables "
+                f"{movables}"
+            )
+        try:
+            edge_idx = int(trial["edge_idx"])
+        except (KeyError, ValueError, TypeError):
+            raise ValueError(f"trial {i} missing/invalid edge_idx")
+        if "push_steps" in trial:
+            push_steps = int(trial["push_steps"])
+        elif "depth" in trial:
+            push_steps = int(trial["depth"]) + 1
+        else:
+            raise ValueError(f"trial {i} missing depth/push_steps")
+        chain.append({
+            "object_id": obj_id,
+            "sim_object_id": obj_to_sim_id[obj_id],
+            "edge_idx": edge_idx,
+            "push_steps": push_steps,
+            "depth": push_steps - 1,
+        })
+    return chain
+
+
+# Top-down render constants mirror sim_replay_subprocess so the still
+# image lines up exactly with what the MP4 (and run_namo --viewer) shows:
+# elevation -90° looks straight down; azimuth 90° gives +X right / +Y up;
+# distance is the workspace extent scaled by 1.6× (same as the MP4).
+_FINAL_PNG_WIDTH = 1280
+_FINAL_PNG_HEIGHT = 720
+_FINAL_PNG_CAMERA_DISTANCE_FACTOR = 1.6
+
+
+def _read_last_qpos(qpos_dump_path: Path) -> Optional[list]:
+    """Parse the qpos dump and return the last valid line's qpos vector."""
+    if not qpos_dump_path.exists():
+        return None
+    last_q: Optional[list] = None
+    with open(qpos_dump_path) as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) < 2:
+                continue
+            try:
+                nq = int(parts[1])
+                q = [float(x) for x in parts[2:2 + nq]]
+            except ValueError:
+                continue
+            if q:
+                last_q = q
+    return last_q
+
+
+def _render_final_scene_image(
+    xml_path: Path,
+    qpos_dump_path: Path,
+    output_path: Path,
+) -> None:
+    """Top-down MuJoCo PNG matching sim_push.mp4's camera setup.
+
+    Same renderer / camera that ``sim_replay_subprocess`` uses for the
+    chain MP4 (and that ``run_namo.py --viewer`` shows live): free camera,
+    looking straight down at the workspace center, framed by the world
+    bounds. If ``qpos_dump_path`` has parsable frames, we set the model's
+    qpos to the last one (= final state at chain halt or completion);
+    otherwise we render the XML's baked initial pose (the chain failed
+    before any push dumped state).
+    """
+    import xml.etree.ElementTree as _ET
+    import numpy as _np
+    import mujoco
+
+    # Inject offscreen framebuffer size, same as sim_replay_subprocess does.
+    # MuJoCo's default is 640×480 — anything larger errors out at Renderer
+    # init unless <visual><global offwidth/offheight/></visual> is set.
+    root = _ET.parse(str(xml_path)).getroot()
+    visual = root.find("visual")
+    if visual is None:
+        visual = _ET.SubElement(root, "visual")
+    glob = visual.find("global")
+    if glob is None:
+        glob = _ET.SubElement(visual, "global")
+    glob.set("offwidth", str(_FINAL_PNG_WIDTH))
+    glob.set("offheight", str(_FINAL_PNG_HEIGHT))
+    xml_str = _ET.tostring(root, encoding="unicode")
+
+    model = mujoco.MjModel.from_xml_string(xml_str)
+    data = mujoco.MjData(model)
+
+    # Apply final qpos if available. Skip on dim mismatch — better to render
+    # the initial pose than to crash.
+    last_q = _read_last_qpos(qpos_dump_path)
+    if last_q is not None and len(last_q) == model.nq:
+        data.qpos[:] = last_q
+    mujoco.mj_forward(model, data)
+
+    # Workspace bounds from boundary walls (wall_1 / wall_2 / wall_3 /
+    # wall_4 — same convention NAMOXMLGenerator emits and the C++ side's
+    # env.get_world_bounds() uses).
+    def _geom_pos(name: str):
+        gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, name)
+        return None if gid < 0 else _np.asarray(model.geom_pos[gid])
+    p1 = _geom_pos("wall_1")
+    p2 = _geom_pos("wall_2")
+    p3 = _geom_pos("wall_3")
+    p4 = _geom_pos("wall_4")
+    if p1 is not None and p2 is not None and p3 is not None and p4 is not None:
+        cx = 0.5 * (p1[0] + p2[0])
+        cy = 0.5 * (p3[1] + p4[1])
+        extent = max(p2[0] - p1[0], p4[1] - p3[1])
+    else:
+        # Fall back to the data extents if walls aren't named as expected.
+        cx, cy = 0.0, 0.0
+        extent = 1.0
+
+    camera = mujoco.MjvCamera()
+    camera.type = mujoco.mjtCamera.mjCAMERA_FREE
+    camera.lookat[:] = [cx, cy, 0.0]
+    camera.distance = extent * _FINAL_PNG_CAMERA_DISTANCE_FACTOR
+    camera.azimuth = 90.0
+    camera.elevation = -90.0
+
+    renderer = mujoco.Renderer(model, height=_FINAL_PNG_HEIGHT, width=_FINAL_PNG_WIDTH)
+    try:
+        renderer.update_scene(data, camera=camera)
+        rgb = renderer.render()
+    finally:
+        renderer.close()
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        from PIL import Image as _PIL_Image
+        _PIL_Image.fromarray(rgb).save(str(output_path))
+    except ImportError:
+        import cv2 as _cv2
+        _cv2.imwrite(str(output_path), rgb[:, :, ::-1])
 
 
 # --------------------------------------------------------------------- main
@@ -395,7 +735,180 @@ def parse_args() -> argparse.Namespace:
         help="Deprecated no-op. C++ replay now always writes mid_obs.jsonl "
              "when diagnostics are enabled.",
     )
+    p.add_argument(
+        "--trial-spec",
+        type=str,
+        default=None,
+        metavar="YAML",
+        help="Path to a trial_spec.yaml (the same format execute_real_push "
+             "consumes). When set, every trial in the spec runs as a single "
+             "continuous chain in one sim subprocess — physics state evolves "
+             "between trials, no XML regeneration between pushes. Requires "
+             "--real-run-dir for the initial scene. Mutually exclusive with "
+             "--from-real-run, --mujoco-xml, --edge-idx, --depth.",
+    )
+    p.add_argument(
+        "--real-run-dir",
+        type=str,
+        default=None,
+        metavar="DIR",
+        help="execute_real_push run directory whose first mid_obs.jsonl frame "
+             "becomes the initial scene for --trial-spec mode. Typically "
+             "<env>/solution/real_push_execution/.",
+    )
     return p.parse_args()
+
+
+def _run_trial_spec_mode(args, recorder, log_file) -> int:
+    """--trial-spec dispatch: run all trials as one continuous sim chain.
+
+    Source of truth for the initial scene is the first ArUco-detected frame
+    of --real-run-dir/mid_obs.jsonl. Sim physics propagates state between
+    pushes — no XML regeneration between trials. On the first push-skill
+    rejection (e.g. edge not reachable), the chain halts and the final
+    scene reflects the state where it stopped (see sim_replay_subprocess
+    halt logic).
+    """
+    if (args.from_real_run or args.mujoco_xml or args.edge_idx is not None
+            or args.depth is not None or args.robot_pose is not None):
+        print(
+            "Error: --trial-spec is mutually exclusive with --from-real-run / "
+            "--mujoco-xml / --edge-idx / --depth / --robot-pose.",
+            file=sys.stderr,
+        )
+        return 2
+    if not args.real_run_dir:
+        print(
+            "Error: --trial-spec requires --real-run-dir (path to an "
+            "execute_real_push run containing mid_obs.jsonl).",
+            file=sys.stderr,
+        )
+        return 2
+
+    spec_path = Path(args.trial_spec)
+    if not spec_path.exists():
+        print(f"Error: --trial-spec file not found: {spec_path}", file=sys.stderr)
+        return 2
+    spec = yaml.safe_load(spec_path.read_text()) or {}
+    trials = spec.get("trials") or []
+    if not trials:
+        print(f"Error: no 'trials' in {spec_path}", file=sys.stderr)
+        return 2
+
+    real_run_dir = Path(args.real_run_dir)
+    try:
+        scene_state = _load_initial_scene_state(real_run_dir)
+    except (FileNotFoundError, RuntimeError) as exc:
+        print(f"Error: --real-run-dir: {exc}", file=sys.stderr)
+        return 2
+
+    initial_xml = Path(recorder.root) / "initial_scene.xml"
+    try:
+        obj_to_sim_id = _build_initial_scene_xml(
+            scene_state, Path(args.config), initial_xml
+        )
+    except Exception as exc:
+        print(f"Error: failed to build initial-scene XML: {exc!r}",
+              file=sys.stderr)
+        return 2
+
+    try:
+        chain = _build_chain_from_trial_spec(trials, obj_to_sim_id)
+    except ValueError as exc:
+        print(f"Error: --trial-spec: {exc}", file=sys.stderr)
+        return 2
+
+    try:
+        starting_pose_sim = _compute_edge_starting_pose_sim(
+            scene_state, chain[0]["object_id"], chain[0]["edge_idx"]
+        )
+    except KeyError as exc:
+        print(f"Error: edge-point teleport: {exc}", file=sys.stderr)
+        return 2
+
+    print(
+        f"[trial-spec] {len(chain)} push(es) "
+        f"chain={[(c['object_id'], c['edge_idx'], c['depth']) for c in chain]} "
+        f"start_pose_sim=({starting_pose_sim[0]:.3f}m, "
+        f"{starting_pose_sim[1]:.3f}m, "
+        f"{starting_pose_sim[2]:.3f}rad)",
+        flush=True,
+    )
+
+    from robot_control.diagnostics.sim_replay import render_chain_to_mp4
+
+    output_mp4 = str(Path(recorder.root) / "sim_push.mp4")
+    namo_cpp_config = (
+        ROBOT_CONTROL_ROOT.parent / "namo_cpp" / "config"
+        / "namo_config_complete_skill15_car_1x.yaml"
+    )
+    if not namo_cpp_config.exists():
+        print(f"Error: required C++ config not found: {namo_cpp_config}",
+              file=sys.stderr)
+        return 2
+
+    import os as _os
+    prior_cwd = _os.getcwd()
+    namo_cpp_dir = ROBOT_CONTROL_ROOT.parent / "namo_cpp"
+    if namo_cpp_dir.exists():
+        _os.chdir(str(namo_cpp_dir))
+    try:
+        rendered = render_chain_to_mp4(
+            start_xml=str(initial_xml),
+            namo_config=str(namo_cpp_config),
+            chain=chain,
+            output_mp4=output_mp4,
+            artifact_dir=str(Path(recorder.root)),
+            starting_robot_pose_sim=starting_pose_sim,
+            skip_video=bool(args.no_video),
+        )
+    finally:
+        _os.chdir(prior_cwd)
+
+    diag_root = Path(recorder.root)
+    chain_failed = rendered is None
+    if chain_failed:
+        print(
+            "[exec-sim-push] chain halted before completion — see "
+            "[sim_replay_subprocess] lines above for the failure reason.",
+            file=sys.stderr,
+        )
+
+    # Top-down MuJoCo render of the final scene, matching the camera setup
+    # sim_replay_subprocess uses for sim_push.mp4 (and run_namo.py --viewer).
+    # Sources qpos from qpos_dump_full.txt (the C++ side writes it during
+    # every push; partial chains preserve it via the failure-halt copy in
+    # sim_replay_subprocess.py). If no qpos is available the renderer falls
+    # back to the XML's baked initial pose, so a deliverable always lands.
+    qpos_dump = diag_root / "qpos_dump_full.txt"
+    final_image = diag_root / "final_scene.png"
+    try:
+        _render_final_scene_image(initial_xml, qpos_dump, final_image)
+        print(f"[exec-sim-push] wrote {final_image}", flush=True)
+    except Exception as exc:
+        print(f"[exec-sim-push] WARN: final_scene render failed: {exc!r}",
+              file=sys.stderr)
+
+    if log_file:
+        try:
+            log_file.close()
+        except Exception:
+            pass
+
+    print()
+    print("=" * 60)
+    status = "FAILED" if chain_failed else "OK"
+    print(f"Chain status: {status}. Records under {diag_root}")
+    if final_image.exists():
+        print(f"  - {final_image}     (deliverable: top-down final scene)")
+    print(f"  - {initial_xml}")
+    if not args.no_video and not chain_failed:
+        print(f"  - {output_mp4}")
+    print(f"  - {diag_root / 'pushes.jsonl'}  (one row per completed push)")
+    print(f"  - {diag_root / 'mid_obs.jsonl'}")
+    print(f"  - {diag_root / 'run.log'}")
+    print("=" * 60)
+    return 1 if chain_failed else 0
 
 
 def main() -> int:
@@ -407,6 +920,13 @@ def main() -> int:
         print("Error: --diag-path is required.", file=sys.stderr)
         return 2
     args._diagnostics_recorder = recorder
+
+    # --trial-spec mode: take an execute_real_push-style trial spec, build a
+    # car XML from the matching real run's recorded initial scene, and run
+    # the whole trial chain in one sim subprocess. Single-push --from-real-run
+    # and --mujoco-xml modes (below) are untouched.
+    if args.trial_spec:
+        return _run_trial_spec_mode(args, recorder, log_file)
 
     # --from-real-run mode: rewind sim to the exact pre-push state of a
     # execute_real_push run. Auto-fills every CLI arg that's normally
