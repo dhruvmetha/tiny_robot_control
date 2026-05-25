@@ -457,15 +457,16 @@ def main() -> int:
     push_steps = args.depth + 1
 
     # ===== C++ NAMOPushController execution =====
-    # Bypass the Python Runtime/PushController/MujocoSimEnv stack entirely.
-    # The Python side ran pure pursuit at the Runtime control rate (30 Hz)
-    # while physics ran at 500 Hz, leaving each wheel command held for
-    # ~17 physics ticks. That decoupling produced the speed-oscillation and
-    # contact-bouncing artifacts we saw in execute_sim_push videos.
+    # We dispatch the push through the C++ NAMOPushController (via sim_replay)
+    # rather than running a Python pure-pursuit loop in this process. The
+    # Python loop ran at the Runtime control rate (30 Hz) while MuJoCo physics
+    # ran at 500 Hz, holding each wheel command for ~17 physics ticks —
+    # producing the speed-oscillation and contact-bouncing artifacts we used
+    # to see in execute_sim_push videos.
     #
-    # The C++ NAMOPushController (which sim_replay calls into) runs the same
-    # PushPathFollower pure-pursuit algorithm but updates wheel commands
-    # every single physics tick. It also does:
+    # The C++ NAMOPushController runs the same PushPathFollower pure-pursuit
+    # algorithm but updates wheel commands every single physics tick. It also
+    # does:
     #   * env_.set_zero_velocity()  — zero every velocity in the scene
     #   * 100-tick pre-push settle  — let chassis drop onto wheels, kill
     #                                 contact transients
