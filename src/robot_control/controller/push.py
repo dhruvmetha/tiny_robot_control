@@ -102,6 +102,12 @@ def _wrap_to_pi(rad: float) -> float:
     return rad
 
 
+def _wheel_log_paths_from_env(raw: str) -> List[str]:
+    """Split NAMO_PUSH_WHEEL_LOG into one or more output paths."""
+    parts = [p for p in raw.split(os.pathsep) if p]
+    return parts or [raw]
+
+
 class PushState(Enum):
     """Push controller state machine."""
 
@@ -198,6 +204,7 @@ class PushController(Controller):
 
         # Push path state
         self._push_path: Optional[List[Point]] = None
+        self._push_path_at_start: Optional[List[Point]] = None
 
         # Retreat phase state
         self._retreat_target: Optional[Point] = None
@@ -206,12 +213,14 @@ class PushController(Controller):
         # Push outcome telemetry: object pose at PUSHING entry, for Δ reporting at PUSH COMPLETE
         self._push_start_obj_pose: Optional[Tuple[float, float, float]] = None
         self._push_start_robot_pose: Optional[Tuple[float, float, float]] = None
+        self._push_start_obs_timestamp: Optional[float] = None
         # Stuck flag: set at PUSH COMPLETE if Δobject < thresholds. Reported via
         # did_fail() so the upstream blacklist gets the (object_id, edge_idx) entry.
         self._push_movement_inadequate: bool = False
 
         # Visualization
         self._target_point: Optional[Point] = None
+        self._target_point_at_start: Optional[Point] = None
         self._object_pose: Optional[ObjectPose] = None
 
     @property
@@ -274,18 +283,39 @@ class PushController(Controller):
         # (our FollowPathController), RETREATING, etc.
         log_path = os.getenv("NAMO_PUSH_WHEEL_LOG")
         if log_path:
+            obs_ts = float(getattr(obs, "timestamp", 0.0) or 0.0)
             if not hasattr(self, "_wheel_log_t0_global"):
-                self._wheel_log_t0_global = float(obs.timestamp)
-            t_rel = float(obs.timestamp) - self._wheel_log_t0_global
+                self._wheel_log_t0_global = obs_ts
+            t_rel = obs_ts - self._wheel_log_t0_global
+            prev_obs_ts = getattr(self, "_wheel_log_prev_obs_timestamp", None)
+            obs_reused = prev_obs_ts is not None and abs(obs_ts - prev_obs_ts) < 1e-9
+            self._wheel_log_prev_obs_timestamp = obs_ts
             mode = str(self._follow_path_controller.metadata.get("mode", ""))
-            with open(log_path, "a") as f:
-                f.write(json.dumps({
-                    "t_s": t_rel,
-                    "left_cmd": float(action.left_speed),
-                    "right_cmd": float(action.right_speed),
-                    "mode": mode,
-                    "state": self._state.value,
-                }) + "\n")
+            sub = self._current_subgoal
+            target_point = self._follow_path_controller.metadata.get("target_point")
+            rec = {
+                "t_s": t_rel,
+                "obs_timestamp": obs_ts,
+                "obs_reused": obs_reused,
+                "left_cmd": float(action.left_speed),
+                "right_cmd": float(action.right_speed),
+                "mode": mode,
+                "state": self._state.value,
+                "path_index": int(self._follow_path_controller.metadata.get("path_index", 0) or 0),
+                "heading_error_deg": self._follow_path_controller.metadata.get("heading_error_deg"),
+                "target_point_cm": list(target_point) if target_point is not None else None,
+                "max_speed_cap": float(self._max_speed),
+                "object_id": getattr(sub, "object_id", None),
+                "edge_idx": getattr(sub, "edge_idx", None),
+                "push_steps": getattr(sub, "push_steps", None),
+            }
+            payload = json.dumps(rec)
+            for path in _wheel_log_paths_from_env(log_path):
+                parent = os.path.dirname(path)
+                if parent:
+                    os.makedirs(parent, exist_ok=True)
+                with open(path, "a") as f:
+                    f.write(payload + "\n")
         return action
 
     def _handle_computing_approach(
@@ -318,6 +348,9 @@ class PushController(Controller):
             # record (push.py:987, 1027).
             self._push_start_obj_pose = (obj.x, obj.y, obj.theta)
             self._push_start_robot_pose = (obs.robot_x, obs.robot_y, obs.robot_theta)
+            self._push_start_obs_timestamp = (
+                float(obs.timestamp) if getattr(obs, "timestamp", None) is not None else None
+            )
             print(
                 f"[PUSH] >>> PUSHING start (skip-approach): obj '{subgoal.object_id}' at "
                 f"({obj.x:.1f},{obj.y:.1f},θ={obj.theta:.1f}°), "
@@ -435,6 +468,9 @@ class PushController(Controller):
             # Capture pre-push poses for outcome reporting at PUSH COMPLETE
             self._push_start_obj_pose = (obj.x, obj.y, obj.theta)
             self._push_start_robot_pose = (obs.robot_x, obs.robot_y, obs.robot_theta)
+            self._push_start_obs_timestamp = (
+                float(obs.timestamp) if getattr(obs, "timestamp", None) is not None else None
+            )
             print(
                 f"[PUSH] >>> PUSHING start: obj '{subgoal.object_id}' at "
                 f"({obj.x:.1f},{obj.y:.1f},θ={obj.theta:.1f}°), "
@@ -511,8 +547,15 @@ class PushController(Controller):
             else:
                 # Fallback: just use mid_pt
                 actual_pos = (obs.robot_x, obs.robot_y)
+                new_mid_pt = mid_pt
                 self._target_point = mid_pt
                 self._push_path = [actual_pos, mid_pt, mid_pt]
+
+            if self._step_count == 0 and self._push_path is not None:
+                self._push_path_at_start = [tuple(pt) for pt in self._push_path]
+                self._target_point_at_start = (
+                    tuple(self._target_point) if self._target_point is not None else None
+                )
 
             # Update path in follow controller
             self._follow_path_controller.set_path(self._push_path)
@@ -1008,12 +1051,45 @@ class PushController(Controller):
         # Wrap dtheta to [-180, 180] for stability.
         dtheta_deg = ((dtheta_deg + 180.0) % 360.0) - 180.0
         disp = math.hypot(dx, dy)
+        path_unit_vec = None
+        path_length_cm = None
+        if self._push_path_at_start and len(self._push_path_at_start) >= 2:
+            sx, sy = self._push_path_at_start[0]
+            ex, ey = self._push_path_at_start[-1]
+            path_len = math.hypot(ex - sx, ey - sy)
+            if path_len > 1e-9:
+                path_unit_vec = [(ex - sx) / path_len, (ey - sy) / path_len]
+                path_length_cm = path_len
         return {
             "object_id": getattr(sub, "object_id", None),
             "expected_edge": getattr(sub, "edge_idx", None),
             "expected_push_steps": getattr(sub, "push_steps", None),
             "object_pose_before": list(self._push_start_obj_pose),
             "object_pose_after": [obj_now.x, obj_now.y, obj_now.theta],
+            "robot_pose_before_cm_deg": (
+                list(self._push_start_robot_pose) if self._push_start_robot_pose is not None else None
+            ),
+            "robot_pose_after_cm_deg": [post_obs.robot_x, post_obs.robot_y, post_obs.robot_theta],
+            "push_start_obs_timestamp": self._push_start_obs_timestamp,
+            "push_end_obs_timestamp": (
+                float(post_obs.timestamp) if getattr(post_obs, "timestamp", None) is not None else None
+            ),
+            "push_path_cm": (
+                [list(pt) for pt in self._push_path_at_start]
+                if self._push_path_at_start is not None
+                else None
+            ),
+            "push_target_cm": (
+                list(self._target_point_at_start)
+                if self._target_point_at_start is not None
+                else None
+            ),
+            "push_path_unit_vec": path_unit_vec,
+            "push_path_length_cm": path_length_cm,
+            "push_controller_max_speed": float(self._max_speed),
+            "push_lookahead_distance_cm": float(self._follow_path_controller.lookahead_distance),
+            "push_dynamic_direction": bool(self._dynamic_direction),
+            "push_ticks_executed": int(self._step_count),
             "delta_pos_cm": [dx, dy],
             "delta_pos_magnitude_cm": disp,
             "delta_theta_deg": dtheta_deg,
@@ -1106,8 +1182,10 @@ class PushController(Controller):
         self._approach_position = None
         self._approach_orientation = None
         self._target_point = None
+        self._target_point_at_start = None
         self._object_pose = None
         self._push_path = None
+        self._push_path_at_start = None
 
         # Reset retreat state
         self._retreat_target = None
@@ -1116,6 +1194,7 @@ class PushController(Controller):
         # Reset push outcome telemetry
         self._push_start_obj_pose = None
         self._push_start_robot_pose = None
+        self._push_start_obs_timestamp = None
         self._push_movement_inadequate = False
 
         # Reset follow path controller

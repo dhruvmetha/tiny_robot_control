@@ -1782,6 +1782,9 @@ class Runtime:
                     "push_steps": subgoal.push_steps,
                     "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
                     "dispatched_object_pose_cm": obj_pose,
+                    "dispatched_obs_timestamp": (
+                        float(obs.timestamp) if getattr(obs, "timestamp", None) is not None else None
+                    ),
                 }
                 self._active_subgoal_type = "push"
             elif isinstance(subgoal, NavigateSubgoal):
@@ -1790,6 +1793,9 @@ class Runtime:
                     "target_cm": [subgoal.x, subgoal.y],
                     "target_theta_deg": subgoal.theta,
                     "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                    "dispatched_obs_timestamp": (
+                        float(obs.timestamp) if getattr(obs, "timestamp", None) is not None else None
+                    ),
                 }
                 self._active_subgoal_type = "navigate"
             else:
@@ -1797,6 +1803,9 @@ class Runtime:
                     "type": type(subgoal).__name__,
                     "repr": repr(subgoal),
                     "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                    "dispatched_obs_timestamp": (
+                        float(obs.timestamp) if getattr(obs, "timestamp", None) is not None else None
+                    ),
                 }
                 self._active_subgoal_type = "other"
             self._active_subgoal_id = self._diag.record_subgoal_start(payload)
@@ -1820,6 +1829,9 @@ class Runtime:
             outcome = {
                 "outcome": "failed" if failed else "success",
                 "completed_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                "completed_obs_timestamp": (
+                    float(obs.timestamp) if getattr(obs, "timestamp", None) is not None else None
+                ),
             }
             self._diag.record_subgoal_end(self._active_subgoal_id, outcome)
         except Exception as exc:

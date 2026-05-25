@@ -7,7 +7,7 @@ runs full MuJoCo physics per tick, so pushes actually move objects.
 Why this exists: ``RLEnvironment.step()`` in the namo_rl C++ binding is atomic
 — it runs the full C++ ``NAMOPushController`` whose push phase is open-loop
 motion-primitive replay. To get *pure-pursuit* push behaviour (matching
-``run_namo.py`` and ``collect_real_primitives.py``) plus *MuJoCo contact
+``run_namo.py`` and ``execute_real_push.py``) plus *MuJoCo contact
 physics*, we need a Python loop that:
 
     1. Sets wheel velocities from Action.left_speed/right_speed

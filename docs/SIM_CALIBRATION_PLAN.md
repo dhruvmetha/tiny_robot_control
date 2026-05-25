@@ -11,40 +11,59 @@ This document is the canonical reference for the implementation. The reader
 is **future me, in another conversation**, who has the diff list but no prior
 context for the calibration session.
 
+Implementation status as of 2026-05-23:
+
+- Real data collection is done with `scripts/execute_real_push.py`, not the
+  older `collect_real_primitives.py` name.
+- Sim replay is done with `scripts/execute_sim_push.py --from-real-run
+  <real_run_dir> --push-index N`.
+- `--from-real-run` is now **strict**: it requires `mid_obs.jsonl` from the
+  real run and does **not** fall back to live camera state.
+- The replay target is the recorded **push-start scene** for each push index.
+  That means the pushed object pose and other recorded scene objects come from
+  `mid_obs.jsonl`, while the compact before/after summary comes from
+  `pushes.jsonl`.
+- `execute_sim_push` still drives the C++ `NAMOPushController` path through
+  `env.step(action)`, so the push itself is exercised through the same sim
+  replay code path we trust elsewhere.
+
 ---
 
 ## 1. Goal
 
-For each row of recorded real-robot data, run the **same primitive** in sim
-with the **same starting object pose**, then record sim's outcome and the
-gap. The result is:
+For each recorded real push, run the **same primitive** in sim against the
+**same recorded push-start scene**, then record sim's outcome and the gap.
+The operational loop is:
 
 ```
-For each (object_id, edge_idx, push_steps) trial in calibration/:
-    Δ_real  — already captured in trial/real/pushes.jsonl
-    Δ_sim   — to be computed by sim_calibrate.py → trial/sim/pushes.jsonl
-    gap     — to be computed by compute_diff.py  → trial/diff/diff.json
+1. Run one execute_real_push session with a trial spec.
+2. That produces one real run directory containing pushes.jsonl, subgoals.jsonl,
+   mid_obs.jsonl, wheel_commands.jsonl, and tier2_push_trials/.
+3. For each desired push record N in that run:
+     execute_sim_push --from-real-run <real_run_dir> --push-index N ...
+4. Compare the real and sim outputs for that push index.
 ```
 
-Then aggregate per `(object, edge, depth)` into a top-level
-`calibration/_summary.csv` for at-a-glance review.
+If you collect, for example, 3 pushes for each of 4 edges and 2 depths, that
+is 24 real push records and therefore 24 separate sim replays.
 
 ---
 
 ## 2. Background — what already exists
 
-### Existing real-side recording (`scripts/collect_real_primitives.py`)
+### Existing real-side recording (`scripts/execute_real_push.py`)
 
-Per real trial, records to disk:
+Per real session, records to disk:
 
 ```
-calibration/<obj>/<edge_depth>/<trial>/real/
-├── config.json         (args + git state)
-├── connectivity.jsonl  (robot online/offline events)
-├── plans.jsonl         (empty for direct trial-spec runs)
-├── pushes.jsonl        (the calibration signal)
-├── run.log             (tee'd stdout)
-└── subgoals.jsonl      (per-subgoal dispatch + outcome)
+<diag-path>/<run-name>/
+├── config.json              (args + git state)
+├── pushes.jsonl             (per-push before/after summary)
+├── subgoals.jsonl           (per-subgoal dispatch + outcome)
+├── mid_obs.jsonl            (full recorded scene stream)
+├── wheel_commands.jsonl     (per-tick push wheel commands)
+├── tier2_push_trials/       (exported per-push chassis-calibration bundles)
+└── run.log                  (tee'd stdout/stderr)
 ```
 
 `pushes.jsonl` schema (one record per push):
@@ -68,26 +87,28 @@ calibration/<obj>/<edge_depth>/<trial>/real/
 }
 ```
 
-All three fields `object_pose_before/after` are `[x_cm, y_cm, theta_deg]`.
+Current runs also include:
 
-### Existing sim_replay (`src/robot_control/diagnostics/sim_replay.py`)
+- `robot_pose_before_cm_deg` / `robot_pose_after_cm_deg`
+- `push_start_obs_timestamp` / `push_end_obs_timestamp`
+- `push_path_cm`, `push_controller_max_speed`, and related push metadata
 
-Takes a starting XML + namo_config + chain of `(object_id, edge_idx,
-push_steps)`, spawns a subprocess (clean `NAMO_QPOS_DUMP` static state),
-runs `env.step` per chain entry, dumps per-tick qpos to a temp file, then
-renders an MP4. **Outputs pixels, not pose data.** Useful for video
-inspection, not for calibration math.
+`mid_obs.jsonl` is the important addition for replay. It records the full scene
+state over time and is now required by `execute_sim_push --from-real-run`.
 
-### Why sim_replay isn't reused as-is
+### Existing sim replay path (`scripts/execute_sim_push.py`)
 
-- Renders MP4 (we don't need video).
-- Output is per-tick qpos, not per-trial Δ.
-- Subprocess is required there because of `NAMO_QPOS_DUMP` static-init.
-  For calibration we don't dump qpos; we read `env.get_full_state()` directly,
-  so in-process is fine and faster.
+`execute_sim_push.py` now wraps the replay path we actually use:
 
-Calibration needs a different tool. It can borrow ideas (template XML, env
-construction, action dispatch) but writes a new script.
+- it rebuilds a rewind XML from the recorded real run
+- it calls `render_chain_to_mp4(...)`
+- the subprocess calls `env.step(action)` through the C++ NAMO push skill
+- the subprocess writes not just MP4/video output, but also
+  `mid_obs.jsonl`, `pushes.jsonl`, `subgoals.jsonl`, `wheel_commands.jsonl`,
+  `qpos_dump_full.txt`, and `tier2_push_trials/`
+
+So the calibration path is no longer a hypothetical in-process tool; it is the
+implemented `execute_sim_push --from-real-run --push-index N` flow.
 
 ### Existing namo_cpp/data scene templates
 
@@ -176,182 +197,131 @@ recorded — no name translation needed.
 
 ---
 
-## 3. File system layout
+## 3. Recommended working layout
 
-### Input (already in place)
+One practical way to organize a calibration session is:
 
 ```
 robot_control/calibration/
-├── obj_1/
-│   ├── edge14_depth2/
-│   │   ├── ticks26_trial1_<ts>/
-│   │   │   ├── real/
-│   │   │   │   ├── config.json
-│   │   │   │   ├── connectivity.jsonl
-│   │   │   │   ├── plans.jsonl
-│   │   │   │   ├── pushes.jsonl   ← the input we read
-│   │   │   │   ├── run.log
-│   │   │   │   └── subgoals.jsonl
-│   │   │   ├── sim/    (empty, to be filled by sim_calibrate.py)
-│   │   │   └── diff/   (empty, to be filled by compute_diff.py)
-│   │   ├── ticks26_trial2_<ts>/  (same shape)
-│   │   └── ticks26_trial3_<ts>/
-│   ├── edge14_depth6/   (similar)
-│   ├── ...
-│   └── edge44_depth9/   (10 trials each)
-└── obj_4/
-    ├── edge1_depth2/    (3 trials each)
-    └── ...
+└── 2026-05-23_push_calibration/
+    ├── real/
+    │   └── <execute_real_push_run>/
+    │       ├── pushes.jsonl
+    │       ├── subgoals.jsonl
+    │       ├── mid_obs.jsonl
+    │       ├── wheel_commands.jsonl
+    │       └── ...
+    └── sim/
+        ├── push_000/
+        ├── push_001/
+        ├── ...
+        └── push_023/
 ```
 
-Current counts as of the plan: **24 targets, 93 trial dirs**.
-`config/objects.yaml` defines the obstacle dims (obj_1: 15×7×4, obj_4:
-12×7.5×5; widths in cm).
+The important mapping is:
 
-### Output (to be filled)
+- one `execute_real_push` run directory can contain many pushes
+- `push_index` selects which recorded push to replay
+- one `execute_sim_push` run should be created per `push_index`
 
-```
-trial/sim/
-├── pushes.jsonl        ← same schema as real, plus sim-specific fields
-└── config.json         ← sim invocation metadata (template path, namo_config,
-                           dims used, robot start pose, etc.)
+For the example session:
 
-trial/diff/
-└── diff.json           ← paired comparison + gap stats
+- 4 edges
+- 2 depths
+- 3 repeats each
 
-calibration/
-└── _summary.csv        ← per-(obj, edge, depth) aggregate (mean/std real,
-                           mean/std sim, mean gap, %gap, n_trials)
-```
+that is `4 * 2 * 3 = 24` push records, so you should expect 24 sim replays.
 
----
+### Example commands
 
-## 4. Per-trial sim pipeline (in-process)
+Collect one real session:
 
-```
-1. Read trial/real/pushes.jsonl
-     → record: (object_id, edge_idx, push_steps, object_pose_before)
-     → object_pose_before is [x_cm, y_cm, theta_deg]
-
-2. Look up object dims from config/objects.yaml
-     → (width_cm, depth_cm, height_cm)
-     → shape rule:
-        ratio = width / depth   (Y / X in object frame)
-        if abs(ratio - 1.0) <= 0.05  → "square"
-        elif ratio > 1.0             → "wide"  (Y > X)   ← obj_1, obj_4
-        else                         → "tall"  (X > Y)
-     → pick template:
-        namo_cpp/data/nominal_primitive_scene_<shape>_1x_car.xml
-
-3. Build in-memory XML (function: _prepare_calibration_xml):
-     a. Read template file as string.
-     b. Parse with xml.etree.ElementTree.
-     c. Find the <body> whose name is "obstacle_1_movable":
-        - Set body's pos="<x_m> <y_m> 0.05"
-        - Set body's quat="<qw> 0 0 <qz>"  (Z-axis rotation only)
-          qw = cos(theta_rad / 2)
-          qz = sin(theta_rad / 2)
-        - Rename body to <object_id> (e.g., "obj_1")
-        - Find the body's child <geom>:
-            * Update geom name to <object_id>
-            * Update geom size to "<depth_cm/200> <width_cm/200> <height_cm/200>"
-              (MuJoCo box size is half-extents in meters → cm/2/100 = cm/200)
-     d. Find <body name="walls"> and modify it:
-        - Update each wall geom's pos so all four walls are at ±2.0 m
-          (4× the real arena half-width). This keeps the wavefront grid
-          large enough to be meaningful but ensures no real contact.
-     e. Find the top-level <include> element and rewrite its file=
-        attribute from the relative path
-        "../test_xml/little-car-modeling-package/assets/mjcf/little_car.xml"
-        to the absolute path
-        "<namo_cpp>/test_xml/little-car-modeling-package/assets/mjcf/little_car.xml".
-        MuJoCo resolves relative includes from the XML file's directory; the
-        edited XML will live in /tmp/ where the relative path doesn't exist.
-     f. Serialize back to string.
-     g. Write to a NamedTemporaryFile (suffix=".xml"). Keep the path; we'll
-        unlink it after env teardown.
-
-4. Construct env:
-     namo_config_car_path = (
-        "<namo_cpp>/config/namo_config_complete_skill15_car_1x.yaml"
-     )
-     # Note: this is the SAME config robot_control's --robot-model car
-     # path loads (find_namo_config in run_namo.py:56-78). Keeps sim_calibrate
-     # exercising the same code paths as the production planning pipeline.
-     env = namo_rl.RLEnvironment(
-        temp_xml_path,
-        namo_config_car_path,
-        visualize=False,
-        skip_warmup=True,
-     )
-     env.warm_up()
-     # Optionally: env.set_collision_checking(False) if you want the push
-     # to be unconstrained by any residual wall contact. Walls are 2 m
-     # away in our edited XML, so this is belt-and-suspenders.
-
-5. Snapshot pre-state:
-     state = env.get_full_state()
-     qpos = state.qpos   # list/array of floats
-
-     Find the obstacle's qpos slot (function: _find_object_qpos_slot):
-     - Each free joint contributes 7 consecutive qpos elements:
-       [x, y, z, qw, qx, qy, qz]
-     - The car has its own freejoint + 2 wheel joints (1 qpos each)
-     - We're looking for the [x, y] pair that matches our written values
-       (the obstacle pose we set in the XML).
-     - Strategy: iterate over qpos in steps of 1, find the consecutive
-       7-element window where x and y are close to our written values
-       and the z is close to 0.05 (the obstacle's z).
-     - Slot index is cached for the lifetime of this env (one per trial).
-     - Sanity-check: convert back to cm and assert the recovered pose
-       matches the real `object_pose_before` to within 0.5 cm / 1°. If
-       not, abort the trial.
-
-6. Build action and step:
-     action = namo_rl.Action()
-     action.object_id = real's object_id          # matches XML body name
-     action.edge_idx  = real's edge_idx
-     action.depth     = real's push_steps - 1
-     action.x = action.y = action.theta = 0.0     # unused for primitive exec
-     env.step(action)
-
-7. Snapshot post-state:
-     state = env.get_full_state()
-     Read same 7-element slot.
-     object_pose_after_sim:
-        x_cm = qpos[slot+0] * 100
-        y_cm = qpos[slot+1] * 100
-        theta_rad = 2 * atan2(qpos[slot+6], qpos[slot+3])   # 2·atan2(qz, qw)
-        theta_deg = theta_rad * 180/pi  (wrap into a standard range)
-
-8. Compute Δ (in cm + deg, matching the real schema's units):
-     delta_pos_cm = [
-       object_pose_after_sim[0] - object_pose_before_sim[0],
-       object_pose_after_sim[1] - object_pose_before_sim[1],
-     ]
-     delta_pos_magnitude_cm = hypot(*delta_pos_cm)
-     delta_theta_deg = wrap_signed_deg(after_theta - before_theta)
-     # wrap_signed_deg keeps the value in [-180, 180]
-
-9. Write trial/sim/pushes.jsonl with the full record (schema below).
-   Write trial/sim/config.json with the invocation metadata.
-
-10. unlink the temp XML.
-    del env  (drop the RLEnvironment so the next trial gets a fresh state).
+```bash
+python scripts/execute_real_push.py \
+  --config config/real.yaml \
+  --camera-service tcp://localhost:5556 \
+  --diag-path robot_control/calibration/2026-05-23_push_calibration/real \
+  --run-name edge_depth_sweep \
+  --trial-spec config/real_primitive_trials_example.yaml \
+  --record-video
 ```
 
-### Why a fresh env per trial
+Replay one recorded push in sim:
 
-`NAMO_QPOS_DUMP` is not used (we're reading get_full_state directly), so
-the static-state constraint that forces sim_replay into a subprocess does
-not apply. But each trial needs a different starting object pose; the
-cleanest way is to construct a new env per trial. The cost is acceptable
-(~hundreds of milliseconds per env build).
+```bash
+python scripts/execute_sim_push.py \
+  --from-real-run robot_control/calibration/2026-05-23_push_calibration/real/edge_depth_sweep \
+  --push-index 7 \
+  --diag-path robot_control/calibration/2026-05-23_push_calibration/sim \
+  --run-name push_007
+```
 
-Alternative explored: keep one env and call `set_full_state` between
-trials. Rejected because the obstacle's qpos slot depends on the XML
-(specifically, on which free joints are present and their order). Per-trial
-XML construction simplifies the pipeline.
+Loop over every recorded push:
+
+```bash
+for idx in $(seq 0 23); do
+  python scripts/execute_sim_push.py \
+    --from-real-run robot_control/calibration/2026-05-23_push_calibration/real/edge_depth_sweep \
+    --push-index "$idx" \
+    --diag-path robot_control/calibration/2026-05-23_push_calibration/sim \
+    --run-name "push_$(printf '%03d' "$idx")"
+done
+```
+
+## 4. Per-push replay pipeline (current implemented flow)
+
+```
+1. Run `execute_real_push.py` over a trial spec.
+
+2. For replay of one recorded push, choose a `push_index` N.
+
+3. `execute_sim_push.py --from-real-run <real_run_dir> --push-index N` loads:
+     - `pushes.jsonl`
+     - `subgoals.jsonl`
+     - `mid_obs.jsonl`
+
+4. The replay script selects the target push record and finds the nearest
+   recorded scene frame for that push in `mid_obs.jsonl`.
+
+5. The rewind XML is built from the recorded scene only:
+     - pushed object pose from `pushes.jsonl.object_pose_before`
+     - robot pose from `pushes.jsonl.robot_pose_before_cm_deg`
+     - other scene objects from the selected `mid_obs.jsonl` frame
+     - workspace bounds from `config/real.yaml`
+   There is no live-camera fallback anymore.
+
+6. `execute_sim_push.py` then dispatches the replay through the existing C++
+   replay path:
+     - `render_chain_to_mp4(...)`
+     - subprocess `robot_control.diagnostics.sim_replay_subprocess`
+     - `env.step(action)` using the C++ `NAMOPushController`
+
+7. The sim run writes:
+     - `pushes.jsonl`
+     - `subgoals.jsonl`
+     - `mid_obs.jsonl`
+     - `wheel_commands.jsonl`
+     - `qpos_dump_full.txt`
+     - `tier2_push_trials/`
+     - `sim_push.mp4`
+
+8. Compare the real push record at index N against the sim output for that run.
+```
+
+Important caveat:
+
+For `--from-real-run`, the script reconstructs the recorded scene, but the
+current C++ replay path may pre-teleport the robot to the selected edge point
+before `env.step(action)` to satisfy the reachability gate in the C++ skill.
+So this pipeline is the right tool for **push calibration** against the same
+recorded scene, not for reproducing the earlier real navigation trajectory.
+
+Historical note:
+
+Sections below may still mention `sim_calibrate.py` from the earlier design.
+Operationally, replace that with looping
+`execute_sim_push --from-real-run <real_run_dir> --push-index N` or a thin
+wrapper around that command.
 
 ---
 
