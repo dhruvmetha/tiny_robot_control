@@ -1,0 +1,11 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/2hop/env1/solution/sim_push_execution/run
+
+[Trapped-start recovery] Robot at (24.6, 5.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[initial-scene] wrote /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/2hop/env1/solution/sim_push_execution/run/initial_scene.xml  robot=(24.62,5.64) movables=['obj_1', 'obj_4'] -> sim=['obstacle_1_movable', 'obstacle_2_movable']
+[trial-spec] 2 push(es) chain=[('obj_1', 14, 8), ('obj_4', 45, 5)] start_pose_sim=(0.250m, 0.085m, 1.571rad)
+[sim_replay_subprocess] step 1 (object=obstacle_1_movable edge=14 depth=8) FAILED: Primitive step 1 failed. Halting chain (remaining 1 step(s) skipped).
+[sim_replay] subprocess exited with status 2; see [sim_replay_subprocess] lines above for details
+[exec-sim-push] chain halted before completion — see [sim_replay_subprocess] lines above for the failure reason.
+[exec-sim-push] wrote /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/2hop/env1/solution/sim_push_execution/run/final_scene.png
