@@ -11,7 +11,7 @@ This document is the canonical reference for the implementation. The reader
 is **future me, in another conversation**, who has the diff list but no prior
 context for the calibration session.
 
-Implementation status as of 2026-05-23:
+Implementation status as of 2026-05-25:
 
 - Real data collection is done with `scripts/execute_real_push.py`, not the
   older `collect_real_primitives.py` name.
@@ -26,6 +26,17 @@ Implementation status as of 2026-05-23:
 - `execute_sim_push` still drives the C++ `NAMOPushController` path through
   `env.step(action)`, so the push itself is exercised through the same sim
   replay code path we trust elsewhere.
+- Tier 1 (`push_tracker_max_speed`) was calibrated against PWM-0.4 straight-
+  line pure-pursuit data via `scripts/find_sim_fraction.py` and the recommended
+  value (≈0.054) is now baked into the canonical car YAML.
+- `kCarWheelMaxSpeedMs` is **locked at 1.0** and is no longer a tuning knob.
+  It's a multiplicative scale redundant with `push_tracker_max_speed`; the
+  former Stage-2 sweep has been retired to avoid overparameterization.
+- Real-vs-sim diff is `scripts/diff_real_vs_sim.py`, which reads matched
+  `tier2_push_trials/<tag>/` bundles from both sides and computes the
+  four-component pose-gap loss (object xy + θ, robot xy + heading θ).
+- The deleted `MujocoSimEnv` Python path is gone — sim now dispatches through
+  the C++ executor exclusively (matches what the planner uses internally).
 
 ---
 
@@ -477,43 +488,70 @@ For center edges, `gap_mag_pct_mean` is the headline.
 
 ## 8. Scripts
 
-Two scripts under `src/robot_control/diagnostics/`:
+The pipeline is three top-level scripts in `scripts/`. The older
+`sim_calibrate.py` / `compute_diff.py` design was retired in favor of
+this leaner triad.
 
-### `sim_calibrate.py`
+### `execute_real_push.py`
 
-Heavy. Walks `<calibration_root>`, finds every
-`<trial>/real/pushes.jsonl`, runs the per-trial sim flow (§4), writes
-`<trial>/sim/`.
-
-```
-python -m robot_control.diagnostics.sim_calibrate <calibration_root>
-    [--targets <glob>]               # e.g. "obj_1/edge44_*"
-    [--namo-config <path>]           # default: the car config
-    [--templates-dir <path>]         # default: namo_cpp/data/
-    [--objects-yaml <path>]          # default: config/objects.yaml
-    [--wall-extent-m 2.0]            # walls relocated to ±this distance
-    [--force]                        # overwrite existing sim/
-    [--dry-run]                      # list trials, do not execute
-    [--max-parallel 1]               # currently sequential; can parallelize later
-```
-
-Idempotent: by default skips trials whose `<trial>/sim/pushes.jsonl`
-already exists. Pass `--force` to overwrite.
-
-### `compute_diff.py`
-
-Light. Walks `<calibration_root>`, pairs each
-`<trial>/real/pushes.jsonl` with `<trial>/sim/pushes.jsonl`, writes
-`<trial>/diff/diff.json`, then emits `_summary.csv`.
+Collect one real push session (N pushes). Writes the diagnostic tree
+(`pushes.jsonl`, `subgoals.jsonl`, `mid_obs.jsonl`,
+`wheel_commands.jsonl`, `config.json`, `run.log`) plus a per-push
+`tier2_push_trials/<tag>/` bundle that the sim side mirrors.
 
 ```
-python -m robot_control.diagnostics.compute_diff <calibration_root>
-    [--targets <glob>]
-    [--summary-out calibration/_summary.csv]
-    [--force]                        # overwrite existing diff/
+python scripts/execute_real_push.py \
+    --config config/real.yaml \
+    --camera-service tcp://localhost:5556 \
+    --trial-spec <path/to/trial_spec.yaml> \
+    --diag-path <where/to/write> \
+    --run-name <name> \
+    --no-reset-check --push-speed 0.4
 ```
 
-Re-runnable: pure pose math, no env.
+### `execute_sim_push.py`
+
+One push per invocation. With `--from-real-run`, loads the recorded
+push-start scene from the real run's `mid_obs.jsonl` and replays that
+exact push through the C++ `NAMOPushController` in MuJoCo. Produces
+the same artifact shape as the real side, including its own
+`tier2_push_trials/` bundle.
+
+```
+python scripts/execute_sim_push.py \
+    --from-real-run <real_run_dir> \
+    --push-index N \
+    --diag-path <sim_parent_dir> \
+    --run-name push_N
+```
+
+To match a real session of N pushes, invoke N times with
+`--push-index 0..N-1` into a common `<sim_parent_dir>`.
+
+### `diff_real_vs_sim.py`
+
+Compares a real session against the matched sim runs. Joins trials
+on `(object_id, expected_edge, expected_push_steps)` with timestamp
+tie-break, computes the four-component pose gap (object xy + θ, robot
+xy + heading θ), aggregates into a headline `L`, writes a report
+under `<real_run>/diff_vs_<sim_basename>/` (CSV + JSON + markdown +
+optional matplotlib plots).
+
+```
+python scripts/diff_real_vs_sim.py \
+    --real <real_run_dir> \
+    --sim <sim_parent_dir> \
+    [--out-dir <dir>] [--theta-weight 0.5]
+```
+
+See §12 for the loss formula and how to use the report.
+
+### `tune_forcerange.py` (not yet written)
+
+The auto-tuner that wraps the §12 sweep. Patches `little_car.xml`,
+runs `execute_sim_push` for every push at each candidate `forcerange`,
+calls `diff_real_vs_sim`, reads `headline_loss_cm`, picks the winner.
+Restores the XML on exit. See §12.7.
 
 ---
 
@@ -745,153 +783,156 @@ Re-runnable: pure pose math, no env.
 
 ---
 
-## 12. Tuning algorithm — knob hierarchy + optimization strategy
+## 12. Tuning algorithm — single-knob Tier 2 sweep
 
 **Direction**: real is the fixed ground truth; sim is what we tune to
-match. Sim evaluations are cheap (~10 min per full sweep over 93 trials).
+match. The pipeline is `execute_real_push` (once) →
+`execute_sim_push --from-real-run` (per push) → `diff_real_vs_sim`
+(per candidate parameter value).
 
-### 13.1 The knobs, ranked by tuning cost
+### 12.1 The knobs, current status
 
-| # | Knob | Type | Default | Cost to change | Effect |
-|---|------|------|---------|----------------|--------|
-| 1 | `skill.push_tracker_max_speed` | YAML (fraction) | 0.3 (in `ConfigManager`) | Free — YAML edit | Scales chassis velocity |
-| 2 | `skill.control_steps_per_push` | YAML (int ticks) | 375 (in `skill15_car_1x.yaml`) | Free — YAML edit | Sets push duration per NAMO unit |
-| 3 | `kCarWheelMaxSpeedMs` | C++ `constexpr` | 1.0 m/s (`namo_push_controller.cpp:22`) | **Recompile required** | Sets the PWM-to-chassis-m/s mapping. Real's firmware does this mapping; sim's compiled constant must match for sim-real velocity parity. |
-| 4 | Wheel `kv`, `forcerange`, `ctrlrange` | XML (`little_car.xml:62-67`) | 0.75 / ±0.5 Nm / ±25 rad/s | Free — XML edit | Motor responsiveness and saturation |
-| 5 | Floor/obstacle friction | XML (`nominal_primitive_scene_*_1x_car.xml`) | floor 0.5/0.005/0.001, obstacle 1/0.005/0.0001 | Free — XML edit, but changes primitive DB physics too | Contact dynamics |
+| # | Knob | Type | Status | Current value | Effect |
+|---|------|------|--------|---------------|--------|
+| 1 | `skill.push_tracker_max_speed` | YAML | **Locked (Tier 1 done)** | ≈0.054 (was 0.3) | Scales the wheel-velocity command. Calibrated against PWM-0.4 straight-line pure-pursuit real data via `find_sim_fraction.py`. Don't sweep again unless you re-collect free-drive data. |
+| 2 | `kCarWheelMaxSpeedMs` | C++ `constexpr` | **Locked at 1.0** | 1.0 m/s (`namo_push_controller.cpp:22`) | PWM-to-chassis-m/s mapping. Multiplicatively redundant with knob 1; pinning it eliminates one degree of freedom. Don't tune. |
+| 3 | Wheel `forcerange` | XML (`little_car.xml:65-71`) | **Tier 2 — the tuning target** | ±0.5 Nm (symmetric) | Motor saturation torque. The single physically meaningful knob for *push-under-load* dynamics. Wheel saturates here when contact forces spike — exactly the regime Tier 1 doesn't see. |
+| 4 | Wheel `kv` | XML | Secondary | 0.75 | Velocity-tracking gain. Affects transients (how fast the wheel reaches the setpoint), not steady-state push. Only sweep if `forcerange` doesn't move the loss. |
+| 5 | Floor/obstacle friction | XML (per-scene) | Last resort | floor 0.5/0.005/0.001, obstacle 1/0.005/0.0001 | Contact dynamics. Two parameters (floor + obstacle), so not a clean single-knob sweep. Only reach for it if knobs 3 + 4 both fail. |
 
-**Stage 1** tunes knobs 1 and 2 only. **Stage 2** brings in knob 3 if
-needed. **Stage 3** (only if stages 1–2 hit a wall) considers knobs 4
-and 5.
+### 12.2 Tier 2 — 1-D sweep over `forcerange`
 
-### 13.2 Stage 1 — 2D grid sweep over the YAML knobs
+**Setup:**
+1. Collect one real run with N pushes via `execute_real_push.py` on a
+   set of representative `(object, edge, depth)` trials.
+2. The Tier 2 sweep varies wheel `forcerange` symmetrically; the sweep
+   variable is the half-range, e.g. `f ∈ {0.25, 0.35, 0.50, 0.65, 0.80}`
+   Nm. Edit `little_car.xml:65-71` to set both wheels (left + right)
+   to `forcerange="-f f"`.
+3. For each candidate `f`:
+    - Patch the XML.
+    - For each push index `0..N-1`: run
+      `execute_sim_push.py --from-real-run <real_run> --push-index N
+      --diag-path <sim_parent>/f_<f> --run-name push_<N>`.
+    - Run `diff_real_vs_sim.py --real <real_run> --sim <sim_parent>/f_<f>`.
+    - Read `_aggregate.json["headline_loss_cm"]` from the diff output.
+4. Pick the `f` minimizing the headline loss.
 
-```
-push_tracker_max_speed       ∈ [0.15, 0.20, 0.25, 0.30, 0.40, 0.50]
-control_steps_per_push       ∈ [200,  275,  375,  475,  575]
-                                   (each maps to a duration per unit at 0.002 s/tick)
-                                   200→0.40s, 275→0.55s, 375→0.75s, 475→0.95s, 575→1.15s
-```
+Each candidate evaluation = N sim pushes + one diff. With ~20 pushes
+per real run and ~5 candidate values, one full sweep is ~100 sim
+pushes, which the C++ executor runs in single-digit minutes.
 
-6 × 5 = 30 grid points. Each evaluation = full sweep of 93 trials
-through sim_calibrate ≈ 10 min ⇒ **~5 hours unattended sim time**.
+### 12.3 Loss function (`diff_real_vs_sim.py`)
 
-For each grid point, write a copy of `skill15_car_1x.yaml` to a temp
-file with the patched values, run `sim_calibrate.py --namo-config
-<temp_yaml>`, then run `compute_diff.py` to get the aggregate loss.
-
-**Aggregate loss** (one number per grid point):
-```
-L = mean over trials of  |delta_pos_magnitude_pct|  +  w * |delta_theta_deg|
-```
-with `w ≈ 0.5 cm/degree` so the two components are commensurate. Use
-`|gap_pct|` not raw `|gap_cm|` so deep pushes don't dominate.
-
-### 13.3 Visualize the landscape
-
-After the grid sweep, plot:
-1. A **5×6 heatmap of L** over `(v, t)`. Find the minimum cell.
-2. **Per-target heatmaps** (one per `(obj, edge, depth)`). If they all
-   point to the same minimum, the calibration is consistent. If they
-   disagree, the gap isn't a uniform calibration miss — it's a
-   structural sim/real mismatch (probably friction or contact
-   geometry), and no setting of `(v, t)` will close all gaps.
-3. A **scatter of `L` vs `v × t`**. If the loss correlates almost
-   perfectly with the product, the two knobs are redundant for our
-   data (the multiplicative-dominance trap). Pick along the
-   `v × t = const` curve by a secondary criterion (e.g., closest to
-   current defaults, or shorter `t` for faster sim runtime).
-
-### 13.4 Refine — Nelder-Mead near the best grid cell
-
-```python
-from scipy.optimize import minimize
-
-def loss_at(v, t):
-    write_temp_yaml(v, t)
-    run_sim_calibrate_over_full_tree(temp_yaml)
-    return aggregate_loss(read_all_diff_jsons())
-
-result = minimize(
-    lambda x: loss_at(x[0], int(round(x[1]))),
-    x0=[best_v, best_t],
-    method='Nelder-Mead',
-    bounds=[(0.05, 0.6), (50, 700)],
-    options={'xatol': 0.01, 'fatol': 0.01},
-)
-```
-
-~15 evaluations after the grid. Bounds enforced via penalty (Nelder-
-Mead doesn't natively respect bounds; wrap with `scipy.optimize.minimize`
-+ `method='L-BFGS-B'` if you want hard bounds).
-
-### 13.5 Stage 2 — recompile `kCarWheelMaxSpeedMs`
-
-Only enter Stage 2 if Stage 1's minimum L is above tolerance (>~10%
-aggregate, per the existing `PUSH_DURATION_CALIBRATION.md` standard)
-**and** the YAML knobs were exercised near their extremes.
-
-In Stage 2, `kCarWheelMaxSpeedMs` becomes a 1-D search. At each value:
-- Edit `namo_push_controller.cpp:22` to the new value
-- `./build_python_bindings.sh` (~30–60 s rebuild)
-- Run sim_calibrate over the full tree at the Stage 1 optimal
-  `(v, t)`
-- Score the gap
-
-Try 3–5 values (e.g., 0.7, 0.85, 1.0, 1.15, 1.3 m/s). Total ~1 hour
-including rebuilds. The optimal value is the one where sim's commanded
-chassis velocity matches the real robot's effective velocity at the
-calibrated PWM setting.
-
-### 13.6 Stage 3 — friction / wheel parameters (only if needed)
-
-If Stage 2 still leaves a gap, the issue is contact dynamics, not
-velocity calibration. Candidates:
-- Obstacle friction `friction="1 0.005 0.0001"` — try defaults from
-  more realistic materials, e.g. wood `(0.4, 0.005, 0.0001)`.
-- Wheel `kv` — drop from 0.75 to 0.5 (slower motor response → larger
-  acceleration phase → less per-unit displacement at short pushes).
-- Wheel `forcerange` — narrow if real motor stalls earlier than sim.
-
-These are XML edits, no recompile. But they affect more than the
-calibration target (they're physically meaningful changes that may
-break other downstream assumptions). Document any change carefully.
-
-### 13.7 Why not Bayesian optimization?
-
-Bayesian opt is overkill for cheap evaluations + 2D continuous
-parameters. The GP surrogate's value is in expensive-eval regimes
-(robot trials, deep learning training). Here we can afford a coarse
-grid that gives us the **whole landscape**, not just an extremum. The
-landscape view is what tells us whether the gap is calibration-shaped
-or structural — and that's the more important decision than where
-exactly the extremum sits.
-
-### 13.8 Tooling — `sim_tune.py`
-
-A third script in `src/robot_control/diagnostics/`:
+Per matched trial, four pose-gap components:
 
 ```
-python -m robot_control.diagnostics.sim_tune <calibration_root>
-    --grid v=0.15,0.20,0.25,0.30,0.40,0.50
-    --grid t=200,275,375,475,575
+gap_object_xy_cm     = ‖Δobject_pos_real − Δobject_pos_sim‖        (Euclidean cm)
+gap_object_theta_deg = |Δobject_theta_real − Δobject_theta_sim|    (deg, wrapped ±180)
+gap_robot_xy_cm      = ‖Δrobot_pos_real − Δrobot_pos_sim‖
+gap_robot_theta_deg  = |Δrobot_heading_real − Δrobot_heading_sim|
+```
+
+Aggregated:
+
+```
+L = mean(gap_object_xy_cm) + w · mean(gap_object_theta_deg)
+  + mean(gap_robot_xy_cm)  + w · mean(gap_robot_theta_deg)
+```
+
+with `w = 0.5` cm/deg by default (heading-error weight; one degree
+heading gap is worth 0.5 cm of position gap). Configurable via
+`--theta-weight`. The four-component breakdown is reported alongside
+the headline so a structural mismatch (e.g. only `gap_object_theta`
+diverges) is immediately visible.
+
+**Pairing:** trials are joined on `(object_id, expected_edge,
+expected_push_steps)`, with `push_start_obs_timestamp` order as a
+tiebreaker for repeated triples. Subgoal IDs are **not** used — the
+unit of analysis for Tier 2 is the push, not the subgoal lifecycle.
+Sim always writes `subgoal_id=1` by construction (one-push-per-
+invocation), so a subgoal-id join would never work anyway.
+
+### 12.4 Reading the report
+
+`diff_real_vs_sim.py` writes:
+
+```
+<real_run>/diff_vs_<sim_basename>/
+├── _per_trial.csv      one row per matched trial × gap field
+├── _aggregate.json     per-field stats + L breakdown
+├── _unmatched.json     trials present on only one side
+├── comparison.md       human-readable headline + worst-5 trials
+└── _plots/             scatter sim Δ vs real Δ for each pose component (matplotlib-gated)
+```
+
+The headline in `comparison.md` is the loss `L`, plus the
+four-component breakdown. The "worst-5 trials" table flags individual
+outliers — useful when one bad push is pulling the mean up
+disproportionately.
+
+**Decision rule from the breakdown:**
+
+| Dominant component | Likely cause | Knob to reach for |
+|---|---|---|
+| `object_xy_cm` | Translation under push: contact friction or wheel saturation | `forcerange` (Tier 2), then obstacle friction |
+| `object_theta_deg` | Spin under contact: contact-point geometry, slip | obstacle friction; structural — won't yield to `forcerange` alone |
+| `robot_xy_cm` | Robot trajectory diverges during the push: wheel slippage or contact reaction | floor friction; wheel `kv` |
+| `robot_theta_deg` | Robot heading drift: differential wheel response | wheel `kv`; structural |
+
+### 12.5 When Tier 2 stops helping
+
+If sweeping `forcerange` across [0.25, 0.80] Nm doesn't change `L` by
+more than ~10% of its current value, the wheel actuator isn't
+saturating during these pushes — the gap is somewhere else. Common
+candidates, in increasing order of "willing to touch":
+1. Friction (floor and/or obstacle) — directly affects how an object
+   slides under contact.
+2. Wheel `kv` — affects how fast the velocity setpoint is reached;
+   matters for short pushes where the transient is a non-trivial
+   fraction of the trial.
+3. Contact geometry — the box approximation may not match the real
+   object's effective shape. Last resort; requires geometric
+   re-modeling.
+
+Use the per-component breakdown above to pick which one to try.
+
+### 12.6 Why a 1-D sweep, not Bayesian optimization or grid
+
+We're searching one continuous parameter with cheap evaluations
+(single-digit minutes). A linear sweep of 5–7 values gives the whole
+loss curve, not just the extremum. The curve shape tells you whether
+the loss is smooth (a clean minimum to bracket) or noisy (Tier 2
+isn't the right knob and you should stop sweeping and read the
+component breakdown). That diagnostic value is more important than
+the speedup from Bayesian optimization.
+
+If a finer grid is needed, refine with Nelder-Mead around the best
+grid point (~10 extra evaluations). Don't bother with `scipy.minimize`
+machinery before the grid sweep shows the curve has a clean shape.
+
+### 12.7 Tooling — `tune_forcerange.py` (future)
+
+The auto-tuner script that wraps the above sweep is not yet written.
+The intended interface:
+
+```
+python scripts/tune_forcerange.py \
+    --real <real_run_dir> \
+    --xml little_car.xml \
+    --grid 0.25,0.35,0.50,0.65,0.80 \
     [--out-dir tuning/]
-    [--config-template <namo_cpp/config/namo_config_complete_skill15_car_1x.yaml>]
 ```
 
-For each grid point: patches a temp YAML, invokes `sim_calibrate.py`
-with `--namo-config <temp>`, reads the resulting summary, records the
-aggregate loss. Output:
+For each `f` in the grid:
+1. Patch `little_car.xml` to `forcerange="-f f"` on both wheel actuators.
+2. Re-run `execute_sim_push --from-real-run` for every push in `<real_run_dir>`.
+3. Run `diff_real_vs_sim` and read `headline_loss_cm`.
+4. Restore the XML at exit.
 
-```
-tuning/
-├── v=0.20_t=375/_summary.csv       (per-target gap at this grid point)
-├── v=0.20_t=475/_summary.csv
-├── ...
-├── _grid_loss.csv                  (aggregate loss per grid point)
-├── _grid_loss.png                  (heatmap)
-└── _per_target_heatmaps.png        (small multiples)
-```
+Output: `tuning/_grid_loss.csv` (f, L, per-component breakdown),
+`tuning/_grid_loss.png` (loss curve), and a final recommendation line
+naming the best `f`. Implement when needed.
 
 ---
 
