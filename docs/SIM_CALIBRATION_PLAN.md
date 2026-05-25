@@ -824,27 +824,38 @@ pushes, which the C++ executor runs in single-digit minutes.
 
 ### 12.3 Loss function (`diff_real_vs_sim.py`)
 
-Per matched trial, four pose-gap components:
+Per matched trial, four pose-gap components are computed (two object,
+two robot), but **only the object terms enter the headline loss**:
 
 ```
 gap_object_xy_cm     = ‖Δobject_pos_real − Δobject_pos_sim‖        (Euclidean cm)
 gap_object_theta_deg = |Δobject_theta_real − Δobject_theta_sim|    (deg, wrapped ±180)
-gap_robot_xy_cm      = ‖Δrobot_pos_real − Δrobot_pos_sim‖
-gap_robot_theta_deg  = |Δrobot_heading_real − Δrobot_heading_sim|
+gap_robot_xy_cm      = ‖Δrobot_pos_real − Δrobot_pos_sim‖          (reported only)
+gap_robot_theta_deg  = |Δrobot_heading_real − Δrobot_heading_sim|  (reported only)
 ```
 
 Aggregated:
 
 ```
 L = mean(gap_object_xy_cm) + w · mean(gap_object_theta_deg)
-  + mean(gap_robot_xy_cm)  + w · mean(gap_robot_theta_deg)
 ```
 
-with `w = 0.5` cm/deg by default (heading-error weight; one degree
+with `w = 0.5` cm/deg by default (heading-error weight; one degree of
 heading gap is worth 0.5 cm of position gap). Configurable via
-`--theta-weight`. The four-component breakdown is reported alongside
-the headline so a structural mismatch (e.g. only `gap_object_theta`
-diverges) is immediately visible.
+`--theta-weight`.
+
+**Why object-only:** what NAMO cares about is whether the obstacle
+ended up where the planner expected. The robot's final pose is a
+means to that end, not a goal. A run where the robot ended up 5 cm
+away from expected but pushed the obstacle perfectly is a calibration
+success; a run with the robot exactly where expected but the obstacle
+off-target is a failure. Including robot gap in the loss would
+encourage tuning that minimizes robot trajectory drift at the cost of
+push fidelity — backwards.
+
+Robot pose gap **is still reported** in the per-field stats table and
+the per-trial CSV — it's useful for diagnosing *why* a gap exists
+(see §12.4) — it just doesn't drive tuning decisions.
 
 **Pairing:** trials are joined on `(object_id, expected_edge,
 expected_push_steps)`, with `push_start_obs_timestamp` order as a
