@@ -1,0 +1,13 @@
+# Manual two-push solution for env1 (2push / 1hop).
+# Depth = recursion depth in search; the script converts to push_steps = depth + 1
+# internally (see execute_real_push.py: trial["depth"] branch).
+#
+# obstacle_target / reset_tolerance_cm are ignored when --no-reset-check is set,
+# but kept here so the YAML is also valid for a reset-checking run later.
+
+obstacle_target: [0.0, 0.0]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {edge_idx: 35, depth: 4}
+  - {edge_idx: 0, depth: 9}

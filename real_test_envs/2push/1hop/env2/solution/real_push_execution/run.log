@@ -1,0 +1,120 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env2/solution/manual_solution
+[tier2] wheel commands will be logged to /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env2/solution/manual_solution/wheel_commands.jsonl
+[collect] 2 trial(s) loaded from /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env2/solution/trial_spec.yaml
+[collect] obstacle_target = (0.0, 0.0) cm  reset_tolerance = 3.0 cm
+[mid-obs] logging every camera observation → /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env2/solution/manual_solution/mid_obs.jsonl
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[fresh] planner.attach_obs_source(world.get) wired
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[Runtime] 🔌 Robot 1 ONLINE at startup (alive_ids=[1], ap_connected=True)
+[planner] auto-detected obstacle: 'obj_1'
+
+=== Trial 1/2 === object=obj_1 edge_idx=31 push_steps=5
+  [skip_reset] start pose: (24.06, 20.93) θ=63.07°. pushing...
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (24.1,20.9,θ=63.1°), edge=31, push_steps=5, robot at (10.9,9.4,θ=78.0°)
+[DIAG] subgoal #1 start recorded
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed: 0.3
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording[PUSH]   Original edge: (27.3, 10.7)
+Press 'space' for emergency stop
+
+[PUSH]   Validated:     (27.0, 10.2)
+Press 'escape' to quit
+[PUSH] Starting navigation: robot=(10.9,9.4) → approach=(27.0,10.2)
+==================================================
+[NAV] navigate_to: goal=(27.0,10.2) θ=63.1°, from=(10.9,9.4), obstacles=3
+
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260523_235414_001.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state - -> PRE_ROTATING pose=(10.9,9.4,θ=78.0°) pre_target_θ=-2.2° heading_err=-80.2°
+[SerialSender] ⚠️ Car 1 DISCONNECTED (alive now: [])
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(10.9,9.6,θ=41.7°) path_waypoints=18 final_wp=(27.3,10.2)
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[NAV] state FOLLOWING -> POST_ROTATING pose=(26.3,9.6,θ=17.8°) goal_θ=63.1° heading_err=+45.3°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (24.1,20.9,θ=63.1°), robot at (26.4,9.9,θ=64.7°), edge=31, push_steps=5 (130 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(24.1,20.9) theta=63.1° size=(15x7.0)
+[PUSH DEBUG] Edge 31: face=3 sample=0
+[PUSH DEBUG] Theoretical: edge_pt (27.3,10.6) → mid_pt (30.8,17.5)
+[PUSH DEBUG] Actual line: (26.4,9.9) → (29.9,16.8)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (28.9, 15.1) theta=85.4°
+[PUSH] Δobject 'obj_1': Δpos=(-0.17,+1.65) |Δ|=1.66cm, Δθ=+19.12°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_9': (9.8, 28.6) theta=9.7° size=(5.5x19.0)
+[PUSH]   Distance robot→object center: 23.4cm
+[PUSH] Object 'obj_1': (23.9, 22.5) theta=82.2° size=(15x7.0)
+[PUSH]   Distance robot→object center: 9.0cm
+[PUSH] Object 'wall_11': (39.7, 28.4) theta=90.9° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.1cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260523_235426.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260523_235426.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (26.9, 10.5) [BACKWARD]
+[PUSH] Retreat timeout after 200 steps
+[Subgoal] <-- DONE (SUCCESS) after 17.9s, robot now at (28.6,14.3,θ=59.4°)
+[DIAG] subgoal #1 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_1, Δ=1.64cm, stuck=False)
+
+=== Trial 2/2 === object=obj_1 edge_idx=0 push_steps=5
+  [skip_reset] start pose: (23.91, 22.49) θ=82.27°. pushing...
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (23.9,22.5,θ=82.3°), edge=0, push_steps=5, robot at (28.6,14.3,θ=59.4°)
+[DIAG] subgoal #2 start recorded
+[PUSH] Starting navigation: robot=(28.6,14.3) → approach=(11.8,20.6)
+[NAV] navigate_to: goal=(11.8,20.6) θ=-7.7°, from=(28.6,14.3), obstacles=3
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260523_235432_002.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(28.6,14.3,θ=59.4°) pre_target_θ=-143.8° heading_err=+156.8°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(29.2,13.6,θ=173.9°) path_waypoints=31 final_wp=(11.2,20.8)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(10.3,20.1,θ=47.1°) goal_θ=-7.7° heading_err=-54.9°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (23.9,22.5,θ=82.3°), robot at (10.8,20.5,θ=350.6°), edge=0, push_steps=5 (130 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(23.9,22.5) theta=82.3° size=(15x7.0)
+[PUSH DEBUG] Edge 0: face=0 sample=0
+[PUSH DEBUG] Theoretical: edge_pt (11.8,20.6) → mid_pt (23.4,19.0)
+[PUSH DEBUG] Actual line: (10.8,20.5) → (22.4,18.9)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (27.7, 18.1) theta=351.1°
+[PUSH] Δobject 'obj_1': Δpos=(+14.71,-0.99) |Δ|=14.74cm, Δθ=+10.55°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_11': (39.7, 28.4) theta=90.9° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 15.9cm
+[PUSH] Object 'wall_9': (9.8, 28.7) theta=9.6° size=(5.5x19.0)
+[PUSH]   Distance robot→object center: 20.7cm
+[PUSH] Object 'obj_1': (38.6, 21.5) theta=92.8° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.5cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260523_235447.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260523_235447.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (23.3, 20.5) [BACKWARD]
+[PUSH] Retreat timeout after 200 steps
+[Subgoal] <-- DONE (SUCCESS) after 21.8s, robot now at (27.6,18.6,θ=328.4°)
+[DIAG] subgoal #2 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_1, Δ=15.33cm, stuck=False)
+[Runtime] Plan complete - stopping robot
+[Runtime] Shutting down

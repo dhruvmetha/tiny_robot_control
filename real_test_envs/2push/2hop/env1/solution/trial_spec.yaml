@@ -1,0 +1,17 @@
+# Manual four-push solution for env1 (2push / 2hop).
+# Stage 1: push obj_4 twice. Stage 2: push obj_1 twice. Trials run in order.
+# Depth → push_steps = depth + 1 internally (execute_real_push.py: trial["depth"]).
+#
+# obstacle_target / reset_tolerance_cm are ignored when --no-reset-check is set,
+# but kept here so the YAML is also valid for a reset-checking run later.
+
+obstacle_target: [0.0, 0.0]
+reset_tolerance_cm: 3.0
+
+trials:
+  # Stage 1 — obj_4
+  - {object_id: obj_4, edge_idx: 56, depth: 3}
+  - {object_id: obj_4, edge_idx: 21, depth: 9}
+  # Stage 2 — obj_1
+  - {object_id: obj_1, edge_idx: 39, depth: 1}
+  - {object_id: obj_1, edge_idx: 4,  depth: 7}

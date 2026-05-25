@@ -1,0 +1,76 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/1hop/env2/solution/manual_solution
+[tier2] wheel commands will be logged to /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/1hop/env2/solution/manual_solution/wheel_commands.jsonl
+[collect] 1 trial(s) loaded from /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/1hop/env2/solution/trial_spec.yaml
+[collect] obstacle_target = (0.0, 0.0) cm  reset_tolerance = 3.0 cm
+[mid-obs] logging every camera observation → /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/1hop/env2/solution/manual_solution/mid_obs.jsonl
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[fresh] planner.attach_obs_source(world.get) wired
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[Runtime] 🔌 Robot 1 ONLINE at startup (alive_ids=[1], ap_connected=True)
+[planner] auto-detected obstacle: 'obj_1'
+
+=== Trial 1/1 === object=obj_1 edge_idx=28 push_steps=6
+  [skip_reset] start pose: (16.70, 19.94) θ=146.31°. pushing...
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (16.7,19.9,θ=146.3°), edge=28, push_steps=6, robot at (28.7,7.1,θ=102.0°)
+[DIAG] subgoal #1 start recorded
+==================================================
+
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed: 0.3
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+[PUSH]   Original edge: (7.3, 12.1)
+[PUSH]   Validated:     (7.0, 11.7)
+Press 'space' for emergency stop
+[PUSH] Starting navigation: robot=(28.7,7.1) → approach=(7.0,11.7)
+Press 'escape' to quit
+==================================================
+
+[NAV] navigate_to: goal=(7.0,11.7) θ=56.3°, from=(28.7,7.1), obstacles=3
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260523_235026_001.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state - -> PRE_ROTATING pose=(28.7,7.1,θ=102.0°) pre_target_θ=-167.6° heading_err=+90.4°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(29.2,6.9,θ=155.2°) path_waypoints=28 final_wp=(7.2,11.8)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(7.5,10.7,θ=124.3°) goal_θ=56.3° heading_err=-68.0°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (16.7,20.0,θ=146.3°), robot at (7.2,11.4,θ=54.9°), edge=28, push_steps=6 (156 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(16.7,20.0) theta=146.3° size=(15x7.0)
+[PUSH DEBUG] Edge 28: face=0 sample=14
+[PUSH DEBUG] Theoretical: edge_pt (7.3,12.2) → mid_pt (13.8,21.9)
+[PUSH DEBUG] Actual line: (7.2,11.4) → (13.7,21.1)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (12.3, 20.2) theta=38.3°
+[PUSH] Δobject 'obj_1': Δpos=(+5.27,+5.20) |Δ|=7.40cm, Δθ=-20.69°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_9': (20.0, 34.6) theta=25.2° size=(5.5x19.0)
+[PUSH]   Distance robot→object center: 16.3cm
+[PUSH] Object 'obj_1': (22.0, 25.2) theta=125.6° size=(15x7.0)
+[PUSH]   Distance robot→object center: 10.8cm
+[PUSH] Object 'wall_11': (39.8, 28.4) theta=91.0° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 28.6cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260523_235040.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260523_235040.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (7.6, 18.6) [BACKWARD]
+[Subgoal] <-- DONE (SUCCESS) after 18.2s, robot now at (9.5,19.1,θ=17.7°)
+[DIAG] subgoal #1 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_1, Δ=7.37cm, stuck=False)
+[Runtime] Plan complete - stopping robot
+[Runtime] Shutting down

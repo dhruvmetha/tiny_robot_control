@@ -1,0 +1,13 @@
+#Manual two-push solution for env3 (2push / 1hop).
+# Single object (obj_4 — only movable in the captured scene), pushed twice.
+# Depth → push_steps = depth + 1 internally (execute_real_push.py: trial["depth"]).
+#
+# obstacle_target / reset_tolerance_cm are ignored when --no-reset-check is set,
+# but kept here so the YAML is also valid for a reset-checking run later.
+
+obstacle_target: [0.0, 0.0]
+reset_tolerance_cm: 3.0
+
+trials:
+  - {object_id: obj_4, edge_idx: 30, depth: 4}
+  - {object_id: obj_4, edge_idx: 23, depth: 8}
