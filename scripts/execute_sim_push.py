@@ -383,6 +383,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--allow-overwrite", action="store_true",
                    help="Reuse existing --run-name directory.")
     p.add_argument(
+        "--no-video",
+        action="store_true",
+        help="Skip the MP4 encoding step. Physics + Tier 2 artifact "
+             "extraction still run. Cuts ~5-10 s per push and avoids the "
+             "GPU-bound renderer init — use during tuning loops.",
+    )
+    p.add_argument(
         "--log-mid-pos",
         action="store_true",
         help="Deprecated no-op. C++ replay now always writes mid_obs.jsonl "
@@ -607,6 +614,7 @@ def main() -> int:
             output_mp4=output_mp4,
             artifact_dir=str(Path(recorder.root)),
             starting_robot_pose_sim=starting_pose_sim,
+            skip_video=bool(args.no_video),
         )
     finally:
         _os.chdir(prior_cwd)

@@ -37,6 +37,7 @@ def render_chain_to_mp4(
     width: int = 1280,
     height: int = 720,
     starting_robot_pose_sim: Optional[tuple] = None,
+    skip_video: bool = False,
 ) -> Optional[str]:
     """Render ``chain`` from ``start_xml`` to ``output_mp4`` as a continuous MP4.
 
@@ -52,9 +53,15 @@ def render_chain_to_mp4(
             continuous per-tick, not frozen-state). The others are forwarded
             into the subprocess if/when we make them configurable; currently
             it uses its own defaults.
+        skip_video: If True, skip the MP4 encoding step. Physics + Tier 2
+            artifact extraction still run. Cuts ~5-10 s per push and
+            avoids the GPU-bound renderer init — useful for tuning loops.
 
     Returns:
         Output path on success, ``None`` on failure (errors logged, never raised).
+        When ``skip_video=True``, returns the requested ``output_mp4`` path even
+        though no file was written there, so callers can still locate the
+        artifact dir alongside it.
     """
     if not chain:
         print("[sim_replay] empty chain; nothing to render", flush=True)
@@ -68,6 +75,8 @@ def render_chain_to_mp4(
         chain_payload["starting_robot_pose_sim"] = list(starting_robot_pose_sim)
     if artifact_dir is not None:
         chain_payload["artifact_dir"] = artifact_dir
+    if skip_video:
+        chain_payload["skip_video"] = True
     fd, chain_path = tempfile.mkstemp(suffix=".json", prefix="sim_replay_chain_")
     try:
         with os.fdopen(fd, "w") as f:
@@ -126,7 +135,7 @@ def render_chain_to_mp4(
         )
         return None
 
-    if not Path(output_mp4).exists():
+    if not skip_video and not Path(output_mp4).exists():
         print(f"[sim_replay] subprocess returned 0 but {output_mp4} is missing",
               flush=True)
         return None

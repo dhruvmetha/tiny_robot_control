@@ -560,6 +560,11 @@ def main() -> int:
     artifact_dir_value = chain_doc.get("artifact_dir")
     artifact_dir = Path(artifact_dir_value) if artifact_dir_value else None
     nav_log_path = artifact_dir / "cxx_nav_raw.log" if artifact_dir is not None else None
+    # When skip_video is set, we skip the cv2/mujoco.Renderer init and the
+    # per-frame MP4 encoding entirely. Physics + qpos dump + Tier 2 artifact
+    # extraction still run. Saves ~5-10 s per push and avoids GPU
+    # initialization in headless tuning loops.
+    skip_video = bool(chain_doc.get("skip_video", False))
 
     # Optional starting robot pose in sim units (meters + radians). Required
     # for the car robot — its body lives inside little_car.xml with a freejoint
@@ -659,64 +664,78 @@ def main() -> int:
         )
         return 1
 
-    # MuJoCo rendering ----------------------------------------------------
+    # MuJoCo model load (needed for both video rendering and artifact extraction).
+    # Renderer + cv2 are only needed for video — skipped under skip_video.
     import mujoco
-    import cv2
 
     xml_str = _inject_offscreen_size(Path(xml_path).read_text(), _WIDTH, _HEIGHT)
     try:
         model = mujoco.MjModel.from_xml_string(xml_str)
         data = mujoco.MjData(model)
-        renderer = mujoco.Renderer(model, height=_HEIGHT, width=_WIDTH)
     except Exception as exc:
         print(
-            f"[sim_replay_subprocess] mujoco model/renderer init failed: {exc!r}",
+            f"[sim_replay_subprocess] mujoco model init failed: {exc!r}",
             flush=True,
         )
         return 1
 
     full_qpos_frames = list(qpos_frames)
 
-    # Stride = ticks per video frame so playback is 1× wall-clock. Read the
-    # timestep off the loaded model (car: 0.002s → 17, sphere: 0.01s → 3).
-    stride = max(1, int(round((1.0 / _FPS) / model.opt.timestep)))
-    qpos_frames = qpos_frames[::stride]
+    if not skip_video:
+        import cv2
 
-    bounds = env.get_world_bounds()
-    cx = 0.5 * (bounds[0] + bounds[1])
-    cy = 0.5 * (bounds[2] + bounds[3])
-    extent = max(bounds[1] - bounds[0], bounds[3] - bounds[2])
-    camera = mujoco.MjvCamera()
-    camera.type = mujoco.mjtCamera.mjCAMERA_FREE
-    camera.lookat[:] = [cx, cy, 0.0]
-    camera.distance = extent * _CAMERA_DISTANCE_FACTOR
-    camera.azimuth = 90.0
-    camera.elevation = -90.0
+        try:
+            renderer = mujoco.Renderer(model, height=_HEIGHT, width=_WIDTH)
+        except Exception as exc:
+            print(
+                f"[sim_replay_subprocess] mujoco renderer init failed: {exc!r}",
+                flush=True,
+            )
+            return 1
 
-    Path(output_mp4).parent.mkdir(parents=True, exist_ok=True)
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    writer = cv2.VideoWriter(output_mp4, fourcc, _FPS, (_WIDTH, _HEIGHT))
-    if not writer.isOpened():
-        print(
-            f"[sim_replay_subprocess] VideoWriter open failed at {output_mp4}",
-            flush=True,
-        )
-        return 1
+        # Stride = ticks per video frame so playback is 1× wall-clock. Read the
+        # timestep off the loaded model (car: 0.002s → 17, sphere: 0.01s → 3).
+        stride = max(1, int(round((1.0 / _FPS) / model.opt.timestep)))
+        qpos_frames_video = qpos_frames[::stride]
 
-    for q in qpos_frames:
-        nq = min(len(q), model.nq)
-        if nq > 0:
-            data.qpos[:nq] = q[:nq]
-        mujoco.mj_forward(model, data)
-        renderer.update_scene(data, camera)
-        rgb = renderer.render()
-        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        writer.write(bgr)
-    writer.release()
-    try:
-        renderer.close()
-    except Exception:
-        pass
+        bounds = env.get_world_bounds()
+        cx = 0.5 * (bounds[0] + bounds[1])
+        cy = 0.5 * (bounds[2] + bounds[3])
+        extent = max(bounds[1] - bounds[0], bounds[3] - bounds[2])
+        camera = mujoco.MjvCamera()
+        camera.type = mujoco.mjtCamera.mjCAMERA_FREE
+        camera.lookat[:] = [cx, cy, 0.0]
+        camera.distance = extent * _CAMERA_DISTANCE_FACTOR
+        camera.azimuth = 90.0
+        camera.elevation = -90.0
+
+        Path(output_mp4).parent.mkdir(parents=True, exist_ok=True)
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        writer = cv2.VideoWriter(output_mp4, fourcc, _FPS, (_WIDTH, _HEIGHT))
+        if not writer.isOpened():
+            print(
+                f"[sim_replay_subprocess] VideoWriter open failed at {output_mp4}",
+                flush=True,
+            )
+            return 1
+
+        for q in qpos_frames_video:
+            nq = min(len(q), model.nq)
+            if nq > 0:
+                data.qpos[:nq] = q[:nq]
+            mujoco.mj_forward(model, data)
+            renderer.update_scene(data, camera)
+            rgb = renderer.render()
+            bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            writer.write(bgr)
+        writer.release()
+        try:
+            renderer.close()
+        except Exception:
+            pass
+    else:
+        print("[sim_replay_subprocess] skip_video set; bypassing MP4 encoding",
+              flush=True)
     if artifact_dir is not None:
         wheel_radius_m = 0.015
         wheel_geom_id = mujoco.mj_name2id(
@@ -750,11 +769,18 @@ def main() -> int:
     except OSError:
         pass
 
-    print(
-        f"[sim_replay_subprocess] wrote {output_mp4} "
-        f"({len(qpos_frames)} frames @ {_FPS} fps, stride={stride})",
-        flush=True,
-    )
+    if skip_video:
+        print(
+            f"[sim_replay_subprocess] no video written (skip_video); "
+            f"{len(qpos_frames)} qpos frames processed",
+            flush=True,
+        )
+    else:
+        print(
+            f"[sim_replay_subprocess] wrote {output_mp4} "
+            f"({len(qpos_frames)} frames @ {_FPS} fps, stride={stride})",
+            flush=True,
+        )
     return 0
 
 
