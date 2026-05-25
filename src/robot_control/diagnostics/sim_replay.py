@@ -30,6 +30,7 @@ def render_chain_to_mp4(
     namo_config: Optional[str],
     chain: List[Dict[str, Any]],
     output_mp4: str,
+    artifact_dir: Optional[str] = None,
     workspace: Optional[WorkspaceConfig] = None,
     hold_frames: int = 0,
     fps: int = 30,
@@ -65,6 +66,8 @@ def render_chain_to_mp4(
     if starting_robot_pose_sim is not None:
         # [x_m, y_m, theta_rad] — fed straight to env.set_robot_pose().
         chain_payload["starting_robot_pose_sim"] = list(starting_robot_pose_sim)
+    if artifact_dir is not None:
+        chain_payload["artifact_dir"] = artifact_dir
     fd, chain_path = tempfile.mkstemp(suffix=".json", prefix="sim_replay_chain_")
     try:
         with os.fdopen(fd, "w") as f:
