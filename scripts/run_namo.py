@@ -33,10 +33,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
+import math
 import os
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -192,6 +195,338 @@ def load_camera_config(config_path: str, objects_path: str):
     )
 
     return camera_config, observer_config
+
+
+# --------------------------------------------------------------------- --sim-xml support
+
+
+def _quat_to_yaw_deg(quat_str: str) -> float:
+    """Yaw (degrees) from MuJoCo quat string 'w x y z'. Z-axis rotation only."""
+    parts = quat_str.split()
+    if len(parts) != 4:
+        return 0.0
+    w, x, y, z = (float(v) for v in parts)
+    return math.degrees(math.atan2(2.0 * (w * z + x * y),
+                                   1.0 - 2.0 * (y * y + z * z)))
+
+
+def _robot_pose_from_real_run(run_dir: Path) -> Optional[Tuple[float, float, float]]:
+    """Read the first ArUco-populated frame in mid_obs.jsonl and return
+    (x_cm, y_cm, theta_deg). Mirrors execute_sim_push._load_initial_scene_state
+    intentionally — keeping run_namo self-contained instead of cross-importing
+    from another script.
+    """
+    mid_obs_path = run_dir / "mid_obs.jsonl"
+    if not mid_obs_path.exists():
+        return None
+    with open(mid_obs_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(rec.get("objects"), dict) or not rec["objects"]:
+                continue
+            for key in ("robot_pose_cm_deg", "robot_pose_cm"):
+                val = rec.get(key)
+                if isinstance(val, list) and len(val) >= 2:
+                    return (
+                        float(val[0]),
+                        float(val[1]),
+                        float(val[2]) if len(val) >= 3 else 0.0,
+                    )
+    return None
+
+
+def _sim_config_from_xml(
+    xml_path: Path,
+    robot_pose_cm_deg: Optional[Tuple[float, float, float]] = None,
+    car_width_cm: float = 7.0,
+    car_height_cm: float = 7.0,
+) -> Tuple[SimConfig, Optional[Tuple[float, float]]]:
+    """Build a SimConfig from a car-format MuJoCo XML.
+
+    Designed for the initial_scene.xml that execute_sim_push --trial-spec
+    emits per real_test_envs scene. Extracts:
+
+      * Workspace bounds from boundary walls (wall_1..wall_4 — same
+        convention NAMOXMLGenerator emits and the C++ env uses).
+      * Movables from every ``<body name='obstacle_N_movable'>``.
+      * Statics from every ``<body name='wall_N'>`` with N >= 5
+        (wall_1..4 are boundaries, already encoded in workspace dims).
+      * Goal from ``<site name='goal'>`` if present; returned separately
+        so the caller can override via --goal.
+
+    Robot pose: the car body's freejoint spawn is baked at (0,0) inside
+    little_car.xml and can't be overridden via include — exactly the
+    constraint that drove _build_initial_scene_xml in execute_sim_push.
+    Caller must pass ``robot_pose_cm_deg`` (typically from
+    ``--sim-real-run-dir/mid_obs.jsonl[0]``). Falls back to workspace
+    center with a warning if None.
+    """
+    root = ET.parse(str(xml_path)).getroot()
+
+    # Workspace bounds from wall_1..wall_4.
+    walls: Dict[str, Tuple[List[float], List[float]]] = {}
+    for geom in root.iter("geom"):
+        name = geom.get("name", "")
+        if name in ("wall_1", "wall_2", "wall_3", "wall_4"):
+            pos = [float(v) for v in geom.get("pos", "0 0 0").split()]
+            size = [float(v) for v in geom.get("size", "0 0 0").split()]
+            walls[name] = (pos, size)
+    if len(walls) != 4:
+        raise ValueError(
+            f"{xml_path}: expected 4 boundary walls wall_1..wall_4, "
+            f"found {sorted(walls.keys())}"
+        )
+    # Inner workspace edges (walls are placed outside the bounds):
+    #   wall_1 = left:   inner edge x = pos.x + size.x
+    #   wall_2 = right:  inner edge x = pos.x - size.x
+    #   wall_3 = bottom: inner edge y = pos.y + size.y
+    #   wall_4 = top:    inner edge y = pos.y - size.y
+    w1_pos, w1_sz = walls["wall_1"]
+    w2_pos, w2_sz = walls["wall_2"]
+    w3_pos, w3_sz = walls["wall_3"]
+    w4_pos, w4_sz = walls["wall_4"]
+    x_min = (w1_pos[0] + w1_sz[0]) * 100.0
+    x_max = (w2_pos[0] - w2_sz[0]) * 100.0
+    y_min = (w3_pos[1] + w3_sz[1]) * 100.0
+    y_max = (w4_pos[1] - w4_sz[1]) * 100.0
+    workspace_w_cm = x_max - x_min
+    workspace_h_cm = y_max - y_min
+
+    # Movables and interior statics.
+    objects: Dict[str, Tuple[float, float, float]] = {}
+    object_defs: Dict[str, ObjectDef] = {}
+    for body in root.iter("body"):
+        bname = body.get("name", "")
+        is_obstacle = bname.startswith("obstacle_") and bname.endswith("_movable")
+        is_wall_n = (
+            bname.startswith("wall_") and bname[5:].isdigit() and int(bname[5:]) >= 5
+        )
+        if not (is_obstacle or is_wall_n):
+            continue
+        geom = body.find("geom")
+        if geom is None:
+            continue
+        pos = [float(v) for v in geom.get("pos", "0 0 0").split()]
+        size = [float(v) for v in geom.get("size", "0 0 0").split()]
+        theta_deg = _quat_to_yaw_deg(geom.get("quat", "1 0 0 0"))
+        # NAMOXMLGenerator emits: half_width=depth/200, half_depth=width/200.
+        # Invert: depth_cm = size[0]*2*100, width_cm = size[1]*2*100.
+        depth_cm = size[0] * 200.0
+        width_cm = size[1] * 200.0
+        height_cm = size[2] * 200.0
+        x_cm = pos[0] * 100.0
+        y_cm = pos[1] * 100.0
+        objects[bname] = (x_cm, y_cm, theta_deg)
+        object_defs[bname] = ObjectDef(
+            name=bname,
+            width=width_cm,
+            depth=depth_cm,
+            height=height_cm,
+            is_static=is_wall_n,
+        )
+
+    # Goal site (optional). The user-baked value is at (0.37, 0.67, 0.0) m.
+    goal_cm: Optional[Tuple[float, float]] = None
+    for site in root.iter("site"):
+        if site.get("name") == "goal":
+            pos = [float(v) for v in site.get("pos", "0 0 0").split()]
+            goal_cm = (pos[0] * 100.0, pos[1] * 100.0)
+            break
+
+    # Robot pose: prefer the caller-supplied (real-side ground truth);
+    # otherwise default to workspace center with a warning.
+    if robot_pose_cm_deg is not None:
+        rx, ry, rtheta = robot_pose_cm_deg
+    else:
+        rx = x_min + workspace_w_cm / 2.0
+        ry = y_min + workspace_h_cm / 2.0
+        rtheta = 0.0
+        print(
+            f"[run_namo] WARNING: --sim-xml without --sim-real-run-dir; "
+            f"defaulting robot to workspace center "
+            f"({rx:.1f},{ry:.1f}) — pass --sim-real-run-dir for the "
+            f"real-side ArUco starting pose.",
+            flush=True,
+        )
+
+    sim_config = SimConfig(
+        x=rx, y=ry, theta=rtheta,
+        width=workspace_w_cm,
+        height=workspace_h_cm,
+        car_width=car_width_cm,
+        car_height=car_height_cm,
+        offset_w=car_width_cm / 2.0,
+        offset_h=car_height_cm / 2.0,
+        wheel_base=car_width_cm,
+        objects=objects,
+        object_defs=object_defs,
+    )
+    return sim_config, goal_cm
+
+
+def _robot_dims_from_namo_config(namo_config_path: str) -> Tuple[float, float]:
+    """Read planning.robot_size from a namo_cpp config and return
+    ``(width_cm, height_cm)`` (full extents). The C++ config stores
+    half-extents in meters under planning.robot_size = [half_x, half_y].
+    """
+    with open(namo_config_path, "r") as f:
+        cfg = yaml.safe_load(f) or {}
+    planning = (cfg.get("planning") or {})
+    rs = planning.get("robot_size")
+    if not isinstance(rs, list) or len(rs) != 2:
+        raise ValueError(
+            f"{namo_config_path}: planning.robot_size missing or malformed "
+            f"(expected [half_x_m, half_y_m]); got {rs!r}"
+        )
+    half_x_m = float(rs[0])
+    half_y_m = float(rs[1])
+    return (half_x_m * 200.0, half_y_m * 200.0)  # half_m -> full_cm
+
+
+def _render_plan_only_mp4(
+    diag_root: Path,
+    sim_xml_path: Path,
+    plan_subgoals: list,
+    scene_objects: Dict[str, Tuple[float, float, float]],
+    scene_object_defs: Dict[str, Any],
+    namo_config_path: str,
+    observation_robot_pose_cm_deg: Tuple[float, float, float],
+) -> None:
+    """Render the planner-returned chain into ``<diag_root>/sim_push.mp4``.
+
+    Uses the same C++ NAMOPushController + sim_replay pipeline that
+    ``execute_sim_push --trial-spec`` uses for its videos. The plan is
+    already MuJoCo-verified by the planner, so this is a faithful replay
+    of what the planner saw — not a separate re-execution under
+    different physics.
+
+    ``observation_robot_pose_cm_deg`` must be the same pose the planner
+    saw (= mid_obs[0] robot pose). namo_bridge.py:400-419 teleports the
+    car there before plan_from_xml runs the chain. If we teleport
+    somewhere else (e.g. the edge point of push 1), push 1's end state
+    diverges, push 2 starts wrong, and the chain visually fails to
+    reach the goal even though the planner verified it succeeds.
+    """
+    import math as _math
+    from robot_control.diagnostics.sim_replay import render_chain_to_mp4
+
+    if not plan_subgoals:
+        return
+
+    # Chain payload format render_chain_to_mp4 / sim_replay_subprocess expect.
+    chain: List[Dict[str, Any]] = []
+    for sg in plan_subgoals:
+        oid = getattr(sg, "object_id", None)
+        edge = int(getattr(sg, "edge_idx"))
+        steps = int(getattr(sg, "push_steps"))
+        chain.append({
+            "object_id": oid,
+            "sim_object_id": oid,  # planner returned the sim body name already
+            "edge_idx": edge,
+            "push_steps": steps,
+            "depth": steps - 1,
+        })
+
+    # Starting pose = the planner's observation pose, converted to sim
+    # units (meters + radians). Matches what the planner used during
+    # verification — see _cm_to_sim equivalent in namo_bridge.py.
+    rx_cm, ry_cm, rtheta_deg = observation_robot_pose_cm_deg
+    starting_pose_sim = (
+        float(rx_cm) / 100.0,
+        float(ry_cm) / 100.0,
+        _math.radians(float(rtheta_deg)),
+    )
+
+    # Resolve every path to absolute BEFORE the chdir, otherwise any
+    # relative input (e.g. "real_test_envs/...") gets re-rooted under
+    # namo_cpp/ and load fails.
+    abs_sim_xml = str(Path(sim_xml_path).resolve())
+    abs_namo_config = str(Path(namo_config_path).resolve())
+    abs_output_mp4 = str((diag_root / "sim_push.mp4").resolve())
+    abs_artifact_dir = str(diag_root.resolve())
+
+    # sim_replay_subprocess resolves motion-primitive db paths from cwd
+    # (same constraint NAMOPlanBridge has). Chdir into namo_cpp/ for the
+    # duration of the call so those resolve correctly.
+    here = Path(__file__).resolve()
+    namo_cpp_dir = here.parents[2] / "namo_cpp"
+    prior_cwd = os.getcwd()
+    if namo_cpp_dir.exists():
+        os.chdir(str(namo_cpp_dir))
+    try:
+        rendered = render_chain_to_mp4(
+            start_xml=abs_sim_xml,
+            namo_config=abs_namo_config,
+            chain=chain,
+            output_mp4=abs_output_mp4,
+            artifact_dir=abs_artifact_dir,
+            starting_robot_pose_sim=starting_pose_sim,
+            skip_video=False,
+        )
+    finally:
+        os.chdir(prior_cwd)
+    if rendered is None:
+        print(
+            "[run_namo plan-only] sim replay returned None — see "
+            "[sim_replay_subprocess] lines above. MP4 not written.",
+            flush=True,
+        )
+        return
+    print(f"[run_namo plan-only] sim_push.mp4 -> {abs_output_mp4}", flush=True)
+
+
+def _emit_plan_only_solution_yaml(
+    diag_root: Path,
+    goal_cm: Tuple[float, float],
+    algorithm: str,
+    strategy: str,
+    plan_subgoals: list,
+    search_time_ms: float,
+) -> None:
+    """Write solution.yaml from a planner-returned chain (plan-only mode).
+
+    The planner's NAMOPushSkill executes every primitive through the C++
+    MuJoCo controller before deeming the chain a "plan". So a non-empty
+    plan is the sim-success result — we record it as-is, no separate
+    runtime execution / SimEnv pass needed (and the runtime's kinematic
+    SimEnv physics doesn't match MuJoCo anyway, which is what was making
+    valid plans look like execution failures).
+    """
+    plan_list: List[Dict[str, Any]] = []
+    for sg in plan_subgoals:
+        plan_list.append({
+            "object_id": getattr(sg, "object_id", None),
+            "edge_idx": int(getattr(sg, "edge_idx")) if hasattr(sg, "edge_idx") else None,
+            "push_steps": int(getattr(sg, "push_steps")) if hasattr(sg, "push_steps") else None,
+        })
+    success = bool(plan_list)
+    payload = {
+        "success": success,
+        "outcome": "success" if success else "planner returned no plan",
+        "goal_cm": [float(goal_cm[0]), float(goal_cm[1])],
+        "algorithm": algorithm,
+        "strategy": strategy,
+        "plan": plan_list,
+        "search_stats": {
+            "search_time_ms": float(search_time_ms),
+            "pushes_in_plan": len(plan_list),
+        },
+    }
+    diag_root.mkdir(parents=True, exist_ok=True)
+    out_path = diag_root / "solution.yaml"
+    out_path.write_text(yaml.safe_dump(payload, sort_keys=False))
+    print(
+        f"[run_namo plan-only] solution.yaml -> {out_path} "
+        f"(success={success}, pushes={len(plan_list)}, "
+        f"search={search_time_ms:.0f}ms)",
+        flush=True,
+    )
 
 
 def detect_goal_from_camera(
@@ -609,6 +944,206 @@ def run_interactive_mode(args):
     return 0
 
 
+def _run_plan_only_mode(args) -> int:
+    """Plan once against --sim-xml, write solution.yaml, exit. No Runtime.
+
+    Inputs:
+      --sim-xml             (required) car-format MuJoCo XML — the initial
+                            scene that execute_sim_push --trial-spec emits.
+      --sim-real-run-dir    (required) execute_real_push run dir; mid_obs[0]
+                            supplies the robot's starting pose (car XML's
+                            freejoint default at (0,0) isn't meaningful).
+      --diag-path/--run-name diagnostics dir for solution.yaml.
+
+    Source of truth for the plan: NAMOPlanBridge.plan() returns a list of
+    PushSubgoals. The bridge dispatches to the C++ NAMOPlanningService,
+    which validates every primitive by executing it in MuJoCo via
+    NAMOPushSkill before adding it to the chain. So a non-empty return =
+    sim-success. We dump it to solution.yaml and stop.
+    """
+    from robot_control.core.types import Observation, ObjectPose
+    from robot_control.planner.namo_bridge import NAMOPlanBridge
+
+    if not args.sim_xml:
+        print("Error: --plan-only path entered without --sim-xml.",
+              file=sys.stderr)
+        return 2
+    if not args.sim_real_run_dir:
+        print(
+            "Error: --sim-xml requires --sim-real-run-dir (for the robot's "
+            "starting pose from mid_obs[0]).",
+            file=sys.stderr,
+        )
+        return 2
+
+    sim_xml_path = Path(args.sim_xml)
+    real_run_dir = Path(args.sim_real_run_dir)
+
+    # Build the scene from the XML — same parser the (now-defunct) SimConfig
+    # path used. Drop SimConfig, keep just what an Observation needs.
+    robot_pose = _robot_pose_from_real_run(real_run_dir)
+    if robot_pose is None:
+        print(
+            f"Error: --sim-real-run-dir {real_run_dir}: no parseable "
+            "robot pose in mid_obs.jsonl[0].",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        sim_config, xml_goal_cm = _sim_config_from_xml(
+            sim_xml_path, robot_pose_cm_deg=robot_pose,
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        print(f"Error: --sim-xml {sim_xml_path}: {exc}", file=sys.stderr)
+        return 2
+
+    # Goal: --goal wins over the XML's <site name='goal'>.
+    if args.goal is not None:
+        goal_cm = (float(args.goal[0]), float(args.goal[1]))
+    elif xml_goal_cm is not None:
+        goal_cm = xml_goal_cm
+    else:
+        print(
+            f"Error: --sim-xml {sim_xml_path} has no <site name='goal'> "
+            "and --goal not provided.",
+            file=sys.stderr,
+        )
+        return 2
+
+    # Resolve namo_cpp config + primitive dir.
+    if args.namo_config:
+        namo_config_path = args.namo_config
+    else:
+        try:
+            namo_config_path = find_namo_config(args.scale_factor, args.robot_model)
+        except FileNotFoundError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+    primitive_data_dir = find_primitive_data_dir()
+
+    # Robot dims come from the namo_cpp config — NOT from a separate runtime
+    # default that would silently override planning.robot_size with a wrong
+    # value. (Long story: NAMOBridge._build_effective_namo_config patches
+    # planning.robot_size with whatever we pass; the legacy run_namo
+    # hardcoded 8x10 was over-inflating wavefront obstacles for a phantom
+    # large robot, making narrow passes look impassable.)
+    rw_cm, rh_cm = _robot_dims_from_namo_config(namo_config_path)
+
+    # Build Observation from the parsed scene.
+    objects: Dict[str, ObjectPose] = {}
+    for name, (x, y, t) in sim_config.objects.items():
+        d = sim_config.object_defs[name]
+        objects[name] = ObjectPose(
+            x=x, y=y, theta=t,
+            width=d.width, depth=d.depth, height=d.height,
+            is_static=d.is_static,
+        )
+    obs = Observation(
+        robot_x=sim_config.x,
+        robot_y=sim_config.y,
+        robot_theta=sim_config.theta,
+        objects=objects,
+        timestamp=0.0,
+        goal_x=goal_cm[0],
+        goal_y=goal_cm[1],
+    )
+
+    if args.verbose:
+        print()
+        print("=" * 60)
+        print("NAMO Plan-Only (sim, MuJoCo-verified via planner internals)")
+        print("=" * 60)
+        print(f"  sim_xml:          {sim_xml_path}")
+        print(f"  sim_real_run_dir: {real_run_dir}")
+        print(f"  robot:            ({obs.robot_x:.2f}, {obs.robot_y:.2f}, "
+              f"θ={obs.robot_theta:.1f}°) [from mid_obs[0]]")
+        print(f"  goal:             ({goal_cm[0]:.2f}, {goal_cm[1]:.2f}) cm")
+        print(f"  robot footprint:  {rw_cm:.1f} x {rh_cm:.1f} cm "
+              "(from namo_cpp config)")
+        print(f"  namo_config:      {namo_config_path}")
+        print(f"  algorithm:        {args.algorithm}")
+        print(f"  strategy:         {args.strategy}")
+        print(f"  max_chain_depth:  {args.max_chain_depth}")
+        print("=" * 60)
+        sys.stdout.flush()
+
+    bridge = NAMOPlanBridge(
+        namo_config_path=namo_config_path,
+        scale_factor=args.scale_factor,
+        primitive_data_dir=primitive_data_dir,
+        verbose=args.verbose,
+        robot_width_cm=rw_cm,
+        robot_height_cm=rh_cm,
+        robot_model=args.robot_model,
+    )
+
+    extra_kwargs: Dict[str, Any] = {}
+    if getattr(args, "rollout_samples_per_state", None) is not None:
+        extra_kwargs["rollout_samples_per_state"] = args.rollout_samples_per_state
+
+    plan_subgoals = bridge.plan(
+        observation=obs,
+        robot_goal_cm=goal_cm,
+        algorithm=args.algorithm,
+        goal_strategy=args.strategy,
+        max_chain_depth=args.max_chain_depth,
+        allow_collisions=args.allow_collisions,
+        frontier_beam_width=args.frontier_beam_width,
+        chain_link_cost=args.chain_link_cost,
+        selection_strategy=args.selection_strategy,
+        goals_per_region=args.goals_per_region,
+        failed_pushes=set(),
+        **extra_kwargs,
+    )
+
+    recorder = getattr(args, "_diagnostics_recorder", None)
+    if recorder is None or not getattr(recorder, "enabled", False):
+        print(
+            "Error: --plan-only requires --diag-path so solution.yaml has a "
+            "home. (Pass --diag-path <env>/solution/eps --run-name run.)",
+            file=sys.stderr,
+        )
+        return 2
+    diag_root = Path(recorder.root)
+    _emit_plan_only_solution_yaml(
+        diag_root,
+        goal_cm,
+        algorithm=args.algorithm,
+        strategy=args.strategy,
+        plan_subgoals=plan_subgoals,
+        search_time_ms=bridge.last_search_time_ms,
+    )
+
+    # If a plan was found, render the MP4 of the chain executing in MuJoCo
+    # — same call execute_sim_push --trial-spec uses. This lands the visual
+    # evidence next to solution.yaml so reviewers can confirm at a glance.
+    # Pass the *observation pose* (mid_obs[0]) as the starting robot pose so
+    # the replay env matches the planner's verification env byte-for-byte
+    # (namo_bridge.py:400-419 also passes observation pose to plan_from_xml).
+    # Earlier this used the edge-point standoff pose, which started push 1
+    # from a different state — push 1's end then diverged, push 2 started
+    # from a wrong state, and the MP4 silently showed a chain that didn't
+    # actually solve the problem even though solution.yaml was correct.
+    if plan_subgoals:
+        try:
+            _render_plan_only_mp4(
+                diag_root=diag_root,
+                sim_xml_path=sim_xml_path,
+                plan_subgoals=plan_subgoals,
+                scene_objects=sim_config.objects,
+                scene_object_defs=sim_config.object_defs,
+                namo_config_path=namo_config_path,
+                observation_robot_pose_cm_deg=robot_pose,
+            )
+        except Exception as exc:
+            print(
+                f"[run_namo plan-only] WARNING: MP4 render failed: {exc!r}",
+                file=sys.stderr,
+            )
+
+    return 0 if plan_subgoals else 1
+
+
 def run_automatic_mode(args):
     """Run NAMO in automatic mode (original behavior)."""
     robot_control_dir, _, _ = get_namo_paths()
@@ -620,12 +1155,18 @@ def run_automatic_mode(args):
         mode = "sim"
         args.sim = True
 
-    # Determine goal
+    # Determine goal.
+    # --goal always wins. In --sim-xml mode the XML's <site name='goal'>
+    # is the secondary source (deferred to the sim_config build below —
+    # we set goal_cm here only if --goal was passed). In real mode we
+    # detect from the camera. Otherwise plain --sim needs --goal.
+    sim_xml_path: Optional[str] = getattr(args, "sim_xml", None)
+    goal_cm: Optional[Tuple[float, float]] = None
+    goal_source: Optional[str] = None
     if args.goal is not None:
         goal_cm = (args.goal[0], args.goal[1])
         goal_source = "command line"
     elif mode == "real":
-        # Detect goal from camera in real mode
         os.chdir(str(robot_control_dir))
         goal_cm = detect_goal_from_camera(
             args.config, args.objects,
@@ -636,9 +1177,33 @@ def run_automatic_mode(args):
             print("Either provide --goal X Y or place goal marker (ArUco 6x6, ID 0) in the scene.")
             return 1
         goal_source = "detected marker"
+    elif sim_xml_path:
+        # Peek the XML for the <site name='goal'> so the planner gets a
+        # real goal at construction time (line ~884), not None. The
+        # sim_config_from_xml call later returns the same value.
+        try:
+            _peek_root = ET.parse(str(sim_xml_path)).getroot()
+        except (ET.ParseError, FileNotFoundError) as exc:
+            print(f"Error: --sim-xml {sim_xml_path}: {exc}", file=sys.stderr)
+            return 1
+        for site in _peek_root.iter("site"):
+            if site.get("name") == "goal":
+                pos = [float(v) for v in site.get("pos", "0 0 0").split()]
+                goal_cm = (pos[0] * 100.0, pos[1] * 100.0)
+                goal_source = "sim-xml goal site"
+                break
+        if goal_cm is None:
+            print(
+                f"Error: --sim-xml {sim_xml_path} has no <site name='goal'> "
+                "and --goal not provided.",
+                file=sys.stderr,
+            )
+            return 1
     else:
-        # Simulation mode requires --goal
-        print("Error: --goal is required in simulation mode (no camera to detect goal marker)")
+        print(
+            "Error: --goal is required in simulation mode without --sim-xml "
+            "(no camera to detect goal marker; XML has no goal site to read)."
+        )
         return 1
 
     # Find NAMO config
@@ -677,15 +1242,33 @@ def run_automatic_mode(args):
     # Must match what navigation planner uses
     from robot_control.camera.workspace import WORKSPACE_WIDTH_CM, WORKSPACE_HEIGHT_CM
 
-    # Load robot dimensions from config
-    robot_width_cm = 8.0  # Default
-    robot_height_cm = 10.0  # Default
+    # Load robot dimensions from config.
+    #
+    # The hardcoded sim default (8x10) is the legacy 2-box sim scene's
+    # robot. For --sim-xml runs the actual car footprint is 7x7
+    # (config/real.yaml), and the planner's wavefront inflation has to
+    # match — otherwise the wavefront over-inflates obstacles for a
+    # phantom larger robot and rejects passages the 7x7 car would
+    # comfortably fit through. Symptom: planner reports NO SUBGOALS even
+    # for trivial 1-push scenes. Read from real.yaml in both real and
+    # --sim-xml modes; only the legacy --sim hardcoded scene falls back
+    # to the 8x10 defaults.
+    robot_width_cm = 8.0  # Default (legacy hardcoded --sim scene)
+    robot_height_cm = 10.0
+    real_yaml_for_robot = None
     if mode == "real" and args.config:
-        with open(args.config, "r") as f:
-            real_config = yaml.safe_load(f)
-        robot_cfg = real_config.get("robot", {})
-        robot_width_cm = robot_cfg.get("width_cm", 8.0)
-        robot_height_cm = robot_cfg.get("height_cm", 10.0)
+        real_yaml_for_robot = args.config
+    elif sim_xml_path:
+        # --sim-xml workflow always targets the real-test-env scenes
+        # captured against config/real.yaml. Pull the real car size from
+        # there so wavefront inflation lines up with execute_sim_push.
+        real_yaml_for_robot = "config/real.yaml"
+    if real_yaml_for_robot and Path(real_yaml_for_robot).exists():
+        with open(real_yaml_for_robot, "r") as f:
+            _robot_yaml = yaml.safe_load(f) or {}
+        _robot_cfg = (_robot_yaml.get("robot") or {})
+        robot_width_cm = float(_robot_cfg.get("width_cm", robot_width_cm))
+        robot_height_cm = float(_robot_cfg.get("height_cm", robot_height_cm))
 
     if args.verbose:
         print(f"Workspace: {WORKSPACE_WIDTH_CM}x{WORKSPACE_HEIGHT_CM} cm")
@@ -731,24 +1314,50 @@ def run_automatic_mode(args):
 
     # Create runtime config
     if mode == "sim":
-        sim_config = SimConfig(
-            car_width=8,
-            car_height=10,
-            x=10,
-            y=10,
-            theta=0,
-            objects={
-                # SimConfig objects are (x_cm, y_cm, theta_deg)
-                "box_1": (25, 30, 0),
-                "box_2": (35, 40, 45),
-            },
-            # Provide geometry for synthetic simulation objects so XML generation
-            # never emits zero-sized geoms during NAMO planning.
-            object_defs={
-                "box_1": ObjectDef(name="box_1", width=8.0, depth=8.0, height=4.0, is_static=False),
-                "box_2": ObjectDef(name="box_2", width=8.0, depth=8.0, height=4.0, is_static=False),
-            },
-        )
+        if sim_xml_path:
+            # --sim-xml mode: build SimConfig from a captured real_test_envs
+            # initial scene. Robot pose comes from --sim-real-run-dir/mid_obs[0]
+            # since the car XML's freejoint spawn at (0,0) isn't meaningful.
+            robot_pose = None
+            if args.sim_real_run_dir:
+                robot_pose = _robot_pose_from_real_run(Path(args.sim_real_run_dir))
+                if robot_pose is None:
+                    print(
+                        f"Error: --sim-real-run-dir {args.sim_real_run_dir} "
+                        "has no parseable mid_obs.jsonl[0] robot pose.",
+                        file=sys.stderr,
+                    )
+                    return 1
+            try:
+                sim_config, _ = _sim_config_from_xml(
+                    Path(sim_xml_path),
+                    robot_pose_cm_deg=robot_pose,
+                )
+            except (ValueError, FileNotFoundError) as exc:
+                print(f"Error: --sim-xml: {exc}", file=sys.stderr)
+                return 1
+            # goal_cm was already filled from the same XML during the goal-
+            # determination block (or overridden by --goal). Discard the
+            # second read above.
+        else:
+            sim_config = SimConfig(
+                car_width=8,
+                car_height=10,
+                x=10,
+                y=10,
+                theta=0,
+                objects={
+                    # SimConfig objects are (x_cm, y_cm, theta_deg)
+                    "box_1": (25, 30, 0),
+                    "box_2": (35, 40, 45),
+                },
+                # Provide geometry for synthetic simulation objects so XML
+                # generation never emits zero-sized geoms during NAMO planning.
+                object_defs={
+                    "box_1": ObjectDef(name="box_1", width=8.0, depth=8.0, height=4.0, is_static=False),
+                    "box_2": ObjectDef(name="box_2", width=8.0, depth=8.0, height=4.0, is_static=False),
+                },
+            )
 
         runtime_config = RuntimeConfig(
             mode="sim",
@@ -790,6 +1399,13 @@ def run_automatic_mode(args):
     runtime = Runtime(runtime_config)
     runtime.run()
 
+    # Note: the --sim-xml case is intercepted at main() dispatch and routed
+    # to _run_plan_only_mode (no Runtime, no SimEnv). solution.yaml is
+    # written there straight from NAMOPlanBridge.plan(). The earlier
+    # post-runtime emit that used to live here read from success_chain.json
+    # — the kinematic SimEnv outcome — which disagreed with the planner's
+    # MuJoCo verification.
+
     return 0
 
 
@@ -805,6 +1421,34 @@ def main():
         "--sim",
         action="store_true",
         help="Run in simulation mode (default if --config not specified)",
+    )
+    parser.add_argument(
+        "--sim-xml",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help=(
+            "In --sim mode, build the SimConfig from a car-format MuJoCo XML "
+            "(the one execute_sim_push --trial-spec emits under "
+            "<env>/solution/sim_push_execution/run/initial_scene.xml). "
+            "When set, --goal is optional — the XML's <site name='goal'> is "
+            "used if present. Recommended companion: --sim-real-run-dir for "
+            "the robot's starting pose (the car XML can't carry the freejoint "
+            "pose). Without --sim-xml, --sim falls back to the legacy "
+            "hardcoded 2-box SimConfig."
+        ),
+    )
+    parser.add_argument(
+        "--sim-real-run-dir",
+        type=str,
+        default=None,
+        metavar="DIR",
+        help=(
+            "execute_real_push run directory whose first mid_obs.jsonl frame "
+            "supplies the robot's starting pose for --sim-xml mode. Typically "
+            "<env>/solution/real_push_execution/. Ignored unless --sim-xml is "
+            "also set."
+        ),
     )
     parser.add_argument(
         "--config", "-c",
@@ -1201,8 +1845,13 @@ def main():
                 print("Error: --interactive mode requires --config for real robot")
                 return 1
             return run_interactive_mode(args)
-        else:
-            return run_automatic_mode(args)
+        # --sim-xml always uses plan-only (planner verifies plans through the
+        # C++ MuJoCo controller, so a returned plan IS a sim-success result —
+        # no point running it again through the kinematic SimEnv, which has
+        # weaker physics and silently turned valid plans into "stuck" failures).
+        if getattr(args, "sim_xml", None):
+            return _run_plan_only_mode(args)
+        return run_automatic_mode(args)
     finally:
         # Best-effort summary write + cleanup. Anything that goes wrong here
         # must not mask the original return code.
