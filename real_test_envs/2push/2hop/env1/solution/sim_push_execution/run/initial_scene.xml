@@ -37,6 +37,6 @@
     <body name="wall_7">
       <geom name="wall_7" condim="4" pos="0.37374868302434117 0.3643900526699619 0.05" quat="0.9576349372871406 0 0 0.28798494211860176" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.0275 0.0975 0.05" type="box"/>
     </body>
-    <site name="goal" type="sphere" size="0.05 0.05 0.05" rgba="0 1 0 0.5" pos="0.44 0.725 0.0"/>
+    <site name="goal" type="sphere" size="0.05 0.05 0.05" rgba="0 1 0 0.5" pos="0.37 0.67 0.0"/>
   </worldbody>
 </mujoco>
