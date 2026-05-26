@@ -10,3 +10,10 @@ recordings/
 /calibration/
 /chassis_calibration/
 MUJOCO_LOG.TXT
+
+# Planner output artifacts under real_test_envs/<env>/solution/.
+# These are produced by `run_namo.py --sim-xml` runs (per-run plan dirs +
+# driver-level logs). Treat the canonical scene/pose files at the env root
+# as the committed inputs; planner outputs are reproducible from them.
+/real_test_envs/**/solution/random_rollout/
+/real_test_envs/**/solution/random_rollout_run*_driver.log
