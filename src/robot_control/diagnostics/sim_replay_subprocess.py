@@ -29,6 +29,7 @@ import math
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
@@ -89,6 +90,83 @@ def _read_qpos_dump(path: str) -> list:
             if q:
                 frames.append(q)
     return frames
+
+
+def _maybe_reencode_mp4_for_vscode_compat(path: str) -> None:
+    """Best-effort MP4 re-encode to H.264 for stricter previewers like VS Code.
+
+    OpenCV's ``mp4v`` writer produces MPEG-4 Part 2 video, which many players
+    accept but VS Code's preview often rejects. If ``ffmpeg`` is available, we
+    re-encode in place to ``avc1``/H.264. Failure is non-fatal: callers still
+    keep the original MP4.
+    """
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        return
+
+    src = Path(path)
+    if not src.exists() or src.suffix.lower() != ".mp4":
+        return
+
+    tmp = src.with_name(f"{src.stem}.h264_tmp{src.suffix}")
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-i",
+        str(src),
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        str(tmp),
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+    except Exception as exc:
+        print(
+            f"[sim_replay_subprocess] WARN: ffmpeg re-encode raised: {exc!r}",
+            flush=True,
+        )
+        return
+
+    if proc.returncode != 0 or not tmp.exists():
+        print(
+            "[sim_replay_subprocess] WARN: ffmpeg re-encode failed; "
+            "leaving original mp4v file in place",
+            flush=True,
+        )
+        if proc.stdout:
+            for line in proc.stdout.splitlines()[-10:]:
+                print(f"[sim_replay_subprocess] ffmpeg: {line}", flush=True)
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+        return
+
+    try:
+        os.replace(tmp, src)
+        print(
+            f"[sim_replay_subprocess] re-encoded {src.name} to H.264 for compatibility",
+            flush=True,
+        )
+    except Exception as exc:
+        print(
+            f"[sim_replay_subprocess] WARN: replacing re-encoded video failed: {exc!r}",
+            flush=True,
+        )
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
 
 
 def _write_jsonl(path: Path, records: List[Dict[str, Any]]) -> None:
@@ -772,6 +850,7 @@ def main() -> int:
             renderer.close()
         except Exception:
             pass
+        _maybe_reencode_mp4_for_vscode_compat(output_mp4)
     else:
         print("[sim_replay_subprocess] skip_video set; bypassing MP4 encoding",
               flush=True)
