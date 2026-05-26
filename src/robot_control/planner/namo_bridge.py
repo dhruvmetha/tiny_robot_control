@@ -431,6 +431,20 @@ class NAMOPlanBridge:
                 if result.error_message:
                     print(f"[NAMOBridge] Error: {result.error_message}")
 
+            # Bug fix: full_namo's _failure_result returns success=False with a
+            # partial action_sequence for diagnostics. Without this guard the
+            # bridge would forward those partial pushes as if they were a
+            # complete plan, and the runtime/--sim-xml path would then record
+            # them in solution.yaml as success=True because the only success
+            # signal downstream was `bool(plan_list)`. Reject failed plans here.
+            if not result.success:
+                if self._verbose:
+                    print(
+                        f"[NAMOBridge] Planner reported success=False; "
+                        f"discarding {len(result.actions)} partial action(s)."
+                    )
+                return []
+
             # Apply blacklist filter: drop the entire plan if any action's
             # (real_object_id, edge_idx) is in the blacklist. We discard the
             # whole plan rather than individual actions because subsequent
