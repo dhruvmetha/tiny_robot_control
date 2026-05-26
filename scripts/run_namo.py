@@ -1521,15 +1521,15 @@ def main():
     parser.add_argument(
         "--robot-model",
         type=str,
-        default="sphere",
+        default="car",
         choices=["sphere", "car"],
         help=(
-            "Robot body model for the planning simulator (default: sphere). "
-            "'sphere' = holonomic point robot (fast search, current default). "
-            "'car' = diff-drive little_car body (matches real-robot physics; "
-            "requires --scale-factor 1.0 and the 1x_car primitive set under "
-            "namo_cpp/data/motion_primitives_1x_car_{square,wide,tall}.dat). "
-            "Same physical 7 cm footprint in both."
+            "Robot body model for the planning simulator (default: car). "
+            "'car' = diff-drive little_car body, matches real-robot physics, "
+            "uses the 1x_car primitive set under "
+            "namo_cpp/data/motion_primitives_1x_car_{square,wide,tall}.dat. "
+            "'sphere' = legacy holonomic point robot (faster search, less "
+            "physically accurate). Both use a 7 cm footprint."
         ),
     )
     parser.add_argument(
