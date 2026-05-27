@@ -31,7 +31,9 @@ push:
                                  # 34.8%/40% to the wheels (RIGHT_GAIN=0.87 trim) —
                                  # both well above stiction. Drift was ~3° / 3 s
                                  # in last test, acceptable.
-  standoff_multiplier: 0.6       # standoff = multiplier * robot_size
+  edge_offset_margin_cm: 1.0     # Match namo_cpp planning.wavefront_edge_offset_margin=0.01 m
+                                 # so runtime edge points use standoff = robot_radius + 1.0 cm.
+  standoff_multiplier: 0.6       # Legacy field only; runtime now requires edge_offset_margin_cm.
   wheel_deadband: 0.05           # motor deadband threshold
   lookahead_ratio: 1.0           # lookahead as fraction of robot car_size. Was 0.3 — short
                                  # lookahead amplifies camera-heading-noise into PP curvature

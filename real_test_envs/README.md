@@ -11,13 +11,13 @@ sub-directory is a self-contained scene with a uniform layout.
 ├── env.png          ← wavefront grid visualization
 ├── scene.jpg        ← annotated camera frame at capture time
 ├── mid_obs.jsonl    ← robot start pose source (first parseable record)
-└── solution/        ← present iff a real-robot run has happened here
-    ├── sim_push_execution/run/
-    │   └── initial_scene.xml   ← byte-identical historical copy of env.xml
-    ├── real_push_execution/
-    │   └── mid_obs.jsonl       ← original (now mirrored at env root)
+└── solution/        ← planner outputs live here when present
     └── random_rollout/run{N}/  ← plan + sim_push.mp4 + diagnostics
 ```
+
+Older checkouts may also have legacy `solution/real_push_execution/`,
+`solution/sim_push_execution/`, or `solution/trial_spec.yaml` artifacts,
+but they are not required for planning against these envs.
 
 Full tree:
 
@@ -45,9 +45,9 @@ Every env has one canonical scene file: **`env.xml`**.
 - 1 or 2 movable obstacles depending on the scene; format is identical
   either way.
 
-`solution/sim_push_execution/run/initial_scene.xml`, where present, is
-a byte-identical historical copy from when the scene was first
-captured. Prefer `env.xml`.
+Some older checkouts also contain
+`solution/sim_push_execution/run/initial_scene.xml`; when present it is
+a byte-identical historical copy of `env.xml`. Prefer `env.xml`.
 
 ## Where the robot pose lives
 
@@ -76,10 +76,9 @@ non-empty `objects` is consumed — see
 }
 ```
 
-Every env keeps a copy of `mid_obs.jsonl` at its root. Envs that have
-completed a real-robot run also have it at
-`solution/real_push_execution/mid_obs.jsonl` (written by
-`execute_real_push`); the env-root copy mirrors that.
+Every env keeps a copy of `mid_obs.jsonl` at its root. Some older
+checkouts also have `solution/real_push_execution/mid_obs.jsonl`; that
+legacy copy is redundant with the env-root file.
 
 ## Plan against an env (canonical command)
 
@@ -104,12 +103,9 @@ sim-success result. Outputs land in the diag dir: `solution.yaml`,
 `sim_push.mp4`, `config.json`, plus C++ diagnostics jsonls.
 
 Reference invocation per env lives at
-`<env>/solution/random_rollout/run1/config.json` → `command_line`
-(some historical entries reference older paths like
-`solution/sim_push_execution/run/initial_scene.xml` for `--sim-xml`
-and `solution/real_push_execution` for `--sim-real-run-dir`; both
-still work because the new env-root files mirror the old locations,
-but new runs should use the env-root paths shown above).
+`<env>/solution/random_rollout/run1/config.json` → `command_line`.
+Those saved configs should point at the env-root paths shown above:
+`<env>/env.xml` for `--sim-xml` and `<env>` for `--sim-real-run-dir`.
 
 ### What changes per env
 

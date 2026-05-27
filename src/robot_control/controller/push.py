@@ -57,6 +57,7 @@ from robot_control.core.types import (
 from robot_control.utils.wavefront_inflation_config import get_wavefront_inflation_config
 from robot_control.utils.wavefront import WavefrontConfig, WavefrontPlanner
 from robot_control.utils.robot_geometry import (
+    effective_robot_radius_cm,
     effective_robot_radius_m_from_cm,
     effective_robot_size_cm,
 )
@@ -172,10 +173,20 @@ class PushController(Controller):
         self._push_config = push_config or PushConfig()
         self._max_speed = max_speed if max_speed is not None else self._push_config.max_speed
 
-        # Standoff distance = standoff_multiplier × effective robot size.
-        # See robot_geometry.effective_robot_size_cm for the formula.
+        # Match the C++ planner's edge-point spawn offset exactly:
+        # standoff = robot_radius + edge_offset_margin_cm.
         car_size = effective_robot_size_cm(config.car_width, config.car_height)
-        self._standoff_distance = self._push_config.standoff_multiplier * car_size
+        if self._push_config.edge_offset_margin_cm is None:
+            raise ValueError(
+                "PushController requires push.edge_offset_margin_cm to be set "
+                "so runtime standoff matches the C++ planner edge offset."
+            )
+        robot_radius_cm = effective_robot_radius_cm(
+            config.car_width, config.car_height
+        )
+        self._standoff_distance = (
+            robot_radius_cm + float(self._push_config.edge_offset_margin_cm)
+        )
 
         # Edge point configuration (matches namo_cpp)
         self._points_per_face = self._push_config.points_per_face

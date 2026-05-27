@@ -33,7 +33,8 @@ class PushConfig:
     """Configuration for PushController."""
 
     max_speed: float = 0.3
-    standoff_multiplier: float = 0.5  # standoff = multiplier * robot_diagonal
+    edge_offset_margin_cm: Optional[float] = None  # standoff = robot_radius + edge_offset_margin_cm
+    standoff_multiplier: float = 0.5  # Legacy field; runtime now requires edge_offset_margin_cm
     wheel_deadband: float = 0.05
     lookahead_ratio: float = 0.3
     push_steps: int = 50  # control ticks per NAMO push step (~1.67 seconds at 30Hz)
@@ -112,6 +113,7 @@ class ControllerConfigs:
             ),
             push=PushConfig(
                 max_speed=push_data.get("max_speed", 0.3),
+                edge_offset_margin_cm=push_data.get("edge_offset_margin_cm", None),
                 standoff_multiplier=push_data.get("standoff_multiplier", 0.5),
                 wheel_deadband=push_data.get("wheel_deadband", 0.05),
                 lookahead_ratio=push_data.get("lookahead_ratio", 0.3),

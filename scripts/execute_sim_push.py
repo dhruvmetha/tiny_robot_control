@@ -752,9 +752,8 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         metavar="DIR",
-        help="execute_real_push run directory whose first mid_obs.jsonl frame "
-             "becomes the initial scene for --trial-spec mode. Typically "
-             "<env>/solution/real_push_execution/.",
+        help="Directory whose first mid_obs.jsonl frame becomes the initial "
+             "scene for --trial-spec mode. Typically <env>.",
     )
     return p.parse_args()
 

@@ -17,3 +17,11 @@ MUJOCO_LOG.TXT
 # as the committed inputs; planner outputs are reproducible from them.
 /real_test_envs/**/solution/random_rollout/
 /real_test_envs/**/solution/random_rollout_run*_driver.log
+
+# Closed-loop experiment sessions are large local outputs. Track the guide, not
+# the run artifacts.
+/closed_loop_sessions/*
+!/closed_loop_sessions/README.md
+
+# Local verification scratch space.
+/_tmp_real_test_envs_verify/

@@ -241,6 +241,128 @@ def _robot_pose_from_real_run(run_dir: Path) -> Optional[Tuple[float, float, flo
     return None
 
 
+def _first_scene_record_from_mid_obs(run_dir: Path) -> Optional[Dict[str, Any]]:
+    """Return the first scene-bearing record from ``mid_obs.jsonl``."""
+    mid_obs_path = run_dir / "mid_obs.jsonl"
+    if not mid_obs_path.exists():
+        return None
+    with open(mid_obs_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(rec.get("objects"), dict) and rec["objects"]:
+                return rec
+    return None
+
+
+def _robot_pose_from_scene_record(
+    scene_record: Dict[str, Any],
+) -> Optional[Tuple[float, float, float]]:
+    """Extract ``(x_cm, y_cm, theta_deg)`` from a scene record."""
+    for key in ("robot_pose_cm_deg", "robot_pose_cm"):
+        val = scene_record.get(key)
+        if isinstance(val, list) and len(val) >= 2:
+            return (
+                float(val[0]),
+                float(val[1]),
+                float(val[2]) if len(val) >= 3 else 0.0,
+            )
+    return None
+
+
+def _goal_from_scene_record(
+    scene_record: Dict[str, Any],
+) -> Optional[Tuple[float, float]]:
+    """Extract ``(x_cm, y_cm)`` goal from a scene record."""
+    goal = scene_record.get("goal_cm")
+    if isinstance(goal, list) and len(goal) >= 2:
+        return float(goal[0]), float(goal[1])
+    return None
+
+
+def _goal_from_xml(xml_path: Path) -> Optional[Tuple[float, float]]:
+    """Read the goal site from a MuJoCo XML, if present."""
+    root = ET.parse(str(xml_path)).getroot()
+    for site in root.iter("site"):
+        if site.get("name") == "goal":
+            pos = [float(v) for v in site.get("pos", "0 0 0").split()]
+            return pos[0] * 100.0, pos[1] * 100.0
+    return None
+
+
+def _observation_from_scene_record(
+    scene_record: Dict[str, Any],
+    default_robot_pose_cm_deg: Optional[Tuple[float, float, float]] = None,
+    default_goal_cm: Optional[Tuple[float, float]] = None,
+):
+    """Build an Observation from a captured mid_obs scene record."""
+    from robot_control.core.types import Observation, ObjectPose
+
+    robot_pose = _robot_pose_from_scene_record(scene_record) or default_robot_pose_cm_deg
+    if robot_pose is None:
+        return None
+
+    goal_cm = _goal_from_scene_record(scene_record) or default_goal_cm
+    if goal_cm is None:
+        return None
+
+    scene_objects = scene_record.get("objects")
+    if not isinstance(scene_objects, dict) or not scene_objects:
+        return None
+
+    objects: Dict[str, ObjectPose] = {}
+    for name, raw_obj in scene_objects.items():
+        if not isinstance(raw_obj, dict):
+            continue
+        if "pose_cm" in raw_obj:
+            pose = raw_obj.get("pose_cm")
+            if not isinstance(pose, list) or len(pose) < 3:
+                continue
+            x_cm = float(pose[0])
+            y_cm = float(pose[1])
+            theta_deg = float(pose[2])
+        else:
+            try:
+                x_cm = float(raw_obj["x_cm"])
+                y_cm = float(raw_obj["y_cm"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            theta_deg = float(raw_obj.get("theta_deg", 0.0))
+        try:
+            width_cm = float(raw_obj["width_cm"])
+            depth_cm = float(raw_obj["depth_cm"])
+            height_cm = float(raw_obj["height_cm"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        objects[name] = ObjectPose(
+            x=x_cm,
+            y=y_cm,
+            theta=theta_deg,
+            width=width_cm,
+            depth=depth_cm,
+            height=height_cm,
+            is_static=bool(raw_obj.get("is_static", False)),
+        )
+
+    if not objects:
+        return None
+
+    return Observation(
+        robot_x=float(robot_pose[0]),
+        robot_y=float(robot_pose[1]),
+        robot_theta=float(robot_pose[2]),
+        objects=objects,
+        timestamp=0.0,
+        goal_x=float(goal_cm[0]),
+        goal_y=float(goal_cm[1]),
+    )
+
+
 def _sim_config_from_xml(
     xml_path: Path,
     robot_pose_cm_deg: Optional[Tuple[float, float, float]] = None,
@@ -332,12 +454,7 @@ def _sim_config_from_xml(
         )
 
     # Goal site (optional). The user-baked value is at (0.37, 0.67, 0.0) m.
-    goal_cm: Optional[Tuple[float, float]] = None
-    for site in root.iter("site"):
-        if site.get("name") == "goal":
-            pos = [float(v) for v in site.get("pos", "0 0 0").split()]
-            goal_cm = (pos[0] * 100.0, pos[1] * 100.0)
-            break
+    goal_cm = _goal_from_xml(xml_path)
 
     # Robot pose: prefer the caller-supplied (real-side ground truth);
     # otherwise default to workspace center with a warning.
@@ -391,12 +508,11 @@ def _robot_dims_from_namo_config(namo_config_path: str) -> Tuple[float, float]:
 
 def _render_plan_only_mp4(
     diag_root: Path,
-    sim_xml_path: Path,
+    scene_xml_path: Path,
     plan_subgoals: list,
-    scene_objects: Dict[str, Tuple[float, float, float]],
-    scene_object_defs: Dict[str, Any],
     namo_config_path: str,
     observation_robot_pose_cm_deg: Tuple[float, float, float],
+    real_to_sim: Optional[Dict[str, str]] = None,
 ) -> None:
     """Render the planner-returned chain into ``<diag_root>/sim_push.mp4``.
 
@@ -423,11 +539,16 @@ def _render_plan_only_mp4(
     chain: List[Dict[str, Any]] = []
     for sg in plan_subgoals:
         oid = getattr(sg, "object_id", None)
+        sim_oid = (
+            str(real_to_sim.get(str(oid), oid))
+            if real_to_sim is not None
+            else str(oid)
+        )
         edge = int(getattr(sg, "edge_idx"))
         steps = int(getattr(sg, "push_steps"))
         chain.append({
             "object_id": oid,
-            "sim_object_id": oid,  # planner returned the sim body name already
+            "sim_object_id": sim_oid,
             "edge_idx": edge,
             "push_steps": steps,
             "depth": steps - 1,
@@ -446,7 +567,7 @@ def _render_plan_only_mp4(
     # Resolve every path to absolute BEFORE the chdir, otherwise any
     # relative input (e.g. "real_test_envs/...") gets re-rooted under
     # namo_cpp/ and load fails.
-    abs_sim_xml = str(Path(sim_xml_path).resolve())
+    abs_sim_xml = str(Path(scene_xml_path).resolve())
     abs_namo_config = str(Path(namo_config_path).resolve())
     abs_output_mp4 = str((diag_root / "sim_push.mp4").resolve())
     abs_artifact_dir = str(diag_root.resolve())
@@ -488,6 +609,8 @@ def _emit_plan_only_solution_yaml(
     strategy: str,
     plan_subgoals: list,
     search_time_ms: float,
+    object_mapping: Optional[Dict[str, Dict[str, str]]] = None,
+    planner_scene_xml: Optional[str] = None,
 ) -> None:
     """Write solution.yaml from a planner-returned chain (plan-only mode).
 
@@ -518,6 +641,10 @@ def _emit_plan_only_solution_yaml(
             "pushes_in_plan": len(plan_list),
         },
     }
+    if object_mapping is not None:
+        payload["object_mapping"] = object_mapping
+    if planner_scene_xml is not None:
+        payload["planner_scene_xml"] = planner_scene_xml
     diag_root.mkdir(parents=True, exist_ok=True)
     out_path = diag_root / "solution.yaml"
     out_path.write_text(yaml.safe_dump(payload, sort_keys=False))
@@ -948,11 +1075,12 @@ def _run_plan_only_mode(args) -> int:
     """Plan once against --sim-xml, write solution.yaml, exit. No Runtime.
 
     Inputs:
-      --sim-xml             (required) car-format MuJoCo XML — the initial
-                            scene that execute_sim_push --trial-spec emits.
-      --sim-real-run-dir    (required) execute_real_push run dir; mid_obs[0]
-                            supplies the robot's starting pose (car XML's
-                            freejoint default at (0,0) isn't meaningful).
+      --sim-xml             (required) car-format MuJoCo XML — typically
+                            <env>/env.xml.
+      --sim-real-run-dir    (required) directory containing mid_obs.jsonl;
+                            mid_obs[0] supplies the robot's starting pose
+                            (car XML's freejoint default at (0,0) isn't
+                            meaningful). Typically <env>.
       --diag-path/--run-name diagnostics dir for solution.yaml.
 
     Source of truth for the plan: NAMOPlanBridge.plan() returns a list of
@@ -961,7 +1089,6 @@ def _run_plan_only_mode(args) -> int:
     NAMOPushSkill before adding it to the chain. So a non-empty return =
     sim-success. We dump it to solution.yaml and stop.
     """
-    from robot_control.core.types import Observation, ObjectPose
     from robot_control.planner.namo_bridge import NAMOPlanBridge
 
     if not args.sim_xml:
@@ -979,9 +1106,14 @@ def _run_plan_only_mode(args) -> int:
     sim_xml_path = Path(args.sim_xml)
     real_run_dir = Path(args.sim_real_run_dir)
 
-    # Build the scene from the XML — same parser the (now-defunct) SimConfig
-    # path used. Drop SimConfig, keep just what an Observation needs.
-    robot_pose = _robot_pose_from_real_run(real_run_dir)
+    scene_record = _first_scene_record_from_mid_obs(real_run_dir)
+    robot_pose = (
+        _robot_pose_from_scene_record(scene_record)
+        if scene_record is not None
+        else None
+    )
+    if robot_pose is None:
+        robot_pose = _robot_pose_from_real_run(real_run_dir)
     if robot_pose is None:
         print(
             f"Error: --sim-real-run-dir {real_run_dir}: no parseable "
@@ -989,23 +1121,32 @@ def _run_plan_only_mode(args) -> int:
             file=sys.stderr,
         )
         return 2
+
+    scene_goal_cm = (
+        _goal_from_scene_record(scene_record)
+        if scene_record is not None
+        else None
+    )
     try:
-        sim_config, xml_goal_cm = _sim_config_from_xml(
-            sim_xml_path, robot_pose_cm_deg=robot_pose,
-        )
-    except (ValueError, FileNotFoundError) as exc:
+        xml_goal_cm = _goal_from_xml(sim_xml_path)
+    except (ET.ParseError, FileNotFoundError) as exc:
         print(f"Error: --sim-xml {sim_xml_path}: {exc}", file=sys.stderr)
         return 2
 
     # Goal: --goal wins over the XML's <site name='goal'>.
     if args.goal is not None:
         goal_cm = (float(args.goal[0]), float(args.goal[1]))
+        goal_source = "command line"
+    elif scene_goal_cm is not None:
+        goal_cm = scene_goal_cm
+        goal_source = "mid_obs.jsonl"
     elif xml_goal_cm is not None:
         goal_cm = xml_goal_cm
+        goal_source = "sim-xml goal site"
     else:
         print(
-            f"Error: --sim-xml {sim_xml_path} has no <site name='goal'> "
-            "and --goal not provided.",
+            f"Error: {real_run_dir / 'mid_obs.jsonl'} has no goal_cm, "
+            f"{sim_xml_path} has no <site name='goal'>, and --goal was not provided.",
             file=sys.stderr,
         )
         return 2
@@ -1029,24 +1170,55 @@ def _run_plan_only_mode(args) -> int:
     # large robot, making narrow passes look impassable.)
     rw_cm, rh_cm = _robot_dims_from_namo_config(namo_config_path)
 
-    # Build Observation from the parsed scene.
-    objects: Dict[str, ObjectPose] = {}
-    for name, (x, y, t) in sim_config.objects.items():
-        d = sim_config.object_defs[name]
-        objects[name] = ObjectPose(
-            x=x, y=y, theta=t,
-            width=d.width, depth=d.depth, height=d.height,
-            is_static=d.is_static,
+    # Prefer the captured scene record so NAMOBridge sees the same real object
+    # IDs the live path uses. Fall back to the XML body names only for legacy
+    # artifacts that lack object geometry in mid_obs.jsonl.
+    obs = (
+        _observation_from_scene_record(
+            scene_record,
+            default_robot_pose_cm_deg=robot_pose,
+            default_goal_cm=goal_cm,
         )
-    obs = Observation(
-        robot_x=sim_config.x,
-        robot_y=sim_config.y,
-        robot_theta=sim_config.theta,
-        objects=objects,
-        timestamp=0.0,
-        goal_x=goal_cm[0],
-        goal_y=goal_cm[1],
+        if scene_record is not None
+        else None
     )
+    scene_source = "mid_obs.jsonl scene record"
+    if obs is None:
+        try:
+            sim_config, _ = _sim_config_from_xml(
+                sim_xml_path,
+                robot_pose_cm_deg=robot_pose,
+                car_width_cm=rw_cm,
+                car_height_cm=rh_cm,
+            )
+        except (ValueError, FileNotFoundError) as exc:
+            print(f"Error: --sim-xml {sim_xml_path}: {exc}", file=sys.stderr)
+            return 2
+        from robot_control.core.types import Observation, ObjectPose
+
+        objects: Dict[str, ObjectPose] = {}
+        for name, (x, y, t) in sim_config.objects.items():
+            d = sim_config.object_defs[name]
+            objects[name] = ObjectPose(
+                x=x,
+                y=y,
+                theta=t,
+                width=d.width,
+                depth=d.depth,
+                height=d.height,
+                is_static=d.is_static,
+            )
+        obs = Observation(
+            robot_x=sim_config.x,
+            robot_y=sim_config.y,
+            robot_theta=sim_config.theta,
+            objects=objects,
+            timestamp=0.0,
+            goal_x=goal_cm[0],
+            goal_y=goal_cm[1],
+        )
+        scene_source = "sim-xml bodies (legacy fallback)"
+    robot_pose = (float(obs.robot_x), float(obs.robot_y), float(obs.robot_theta))
 
     if args.verbose:
         print()
@@ -1055,9 +1227,10 @@ def _run_plan_only_mode(args) -> int:
         print("=" * 60)
         print(f"  sim_xml:          {sim_xml_path}")
         print(f"  sim_real_run_dir: {real_run_dir}")
+        print(f"  scene source:     {scene_source}")
         print(f"  robot:            ({obs.robot_x:.2f}, {obs.robot_y:.2f}, "
               f"θ={obs.robot_theta:.1f}°) [from mid_obs[0]]")
-        print(f"  goal:             ({goal_cm[0]:.2f}, {goal_cm[1]:.2f}) cm")
+        print(f"  goal:             ({goal_cm[0]:.2f}, {goal_cm[1]:.2f}) cm [{goal_source}]")
         print(f"  robot footprint:  {rw_cm:.1f} x {rh_cm:.1f} cm "
               "(from namo_cpp config)")
         print(f"  namo_config:      {namo_config_path}")
@@ -1105,6 +1278,16 @@ def _run_plan_only_mode(args) -> int:
         )
         return 2
     diag_root = Path(recorder.root)
+    object_mapping_obj = bridge.get_object_mapping()
+    object_mapping = {
+        "real_to_sim": dict(object_mapping_obj.real_to_sim),
+        "sim_to_real": dict(object_mapping_obj.sim_to_real),
+    }
+    planner_scene_path: Optional[Path] = None
+    if bridge.last_xml_content:
+        diag_root.mkdir(parents=True, exist_ok=True)
+        planner_scene_path = diag_root / "planner_scene.xml"
+        planner_scene_path.write_text(bridge.last_xml_content)
     _emit_plan_only_solution_yaml(
         diag_root,
         goal_cm,
@@ -1112,6 +1295,8 @@ def _run_plan_only_mode(args) -> int:
         strategy=args.strategy,
         plan_subgoals=plan_subgoals,
         search_time_ms=bridge.last_search_time_ms,
+        object_mapping=object_mapping,
+        planner_scene_xml=planner_scene_path.name if planner_scene_path is not None else None,
     )
 
     # If a plan was found, render the MP4 of the chain executing in MuJoCo
@@ -1128,12 +1313,11 @@ def _run_plan_only_mode(args) -> int:
         try:
             _render_plan_only_mp4(
                 diag_root=diag_root,
-                sim_xml_path=sim_xml_path,
+                scene_xml_path=planner_scene_path or sim_xml_path,
                 plan_subgoals=plan_subgoals,
-                scene_objects=sim_config.objects,
-                scene_object_defs=sim_config.object_defs,
                 namo_config_path=namo_config_path,
                 observation_robot_pose_cm_deg=robot_pose,
+                real_to_sim=object_mapping["real_to_sim"],
             )
         except Exception as exc:
             print(
@@ -1429,8 +1613,7 @@ def main():
         metavar="PATH",
         help=(
             "In --sim mode, build the SimConfig from a car-format MuJoCo XML "
-            "(the one execute_sim_push --trial-spec emits under "
-            "<env>/solution/sim_push_execution/run/initial_scene.xml). "
+            "(typically <env>/env.xml). "
             "When set, --goal is optional — the XML's <site name='goal'> is "
             "used if present. Recommended companion: --sim-real-run-dir for "
             "the robot's starting pose (the car XML can't carry the freejoint "
@@ -1444,10 +1627,9 @@ def main():
         default=None,
         metavar="DIR",
         help=(
-            "execute_real_push run directory whose first mid_obs.jsonl frame "
-            "supplies the robot's starting pose for --sim-xml mode. Typically "
-            "<env>/solution/real_push_execution/. Ignored unless --sim-xml is "
-            "also set."
+            "Directory whose first mid_obs.jsonl frame supplies the robot's "
+            "starting pose for --sim-xml mode. Typically <env>. Ignored "
+            "unless --sim-xml is also set."
         ),
     )
     parser.add_argument(

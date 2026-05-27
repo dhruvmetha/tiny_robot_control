@@ -48,6 +48,26 @@ os.close(_QPOS_FD)
 os.environ["NAMO_QPOS_DUMP"] = _QPOS_PATH
 
 
+def _configure_headless_mujoco_backend() -> None:
+    """Prefer EGL for headless replay renders when no backend was requested.
+
+    On this stack, leaving MUJOCO_GL unset under a no-DISPLAY session makes
+    mujoco.Renderer fall through to GLFW/X11 and fail before the MP4 render
+    begins. EGL works headlessly, so adopt it automatically unless the caller
+    already pinned a backend explicitly.
+    """
+    if os.environ.get("MUJOCO_GL"):
+        return
+    if os.environ.get("DISPLAY"):
+        return
+    os.environ["MUJOCO_GL"] = "egl"
+    print(
+        "[sim_replay_subprocess] DISPLAY is unset; defaulting MUJOCO_GL=egl "
+        "for headless rendering",
+        flush=True,
+    )
+
+
 # Render resolution. Bump if you need higher quality; remember to also
 # increase the offscreen framebuffer (injected below).
 _WIDTH = 1280
@@ -643,6 +663,9 @@ def main() -> int:
     # extraction still run. Saves ~5-10 s per push and avoids GPU
     # initialization in headless tuning loops.
     skip_video = bool(chain_doc.get("skip_video", False))
+
+    if not skip_video:
+        _configure_headless_mujoco_backend()
 
     # Optional starting robot pose in sim units (meters + radians). Required
     # for the car robot — its body lives inside little_car.xml with a freejoint
