@@ -95,18 +95,6 @@ def _push_signature_matches(active: object, push_rec: dict) -> bool:
         return False
 
 
-def _object_sort_key(name: str) -> tuple[int, int, str]:
-    if name.startswith("obj_"):
-        suffix = name[4:]
-        if suffix.isdigit():
-            return (0, int(suffix), name)
-    if name.startswith("wall_"):
-        suffix = name[5:]
-        if suffix.isdigit():
-            return (1, int(suffix), name)
-    return (2, 0, name)
-
-
 def _select_rewind_scene_record(mid_obs: list[dict], push_rec: dict) -> dict | None:
     start_ts = _safe_float(push_rec.get("push_start_obs_timestamp"))
     if start_ts is None:
@@ -276,11 +264,11 @@ def _build_initial_scene_xml(
     the recorded *initial* scene, and per-push positions evolve in sim
     physics rather than being seeded from real-side pushes.jsonl.
 
-    The mapping reflects how NAMOXMLGenerator.from_observation renames keys:
-    the N-th movable in iteration order becomes ``obstacle_N_movable`` (and
-    the N-th static becomes ``wall_{4+N}``). We iterate in the same sorted
-    order :func:`_object_sort_key` produces (obj_N sorted by N first, then
-    wall_N), so the mapping is deterministic and matches the generated XML.
+    The mapping reflects how NAMOBridge / NAMOXMLGenerator renames keys:
+    the N-th movable in lexicographic ``sorted(scene_objects.keys())`` order
+    becomes ``obstacle_N_movable`` (and the N-th static becomes
+    ``wall_{4+N}``). We iterate in that same order so manual probes use the
+    exact same body naming as planner-side sim.
     """
     recorded_scene_objects = scene_state.get("scene_objects")
     if not isinstance(recorded_scene_objects, dict) or not recorded_scene_objects:
@@ -289,7 +277,7 @@ def _build_initial_scene_xml(
     objects: dict = {}
     obj_to_sim_id: dict = {}
     movable_count = 0
-    for name in sorted(recorded_scene_objects.keys(), key=_object_sort_key):
+    for name in sorted(recorded_scene_objects.keys()):
         o = recorded_scene_objects[name]
         if not isinstance(o, dict):
             continue
@@ -360,7 +348,7 @@ def _build_rewind_xml(
     scene_source = "recorded mid_obs"
     if not isinstance(recorded_scene_objects, dict) or not recorded_scene_objects:
         raise RuntimeError("recorded scene_objects payload is missing")
-    for name in sorted(recorded_scene_objects.keys(), key=_object_sort_key):
+    for name in sorted(recorded_scene_objects.keys()):
         o = recorded_scene_objects[name]
         if not isinstance(o, dict):
             continue
@@ -452,6 +440,18 @@ def _compute_edge_starting_pose_sim(
         float(ep.position[0]) / 100.0,
         float(ep.position[1]) / 100.0,
         _math.radians(float(ep.approach_theta)),
+    )
+
+
+def _recorded_robot_pose_sim(scene_state: dict) -> Tuple[float, float, float]:
+    """Return the recorded robot pose as (x_m, y_m, theta_rad)."""
+    import math as _math
+
+    rx, ry, rtheta_deg = scene_state["robot_pose"]
+    return (
+        float(rx) / 100.0,
+        float(ry) / 100.0,
+        _math.radians(float(rtheta_deg)),
     )
 
 
@@ -755,6 +755,15 @@ def parse_args() -> argparse.Namespace:
         help="Directory whose first mid_obs.jsonl frame becomes the initial "
              "scene for --trial-spec mode. Typically <env>.",
     )
+    p.add_argument(
+        "--starting-pose-mode",
+        choices=("edge", "recorded"),
+        default="edge",
+        help="How to initialize the car pose before replay. 'edge' keeps the "
+             "historical behavior of teleporting to the push edge point. "
+             "'recorded' uses the recorded robot pose from the source scene "
+             "instead.",
+    )
     return p.parse_args()
 
 
@@ -818,16 +827,21 @@ def _run_trial_spec_mode(args, recorder, log_file) -> int:
         return 2
 
     try:
-        starting_pose_sim = _compute_edge_starting_pose_sim(
-            scene_state, chain[0]["object_id"], chain[0]["edge_idx"]
-        )
+        if args.starting_pose_mode == "recorded":
+            starting_pose_sim = _recorded_robot_pose_sim(scene_state)
+        else:
+            starting_pose_sim = _compute_edge_starting_pose_sim(
+                scene_state, chain[0]["object_id"], chain[0]["edge_idx"]
+            )
     except KeyError as exc:
-        print(f"Error: edge-point teleport: {exc}", file=sys.stderr)
+        label = "recorded robot pose" if args.starting_pose_mode == "recorded" else "edge-point teleport"
+        print(f"Error: {label}: {exc}", file=sys.stderr)
         return 2
 
     print(
         f"[trial-spec] {len(chain)} push(es) "
         f"chain={[(c['object_id'], c['edge_idx'], c['depth']) for c in chain]} "
+        f"starting_pose_mode={args.starting_pose_mode} "
         f"start_pose_sim=({starting_pose_sim[0]:.3f}m, "
         f"{starting_pose_sim[1]:.3f}m, "
         f"{starting_pose_sim[2]:.3f}rad)",
@@ -1020,81 +1034,72 @@ def main() -> int:
 
     # Starting robot pose in sim units (meters + radians).
     #
-    # WHY WE TELEPORT TO THE EDGE POINT (not the captured real-robot pose):
-    # The C++ NAMOPushSkill (namo_push_skill.cpp:163-170) runs
-    # `get_reachable_edges_with_wavefront(object_name)` BEFORE the push and
-    # rejects with "Requested edge N not reachable" if the wavefront can't
-    # find a path from the robot's current pose to the requested edge. For
-    # --from-real-run, the captured real-robot pose can be inside obstacle
-    # inflation (the Python rewind builder logs "Trapped-start recovery"
-    # when this happens). The C++ wavefront, rebuilt from the XML at
-    # runtime, doesn't have that local-cell clearing applied, so it sees
-    # the start as trapped and refuses every edge.
-    #
-    # Fix: pre-teleport the car to the edge point itself, with the push
-    # heading. The wavefront's start cell is then the edge point (a free
-    # cell, since the standoff distance puts it outside the object's
-    # inflation), reachability check passes, and the C++ controller's own
-    # set_robot_se2() teleport at namo_push_controller.cpp:441 becomes a
-    # no-op. The push primitive then runs normally.
+    # Default historical behavior teleports to the edge point rather than the
+    # recorded robot pose. For diagnostics, callers can opt into starting from
+    # the recorded pose instead via --starting-pose-mode=recorded.
     starting_pose_sim: Optional[Tuple[float, float, float]] = None
     import math as _math
     if args.robot_pose is not None:
-        # Compute the edge point from the rewind XML's object state and
-        # the requested edge_idx. Use the same defaults as the C++ skill:
-        # points_per_face=15 (matches PushConfig.points_per_face), and a
-        # standoff that maps the C++ "push_offset_margin_" semantics. For
-        # the default car_size=7cm and standoff_multiplier=0.6, that's
-        # 0.6 * effective_robot_size_cm(7,7) = 0.6 * 6 = 3.6 cm.
-        from robot_control.utils.robot_geometry import effective_robot_size_cm
-        from robot_control.core.types import ObjectPose
+        if args.starting_pose_mode == "recorded":
+            starting_pose_sim = (
+                float(args.robot_pose[0]) / 100.0,
+                float(args.robot_pose[1]) / 100.0,
+                _math.radians(float(args.robot_pose[2])),
+            )
+            print(
+                f"[exec-sim-push] pre-teleport to recorded robot pose: "
+                f"({args.robot_pose[0]:.2f}, {args.robot_pose[1]:.2f}) cm, "
+                f"θ={args.robot_pose[2]:.2f}°",
+                flush=True,
+            )
+        else:
+            # Compute the edge point from the rewind XML's object state and
+            # the requested edge_idx. Use the same defaults as the C++ skill:
+            # points_per_face=15, standoff = 0.6 * effective_robot_size(7,7).
+            from robot_control.utils.robot_geometry import effective_robot_size_cm
+            from robot_control.core.types import ObjectPose
 
-        # Pull the pushed object's pose out of the rewind XML so the edge
-        # point matches what the C++ env will compute internally.
-        import xml.etree.ElementTree as _ET
-        _tree = _ET.parse(args.mujoco_xml)
-        _root = _tree.getroot()
-        _obj_geom = None
-        for _g in _root.iter("geom"):
-            if _g.get("name") == sim_object_id:
-                _obj_geom = _g
-                break
-        if _obj_geom is None:
-            print(f"Error: could not find geom {sim_object_id!r} in "
-                  f"{args.mujoco_xml}", file=sys.stderr)
-            return 2
-        _pos = [float(v) for v in _obj_geom.get("pos", "0 0 0").split()]
-        _quat = [float(v) for v in _obj_geom.get("quat", "1 0 0 0").split()]
-        _size = [float(v) for v in _obj_geom.get("size", "0 0 0").split()]
-        # Yaw from quaternion (w, x, y, z); rotation is about Z only here.
-        _yaw_rad = _math.atan2(
-            2.0 * (_quat[0] * _quat[3] + _quat[1] * _quat[2]),
-            1.0 - 2.0 * (_quat[2] * _quat[2] + _quat[3] * _quat[3]),
-        )
-        # ObjectPose convention: depth=X-extent, width=Y-extent (in cm).
-        _obj_pose = ObjectPose(
-            x=_pos[0] * 100.0,
-            y=_pos[1] * 100.0,
-            theta=_math.degrees(_yaw_rad),
-            width=_size[1] * 2.0 * 100.0,   # Y-extent → width
-            depth=_size[0] * 2.0 * 100.0,   # X-extent → depth
-            height=_size[2] * 2.0 * 100.0,
-            is_static=False,
-        )
-        _car_size_cm = effective_robot_size_cm(7.0, 7.0)  # default 7×7 robot
-        _standoff_cm = 0.6 * _car_size_cm
-        _ep = get_edge_point(_obj_pose, int(args.edge_idx),
-                             _standoff_cm, 15)
-        # Convert cm + degrees → meters + radians for the C++ env API.
-        starting_pose_sim = (
-            float(_ep.position[0]) / 100.0,
-            float(_ep.position[1]) / 100.0,
-            _math.radians(float(_ep.approach_theta)),
-        )
-        print(f"[exec-sim-push] pre-teleport to edge point: "
-              f"({_ep.position[0]:.2f}, {_ep.position[1]:.2f}) cm, "
-              f"θ={_ep.approach_theta:.2f}° "
-              f"(standoff {_standoff_cm:.1f} cm from face)", flush=True)
+            import xml.etree.ElementTree as _ET
+            _tree = _ET.parse(args.mujoco_xml)
+            _root = _tree.getroot()
+            _obj_geom = None
+            for _g in _root.iter("geom"):
+                if _g.get("name") == sim_object_id:
+                    _obj_geom = _g
+                    break
+            if _obj_geom is None:
+                print(f"Error: could not find geom {sim_object_id!r} in "
+                      f"{args.mujoco_xml}", file=sys.stderr)
+                return 2
+            _pos = [float(v) for v in _obj_geom.get("pos", "0 0 0").split()]
+            _quat = [float(v) for v in _obj_geom.get("quat", "1 0 0 0").split()]
+            _size = [float(v) for v in _obj_geom.get("size", "0 0 0").split()]
+            _yaw_rad = _math.atan2(
+                2.0 * (_quat[0] * _quat[3] + _quat[1] * _quat[2]),
+                1.0 - 2.0 * (_quat[2] * _quat[2] + _quat[3] * _quat[3]),
+            )
+            _obj_pose = ObjectPose(
+                x=_pos[0] * 100.0,
+                y=_pos[1] * 100.0,
+                theta=_math.degrees(_yaw_rad),
+                width=_size[1] * 2.0 * 100.0,
+                depth=_size[0] * 2.0 * 100.0,
+                height=_size[2] * 2.0 * 100.0,
+                is_static=False,
+            )
+            _car_size_cm = effective_robot_size_cm(7.0, 7.0)
+            _standoff_cm = 0.6 * _car_size_cm
+            _ep = get_edge_point(_obj_pose, int(args.edge_idx),
+                                 _standoff_cm, 15)
+            starting_pose_sim = (
+                float(_ep.position[0]) / 100.0,
+                float(_ep.position[1]) / 100.0,
+                _math.radians(float(_ep.approach_theta)),
+            )
+            print(f"[exec-sim-push] pre-teleport to edge point: "
+                  f"({_ep.position[0]:.2f}, {_ep.position[1]:.2f}) cm, "
+                  f"θ={_ep.approach_theta:.2f}° "
+                  f"(standoff {_standoff_cm:.1f} cm from face)", flush=True)
 
     output_mp4 = str(Path(recorder.root) / "sim_push.mp4")
 

@@ -1,0 +1,59 @@
+{
+  "run_name": "sequential_push_preview",
+  "started_at_epoch": 1780039021.0640824,
+  "started_at_utc": "2026-05-29T07:17:01.064Z",
+  "git": {
+    "commit": "nogit",
+    "dirty": false,
+    "branch": "unknown"
+  },
+  "command_line": [
+    "robot_control/scripts/execute_sim_push.py",
+    "--trial-spec",
+    "/tmp/env4_two_push_trial_spec.yaml",
+    "--real-run-dir",
+    "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4",
+    "--starting-pose-mode",
+    "recorded",
+    "--diag-path",
+    "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4",
+    "--run-name",
+    "sequential_push_preview",
+    "--allow-overwrite"
+  ],
+  "args": {
+    "mujoco_xml": null,
+    "edge_idx": null,
+    "depth": null,
+    "from_real_run": null,
+    "push_index": 0,
+    "camera_service": "tcp://localhost:5556",
+    "object_id": null,
+    "mujoco_viewer": false,
+    "robot_pose": null,
+    "no_gui": false,
+    "config": "config/real.yaml",
+    "diag_path": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4",
+    "run_name": "sequential_push_preview",
+    "push_speed": null,
+    "nav_speed": null,
+    "allow_overwrite": true,
+    "no_video": false,
+    "log_mid_pos": false,
+    "trial_spec": "/tmp/env4_two_push_trial_spec.yaml",
+    "real_run_dir": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4",
+    "starting_pose_mode": "recorded"
+  },
+  "config_yaml_path": "config/real.yaml",
+  "config_yaml": {
+    "_error": "failed to load: FileNotFoundError(2, 'No such file or directory')"
+  },
+  "objects_yaml_path": null,
+  "objects_yaml": null,
+  "diagnostics": {
+    "capture_scene": false,
+    "diag_path": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4",
+    "resolved_run_dir": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/sequential_push_preview",
+    "allow_overwrite": true
+  }
+}

@@ -3,9 +3,9 @@
 #
 # Tier-1 rule for occupancy inflation:
 #   total_inflation = robot_radius + inflation_margin
-# We standardize the base inflation_margin to 0.005m everywhere.
+# We standardize the base inflation_margin to 0.002m everywhere.
 tier1:
-  base_inflation_margin_m: 0.005
+  base_inflation_margin_m: 0.002
 
 # Per-context additive margins on top of tier1.base_inflation_margin_m.
 # These preserve current behavior knobs while making the base explicit.
@@ -13,7 +13,8 @@ navigation:
   additional_margin_m: 0.0
 
 push_approach:
-  additional_margin_m: 0.003
+  # Match planner/sim exactly: no extra runtime-only push inflation.
+  additional_margin_m: 0.0
 
 xml_collision_resolution:
   # Minimum separation used during XML collision resolution wavefront checks.

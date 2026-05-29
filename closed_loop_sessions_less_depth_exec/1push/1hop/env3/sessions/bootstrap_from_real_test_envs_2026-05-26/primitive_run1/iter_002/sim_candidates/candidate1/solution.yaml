@@ -1,0 +1,24 @@
+success: true
+outcome: success
+goal_cm:
+- 37.0
+- 67.0
+algorithm: full_namo
+strategy: primitive
+plan:
+- object_id: obj_1
+  edge_idx: 24
+  push_steps: 1
+- object_id: obj_1
+  edge_idx: 12
+  push_steps: 5
+search_stats:
+  search_time_ms: 122032.38677978516
+  pushes_in_plan: 2
+  sim_pushes_tried: 1155
+object_mapping:
+  real_to_sim:
+    obj_1: obstacle_1_movable
+  sim_to_real:
+    obstacle_1_movable: obj_1
+planner_scene_xml: planner_scene.xml

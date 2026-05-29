@@ -1,6 +1,9 @@
 """Utility classes for robot_control."""
 
-from robot_control.utils.camera_recorder import CameraRecorder
+try:
+    from robot_control.utils.camera_recorder import CameraRecorder
+except Exception:
+    CameraRecorder = None
 from robot_control.utils.wavefront import WavefrontPlanner, WavefrontConfig
 from robot_control.utils.robot_geometry import (
     # Canonical names (prefer these in new code):
@@ -22,7 +25,6 @@ from robot_control.utils.xml_generator import (
 )
 
 __all__ = [
-    "CameraRecorder",
     "NAMOXMLGenerator",
     "ObjectSpec",
     "RobotSpec",
@@ -39,3 +41,6 @@ __all__ = [
     "rotation_safe_radius_cm",
     "rotation_safe_radius_m_from_cm",
 ]
+
+if CameraRecorder is not None:
+    __all__.insert(0, "CameraRecorder")

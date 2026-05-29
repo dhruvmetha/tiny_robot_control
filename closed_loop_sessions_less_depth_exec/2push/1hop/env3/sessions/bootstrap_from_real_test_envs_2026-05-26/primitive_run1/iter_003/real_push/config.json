@@ -1,0 +1,95 @@
+{
+  "run_name": "real_push",
+  "started_at_epoch": 1780031965.4847965,
+  "started_at_utc": "2026-05-29T05:19:25.484Z",
+  "git": {
+    "commit": "92e9e68",
+    "dirty": true,
+    "branch": "real-robot"
+  },
+  "command_line": [
+    "/home/dhruv/projects_dhruv/namo/robot_control/scripts/execute_real_push.py",
+    "--config",
+    "/home/dhruv/projects_dhruv/namo/robot_control/config/real.yaml",
+    "--camera-service",
+    "tcp://localhost:5556",
+    "--trial-spec",
+    "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/2push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003/selected_trial_spec.yaml",
+    "--diag-path",
+    "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/2push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003",
+    "--run-name",
+    "real_push",
+    "--headless",
+    "--capture-scene",
+    "--record-video",
+    "--nav-speed",
+    "0.4",
+    "--push-speed",
+    "0.4",
+    "--no-reset-check",
+    "--allow-overwrite"
+  ],
+  "args": {
+    "config": "/home/dhruv/projects_dhruv/namo/robot_control/config/real.yaml",
+    "camera_service": "tcp://localhost:5556",
+    "trial_spec": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/2push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003/selected_trial_spec.yaml",
+    "diag_path": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/2push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003",
+    "run_name": "real_push",
+    "record_video": "__USE_DIAG_PATH__",
+    "capture_scene": true,
+    "push_speed": 0.4,
+    "nav_speed": 0.4,
+    "allow_overwrite": true,
+    "dry_run": false,
+    "no_reset_check": true,
+    "log_mid_pos": false,
+    "marker_lock": false,
+    "headless": true
+  },
+  "config_yaml_path": "/home/dhruv/projects_dhruv/namo/robot_control/config/real.yaml",
+  "config_yaml": {
+    "camera": {
+      "device": 4,
+      "resolution": "720p",
+      "fps": 60,
+      "calibration_file": "",
+      "exposure": -6,
+      "undistort": false
+    },
+    "robot": {
+      "marker_id": 1,
+      "marker_size_mm": 36.0,
+      "width_cm": 7,
+      "height_cm": 7,
+      "marker_to_wheel_offset": [
+        0.0,
+        0.0
+      ]
+    },
+    "object_marker_size_mm": 30.0,
+    "workspace": {
+      "width_cm": 49.0,
+      "height_cm": 77.5,
+      "origin_offset": [
+        4.9,
+        6.0
+      ],
+      "warmup_frames": 30,
+      "min_inliers": 12
+    },
+    "serial": {
+      "port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00",
+      "baudrate": 115200,
+      "send_hz": 30.0,
+      "invert_right_wheel": false
+    }
+  },
+  "objects_yaml_path": null,
+  "objects_yaml": null,
+  "diagnostics": {
+    "capture_scene": true,
+    "diag_path": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/2push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003",
+    "resolved_run_dir": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/2push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003/real_push",
+    "allow_overwrite": true
+  }
+}

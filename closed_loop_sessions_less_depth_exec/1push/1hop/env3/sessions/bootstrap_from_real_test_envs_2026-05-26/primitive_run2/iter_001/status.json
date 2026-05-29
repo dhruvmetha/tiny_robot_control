@@ -1,0 +1,29 @@
+{
+  "iteration": 1,
+  "state": "real_push_prepared",
+  "scene_before_ready": true,
+  "successful_sim_candidates": [
+    "candidate1"
+  ],
+  "selected_candidate": "candidate1",
+  "real_push_completed": false,
+  "scene_after_ready": false,
+  "goal_reached": false,
+  "goal_wavefront_reachable": false,
+  "goal_success_criterion": null,
+  "real_failure_mode": null,
+  "replan_same_iteration": false,
+  "final_distance_to_goal_cm": null,
+  "last_replan_exit_code": 0,
+  "last_replan_driver_log": "replan_candidate1_driver.log",
+  "last_replan_rejections": [],
+  "last_replan_accepted_attempt": 1,
+  "last_replan_strategy": "primitive",
+  "last_replan_verification_ms": null,
+  "selected_plan_path": "selected_plan.json",
+  "selected_trial_spec_path": "selected_trial_spec.yaml",
+  "launch_real_push_script": "launch_real_push.sh",
+  "selected_sim_push_steps": 2,
+  "selected_real_push_steps": 2,
+  "selected_push_steps_overridden_for_real": false
+}

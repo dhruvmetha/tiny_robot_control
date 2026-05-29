@@ -837,8 +837,9 @@ class PushController(Controller):
     def _build_wavefront(self, obs: Observation) -> WavefrontPlanner:
         """Build wavefront from current observation.
 
-        IMPORTANT: Uses standardized tier-1 inflation + push additive margin.
-        Otherwise validation may pass but navigation fails.
+        Match planner/sim exactly: 5 mm grid, same robot radius, and tier-1
+        base inflation only. Do not add a runtime-only push margin here, or
+        the real controller will reject approach cells that planner/sim accepts.
         """
         # Effective robot inflation radius (meters).
         # See robot_geometry.effective_robot_radius_m_from_cm for the formula.

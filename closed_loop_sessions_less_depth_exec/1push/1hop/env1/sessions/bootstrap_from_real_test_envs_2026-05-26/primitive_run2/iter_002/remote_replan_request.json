@@ -1,0 +1,18 @@
+{
+  "job_id": "55152584",
+  "partition": "main-redhat",
+  "submitted_at_epoch": 1780026296.601905,
+  "remote_root_base": "/scratch/tdn39/namo_less_depth_runtime",
+  "remote_job_root": "/scratch/tdn39/namo_less_depth_runtime/closed_loop_sessions_less_depth_exec/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run2/iter_002/request_1780026289_b2441ee5",
+  "remote_session_dir": "/scratch/tdn39/namo_less_depth_runtime/closed_loop_sessions_less_depth_exec/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run2/iter_002/request_1780026289_b2441ee5/robot_control/closed_loop_sessions_less_depth_exec/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26",
+  "request_token": "1780026289_b2441ee5",
+  "local_namo_cpp_hash": "a8985877153913559a52db3609e8cf86cc3b71b75f7d3aba59e6073f35ebbd78",
+  "session_meta_hash": "55147e41b7f6bcda7a6031cd50d598c01e4a5aea7760a96dd39ff04aee4d28d4",
+  "run_meta_hash": "f2e719bba70c6a60d74a032307bee7a8f696bad5c9924b478d2d6fa10781eadf",
+  "scene_before_hashes": {
+    "env.xml": "1aa6f5869caa30169280b678a958ab33fe3f098e1280dd98ef01f12c4adca1e3",
+    "mid_obs.jsonl": "8be9537af87bff836075c1e5467e511362138e447ec9ad746e905a3b249fa9fa",
+    "env.png": "944659cc63ee15c657c9fee7785ddcaba60e3e7a69f799dc9ed0159834e16680",
+    "scene.jpg": "41ae7b241d3fb76c27f0f44fb738deafb7b386ff8828a3d872111b9b7bf55a0f"
+  }
+}

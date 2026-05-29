@@ -1,0 +1,103 @@
+{
+  "starting_pose_sim": [
+    0.1962871018824169,
+    0.055770681177123194,
+    1.2762077264591574
+  ],
+  "object_id": "obstacle_1_movable",
+  "goal_reachable_before": false,
+  "reachable_edges_before": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40,
+    42,
+    44,
+    46,
+    48,
+    50,
+    52,
+    54,
+    56,
+    58
+  ],
+  "step_infos": [
+    {
+      "edge_idx": 58,
+      "done": true,
+      "info": {
+        "failure_reason": "",
+        "failure_type": "0",
+        "movable_collisions": "",
+        "robot_goal_reached": "false",
+        "steps_executed": "1",
+        "wall_collision": "true"
+      }
+    },
+    {
+      "edge_idx": 29,
+      "done": true,
+      "info": {
+        "failure_reason": "",
+        "failure_type": "0",
+        "movable_collisions": "",
+        "robot_goal_reached": "false",
+        "steps_executed": "1",
+        "wall_collision": "true"
+      }
+    }
+  ],
+  "goal_reachable_after": false,
+  "reachable_edges_after": [
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40,
+    42,
+    44,
+    46,
+    48
+  ],
+  "region_adjacency_after": {
+    "robot_goal": []
+  },
+  "region_edge_objects_after": {
+    "robot_goal": {}
+  },
+  "region_labels_after": {
+    "1": "robot_goal"
+  },
+  "panel_outputs": {
+    "environment": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/post_chain_wavefront/post_chain_panel_environment.png",
+    "inflated": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/post_chain_wavefront/post_chain_panel_inflated.png",
+    "graph": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/post_chain_wavefront/post_chain_panel_graph.png"
+  },
+  "initial_scene_xml": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/post_chain_wavefront/initial_scene.xml"
+}

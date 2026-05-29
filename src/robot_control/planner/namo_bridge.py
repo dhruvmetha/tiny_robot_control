@@ -15,7 +15,8 @@ import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from time import perf_counter
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 import yaml
 
@@ -56,6 +57,21 @@ class ObjectMapping:
         """Clear all mappings."""
         self.real_to_sim.clear()
         self.sim_to_real.clear()
+
+
+@dataclass
+class ChainVerificationResult:
+    """Structured result of exact-chain simulation verification."""
+
+    success: bool
+    verified_subgoals: List[PushSubgoal]
+    sim_pushes_tried: int
+    failed_step_index: Optional[int]
+    failure_reason: Optional[str]
+    goal_reachable_after: bool
+    verification_time_ms: float
+    planner_scene_xml: str
+    object_mapping: Dict[str, Dict[str, str]]
 
 
 class NAMOPlanBridge:
@@ -126,6 +142,7 @@ class NAMOPlanBridge:
         self._robot_height_cm = float(robot_height_cm)
         self._robot_model = robot_model
         self._generated_config_path: Optional[Path] = None
+        self._max_push_steps: Optional[int] = None
         # Path to a YAML file listing manual primitives (object_id, edge_idx,
         # push_steps) to try when goal_strategy == "manual_primitives".
         # Validated lazily at plan()-time so the bridge can still be
@@ -170,6 +187,7 @@ class NAMOPlanBridge:
 
         # Timing from last plan_from_xml() call
         self.last_search_time_ms: float = 0.0
+        self.last_sim_pushes_tried: Optional[int] = None
 
         # Algorithm-specific diagnostics from the last plan() call. Populated
         # whenever the planner attaches stats to its PlannerResult. Consumed
@@ -223,6 +241,16 @@ class NAMOPlanBridge:
                 cfg = yaml.safe_load(f) or {}
 
             planning = cfg.setdefault("planning", {})
+            motion_primitives = cfg.get("motion_primitives") or {}
+            skill_cfg = cfg.get("skill") or {}
+            raw_max_push_steps = (
+                motion_primitives.get("max_push_steps")
+                or skill_cfg.get("max_push_steps")
+            )
+            try:
+                self._max_push_steps = int(raw_max_push_steps) if raw_max_push_steps is not None else None
+            except (TypeError, ValueError):
+                self._max_push_steps = None
             half_x_m, half_y_m = scaled_half_extents_m_from_full_extents_cm(
                 self._robot_width_cm,
                 self._robot_height_cm,
@@ -243,6 +271,8 @@ class NAMOPlanBridge:
                     f"[NAMOBridge] Runtime config override: planning.robot_size="
                     f"[{half_x_m:.6f}, {half_y_m:.6f}] m (half-extents, scaled)"
                 )
+                if self._max_push_steps is not None:
+                    print(f"[NAMOBridge] Runtime config max_push_steps={self._max_push_steps}")
                 print(f"[NAMOBridge] Effective NAMO config: {self._generated_config_path}")
 
             return str(self._generated_config_path)
@@ -272,6 +302,262 @@ class NAMOPlanBridge:
                 pause_after_load=self._pause_after_load,
             )
         return self._planning_service
+
+    def _starting_robot_pose_sim(
+        self,
+        observation: Observation,
+    ) -> Optional[Tuple[float, float, float]]:
+        """Return planner-consistent robot start pose in sim units."""
+        if self._robot_model != "car":
+            return None
+        rx_m, ry_m = self._cm_to_sim(
+            float(observation.robot_x),
+            float(observation.robot_y),
+        )
+        return (rx_m, ry_m, math.radians(float(observation.robot_theta)))
+
+    def _serialize_object_mapping(self) -> Dict[str, Dict[str, str]]:
+        """Return the current mapping in a JSON/YAML-friendly form."""
+        return {
+            "real_to_sim": dict(self._object_mapping.real_to_sim),
+            "sim_to_real": dict(self._object_mapping.sim_to_real),
+        }
+
+    def _chain_entry_to_push_subgoal(self, entry: Any) -> PushSubgoal:
+        """Normalize a chain entry to PushSubgoal in real-object naming."""
+        if isinstance(entry, PushSubgoal):
+            if int(entry.push_steps) < 1:
+                raise ValueError(
+                    f"push_steps must be >= 1 for {entry.object_id} edge={entry.edge_idx}"
+                )
+            return PushSubgoal(
+                object_id=str(entry.object_id),
+                edge_idx=int(entry.edge_idx),
+                push_steps=int(entry.push_steps),
+            )
+        if isinstance(entry, dict):
+            object_id = str(entry["object_id"])
+            edge_idx = int(entry["edge_idx"])
+            push_steps = int(entry["push_steps"])
+            if push_steps < 1:
+                raise ValueError(
+                    f"push_steps must be >= 1 for {object_id} edge={edge_idx}"
+                )
+            return PushSubgoal(
+                object_id=object_id,
+                edge_idx=edge_idx,
+                push_steps=push_steps,
+            )
+        raise TypeError(f"unsupported chain entry type: {type(entry)!r}")
+
+    def _resolve_sim_object_id(self, object_id: str) -> str:
+        """Resolve a chain entry object ID to the planner scene's sim body ID."""
+        if object_id in self._object_mapping.real_to_sim:
+            return self._object_mapping.real_to_sim[object_id]
+        if object_id in self._object_mapping.sim_to_real:
+            return object_id
+        raise KeyError(
+            f"object_id {object_id!r} is not present in mapping "
+            f"(real={sorted(self._object_mapping.real_to_sim)}, "
+            f"sim={sorted(self._object_mapping.sim_to_real)})"
+        )
+
+    def _build_rl_env_for_scene(
+        self,
+        namo_rl: Any,
+        xml_path: str,
+        starting_robot_pose: Optional[Tuple[float, float, float]],
+    ):
+        """Construct RLEnvironment exactly like the planner path does."""
+        if starting_robot_pose is None:
+            return namo_rl.RLEnvironment(
+                xml_path,
+                self._effective_namo_config_path,
+                False,
+            )
+
+        env = namo_rl.RLEnvironment(
+            xml_path,
+            self._effective_namo_config_path,
+            False,
+            True,
+        )
+        env.set_robot_pose(*starting_robot_pose)
+        env.warm_up()
+        return env
+
+    def verify_chain(
+        self,
+        observation: Observation,
+        robot_goal_cm: Tuple[float, float],
+        chain: Sequence[Any],
+        *,
+        allow_collisions: bool = True,
+    ) -> ChainVerificationResult:
+        """Sim-verify an exact push chain from the current observation.
+
+        Returns success only if every push succeeds and the final state makes
+        the robot goal reachable under the planner's C++ wavefront check.
+        """
+        t0 = perf_counter()
+        planner_scene_xml = self._generate_xml(observation, robot_goal_cm)
+        if planner_scene_xml is None:
+            return ChainVerificationResult(
+                success=False,
+                verified_subgoals=[],
+                sim_pushes_tried=0,
+                failed_step_index=None,
+                failure_reason="failed_to_generate_xml",
+                goal_reachable_after=False,
+                verification_time_ms=(perf_counter() - t0) * 1000.0,
+                planner_scene_xml="",
+                object_mapping=self._serialize_object_mapping(),
+            )
+
+        self.last_xml_content = planner_scene_xml
+        xml_path = self._write_xml(planner_scene_xml)
+        if xml_path is None:
+            return ChainVerificationResult(
+                success=False,
+                verified_subgoals=[],
+                sim_pushes_tried=0,
+                failed_step_index=None,
+                failure_reason="failed_to_write_xml",
+                goal_reachable_after=False,
+                verification_time_ms=(perf_counter() - t0) * 1000.0,
+                planner_scene_xml=planner_scene_xml,
+                object_mapping=self._serialize_object_mapping(),
+            )
+
+        normalized_chain: List[PushSubgoal] = []
+        try:
+            for entry in chain:
+                normalized_chain.append(self._chain_entry_to_push_subgoal(entry))
+        except (KeyError, TypeError, ValueError) as exc:
+            if self._debug_xml_path is None:
+                try:
+                    Path(xml_path).unlink()
+                except OSError:
+                    pass
+            return ChainVerificationResult(
+                success=False,
+                verified_subgoals=[],
+                sim_pushes_tried=0,
+                failed_step_index=None,
+                failure_reason=f"invalid_chain_entry: {exc}",
+                goal_reachable_after=False,
+                verification_time_ms=(perf_counter() - t0) * 1000.0,
+                planner_scene_xml=planner_scene_xml,
+                object_mapping=self._serialize_object_mapping(),
+            )
+
+        bridge_path = Path(__file__).resolve()
+        namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
+        original_cwd = os.getcwd()
+        os.chdir(str(namo_cpp_dir))
+
+        try:
+            namo_rl, _, _ = load_canonical_namo_rl(bridge_path)
+            starting_robot_pose = self._starting_robot_pose_sim(observation)
+            env = self._build_rl_env_for_scene(namo_rl, xml_path, starting_robot_pose)
+            try:
+                env.set_collision_checking(not allow_collisions)
+            except Exception:
+                pass
+
+            goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
+            env.set_robot_goal(goal_sim[0], goal_sim[1], 0.0)
+
+            verified_subgoals: List[PushSubgoal] = []
+            for idx, subgoal in enumerate(normalized_chain):
+                sim_object_id = self._resolve_sim_object_id(subgoal.object_id)
+                action = namo_rl.Action()
+                action.object_id = sim_object_id
+                action.edge_idx = int(subgoal.edge_idx)
+                action.depth = int(subgoal.push_steps) - 1
+                action.x = 0.0
+                action.y = 0.0
+                action.theta = 0.0
+
+                try:
+                    step_result = env.step(action)
+                except Exception as exc:
+                    return ChainVerificationResult(
+                        success=False,
+                        verified_subgoals=verified_subgoals,
+                        sim_pushes_tried=idx + 1,
+                        failed_step_index=idx,
+                        failure_reason=f"env_step_exception: {exc!r}",
+                        goal_reachable_after=False,
+                        verification_time_ms=(perf_counter() - t0) * 1000.0,
+                        planner_scene_xml=planner_scene_xml,
+                        object_mapping=self._serialize_object_mapping(),
+                    )
+
+                info = getattr(step_result, "info", {}) or {}
+                if not bool(getattr(step_result, "done", False)):
+                    failure_reason = str(
+                        info.get("failure_reason")
+                        or f"step_returned_done_false_for_{sim_object_id}"
+                    )
+                    return ChainVerificationResult(
+                        success=False,
+                        verified_subgoals=verified_subgoals,
+                        sim_pushes_tried=idx + 1,
+                        failed_step_index=idx,
+                        failure_reason=failure_reason,
+                        goal_reachable_after=False,
+                        verification_time_ms=(perf_counter() - t0) * 1000.0,
+                        planner_scene_xml=planner_scene_xml,
+                        object_mapping=self._serialize_object_mapping(),
+                    )
+
+                verified_subgoals.append(subgoal)
+
+            goal_reachable_after = bool(env.is_robot_goal_reachable())
+            if not goal_reachable_after:
+                return ChainVerificationResult(
+                    success=False,
+                    verified_subgoals=verified_subgoals,
+                    sim_pushes_tried=len(normalized_chain),
+                    failed_step_index=None,
+                    failure_reason="goal_not_reachable_after_chain",
+                    goal_reachable_after=False,
+                    verification_time_ms=(perf_counter() - t0) * 1000.0,
+                    planner_scene_xml=planner_scene_xml,
+                    object_mapping=self._serialize_object_mapping(),
+                )
+
+            return ChainVerificationResult(
+                success=True,
+                verified_subgoals=verified_subgoals,
+                sim_pushes_tried=len(normalized_chain),
+                failed_step_index=None,
+                failure_reason=None,
+                goal_reachable_after=True,
+                verification_time_ms=(perf_counter() - t0) * 1000.0,
+                planner_scene_xml=planner_scene_xml,
+                object_mapping=self._serialize_object_mapping(),
+            )
+        except Exception as exc:
+            return ChainVerificationResult(
+                success=False,
+                verified_subgoals=[],
+                sim_pushes_tried=0,
+                failed_step_index=None,
+                failure_reason=f"verification_exception: {exc!r}",
+                goal_reachable_after=False,
+                verification_time_ms=(perf_counter() - t0) * 1000.0,
+                planner_scene_xml=planner_scene_xml,
+                object_mapping=self._serialize_object_mapping(),
+            )
+        finally:
+            os.chdir(original_cwd)
+            if self._debug_xml_path is None:
+                try:
+                    Path(xml_path).unlink()
+                except OSError:
+                    pass
 
     def plan(
         self,
@@ -315,6 +601,21 @@ class NAMOPlanBridge:
         # don't leave a stale value from a previous successful call. The success
         # path overwrites this at line ~351 after the service call. BUG-019.
         self.last_search_time_ms = 0.0
+        self.last_sim_pushes_tried = None
+        self.last_algorithm_stats = None
+
+        # Manual-primitives strategy: bypass the C++ planner entirely.
+        # Load a YAML file of (object_id, edge_idx, push_steps) entries,
+        # apply them in sequence against a fresh RLEnvironment built from
+        # the same XML, and return PushSubgoals only if the post-chain
+        # state has the robot goal reachable. Failure → empty list (the
+        # runtime treats this as "planning failed" and aborts the run).
+        if goal_strategy == "manual_primitives":
+            return self._simulate_manual_chain(
+                observation=observation,
+                robot_goal_cm=robot_goal_cm,
+                allow_collisions=allow_collisions,
+            )
 
         # Generate XML and object mapping
         xml_content = self._generate_xml(observation, robot_goal_cm)
@@ -332,26 +633,6 @@ class NAMOPlanBridge:
         xml_path = self._write_xml(xml_content)
         if xml_path is None:
             return []
-
-        # Manual-primitives strategy: bypass the C++ planner entirely.
-        # Load a YAML file of (object_id, edge_idx, push_steps) entries,
-        # apply them in sequence against a fresh RLEnvironment built from
-        # the same XML, and return PushSubgoals only if the post-chain
-        # state has the robot goal reachable. Failure → empty list (the
-        # runtime treats this as "planning failed" and aborts the run).
-        if goal_strategy == "manual_primitives":
-            try:
-                return self._simulate_manual_chain(
-                    xml_path=xml_path,
-                    robot_goal_cm=robot_goal_cm,
-                )
-            finally:
-                # Clean up temp XML (same pattern as the normal plan path).
-                if self._debug_xml_path is None:
-                    try:
-                        Path(xml_path).unlink()
-                    except OSError:
-                        pass
 
         # Change to namo_cpp directory so relative paths in config work
         # (e.g., motion_primitives_file: "data/motion_primitives_15.dat")
@@ -379,6 +660,8 @@ class NAMOPlanBridge:
             # skips those edges from the start, instead of relying on the
             # post-hoc filter below to throw away whole plans. Keys must use
             # the planner's SIM object naming, not the runtime's real naming.
+            if self._max_push_steps is not None:
+                kwargs.setdefault("max_push_steps", int(self._max_push_steps))
             if failed_pushes:
                 external_blacklist: Dict[str, Set[int]] = {}
                 for real_id, edge_idx in failed_pushes:
@@ -396,13 +679,7 @@ class NAMOPlanBridge:
             # without this arg. We always pass it for car so the env
             # constructor skips its 3-tick warm-up, the service teleports
             # to this pose, then warms up cleanly from the right state.
-            starting_robot_pose: Optional[Tuple[float, float, float]] = None
-            if self._robot_model == "car":
-                rx_m, ry_m = self._cm_to_sim(
-                    float(observation.robot_x), float(observation.robot_y)
-                )
-                rtheta_rad = math.radians(float(observation.robot_theta))
-                starting_robot_pose = (rx_m, ry_m, rtheta_rad)
+            starting_robot_pose = self._starting_robot_pose_sim(observation)
 
             # Run planning
             result = service.plan_from_xml(
@@ -422,6 +699,15 @@ class NAMOPlanBridge:
 
             self.last_search_time_ms = result.search_time_ms
             self.last_algorithm_stats = getattr(result, "algorithm_stats", None)
+            total_primitives_attempted = None
+            if isinstance(self.last_algorithm_stats, dict):
+                raw_total = self.last_algorithm_stats.get("total_primitives_attempted")
+                if raw_total is not None:
+                    try:
+                        total_primitives_attempted = int(raw_total)
+                    except (TypeError, ValueError):
+                        total_primitives_attempted = None
+            self.last_sim_pushes_tried = total_primitives_attempted
 
             if self._verbose:
                 print(
@@ -524,13 +810,7 @@ class NAMOPlanBridge:
             # short-circuits with 0 actions because the goal IS reachable
             # from the actual pose, and the run aborts as "all attempts
             # failed". Sphere XMLs bake pose into the geom; skip.
-            starting_robot_pose: Optional[Tuple[float, float, float]] = None
-            if self._robot_model == "car":
-                rx_m, ry_m = self._cm_to_sim(
-                    float(observation.robot_x), float(observation.robot_y)
-                )
-                rtheta_rad = math.radians(float(observation.robot_theta))
-                starting_robot_pose = (rx_m, ry_m, rtheta_rad)
+            starting_robot_pose = self._starting_robot_pose_sim(observation)
 
             summary = service.analyze_reachability_from_xml(
                 xml_path=xml_path,
@@ -675,8 +955,9 @@ class NAMOPlanBridge:
 
     def _simulate_manual_chain(
         self,
-        xml_path: str,
+        observation: Observation,
         robot_goal_cm: Tuple[float, float],
+        allow_collisions: bool,
     ) -> List[PushSubgoal]:
         """Apply a YAML-specified push chain in sim and return subgoals on success.
 
@@ -690,20 +971,7 @@ class NAMOPlanBridge:
                 edge_idx: 23
                 push_steps: 2
 
-        Each entry: ``object_id`` (real-robot name; we resolve the sim name
-        via the bridge's object mapping), ``edge_idx`` (0..59 for
-        points_per_face=15), and ``push_steps`` (>=1; ``depth = push_steps - 1``
-        is what the C++ side wants on the Action object).
-
-        Behaviour: build a fresh RLEnvironment from ``xml_path``, mirror the
-        planner-side ``set_collision_checking(False)`` so wall contacts don't
-        abort the primitive, ``env.step()`` each entry in order, then check
-        ``env.is_robot_goal_reachable()``. If reachable, return the chain
-        translated to PushSubgoals. If not reachable (or any step raises),
-        return ``[]`` — the runtime sees that as "planning failed".
-
-        Returns the chain only on full sim verification; the real robot
-        never sees the chain unless sim approves.
+        Returns the chain only on full planner-exact sim verification.
         """
         if not self._manual_primitives_file:
             print(
@@ -738,160 +1006,38 @@ class NAMOPlanBridge:
             )
             return []
 
-        # Construct a fresh sim env. Same chdir trick the rest of the bridge
-        # uses so the C++ side resolves "data/motion_primitives_*.dat".
-        bridge_path = Path(__file__).resolve()
-        namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
-        original_cwd = os.getcwd()
-        os.chdir(str(namo_cpp_dir))
-
-        try:
-            from namo_binding_loader import load_canonical_namo_rl  # type: ignore
-        except ImportError:
-            # Use the same loader path the rest of the bridge already imports.
-            from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
-
-        try:
-            namo_rl, _, _ = load_canonical_namo_rl(bridge_path)
-        except Exception as exc:
-            os.chdir(original_cwd)
-            print(
-                f"[NAMOBridge] manual_primitives: failed to load namo_rl: {exc!r}",
-                flush=True,
-            )
-            return []
-
-        try:
-            env = namo_rl.RLEnvironment(
-                xml_path,
-                self._effective_namo_config_path,
-                False,
-            )
-        except Exception as exc:
-            os.chdir(original_cwd)
-            print(
-                f"[NAMOBridge] manual_primitives: RLEnvironment ctor failed: {exc!r}",
-                flush=True,
-            )
-            return []
-
-        # Mirror the planner-side region_allow_collisions=true behaviour so
-        # wall contact during the manual chain doesn't abort the primitive.
-        try:
-            env.set_collision_checking(False)
-        except Exception:
-            pass
-
-        # The C++ env needs the robot goal set for is_robot_goal_reachable()
-        # to return anything meaningful. Convert real-cm → sim coordinates.
-        try:
-            goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
-            env.set_robot_goal(goal_sim[0], goal_sim[1], 0.0)
-        except Exception as exc:
-            os.chdir(original_cwd)
-            print(
-                f"[NAMOBridge] manual_primitives: set_robot_goal failed: {exc!r}",
-                flush=True,
-            )
-            return []
-
         print(
             f"[NAMOBridge] manual_primitives: simulating {len(entries)} entries "
             f"from {path.name}",
             flush=True,
         )
 
-        # Step through each entry, building the parallel PushSubgoal list as
-        # we go. Bail out on any malformed entry or step exception.
-        subgoals: List[PushSubgoal] = []
-        for idx, entry in enumerate(entries, start=1):
-            try:
-                real_object_id = str(entry["object_id"])
-                edge_idx = int(entry["edge_idx"])
-                push_steps = int(entry["push_steps"])
-            except (KeyError, TypeError, ValueError) as exc:
-                os.chdir(original_cwd)
-                print(
-                    f"[NAMOBridge] manual_primitives: entry {idx} malformed "
-                    f"({entry!r}): {exc!r}",
-                    flush=True,
-                )
-                return []
-            if push_steps < 1:
-                os.chdir(original_cwd)
-                print(
-                    f"[NAMOBridge] manual_primitives: entry {idx} has "
-                    f"push_steps={push_steps} (must be >= 1)",
-                    flush=True,
-                )
-                return []
+        result = self.verify_chain(
+            observation=observation,
+            robot_goal_cm=robot_goal_cm,
+            chain=entries,
+            allow_collisions=allow_collisions,
+        )
+        self.last_search_time_ms = result.verification_time_ms
+        self.last_sim_pushes_tried = result.sim_pushes_tried
+        self.last_algorithm_stats = {
+            "total_primitives_attempted": int(result.sim_pushes_tried),
+        }
 
-            sim_object_id = self._object_mapping.get_sim_name(real_object_id)
-            action = namo_rl.Action()
-            action.object_id = sim_object_id
-            action.edge_idx = edge_idx
-            action.depth = push_steps - 1
-            action.x = 0.0
-            action.y = 0.0
-            action.theta = 0.0
-
-            try:
-                step_result = env.step(action)
-            except Exception as exc:
-                os.chdir(original_cwd)
-                print(
-                    f"[NAMOBridge] manual_primitives: entry {idx} "
-                    f"({real_object_id}→{sim_object_id} e{edge_idx} "
-                    f"steps={push_steps}) raised: {exc!r}",
-                    flush=True,
-                )
-                return []
-
-            info = getattr(step_result, "info", {}) or {}
-            failure_reason = info.get("failure_reason", "")
-            print(
-                f"[NAMOBridge] manual_primitives: entry {idx} "
-                f"({real_object_id} e{edge_idx} steps={push_steps}) "
-                f"→ done={step_result.done}, reward={step_result.reward}, "
-                f"failure_reason={failure_reason!r}",
-                flush=True,
-            )
-
-            subgoals.append(
-                PushSubgoal(
-                    object_id=real_object_id,
-                    edge_idx=edge_idx,
-                    push_steps=push_steps,
-                )
-            )
-
-        # Final reachability check — only return the chain if the sim says
-        # the goal is reachable post-chain.
-        try:
-            goal_reachable = bool(env.is_robot_goal_reachable())
-        except Exception as exc:
-            os.chdir(original_cwd)
-            print(
-                f"[NAMOBridge] manual_primitives: is_robot_goal_reachable raised: {exc!r}",
-                flush=True,
-            )
-            return []
-        finally:
-            os.chdir(original_cwd)
-
-        if goal_reachable:
+        if result.success:
             print(
                 f"[NAMOBridge] manual_primitives: SIM VERIFIED — goal is "
-                f"reachable after {len(subgoals)} push(es); dispatching chain "
+                f"reachable after {len(result.verified_subgoals)} push(es); dispatching chain "
                 f"to real robot",
                 flush=True,
             )
-            return subgoals
+            return result.verified_subgoals
 
         print(
             f"[NAMOBridge] manual_primitives: SIM REJECTED — goal NOT reachable "
-            f"after {len(subgoals)} push(es); returning empty plan (real robot "
-            f"will NOT execute)",
+            f"after {len(result.verified_subgoals)} verified push(es); "
+            f"failure_reason={result.failure_reason!r}; returning empty plan "
+            f"(real robot will NOT execute)",
             flush=True,
         )
         return []

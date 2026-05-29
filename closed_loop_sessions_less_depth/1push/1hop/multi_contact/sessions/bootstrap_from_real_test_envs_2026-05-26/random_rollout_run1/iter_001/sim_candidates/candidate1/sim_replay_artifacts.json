@@ -1,0 +1,10 @@
+{
+  "timestep_s": 0.002,
+  "push_tick_count": 4400,
+  "pre_settle_steps": 200,
+  "post_settle_steps": 200,
+  "n_qpos_frames": 4800,
+  "n_scene_objects": 8,
+  "wheel_radius_m": 0.015,
+  "k_car_wheel_max_speed_ms": 1.0
+}

@@ -360,7 +360,8 @@ def main():
 
     # Build objects dict for generator
     objects = {}
-    for name, obj in last_obs.objects.items():
+    for name in sorted(last_obs.objects.keys()):
+        obj = last_obs.objects[name]
         # (x_cm, y_cm, theta_deg, width_cm, depth_cm, height_cm, is_static)
         objects[name] = (obj.x, obj.y, obj.theta, obj.width, obj.depth, obj.height, obj.is_static)
 

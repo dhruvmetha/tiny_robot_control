@@ -1178,6 +1178,13 @@ def parse_args() -> argparse.Namespace:
              "stabilizes object identity under ArUco misreads. Leave unset "
              "to match run_namo.py's live observation behavior more closely.",
     )
+    p.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run without the Runtime GUI window. Recommended for closed-loop "
+             "session execution so shutdown/capture does not depend on the Qt "
+             "event loop.",
+    )
     return p.parse_args()
 
 
@@ -1245,6 +1252,8 @@ def main() -> int:
         planner=planner,
         dry_run=args.dry_run,
         quit_on_complete=True,
+        show_gui=not args.headless,
+        show_camera=not args.headless,
         camera_service_address=args.camera_service,
         record_video_dir=getattr(args, "record_video", None),
         nav_speed_override=args.nav_speed,

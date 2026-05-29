@@ -1,6 +1,10 @@
 """Camera module for ArUco-based robot and object detection."""
 
-from robot_control.camera.observer import ArucoObserver, ObserverConfig
+try:
+    from robot_control.camera.observer import ArucoObserver, ObserverConfig
+except Exception:
+    ArucoObserver = None
+    ObserverConfig = None
 from robot_control.camera.workspace import (
     MARKER_SIZE_CM,
     WORKSPACE_HEIGHT_CM,
@@ -52,11 +56,12 @@ def make_real_workspace_config(
 
 
 __all__ = [
-    "ArucoObserver",
-    "ObserverConfig",
     "WORKSPACE_WIDTH_CM",
     "WORKSPACE_HEIGHT_CM",
     "MARKER_SIZE_CM",
     "WORKSPACE_MARKERS",
     "make_real_workspace_config",
 ]
+
+if ArucoObserver is not None and ObserverConfig is not None:
+    __all__[0:0] = ["ArucoObserver", "ObserverConfig"]

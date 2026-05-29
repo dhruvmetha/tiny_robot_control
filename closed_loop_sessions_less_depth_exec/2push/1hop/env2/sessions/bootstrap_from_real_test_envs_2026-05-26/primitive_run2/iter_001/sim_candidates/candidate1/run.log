@@ -1,0 +1,38 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run2/iter_001/sim_candidates/candidate1
+
+[Trapped-start recovery] Robot at (10.9, 9.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+  [Progress] 11 primitives tried (5.4/sec) — current: obj=obstacle_1_movable edge=21 depth=1 neighbour='goal'
+  [Progress] 22 primitives tried (5.3/sec) — current: obj=obstacle_1_movable edge=43 depth=1 neighbour='goal'
+  [Progress] 32 primitives tried (4.9/sec) — current: obj=obstacle_1_movable edge=3 depth=2 neighbour='goal'
+  [Progress] 38 primitives tried (2.9/sec) — current: obj=obstacle_1_movable edge=15 depth=2 neighbour='goal'
+  [Progress] 44 primitives tried (2.9/sec) — current: obj=obstacle_1_movable edge=27 depth=2 neighbour='goal'
+  [Progress] 50 primitives tried (2.8/sec) — current: obj=obstacle_1_movable edge=39 depth=2 neighbour='goal'
+  [Progress] 56 primitives tried (2.9/sec) — current: obj=obstacle_1_movable edge=51 depth=2 neighbour='goal'
+  [Progress] 62 primitives tried (2.7/sec) — current: obj=obstacle_1_movable edge=3 depth=3 neighbour='goal'
+  [Progress] 66 primitives tried (1.8/sec) — current: obj=obstacle_1_movable edge=11 depth=3 neighbour='goal'
+  [Progress] 70 primitives tried (1.8/sec) — current: obj=obstacle_1_movable edge=19 depth=3 neighbour='goal'
+  [Progress] 74 primitives tried (1.6/sec) — current: obj=obstacle_1_movable edge=27 depth=3 neighbour='goal'
+  [Progress] 78 primitives tried (1.8/sec) — current: obj=obstacle_1_movable edge=35 depth=3 neighbour='goal'
+  [Progress] 84 primitives tried (2.8/sec) — current: obj=obstacle_1_movable edge=47 depth=3 neighbour='goal'
+  [Progress] 88 primitives tried (1.7/sec) — current: obj=obstacle_1_movable edge=55 depth=3 neighbour='goal'
+  [Progress] 92 primitives tried (1.6/sec) — current: obj=obstacle_1_movable edge=3 depth=4 neighbour='goal'
+  [Progress] 95 primitives tried (1.4/sec) — current: obj=obstacle_1_movable edge=9 depth=4 neighbour='goal'
+  [Progress] 98 primitives tried (1.3/sec) — current: obj=obstacle_1_movable edge=15 depth=4 neighbour='goal'
+  [Progress] 101 primitives tried (1.4/sec) — current: obj=obstacle_1_movable edge=21 depth=4 neighbour='goal'
+  [Progress] 104 primitives tried (1.4/sec) — current: obj=obstacle_1_movable edge=27 depth=4 neighbour='goal'
+  [Progress] 108 primitives tried (1.6/sec) — current: obj=obstacle_1_movable edge=35 depth=4 neighbour='goal'
+  [Progress] 112 primitives tried (1.6/sec) — current: obj=obstacle_1_movable edge=43 depth=4 neighbour='goal'
+  [Progress] 116 primitives tried (1.5/sec) — current: obj=obstacle_1_movable edge=51 depth=4 neighbour='goal'
+  [Progress] 119 primitives tried (1.2/sec) — current: obj=obstacle_1_movable edge=57 depth=4 neighbour='goal'
+  [Progress] 123 primitives tried (1.7/sec) — current: obj=obstacle_1_movable edge=5 depth=5 neighbour='goal'
+  [Progress] 126 primitives tried (1.2/sec) — current: obj=obstacle_1_movable edge=11 depth=5 neighbour='goal'
+  [Progress] 130 primitives tried (1.9/sec) — current: obj=obstacle_1_movable edge=19 depth=5 neighbour='goal'
+[NAMOPlanningService] search=60885ms, total=60970ms, actions=1
+[run_namo plan-only] solution.yaml -> /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run2/iter_001/sim_candidates/candidate1/solution.yaml (success=True, pushes=1, search=60970ms, sim_pushes_tried=132)
+[sim_replay_subprocess] DISPLAY is unset; defaulting MUJOCO_GL=egl for headless rendering
+[sim_replay_subprocess] re-encoded sim_push.mp4 to H.264 for compatibility
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run2/iter_001/sim_candidates/candidate1/sim_push.mp4 (2950 frames @ 30 fps, stride=17)
+[run_namo plan-only] sim_push.mp4 -> /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run2/iter_001/sim_candidates/candidate1/sim_push.mp4
+[Diagnostics] Wrote summary.json (outcome=crashed)

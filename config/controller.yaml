@@ -39,7 +39,7 @@ push:
                                  # lookahead amplifies camera-heading-noise into PP curvature
                                  # corrections; 1.0 matches the Tier-1 PP calibration setting
                                  # which produced clean (no-wiggle) tracking.
-  push_steps: 26                # ~0.90 s per NAMO push step at 30 Hz (was 25 → 0.83 s; sim is 0.75 s)
+  push_steps: 30                # ~1.00 s per NAMO push step at 30 Hz (sim currently uses 550 control ticks/step)
   dynamic_direction: false       # true = update push direction every step, false = fix at start
 
   # Approach phase parameters

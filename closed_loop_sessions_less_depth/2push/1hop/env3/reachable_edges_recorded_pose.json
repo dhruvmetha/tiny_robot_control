@@ -1,0 +1,45 @@
+{
+  "scene_root": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env3",
+  "start_state_dir": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/start_state",
+  "edge_image": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env3/edge_labels_recorded_pose.png",
+  "reachability_xml": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env3/edge_reachability_initial_scene.xml",
+  "robot_pose_cm": [
+    29.417042199136176,
+    10.888133856209631,
+    166.40845401976287
+  ],
+  "goal_cm": [
+    37.0,
+    67.0
+  ],
+  "movable_object_map": {
+    "obj_4": "obstacle_1_movable"
+  },
+  "reachable_edges_by_real_object": {
+    "obj_4": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      11,
+      13,
+      15,
+      17,
+      19,
+      21,
+      23,
+      25,
+      27,
+      29,
+      30,
+      32,
+      34,
+      36,
+      38,
+      40,
+      42
+    ]
+  },
+  "goal_reachable": false
+}

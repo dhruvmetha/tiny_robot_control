@@ -12,7 +12,7 @@ import yaml
 class WavefrontInflationConfig:
     """Inflation values in meters."""
 
-    tier1_base_inflation_margin_m: float = 0.005
+    tier1_base_inflation_margin_m: float = 0.002
     navigation_additional_margin_m: float = 0.0
     push_approach_additional_margin_m: float = 0.003
     xml_min_separation_m: float = 0.005
@@ -46,7 +46,7 @@ def load_wavefront_inflation_config(
 
     return WavefrontInflationConfig(
         tier1_base_inflation_margin_m=_to_float(
-            data, "tier1", "base_inflation_margin_m", 0.005
+            data, "tier1", "base_inflation_margin_m", 0.002
         ),
         navigation_additional_margin_m=_to_float(
             data, "navigation", "additional_margin_m", 0.0

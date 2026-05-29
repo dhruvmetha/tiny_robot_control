@@ -221,6 +221,10 @@ class NAMOPlanner(Planner):
         self._current_idx: int = 0
         self._plan_generated: bool = False
         self._planning_failed: bool = False
+        self._committed_chain: List[PushSubgoal] = []
+        self._committed_chain_origin: Optional[str] = None
+        self._pending_reuse_chain: Optional[List[PushSubgoal]] = None
+        self._pending_reuse_origin: Optional[str] = None
 
         # Reachability check state
         self._navigating_to_goal: bool = False
@@ -315,6 +319,254 @@ class NAMOPlanner(Planner):
                   flush=True)
             return None
 
+    def _copy_push_chain(self, chain: List[PushSubgoal]) -> List[PushSubgoal]:
+        """Return a defensive copy of a push chain."""
+        return [
+            PushSubgoal(
+                object_id=str(sg.object_id),
+                edge_idx=int(sg.edge_idx),
+                push_steps=int(sg.push_steps),
+            )
+            for sg in chain
+        ]
+
+    def _queue_mpc_chain(
+        self,
+        obs: Observation,
+        chain: List[PushSubgoal],
+        *,
+        origin: str,
+        attempt_index: int,
+        xml_content: Optional[str] = None,
+        object_mapping: Optional[Dict[str, Dict[str, str]]] = None,
+    ) -> None:
+        """Preserve the full chain, but queue only its first push for MPC."""
+        self._committed_chain = self._copy_push_chain(chain)
+        self._committed_chain_origin = origin
+        self._subgoals = [self._committed_chain[0]]
+        self._current_idx = 0
+        self._plan_generated = True
+        self._pending_reuse_chain = None
+        self._pending_reuse_origin = None
+
+        if len(chain) > 1:
+            print(
+                f"[NAMOPlanner] MPC mode: preserving {len(chain)} pushes from {origin}, "
+                f"queuing only the first for real execution"
+            )
+
+        if self._verbose:
+            print(
+                f"[NAMOPlanner] Queued {len(self._subgoals)} subgoal(s) "
+                f"({self._execution_mode} mode, chain origin={origin}, "
+                f"full_chain={len(chain)}):"
+            )
+            for i, sg in enumerate(self._subgoals):
+                print(
+                    f"  [{i}] {sg.object_id} edge={sg.edge_idx} "
+                    f"steps={sg.push_steps}"
+                )
+
+        self._emit_sim_capture_for_plan(
+            obs=obs,
+            subgoals=chain,
+            attempt_index=attempt_index,
+            xml_content=xml_content,
+            object_mapping=object_mapping,
+        )
+
+    def _emit_sim_capture_for_plan(
+        self,
+        *,
+        obs: Observation,
+        subgoals: List[PushSubgoal],
+        attempt_index: int,
+        xml_content: Optional[str] = None,
+        object_mapping: Optional[Dict[str, Dict[str, str]]] = None,
+    ) -> None:
+        """Best-effort per-plan sim-success capture."""
+        if self._sim_capture_callback is None or not subgoals:
+            return
+
+        push_chain: List[Dict[str, Any]] = []
+        real_to_sim: Dict[str, str] = {}
+        if isinstance(object_mapping, dict):
+            maybe_real_to_sim = object_mapping.get("real_to_sim")
+            if isinstance(maybe_real_to_sim, dict):
+                real_to_sim = {str(k): str(v) for k, v in maybe_real_to_sim.items()}
+
+        obj_map = getattr(self._bridge, "_object_mapping", None)
+        for sg in subgoals:
+            sim_object_id = real_to_sim.get(str(sg.object_id))
+            if sim_object_id is None and obj_map is not None:
+                sim_object_id = obj_map.get_sim_name(sg.object_id)
+            if sim_object_id is None:
+                sim_object_id = str(sg.object_id)
+            push_chain.append({
+                "object_id": sg.object_id,
+                "sim_object_id": sim_object_id,
+                "edge_idx": sg.edge_idx,
+                "push_steps": sg.push_steps,
+                "depth": sg.push_steps - 1,
+            })
+
+        if not push_chain:
+            return
+
+        try:
+            xml_payload = xml_content if xml_content is not None else getattr(self._bridge, "last_xml_content", None)
+            if xml_payload is None:
+                return
+            rx_m, ry_m = self._bridge._cm_to_sim(
+                float(obs.robot_x), float(obs.robot_y)
+            )
+            rtheta_rad = math.radians(float(obs.robot_theta))
+            self._sim_capture_callback(
+                xml_content=xml_payload,
+                push_chain=push_chain,
+                attempt_index=attempt_index,
+                starting_robot_pose_sim=(rx_m, ry_m, rtheta_rad),
+            )
+        except Exception as exc:
+            print(f"[DIAG] sim-capture callback failed: {exc!r}", flush=True)
+
+    def _record_reuse_diagnostics(
+        self,
+        *,
+        obs: Observation,
+        reuse_kind: str,
+        verification_time_ms: float,
+        success: bool,
+        chain: List[PushSubgoal],
+        failed_step_index: Optional[int],
+        failure_reason: Optional[str],
+    ) -> None:
+        """Best-effort diagnostics record for a reuse verification attempt."""
+        if self._diag is None:
+            return
+        try:
+            first_subgoal = None
+            if chain:
+                sg0 = chain[0]
+                first_subgoal = {
+                    "object_id": sg0.object_id,
+                    "edge_idx": sg0.edge_idx,
+                    "push_steps": sg0.push_steps,
+                }
+            self._diag.record_plan({
+                "attempt_index": 0,
+                "attempt_seed": None,
+                "search_time_ms": verification_time_ms,
+                "cumulative_ms": self._total_planning_ms,
+                "success": success,
+                "subgoals_returned": len(chain) if success else 0,
+                "first_subgoal": first_subgoal,
+                "blacklist_size_before": len(self._failed_pushes),
+                "plan_source": reuse_kind,
+                "failed_step_index": failed_step_index,
+                "failure_reason": failure_reason,
+                "robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                "object_poses_cm": {
+                    name: [o.x, o.y, o.theta]
+                    for name, o in obs.objects.items()
+                },
+            })
+        except Exception as exc:
+            print(f"[DIAG] record_plan failed: {exc!r}", flush=True)
+
+    def _try_pending_chain_reuse(self, obs: Observation) -> bool:
+        """Try suffix/full-chain reuse from the fresh post-push observation."""
+        if self._execution_mode != "mpc":
+            return False
+        if not self._pending_reuse_chain:
+            return False
+
+        source_chain = self._copy_push_chain(self._pending_reuse_chain)
+        source_origin = self._pending_reuse_origin or "fresh_plan"
+        print(
+            f"[NAMOPlanner] Reuse check from updated real scene: "
+            f"source={source_origin}, chain_len={len(source_chain)}"
+        )
+
+        def _verify_reuse(chain: List[PushSubgoal], reuse_kind: str):
+            result = self._bridge.verify_chain(
+                observation=obs,
+                robot_goal_cm=self._robot_goal_cm,
+                chain=chain,
+                allow_collisions=self._allow_collisions,
+            )
+            self._plan_count += 1
+            self._total_planning_ms += result.verification_time_ms
+            self._record_reuse_diagnostics(
+                obs=obs,
+                reuse_kind=reuse_kind,
+                verification_time_ms=result.verification_time_ms,
+                success=result.success,
+                chain=result.verified_subgoals if result.success else chain,
+                failed_step_index=result.failed_step_index,
+                failure_reason=result.failure_reason,
+            )
+            return result
+
+        suffix_result = None
+        if len(source_chain) > 1:
+            suffix_chain = self._copy_push_chain(source_chain[1:])
+            suffix_result = _verify_reuse(suffix_chain, "reuse_suffix")
+            if suffix_result.success:
+                print(
+                    f"[NAMOPlanner] Reusing suffix chain ({len(suffix_result.verified_subgoals)} pushes) "
+                    f"from updated real scene"
+                )
+                self._queue_mpc_chain(
+                    obs=obs,
+                    chain=suffix_result.verified_subgoals,
+                    origin="reuse_suffix",
+                    attempt_index=0,
+                    xml_content=suffix_result.planner_scene_xml,
+                    object_mapping=suffix_result.object_mapping,
+                )
+                return True
+            if suffix_result.failed_step_index != 0:
+                print(
+                    "[NAMOPlanner] Post-push reuse failed; falling back to full replanning"
+                )
+                self._pending_reuse_chain = None
+                self._pending_reuse_origin = None
+                self._committed_chain = []
+                self._committed_chain_origin = None
+                return False
+
+        full_result = _verify_reuse(source_chain, "reuse_full")
+        if full_result.success:
+            if suffix_result is None:
+                print(
+                    f"[NAMOPlanner] Reusing full chain ({len(full_result.verified_subgoals)} pushes) "
+                    f"from updated real scene"
+                )
+            else:
+                print(
+                    f"[NAMOPlanner] Reusing full chain ({len(full_result.verified_subgoals)} pushes) "
+                    f"from updated real scene after suffix first-step failure"
+                )
+            self._queue_mpc_chain(
+                obs=obs,
+                chain=full_result.verified_subgoals,
+                origin="reuse_full",
+                attempt_index=0,
+                xml_content=full_result.planner_scene_xml,
+                object_mapping=full_result.object_mapping,
+            )
+            return True
+
+        print(
+            "[NAMOPlanner] Post-push reuse failed; falling back to full replanning"
+        )
+        self._pending_reuse_chain = None
+        self._pending_reuse_origin = None
+        self._committed_chain = []
+        self._committed_chain_origin = None
+        return False
+
     def plan(self, obs: Observation) -> Optional[Subgoal]:
         """Generate next subgoal from current observation.
 
@@ -354,6 +606,9 @@ class NAMOPlanner(Planner):
 
         # Goal is blocked - run NAMO planning
         self._navigating_to_goal = False  # Reset in case we were navigating
+        if self._try_pending_chain_reuse(obs):
+            if self._current_idx < len(self._subgoals):
+                return self._subgoals[self._current_idx]
         if not self._plan_generated:
             print("[NAMOPlanner] Goal BLOCKED - running NAMO planning...")
             self._generate_plan(obs)
@@ -383,6 +638,10 @@ class NAMOPlanner(Planner):
             return
 
         if failed:
+            self._pending_reuse_chain = None
+            self._pending_reuse_origin = None
+            self._committed_chain = []
+            self._committed_chain_origin = None
             # Track which subgoal failed
             if self._current_idx < len(self._subgoals):
                 self._failed_subgoal = self._subgoals[self._current_idx]
@@ -445,6 +704,46 @@ class NAMOPlanner(Planner):
                 f"entry/entries after successful push (world state changed)"
             )
             self._failed_pushes.clear()
+
+        if self._execution_mode == "mpc":
+            executed_chain = self._copy_push_chain(self._committed_chain)
+            self._subgoals = []
+            self._current_idx = 0
+            self._plan_generated = False
+
+            if self._is_goal_reachable(obs):
+                print(
+                    "[NAMOPlanner] Goal is NOW REACHABLE - skipping committed-chain reuse"
+                )
+                self._pending_reuse_chain = None
+                self._pending_reuse_origin = None
+                self._committed_chain = []
+                self._committed_chain_origin = None
+                return
+
+            if executed_chain:
+                self._pending_reuse_chain = executed_chain
+                self._pending_reuse_origin = self._committed_chain_origin or "fresh_plan"
+                if len(executed_chain) > 1:
+                    print(
+                        f"[NAMOPlanner] Push complete. Will try reuse from updated real scene "
+                        f"for remaining chain len={len(executed_chain) - 1}"
+                    )
+                else:
+                    print(
+                        "[NAMOPlanner] Push complete. Will retry the committed single-push "
+                        "plan from the updated real scene before fresh replanning"
+                    )
+            else:
+                self._pending_reuse_chain = None
+                self._pending_reuse_origin = None
+                self._committed_chain = []
+                self._committed_chain_origin = None
+                print(
+                    "[NAMOPlanner] Push sequence complete. "
+                    "Will re-check reachability."
+                )
+            return
 
         self._current_idx += 1
         remaining = len(self._subgoals) - self._current_idx
@@ -564,6 +863,10 @@ class NAMOPlanner(Planner):
         self._replan_attempt = 0
         self._failed_subgoal = None
         self._failed_pushes = set()
+        self._committed_chain = []
+        self._committed_chain_origin = None
+        self._pending_reuse_chain = None
+        self._pending_reuse_origin = None
 
     def _is_goal_reachable(self, obs: Observation) -> bool:
         """Check if robot can reach goal without pushing any objects.
@@ -721,87 +1024,36 @@ class NAMOPlanner(Planner):
                         # Diagnostics must never break the planner.
                         print(f"[DIAG] record_plan failed: {_e!r}", flush=True)
 
-                # Per-plan sim-success capture. Fires on every plan() call
-                # that returned at least one push (planner's sim search
-                # succeeded), independent of whether the real robot will go
-                # on to execute it successfully. Each plan therefore lands as
-                # its own (xml, chain.json, replay.mp4) triple — no
-                # dependence on the run-end finally block, which the
-                # PyQt-viewer path notoriously fails to reach.
-                if self._sim_capture_callback is not None and subgoals:
-                    push_chain: List[Dict[str, Any]] = []
-                    # PushSubgoal.object_id holds the *real-robot* object name
-                    # (obj_4 etc., per NAMOPlanBridge._convert_to_subgoals).
-                    # The replay XML uses the *sim* names (obstacle_2_movable),
-                    # so without translation env.step() returns "Action not
-                    # applicable" and the post-push frame is identical to the
-                    # pre-push frame. Look up the sim name from the bridge's
-                    # mapping table and store both in the chain JSON so the
-                    # file is self-describing.
-                    obj_map = getattr(self._bridge, "_object_mapping", None)
-                    for sg in subgoals:
-                        if isinstance(sg, PushSubgoal):
-                            sim_object_id = (
-                                obj_map.get_sim_name(sg.object_id)
-                                if obj_map is not None else sg.object_id
-                            )
-                            push_chain.append({
-                                "object_id": sg.object_id,
-                                "sim_object_id": sim_object_id,
-                                "edge_idx": sg.edge_idx,
-                                "push_steps": sg.push_steps,
-                                "depth": sg.push_steps - 1,
-                            })
-                    if push_chain:
-                        try:
-                            xml_content = getattr(self._bridge, "last_xml_content", None)
-                            if xml_content is not None:
-                                # Convert observation pose (cm + deg) to sim
-                                # units (m + rad) the same way the bridge
-                                # does for the planning service. Replay env
-                                # uses these for set_robot_pose().
-                                import math as _math
-                                rx_m, ry_m = self._bridge._cm_to_sim(
-                                    float(obs.robot_x), float(obs.robot_y)
-                                )
-                                rtheta_rad = _math.radians(float(obs.robot_theta))
-                                self._sim_capture_callback(
-                                    xml_content=xml_content,
-                                    push_chain=push_chain,
-                                    attempt_index=attempt + 1,
-                                    starting_robot_pose_sim=(rx_m, ry_m, rtheta_rad),
-                                )
-                        except Exception as _e:
-                            print(f"[DIAG] sim-capture callback failed: {_e!r}", flush=True)
-
                 if subgoals:
                     if self._execution_mode == "mpc":
-                        # MPC: enqueue only the first push; discard the rest.
-                        # The next plan() call will replan from a fresh
-                        # observation, ensuring closed-loop behaviour at the
-                        # plan level.
-                        if len(subgoals) > 1:
-                            print(
-                                f"[NAMOPlanner] MPC mode: keeping 1 of "
-                                f"{len(subgoals)} planned pushes (rest "
-                                f"discarded for replan)"
-                            )
-                        self._subgoals = [subgoals[0]]
+                        self._queue_mpc_chain(
+                            obs=obs,
+                            chain=subgoals,
+                            origin="fresh_plan",
+                            attempt_index=attempt + 1,
+                        )
                     else:
                         # open_loop: commit to the full planned sequence.
+                        self._committed_chain = self._copy_push_chain(subgoals)
+                        self._committed_chain_origin = "fresh_plan"
                         self._subgoals = subgoals
-                    self._current_idx = 0
-                    if self._verbose:
-                        print(
-                            f"[NAMOPlanner] Queued {len(self._subgoals)} subgoal(s) "
-                            f"({self._execution_mode} mode, planner returned "
-                            f"{len(subgoals)}):"
-                        )
-                        for i, sg in enumerate(self._subgoals):
+                        self._current_idx = 0
+                        if self._verbose:
                             print(
-                                f"  [{i}] {sg.object_id} edge={sg.edge_idx} "
-                                f"steps={sg.push_steps}"
+                                f"[NAMOPlanner] Queued {len(self._subgoals)} subgoal(s) "
+                                f"({self._execution_mode} mode, planner returned "
+                                f"{len(subgoals)}):"
                             )
+                            for i, sg in enumerate(self._subgoals):
+                                print(
+                                    f"  [{i}] {sg.object_id} edge={sg.edge_idx} "
+                                    f"steps={sg.push_steps}"
+                                )
+                        self._emit_sim_capture_for_plan(
+                            obs=obs,
+                            subgoals=subgoals,
+                            attempt_index=attempt + 1,
+                        )
                     return  # Success
 
                 # No subgoals - will retry if attempts remain
@@ -864,6 +1116,10 @@ class NAMOPlanner(Planner):
         self._planning_failed = True
         self._subgoals = []
         self._current_idx = 0
+        self._committed_chain = []
+        self._committed_chain_origin = None
+        self._pending_reuse_chain = None
+        self._pending_reuse_origin = None
 
     def get_subgoal_queue(self) -> List[PushSubgoal]:
         """Get the current subgoal queue (for debugging)."""

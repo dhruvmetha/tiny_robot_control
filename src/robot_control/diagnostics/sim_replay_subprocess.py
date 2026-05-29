@@ -712,6 +712,7 @@ def main() -> int:
     prior_nav_log = os.environ.get("NAMO_NAV_LOG")
     saved_stderr_fd: Optional[int] = None
     nav_log_fd: Optional[int] = None
+    failure_result: Optional[Dict[str, Any]] = None
     try:
         if artifact_dir is not None and nav_log_path is not None:
             artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -759,26 +760,14 @@ def main() -> int:
                     f"Halting chain (remaining {len(chain) - idx} step(s) skipped).",
                     flush=True,
                 )
-                # Copy whatever the qpos dump has so far into the artifact
-                # dir before bailing. The successful pushes before this one
-                # already dumped frames; preserving them lets the caller
-                # render a final_scene PNG of the failure state instead of
-                # losing all visual context. _QPOS_PATH itself is unlinked
-                # at process exit (line 788), so without this copy the dump
-                # disappears.
-                if artifact_dir is not None and Path(_QPOS_PATH).exists():
-                    try:
-                        artifact_dir.mkdir(parents=True, exist_ok=True)
-                        shutil.copyfile(
-                            _QPOS_PATH, artifact_dir / "qpos_dump_full.txt"
-                        )
-                    except Exception as exc:
-                        print(
-                            f"[sim_replay_subprocess] WARN: failed to copy "
-                            f"qpos dump on failure: {exc!r}",
-                            flush=True,
-                        )
-                return 2
+                failure_result = {
+                    "step_index": idx,
+                    "object_id": action.object_id,
+                    "edge_idx": action.edge_idx,
+                    "depth": action.depth,
+                    "info": dict(step_result.info or {}),
+                }
+                break
     finally:
         if saved_stderr_fd is not None:
             try:
@@ -795,6 +784,22 @@ def main() -> int:
             os.environ["NAMO_NAV_LOG"] = prior_nav_log
 
     qpos_frames = _read_qpos_dump(_QPOS_PATH)
+    if failure_result is not None and not qpos_frames:
+        try:
+            current_state = env.get_full_state()
+            if getattr(current_state, "qpos", None):
+                qpos_frames = [list(current_state.qpos)]
+                print(
+                    "[sim_replay_subprocess] failure produced no qpos dump; "
+                    "using current env full_state for a static failure frame",
+                    flush=True,
+                )
+        except Exception as exc:
+            print(
+                f"[sim_replay_subprocess] WARN: failed to capture full_state "
+                f"after failure: {exc!r}",
+                flush=True,
+            )
     if not qpos_frames:
         print(
             "[sim_replay_subprocess] qpos dump was empty — the C++ push "
@@ -905,10 +910,25 @@ def main() -> int:
                 flush=True,
             )
             return 1
+        if failure_result is not None:
+            _write_json(
+                artifact_dir / "failure_result.json",
+                failure_result,
+            )
     try:
         os.unlink(_QPOS_PATH)
     except OSError:
         pass
+
+    if failure_result is not None:
+        status_msg = (
+            f"[sim_replay_subprocess] rendered failure context to {output_mp4} "
+            f"(failed at step {failure_result['step_index']})"
+            if not skip_video else
+            "[sim_replay_subprocess] captured failure context without video"
+        )
+        print(status_msg, flush=True)
+        return 2
 
     if skip_video:
         print(

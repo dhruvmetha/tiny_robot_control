@@ -1,0 +1,10 @@
+{
+  "run_name": "random_rollout_run3",
+  "strategy": "random_rollout",
+  "seed_source_run": "run3",
+  "seed_source_path": null,
+  "iter_001_candidate_dir": "iter_001/sim_candidates/candidate1",
+  "seed_solution_success": false,
+  "shuffle_seed": 1123297573,
+  "created_at_utc": "2026-05-28T23:25:36.321180Z"
+}

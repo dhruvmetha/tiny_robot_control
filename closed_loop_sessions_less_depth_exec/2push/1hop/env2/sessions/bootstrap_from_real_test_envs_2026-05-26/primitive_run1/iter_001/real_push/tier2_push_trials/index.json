@@ -1,0 +1,25 @@
+{
+  "exported_trial_count": 1,
+  "source": "real",
+  "source_files": {
+    "pushes": "pushes.jsonl",
+    "subgoals": "subgoals.jsonl",
+    "mid_obs": "mid_obs.jsonl",
+    "wheel_commands": "wheel_commands.jsonl"
+  },
+  "trials": [
+    {
+      "trial_dir": "tier2_push_trials/trial_001_subgoal_001_obj_1_e23_s5",
+      "subgoal_id": 1,
+      "object_id": "obj_1",
+      "expected_edge": 23,
+      "expected_push_steps": 5,
+      "n_pose_samples": 74,
+      "n_command_samples": 150,
+      "forward_cruise_cm_s": 3.8953053356427594,
+      "linear_fit_speed_cm_s": 3.8673623333876916,
+      "omega_fit_deg_s": -0.8825109362829247,
+      "stuck": false
+    }
+  ]
+}

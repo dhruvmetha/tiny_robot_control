@@ -1,0 +1,15 @@
+{
+  "iteration": 1,
+  "state": "awaiting_replan",
+  "scene_before_ready": true,
+  "successful_sim_candidates": [],
+  "selected_candidate": null,
+  "real_push_completed": false,
+  "scene_after_ready": false,
+  "goal_reached": false,
+  "goal_wavefront_reachable": false,
+  "goal_success_criterion": null,
+  "real_failure_mode": null,
+  "replan_same_iteration": false,
+  "final_distance_to_goal_cm": null
+}

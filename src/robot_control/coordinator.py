@@ -7,7 +7,10 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 from robot_control.controller.base import Controller
 from robot_control.core.types import Action, Observation
 from robot_control.core.world_state import WorldState
-from robot_control.gui import Window
+try:
+    from robot_control.gui import Window
+except ImportError:
+    Window = None
 
 SPEED_PRESETS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9]
 

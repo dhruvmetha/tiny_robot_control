@@ -1,0 +1,41 @@
+{
+  "prepared_at_utc": "2026-05-29T02:06:41.369717Z",
+  "run_name": "random_rollout_run3",
+  "iteration": 1,
+  "candidate_name": "candidate1",
+  "solution_path": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/random_rollout_run3/iter_001/sim_candidates/candidate1/solution.yaml",
+  "goal_cm": [
+    37.0,
+    67.0
+  ],
+  "plan_success": true,
+  "full_plan": [
+    {
+      "object_id": "obj_1",
+      "edge_idx": 25,
+      "push_steps": 5
+    }
+  ],
+  "selected_push_index": 0,
+  "selected_push": {
+    "plan_object_id": "obj_1",
+    "sim_object_id": "obstacle_1_movable",
+    "real_object_id": "obj_1",
+    "edge_idx": 25,
+    "push_steps": 5,
+    "sim_push_steps": 5,
+    "push_steps_overridden_for_real": false
+  },
+  "object_mapping": {
+    "real_to_sim": {
+      "obj_1": "obstacle_1_movable"
+    },
+    "sim_to_real": {
+      "obstacle_1_movable": "obj_1"
+    }
+  },
+  "obstacle_target_cm": [
+    24.043733082667593,
+    20.94318622320953
+  ]
+}

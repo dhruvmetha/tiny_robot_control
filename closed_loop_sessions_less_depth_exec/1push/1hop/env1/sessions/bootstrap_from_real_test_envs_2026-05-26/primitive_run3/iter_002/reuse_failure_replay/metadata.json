@@ -1,0 +1,36 @@
+{
+  "run_name": "primitive_run3",
+  "iteration": 2,
+  "goal_cm": [
+    37.0,
+    67.0
+  ],
+  "sim_object_id": "obstacle_1_movable",
+  "reachable_edges": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18
+  ],
+  "requested_edge": 4,
+  "requested_push_steps": 5,
+  "step_done": false,
+  "step_reward": -1.0,
+  "step_info": {
+    "collision_object": "wall_6",
+    "failure_reason": "Primitive step 1 failed",
+    "failure_type": "2",
+    "movable_collisions": "",
+    "robot_goal_reached": "false",
+    "steps_executed": "1",
+    "wall_collision": "false"
+  },
+  "qpos_frame_count": 0,
+  "video_frame_count_written": 0,
+  "xml_path": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run3/iter_002/reuse_failure_replay/scene_before_replay.xml"
+}

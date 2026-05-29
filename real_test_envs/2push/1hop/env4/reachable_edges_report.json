@@ -1,0 +1,48 @@
+{
+  "source_env_dir": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4",
+  "session_dir": "/home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/2push/1hop/env4/sessions/bootstrap_from_real_test_envs_2026-05-29",
+  "goal_cm": [
+    37.0,
+    67.0
+  ],
+  "robot_pose_cm": [
+    19.62871018824169,
+    5.57706811771232,
+    73.12131650809596
+  ],
+  "real_object_id": "obj_1",
+  "sim_object_id": "obstacle_1_movable",
+  "reachable_edges": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40,
+    42,
+    44,
+    46,
+    48,
+    50,
+    52,
+    54,
+    56,
+    58
+  ],
+  "reachable_edge_count": 30
+}

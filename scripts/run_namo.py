@@ -609,6 +609,7 @@ def _emit_plan_only_solution_yaml(
     strategy: str,
     plan_subgoals: list,
     search_time_ms: float,
+    sim_pushes_tried: Optional[int] = None,
     object_mapping: Optional[Dict[str, Dict[str, str]]] = None,
     planner_scene_xml: Optional[str] = None,
 ) -> None:
@@ -639,6 +640,9 @@ def _emit_plan_only_solution_yaml(
         "search_stats": {
             "search_time_ms": float(search_time_ms),
             "pushes_in_plan": len(plan_list),
+            "sim_pushes_tried": (
+                int(sim_pushes_tried) if sim_pushes_tried is not None else None
+            ),
         },
     }
     if object_mapping is not None:
@@ -651,7 +655,8 @@ def _emit_plan_only_solution_yaml(
     print(
         f"[run_namo plan-only] solution.yaml -> {out_path} "
         f"(success={success}, pushes={len(plan_list)}, "
-        f"search={search_time_ms:.0f}ms)",
+        f"search={search_time_ms:.0f}ms, "
+        f"sim_pushes_tried={sim_pushes_tried})",
         flush=True,
     )
 
@@ -1022,6 +1027,7 @@ def run_interactive_mode(args):
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
         shuffle_edges=not args.no_shuffle_edges,
+        shuffle_seed=args.shuffle_seed,
         rollout_samples_per_state=args.rollout_samples_per_state,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
@@ -1253,6 +1259,25 @@ def _run_plan_only_mode(args) -> int:
     extra_kwargs: Dict[str, Any] = {}
     if getattr(args, "rollout_samples_per_state", None) is not None:
         extra_kwargs["rollout_samples_per_state"] = args.rollout_samples_per_state
+    if getattr(args, "shuffle_seed", None) is not None:
+        extra_kwargs["shuffle_seed"] = args.shuffle_seed
+    # Region "opened" success bar (forwarded to RegionOpeningPlanner via the
+    # service's algo_params). Default 1 = legacy behavior.
+    if getattr(args, "region_success_min_reachable", None) is not None:
+        extra_kwargs["region_success_min_reachable"] = args.region_success_min_reachable
+    # ML strategies need the model path + inference knobs forwarded to the
+    # bridge (and on to NAMOPlanningService). The Runtime/NAMOPlanner path
+    # passes these; plan-only must too, or `--strategy ml` reaches the planner
+    # with no model and fails instantly. Mirrors NAMOPlanner._plan extra_kwargs.
+    if getattr(args, "ml_goal_model_path", None):
+        extra_kwargs["ml_goal_model_path"] = args.ml_goal_model_path
+        extra_kwargs["ml_device"] = args.ml_device
+        if getattr(args, "ml_samples", None) is not None:
+            extra_kwargs["ml_samples"] = args.ml_samples
+        if getattr(args, "ml_num_steps", None) is not None:
+            extra_kwargs["ml_num_steps"] = args.ml_num_steps
+        if getattr(args, "ml_sampler_method", None) is not None:
+            extra_kwargs["ml_sampler_method"] = args.ml_sampler_method
 
     plan_subgoals = bridge.plan(
         observation=obs,
@@ -1295,6 +1320,7 @@ def _run_plan_only_mode(args) -> int:
         strategy=args.strategy,
         plan_subgoals=plan_subgoals,
         search_time_ms=bridge.last_search_time_ms,
+        sim_pushes_tried=bridge.last_sim_pushes_tried,
         object_mapping=object_mapping,
         planner_scene_xml=planner_scene_path.name if planner_scene_path is not None else None,
     )
@@ -1486,6 +1512,7 @@ def run_automatic_mode(args):
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
         shuffle_edges=not args.no_shuffle_edges,
+        shuffle_seed=args.shuffle_seed,
         rollout_samples_per_state=args.rollout_samples_per_state,
         # Workspace config for reachability (must match navigation planner)
         workspace_width_cm=WORKSPACE_WIDTH_CM,
@@ -1856,6 +1883,18 @@ def main():
         help="Goal samples per region for validation (default: 10)",
     )
     parser.add_argument(
+        "--region-success-min-reachable",
+        type=int,
+        default=1,
+        help=(
+            "Minimum number of sampled region-goal points that must be "
+            "reachable for a region to count as opened/solved (default: 1). "
+            "Pair with --goals-per-region to set the bar, e.g. "
+            "--goals-per-region 100 --region-success-min-reachable 20 "
+            "requires 20 of 100 sampled goals reachable."
+        ),
+    )
+    parser.add_argument(
         "--max-planning-retries",
         type=int,
         default=5,
@@ -1868,6 +1907,13 @@ def main():
         action="store_true",
         help=("Disable edge-ordering randomization in the planner. Pushes "
               "are enumerated in a fixed deterministic order."),
+    )
+    parser.add_argument(
+        "--shuffle-seed",
+        type=int,
+        default=None,
+        help=("Explicit shuffle seed for planner edge/random ordering. "
+              "If omitted, planner uses its default behavior."),
     )
     parser.add_argument(
         "--max-replan-attempts",

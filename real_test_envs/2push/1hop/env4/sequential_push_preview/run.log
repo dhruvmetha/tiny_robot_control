@@ -1,0 +1,15 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/sequential_push_preview
+
+[Trapped-start recovery] Robot at (19.6, 5.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[initial-scene] wrote /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/sequential_push_preview/initial_scene.xml  robot=(19.63,5.58) movables=['obj_1'] -> sim=['obstacle_1_movable']
+[trial-spec] 2 push(es) chain=[('obj_1', 58, 4), ('obj_1', 29, 4)] starting_pose_mode=recorded start_pose_sim=(0.196m, 0.056m, 1.276rad)
+[sim_replay_subprocess] DISPLAY is unset; defaulting MUJOCO_GL=egl for headless rendering
+[sim_replay_subprocess] re-encoded sim_push.mp4 to H.264 for compatibility
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/2push/1hop/env4/sequential_push_preview/sim_push.mp4 (5900 frames @ 30 fps, stride=17)
+/home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/glfw/__init__.py:917: GLFWError: (65550) b'X11: The DISPLAY environment variable is missing'
+  warnings.warn(message, GLFWError)
+/home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/glfw/__init__.py:917: GLFWError: (65537) b'The GLFW library is not initialized'
+  warnings.warn(message, GLFWError)
+[exec-sim-push] WARN: final_scene render failed: FatalError('gladLoadGL error')

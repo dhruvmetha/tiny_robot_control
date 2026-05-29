@@ -1,0 +1,15 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/1push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003/reuse_suffix_preview
+
+[Trapped-start recovery] Robot at (22.3, 16.2) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[initial-scene] wrote /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/1push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003/reuse_suffix_preview/initial_scene.xml  robot=(22.28,16.23) movables=['obj_1'] -> sim=['obstacle_1_movable']
+[trial-spec] 1 push(es) chain=[('obj_1', 12, 4)] starting_pose_mode=recorded start_pose_sim=(0.223m, 0.162m, 1.239rad)
+[sim_replay_subprocess] DISPLAY is unset; defaulting MUJOCO_GL=egl for headless rendering
+[sim_replay_subprocess] re-encoded sim_push.mp4 to H.264 for compatibility
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth_exec/1push/1hop/env3/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_003/reuse_suffix_preview/sim_push.mp4 (2950 frames @ 30 fps, stride=17)
+/home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/glfw/__init__.py:917: GLFWError: (65550) b'X11: The DISPLAY environment variable is missing'
+  warnings.warn(message, GLFWError)
+/home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/glfw/__init__.py:917: GLFWError: (65537) b'The GLFW library is not initialized'
+  warnings.warn(message, GLFWError)
+[exec-sim-push] WARN: final_scene render failed: FatalError('gladLoadGL error')

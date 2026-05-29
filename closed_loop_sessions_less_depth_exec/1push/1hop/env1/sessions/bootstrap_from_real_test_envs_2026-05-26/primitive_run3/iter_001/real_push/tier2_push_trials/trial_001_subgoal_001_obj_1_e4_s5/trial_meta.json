@@ -1,0 +1,57 @@
+{
+  "trial_kind": "straight",
+  "source": "real",
+  "left_cmd": 0.4,
+  "right_cmd": 0.4,
+  "cmd_units": "pwm",
+  "duration_s": 5.039820909500122,
+  "started_at_utc_iso": "2026-05-29T03:51:27.181749Z",
+  "n_samples": 75,
+  "real_meta": {
+    "controller": "PushController",
+    "push_state": "PUSHING",
+    "subgoal_id": 1,
+    "object_id": "obj_1",
+    "edge_idx": 4,
+    "push_steps": 5,
+    "max_speed": 0.4,
+    "lookahead_distance_cm": 7.0,
+    "dynamic_direction": false,
+    "path_start_cm": [
+      7.048504053662168,
+      13.310771978802856
+    ],
+    "path_end_cm": [
+      8.683553095525934,
+      75.2892086695641
+    ],
+    "path_unit_vec": [
+      0.02637175873973815,
+      0.9996522046896976
+    ],
+    "start_pose_cm_deg": [
+      7.048504053662168,
+      13.310771978802856,
+      88.93373590009543
+    ],
+    "end_pose_cm_deg": [
+      7.283361624379983,
+      33.68336622083874,
+      79.03786595412726
+    ],
+    "stuck": false,
+    "phase_timestamps": {
+      "dispatched_obs_timestamp": 1780026684.225186,
+      "push_start_obs_timestamp": 1780026687.181749,
+      "push_end_obs_timestamp": 1780026698.9409106,
+      "completed_obs_timestamp": 1780026698.9409106
+    },
+    "phase_durations_s": {
+      "approach_plus_advance": 2.9565629959106445,
+      "pushing": 11.759161472320557,
+      "retreat": 0.0,
+      "subgoal_total": 14.77294921875
+    }
+  },
+  "sim_meta": null
+}

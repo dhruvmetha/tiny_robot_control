@@ -1,0 +1,15 @@
+{
+  "step_index": 1,
+  "object_id": "obstacle_1_movable",
+  "edge_idx": 4,
+  "depth": 4,
+  "info": {
+    "collision_object": "wall_6",
+    "failure_reason": "Primitive step 1 failed",
+    "failure_type": "2",
+    "movable_collisions": "",
+    "robot_goal_reached": "false",
+    "steps_executed": "1",
+    "wall_collision": "false"
+  }
+}

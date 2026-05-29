@@ -1,0 +1,12 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/1push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_001/sim_candidates/candidate1
+
+[Trapped-start recovery] Robot at (28.8, 7.0) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanningService] search=390ms, total=479ms, actions=1
+[run_namo plan-only] solution.yaml -> /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/1push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_001/sim_candidates/candidate1/solution.yaml (success=True, pushes=1, search=479ms, sim_pushes_tried=1)
+[sim_replay_subprocess] DISPLAY is unset; defaulting MUJOCO_GL=egl for headless rendering
+[sim_replay_subprocess] re-encoded sim_push.mp4 to H.264 for compatibility
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/1push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_001/sim_candidates/candidate1/sim_push.mp4 (750 frames @ 30 fps, stride=17)
+[run_namo plan-only] sim_push.mp4 -> /home/dhruv/projects_dhruv/namo/robot_control/closed_loop_sessions_less_depth/1push/1hop/env2/sessions/bootstrap_from_real_test_envs_2026-05-26/primitive_run1/iter_001/sim_candidates/candidate1/sim_push.mp4
+[Diagnostics] Wrote summary.json (outcome=crashed)

@@ -1,0 +1,67 @@
+{
+  "layout_version": 2,
+  "session_name": "bootstrap_from_real_test_envs_2026-05-26",
+  "source_env": "1push/2hop/multi_contact",
+  "source_random_rollout_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/2hop/multi_contact/solution/random_rollout",
+  "canonical_goal_cm": [
+    37.0,
+    67.0
+  ],
+  "workspace_cm": {
+    "width_cm": 49.0,
+    "height_cm": 77.5
+  },
+  "initial_seed_runs": [
+    "primitive_run1",
+    "primitive_run2",
+    "primitive_run3",
+    "random_rollout_run1",
+    "random_rollout_run2",
+    "random_rollout_run3"
+  ],
+  "start_state_dir": "start_state",
+  "migration_timestamp_utc": "2026-05-26T23:03:25.863836Z",
+  "strategy_seed_roots": {
+    "random_rollout": "/home/dhruv/projects_dhruv/namo/robot_control/real_test_envs/1push/2hop/multi_contact/solution/random_rollout",
+    "primitive": null
+  },
+  "run_specs": [
+    {
+      "run_name": "primitive_run1",
+      "strategy": "primitive",
+      "seed_source_run": null,
+      "seed_source_path": null
+    },
+    {
+      "run_name": "primitive_run2",
+      "strategy": "primitive",
+      "seed_source_run": null,
+      "seed_source_path": null
+    },
+    {
+      "run_name": "primitive_run3",
+      "strategy": "primitive",
+      "seed_source_run": null,
+      "seed_source_path": null
+    },
+    {
+      "run_name": "random_rollout_run1",
+      "strategy": "random_rollout",
+      "seed_source_run": "run1",
+      "seed_source_path": null
+    },
+    {
+      "run_name": "random_rollout_run2",
+      "strategy": "random_rollout",
+      "seed_source_run": "run2",
+      "seed_source_path": null
+    },
+    {
+      "run_name": "random_rollout_run3",
+      "strategy": "random_rollout",
+      "seed_source_run": "run3",
+      "seed_source_path": null
+    }
+  ],
+  "planner_namo_config_path": "/home/dhruv/projects_dhruv/namo/namo_cpp/config/namo_config_complete_skill15_car_1x_maxpush5.yaml"
+}

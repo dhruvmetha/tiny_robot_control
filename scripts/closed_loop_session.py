@@ -9,6 +9,7 @@ execution without mutating ``real_test_envs`` or changing runtime logic.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib
 import importlib.util
 import json
@@ -38,7 +39,11 @@ LAYOUT_VERSION = 2
 DEFAULT_SESSION_GLOB = "bootstrap_from_real_test_envs_*"
 GOAL_TOLERANCE_CM = 5.0
 RESET_TOLERANCE_CM = 3.0
+MIN_EXECUTION_PUSH_STEPS = 2
+MAX_REPLAN_ATTEMPTS = 8
 EXPECTED_SCENE_FILES = ("env.xml", "mid_obs.jsonl", "env.png", "scene.jpg")
+RUN_STRATEGIES = ("primitive", "random_rollout")
+RUNS_PER_STRATEGY = 3
 
 
 def _utc_now() -> tuple[float, str]:
@@ -154,16 +159,94 @@ def _object_sort_key(name: str) -> tuple[int, int, str]:
     return (2, 0, name)
 
 
-def _run_sort_key(name: str) -> tuple[int, str]:
+def _strategy_run_name(strategy: str, index: int) -> str:
+    return f"{strategy}_run{index}"
+
+
+def _parse_run_name(name: str) -> Optional[tuple[str, int, bool]]:
     if name.startswith("run") and name[3:].isdigit():
-        return (int(name[3:]), name)
-    return (10**9, name)
+        return ("random_rollout", int(name[3:]), True)
+    for strategy in RUN_STRATEGIES:
+        prefix = f"{strategy}_run"
+        if name.startswith(prefix) and name[len(prefix):].isdigit():
+            return (strategy, int(name[len(prefix):]), False)
+    return None
+
+
+def _run_sort_key(name: str) -> tuple[int, int, str]:
+    parsed = _parse_run_name(name)
+    if parsed is None:
+        return (10**9, 10**9, name)
+    strategy, index, is_legacy = parsed
+    strategy_order = {strategy_name: idx for idx, strategy_name in enumerate(RUN_STRATEGIES)}
+    if is_legacy:
+        return (strategy_order.get("random_rollout", 10**9), index, name)
+    return (strategy_order.get(strategy, 10**9), index, name)
 
 
 def _iter_sort_key(name: str) -> tuple[int, str]:
     if name.startswith("iter_") and name[5:].isdigit():
         return (int(name[5:]), name)
     return (10**9, name)
+
+
+def _is_run_dir(path: Path) -> bool:
+    if not path.is_dir():
+        return False
+    if (path / "run_meta.json").exists():
+        return True
+    return _parse_run_name(path.name) is not None
+
+
+def _load_run_meta(run_dir: Path) -> dict[str, Any]:
+    meta = _read_json(run_dir / "run_meta.json", default={}) or {}
+    if isinstance(meta, dict):
+        return meta
+    return {}
+
+
+def _run_strategy(run_dir: Path) -> str:
+    run_meta = _load_run_meta(run_dir)
+    strategy = run_meta.get("strategy")
+    if isinstance(strategy, str) and strategy in RUN_STRATEGIES:
+        return strategy
+    parsed = _parse_run_name(run_dir.name)
+    if parsed is not None:
+        return parsed[0]
+    return "random_rollout"
+
+
+def _default_run_shuffle_seed(session_dir: Path, run_name: str) -> int:
+    raw = f"{session_dir.resolve()}::{run_name}".encode("utf-8")
+    return int.from_bytes(hashlib.sha256(raw).digest()[:4], "big")
+
+
+def _run_shuffle_seed(run_dir: Path) -> int:
+    run_meta = _load_run_meta(run_dir)
+    value = run_meta.get("shuffle_seed")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            pass
+    return _default_run_shuffle_seed(run_dir.parent, run_dir.name)
+
+
+def _replace_path_prefix(payload: Any, old_prefix: str, new_prefix: str) -> Any:
+    if isinstance(payload, str):
+        if payload.startswith(old_prefix):
+            return new_prefix + payload[len(old_prefix):]
+        return payload
+    if isinstance(payload, list):
+        return [_replace_path_prefix(item, old_prefix, new_prefix) for item in payload]
+    if isinstance(payload, dict):
+        return {
+            key: _replace_path_prefix(value, old_prefix, new_prefix)
+            for key, value in payload.items()
+        }
+    return payload
 
 
 def _iter_dir(run_dir: Path, iteration: int) -> Path:
@@ -184,6 +267,48 @@ def _workspace_from_real_yaml(real_yaml_path: Path) -> dict[str, float]:
     return {
         "width_cm": float(ws.get("width_cm", 49.0)),
         "height_cm": float(ws.get("height_cm", 77.5)),
+    }
+
+
+def _real_runtime_settings_from_diag(real_push_dir: Path) -> dict[str, Any]:
+    config_path = real_push_dir / "config.json"
+    payload = _read_json(config_path, default={}) or {}
+    args = payload.get("args") if isinstance(payload, dict) else {}
+    config_yaml = None
+    camera_service = None
+    if isinstance(args, dict):
+        raw_cfg = args.get("config")
+        raw_camera = args.get("camera_service")
+        if isinstance(raw_cfg, str) and raw_cfg.strip():
+            config_yaml = Path(raw_cfg)
+        if isinstance(raw_camera, str) and raw_camera.strip():
+            camera_service = raw_camera
+    if config_yaml is None:
+        config_yaml = ROBOT_CONTROL_ROOT / "config" / "real.yaml"
+    if camera_service is None:
+        camera_service = "tcp://localhost:5556"
+    return {
+        "config_yaml_path": config_yaml,
+        "camera_service": camera_service,
+    }
+
+
+def _real_runtime_scene_config(real_yaml_path: Path) -> dict[str, Any]:
+    data = yaml.safe_load(real_yaml_path.read_text()) if real_yaml_path.exists() else {}
+    if not isinstance(data, dict):
+        data = {}
+    workspace = data.get("workspace") or {}
+    robot = data.get("robot") or {}
+    origin = workspace.get("origin_offset") or [0.0, 0.0]
+    if not isinstance(origin, list) or len(origin) < 2:
+        origin = [0.0, 0.0]
+    return {
+        "workspace_width_cm": float(workspace.get("width_cm", 49.0)),
+        "workspace_height_cm": float(workspace.get("height_cm", 77.5)),
+        "workspace_origin_offset_cm": [float(origin[0]), float(origin[1])],
+        "robot_width_cm": float(robot.get("width_cm", 7.0)),
+        "robot_height_cm": float(robot.get("height_cm", 7.0)),
+        "robot_marker_id": int(robot.get("marker_id", 1)),
     }
 
 
@@ -216,7 +341,73 @@ def _load_namo_xml_generator_class():
     return module.NAMOXMLGenerator
 
 
-def _planner_car_1x_config_path() -> Path:
+def _ensure_robot_control_namespace_package(*subpackages: str) -> None:
+    """Seed lightweight namespace-package stubs without running __init__.py."""
+    robot_control_pkg = sys.modules.get("robot_control")
+    if robot_control_pkg is None:
+        robot_control_pkg = types.ModuleType("robot_control")
+        robot_control_pkg.__path__ = [str(SRC / "robot_control")]
+        sys.modules["robot_control"] = robot_control_pkg
+
+    for subpkg in subpackages:
+        module_name = f"robot_control.{subpkg}"
+        if module_name in sys.modules:
+            continue
+        pkg = types.ModuleType(module_name)
+        pkg.__path__ = [str(SRC / "robot_control" / subpkg.replace(".", "/"))]
+        sys.modules[module_name] = pkg
+
+
+def _load_robot_control_core_types():
+    _ensure_robot_control_namespace_package("core")
+    return importlib.import_module("robot_control.core.types")
+
+
+def _load_namo_bridge_class():
+    _ensure_robot_control_namespace_package(
+        "camera",
+        "core",
+        "planner",
+        "utils",
+    )
+    utils_pkg = sys.modules.get("robot_control.utils")
+    if utils_pkg is not None and not hasattr(utils_pkg, "NAMOXMLGenerator"):
+        utils_pkg.NAMOXMLGenerator = _load_namo_xml_generator_class()
+    module = importlib.import_module("robot_control.planner.namo_bridge")
+    return module.NAMOPlanBridge
+
+
+def _planner_car_1x_config_path(session_dir: Optional[Path] = None) -> Path:
+    override = os.environ.get("CLOSED_LOOP_NAMO_CONFIG_PATH")
+    if override:
+        config_path = Path(override).expanduser().resolve()
+        if not config_path.exists():
+            raise FileNotFoundError(f"{config_path} not found")
+        return config_path
+
+    if session_dir is not None:
+        session_meta = _read_json(session_dir / "session_meta.json", default={}) or {}
+        if isinstance(session_meta, dict):
+            raw = session_meta.get("planner_namo_config_path")
+            if isinstance(raw, str) and raw.strip():
+                config_path = Path(raw).expanduser()
+                if not config_path.is_absolute():
+                    config_path = (session_dir / config_path).resolve()
+                else:
+                    config_path = config_path.resolve()
+                if not config_path.exists():
+                    fallback = (
+                        ROBOT_CONTROL_ROOT.parent
+                        / "namo_cpp"
+                        / "config"
+                        / config_path.name
+                    )
+                    if fallback.exists():
+                        return fallback.resolve()
+                if not config_path.exists():
+                    raise FileNotFoundError(f"{config_path} not found")
+                return config_path
+
     config_path = (
         ROBOT_CONTROL_ROOT.parent
         / "namo_cpp"
@@ -228,10 +419,23 @@ def _planner_car_1x_config_path() -> Path:
     return config_path
 
 
+def _planner_robot_dims_from_config(config_path: Path) -> tuple[float, float]:
+    cfg = yaml.safe_load(config_path.read_text()) or {}
+    planning = (cfg.get("planning") or {}) if isinstance(cfg, dict) else {}
+    robot_size = planning.get("robot_size")
+    if not isinstance(robot_size, list) or len(robot_size) != 2:
+        raise RuntimeError(f"{config_path} missing planning.robot_size")
+    half_x_m = float(robot_size[0])
+    half_y_m = float(robot_size[1])
+    return half_x_m * 200.0, half_y_m * 200.0
+
+
 def _goal_probe_python_bin() -> Path:
     env_bin = os.environ.get("PYTHON_BIN")
     if env_bin:
-        return Path(env_bin)
+        env_path = Path(env_bin)
+        if env_path.exists():
+            return env_path
     if sys.version_info[:2] == (3, 12):
         return Path(sys.executable)
     common_env = Path.home() / "miniconda3" / "envs" / "namo312" / "bin" / "python"
@@ -241,6 +445,7 @@ def _goal_probe_python_bin() -> Path:
 
 
 def _goal_wavefront_reachable(
+    session_dir: Path,
     env_xml_path: Path,
     robot_pose_cm: tuple[float, float, float],
     goal_cm: tuple[float, float],
@@ -251,7 +456,7 @@ def _goal_wavefront_reachable(
     this is the closed-loop wrapper's unified reachability criterion.
     """
     python_bin = _goal_probe_python_bin()
-    config_path = _planner_car_1x_config_path()
+    config_path = _planner_car_1x_config_path(session_dir)
     loader_path = SRC / "robot_control" / "planner" / "namo_binding_loader.py"
     namo_cpp_dir = ROBOT_CONTROL_ROOT.parent / "namo_cpp"
     probe_code = r"""
@@ -394,11 +599,239 @@ def _scene_before_state(scene_before_dir: Path) -> dict[str, Any]:
     }
 
 
+def _capture_live_observation_from_camera_service(
+    camera_service: str,
+    reference_objects: dict[str, Any],
+    timeout_s: float = 10.0,
+    stable_secs: float = 1.0,
+):
+    _ensure_robot_control_namespace_package("nodes")
+    module = importlib.import_module("robot_control.nodes.remote_observer")
+    RemoteObserverNode = module.RemoteObserverNode
+    ObjectSizeInfo = module.ObjectSizeInfo
+
+    object_sizes: dict[str, Any] = {}
+    for name, raw_obj in reference_objects.items():
+        if not isinstance(raw_obj, dict):
+            continue
+        object_sizes[name] = ObjectSizeInfo(
+            width=float(raw_obj.get("width_cm", 0.0)),
+            depth=float(raw_obj.get("depth_cm", 0.0)),
+            height=float(raw_obj.get("height_cm", 0.0)),
+            is_static=bool(raw_obj.get("is_static", False)),
+        )
+
+    observer = RemoteObserverNode(address=camera_service, object_sizes=object_sizes)
+    if not observer.start():
+        raise RuntimeError(
+            f"failed to connect to camera_service at {camera_service}; "
+            "is it running?"
+        )
+    try:
+        deadline = time.time() + timeout_s
+        obs = None
+        while time.time() < deadline:
+            obs = observer.get()
+            if obs is not None:
+                break
+            time.sleep(0.1)
+        if obs is None:
+            raise RuntimeError(
+                f"camera_service at {camera_service} published no observation "
+                f"within {timeout_s:.1f}s"
+            )
+        time.sleep(stable_secs)
+        obs = observer.get() or obs
+        return obs
+    finally:
+        observer.stop()
+
+
+def _build_scene_after_payload_from_live_observation(
+    obs: Any,
+    reference_scene_objects: dict[str, Any],
+    goal_cm: tuple[float, float],
+    scene_cfg: dict[str, Any],
+) -> dict[str, Any]:
+    observed_objects = getattr(obs, "objects", None)
+    if not isinstance(observed_objects, dict):
+        raise RuntimeError("live observation missing objects payload")
+
+    payload: dict[str, Any] = {
+        "captured_at_epoch": time.time(),
+        "captured_at_observation_epoch": float(getattr(obs, "timestamp", time.time())),
+        "mode": "real",
+        "workspace": {
+            "width_cm": float(scene_cfg["workspace_width_cm"]),
+            "height_cm": float(scene_cfg["workspace_height_cm"]),
+            "origin_offset_cm": [
+                float(scene_cfg["workspace_origin_offset_cm"][0]),
+                float(scene_cfg["workspace_origin_offset_cm"][1]),
+            ],
+        },
+        "robot": {
+            "pose_cm": [
+                float(getattr(obs, "robot_x")),
+                float(getattr(obs, "robot_y")),
+                float(getattr(obs, "robot_theta")),
+            ],
+            "width_cm": float(scene_cfg["robot_width_cm"]),
+            "height_cm": float(scene_cfg["robot_height_cm"]),
+            "marker_id": int(scene_cfg["robot_marker_id"]),
+        },
+        "goal_cm": [float(goal_cm[0]), float(goal_cm[1])],
+        "objects": {},
+        "_recovered_from_live_camera_service": True,
+        "_recovered_reason": "missing scene_after artifacts during closed-loop advance",
+    }
+
+    missing_movable: list[str] = []
+    objects_out: dict[str, Any] = {}
+    for name, raw_obj in reference_scene_objects.items():
+        if not isinstance(raw_obj, dict):
+            continue
+        live_obj = observed_objects.get(name)
+        if live_obj is None:
+            if bool(raw_obj.get("is_static", False)):
+                objects_out[name] = {
+                    "pose_cm": [
+                        float(raw_obj["x_cm"]),
+                        float(raw_obj["y_cm"]),
+                        float(raw_obj.get("theta_deg", 0.0)),
+                    ],
+                    "width_cm": float(raw_obj["width_cm"]),
+                    "depth_cm": float(raw_obj["depth_cm"]),
+                    "height_cm": float(raw_obj["height_cm"]),
+                    "is_static": True,
+                }
+                continue
+            missing_movable.append(name)
+            continue
+        objects_out[name] = {
+            "pose_cm": [float(live_obj.x), float(live_obj.y), float(live_obj.theta)],
+            "width_cm": float(raw_obj.get("width_cm", getattr(live_obj, "width", 0.0))),
+            "depth_cm": float(raw_obj.get("depth_cm", getattr(live_obj, "depth", 0.0))),
+            "height_cm": float(raw_obj.get("height_cm", getattr(live_obj, "height", 0.0))),
+            "is_static": bool(raw_obj.get("is_static", getattr(live_obj, "is_static", False))),
+        }
+
+    if missing_movable:
+        raise RuntimeError(
+            "live observation missing movable object markers: "
+            + ", ".join(sorted(missing_movable))
+        )
+
+    payload["objects"] = objects_out
+    return payload
+
+
+def recover_scene_after(
+    session_dir: Path,
+    run_name: str,
+    iteration: int,
+    *,
+    allow_overwrite: bool = False,
+) -> dict[str, Any]:
+    session_meta = _load_session_meta(session_dir)
+    run_dir = session_dir / run_name
+    iter_dir = _iter_dir(run_dir, iteration)
+    real_push_dir = iter_dir / "real_push"
+    if not real_push_dir.exists():
+        raise FileNotFoundError(f"{real_push_dir} not found")
+
+    settings = _real_runtime_settings_from_diag(real_push_dir)
+    scene_cfg = _real_runtime_scene_config(Path(settings["config_yaml_path"]))
+    scene_before_state = _scene_before_state(iter_dir / "scene_before")
+    goal = session_meta.get("canonical_goal_cm")
+    if not isinstance(goal, list) or len(goal) < 2:
+        raise RuntimeError(f"{session_dir / 'session_meta.json'} missing canonical_goal_cm")
+    goal_cm = (float(goal[0]), float(goal[1]))
+
+    camera_service = str(settings["camera_service"])
+    obs = _capture_live_observation_from_camera_service(
+        camera_service,
+        scene_before_state["scene_objects"],
+    )
+    payload = _build_scene_after_payload_from_live_observation(
+        obs,
+        scene_before_state["scene_objects"],
+        goal_cm,
+        scene_cfg,
+    )
+
+    _ensure_robot_control_namespace_package("diagnostics")
+    capture_mod = importlib.import_module("robot_control.diagnostics.capture")
+    jpg_bytes = capture_mod.request_camera_frame(camera_service, kind="vis", timeout_sec=2.0)
+    if jpg_bytes is None:
+        raise RuntimeError(
+            f"camera_service at {camera_service} did not return a diagnostic frame; "
+            "restart camera_service if needed"
+        )
+
+    scene_after_json = real_push_dir / "scene_after.json"
+    scene_after_jpg = real_push_dir / "scene_after.jpg"
+    if (scene_after_json.exists() or scene_after_jpg.exists()) and not allow_overwrite:
+        raise RuntimeError(
+            f"{real_push_dir} already contains scene_after artifacts; "
+            "pass --allow-overwrite to replace them"
+        )
+    _write_json_atomic(scene_after_json, payload)
+    scene_after_jpg.write_bytes(jpg_bytes)
+    return {
+        "session_dir": str(session_dir),
+        "run_name": run_name,
+        "iteration": iteration,
+        "camera_service": camera_service,
+        "scene_after_json": str(scene_after_json),
+        "scene_after_jpg": str(scene_after_jpg),
+        "recovered_from_live_camera_service": True,
+    }
+
+
+def _observation_from_scene_before(
+    scene_before_dir: Path,
+    fallback_goal_cm: Optional[tuple[float, float]] = None,
+):
+    types_mod = _load_robot_control_core_types()
+    Observation = types_mod.Observation
+    ObjectPose = types_mod.ObjectPose
+
+    state = _scene_before_state(scene_before_dir)
+    goal_cm = state["goal_cm"] or fallback_goal_cm
+    if goal_cm is None:
+        raise RuntimeError(f"{scene_before_dir} missing goal_cm")
+
+    objects: dict[str, Any] = {}
+    for name, raw_obj in state["scene_objects"].items():
+        if not isinstance(raw_obj, dict):
+            continue
+        objects[name] = ObjectPose(
+            x=float(raw_obj["x_cm"]),
+            y=float(raw_obj["y_cm"]),
+            theta=float(raw_obj["theta_deg"]),
+            width=float(raw_obj["width_cm"]),
+            depth=float(raw_obj["depth_cm"]),
+            height=float(raw_obj["height_cm"]),
+            is_static=bool(raw_obj.get("is_static", False)),
+        )
+
+    robot_pose = state["robot_pose"]
+    return Observation(
+        robot_x=float(robot_pose[0]),
+        robot_y=float(robot_pose[1]),
+        robot_theta=float(robot_pose[2]),
+        objects=objects,
+        timestamp=float(state["observation_timestamp"] or 0.0),
+        goal_x=float(goal_cm[0]),
+        goal_y=float(goal_cm[1]),
+    )
+
+
 def _mapping_from_scene_objects(scene_objects: dict[str, Any]) -> tuple[dict[str, str], dict[str, str]]:
     real_to_sim: dict[str, str] = {}
     sim_to_real: dict[str, str] = {}
     movable_count = 0
-    for name in sorted(scene_objects.keys(), key=_object_sort_key):
+    for name in sorted(scene_objects.keys()):
         obj = scene_objects[name]
         if not isinstance(obj, dict):
             continue
@@ -471,7 +904,7 @@ def _mapping_from_scene_env_xml(
     for sim_name, sim_spec in sorted(sim_specs.items()):
         best_real: Optional[str] = None
         best_score: Optional[tuple[float, float, float]] = None
-        for real_name in sorted(unmatched_real, key=_object_sort_key):
+        for real_name in sorted(unmatched_real):
             real_spec = real_specs[real_name]
             pos_err = math.hypot(
                 sim_spec["x_cm"] - real_spec["x_cm"],
@@ -549,7 +982,7 @@ def _mapping_from_solution(
 
 def _scene_objects_to_generator_input(scene_objects: dict[str, Any]) -> dict[str, tuple[float, float, float, float, float, float, bool]]:
     converted: dict[str, tuple[float, float, float, float, float, float, bool]] = {}
-    for name in sorted(scene_objects.keys(), key=_object_sort_key):
+    for name in sorted(scene_objects.keys()):
         obj = scene_objects[name]
         if not isinstance(obj, dict):
             continue
@@ -590,6 +1023,204 @@ def _is_successful_seed_run(run_dir: Path) -> bool:
         return False
     data = yaml.safe_load(solution_path.read_text()) or {}
     return bool(data.get("success"))
+
+
+def _solution_first_push_steps(solution: dict[str, Any]) -> Optional[int]:
+    plan = solution.get("plan")
+    if not isinstance(plan, list) or not plan:
+        return None
+    first_push = plan[0]
+    if not isinstance(first_push, dict):
+        return None
+    try:
+        return int(first_push["push_steps"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _closed_loop_solution_rejection_reason(solution: dict[str, Any]) -> Optional[str]:
+    if not bool(solution.get("success")):
+        return "plan_not_successful"
+    first_push_steps = _solution_first_push_steps(solution)
+    if first_push_steps is None:
+        return "missing_first_push_steps"
+    return None
+
+
+def _instantiate_closed_loop_bridge(session_dir: Optional[Path] = None):
+    NAMOPlanBridge = _load_namo_bridge_class()
+    config_path = _planner_car_1x_config_path(session_dir)
+    robot_width_cm, robot_height_cm = _planner_robot_dims_from_config(config_path)
+    return NAMOPlanBridge(
+        namo_config_path=str(config_path),
+        scale_factor=1.0,
+        verbose=False,
+        robot_width_cm=robot_width_cm,
+        robot_height_cm=robot_height_cm,
+        robot_model="car",
+    )
+
+
+def _write_reused_candidate(
+    *,
+    candidate_dir: Path,
+    goal_cm: tuple[float, float],
+    verified_subgoals: list[Any],
+    verification_time_ms: float,
+    sim_pushes_tried: int,
+    planner_scene_xml: str,
+    object_mapping: dict[str, Any],
+    source_solution: Optional[dict[str, Any]],
+    origin_kind: str,
+    source_iteration: int,
+) -> None:
+    candidate_dir.mkdir(parents=True, exist_ok=True)
+    planner_scene_path = candidate_dir / "planner_scene.xml"
+    planner_scene_path.write_text(planner_scene_xml)
+
+    plan_list: list[dict[str, Any]] = []
+    for sg in verified_subgoals:
+        plan_list.append(
+            {
+                "object_id": str(getattr(sg, "object_id")),
+                "edge_idx": int(getattr(sg, "edge_idx")),
+                "push_steps": int(getattr(sg, "push_steps")),
+            }
+        )
+
+    payload = {
+        "success": True,
+        "outcome": "success",
+        "goal_cm": [float(goal_cm[0]), float(goal_cm[1])],
+        "algorithm": str((source_solution or {}).get("algorithm") or "full_namo"),
+        "strategy": str((source_solution or {}).get("strategy") or "random_rollout"),
+        "plan": plan_list,
+        "search_stats": {
+            "search_time_ms": float(verification_time_ms),
+            "pushes_in_plan": len(plan_list),
+            "sim_pushes_tried": int(sim_pushes_tried),
+        },
+        "object_mapping": object_mapping,
+        "planner_scene_xml": planner_scene_path.name,
+        "plan_origin": {
+            "kind": origin_kind,
+            "source": "previous_committed_chain",
+            "source_iteration": int(source_iteration),
+        },
+    }
+    _write_yaml_atomic(candidate_dir / "solution.yaml", payload)
+
+
+def _attempt_reuse_from_previous_plan(
+    session_dir: Path,
+    run_name: str,
+    iteration: int,
+) -> Optional[dict[str, Any]]:
+    if iteration <= 1:
+        return None
+
+    previous_iter_dir = _iter_dir(session_dir / run_name, iteration - 1)
+    selected_plan_path = previous_iter_dir / "selected_plan.json"
+    if not selected_plan_path.exists():
+        return None
+
+    selected_plan = _read_json(selected_plan_path, default=None)
+    if not isinstance(selected_plan, dict):
+        return None
+
+    full_plan = selected_plan.get("full_plan")
+    if not isinstance(full_plan, list) or not full_plan:
+        return None
+
+    source_solution: Optional[dict[str, Any]] = None
+    source_solution_path = selected_plan.get("solution_path")
+    if isinstance(source_solution_path, str) and source_solution_path.strip():
+        source_path = Path(source_solution_path)
+        if source_path.exists():
+            loaded = yaml.safe_load(source_path.read_text()) or {}
+            if isinstance(loaded, dict):
+                source_solution = loaded
+
+    session_meta = _load_session_meta(session_dir)
+    goal = session_meta.get("canonical_goal_cm")
+    if not isinstance(goal, list) or len(goal) < 2:
+        raise RuntimeError(f"{session_dir / 'session_meta.json'} missing canonical_goal_cm")
+    goal_cm = (float(goal[0]), float(goal[1]))
+
+    iter_dir = _iter_dir(session_dir / run_name, iteration)
+    observation = _observation_from_scene_before(iter_dir / "scene_before", fallback_goal_cm=goal_cm)
+    bridge = _instantiate_closed_loop_bridge(session_dir)
+
+    def _verify(chain: list[Any], origin_kind: str) -> Optional[dict[str, Any]]:
+        result = bridge.verify_chain(
+            observation=observation,
+            robot_goal_cm=goal_cm,
+            chain=chain,
+            allow_collisions=True,
+        )
+        if not result.success:
+            return {
+                "success": False,
+                "origin_kind": origin_kind,
+                "failed_step_index": result.failed_step_index,
+                "failure_reason": result.failure_reason,
+                "verification_time_ms": result.verification_time_ms,
+                "sim_pushes_tried": int(result.sim_pushes_tried),
+            }
+
+        candidate_dir = iter_dir / "sim_candidates" / "candidate1"
+        if candidate_dir.exists():
+            shutil.rmtree(candidate_dir)
+        _write_reused_candidate(
+            candidate_dir=candidate_dir,
+            goal_cm=goal_cm,
+            verified_subgoals=result.verified_subgoals,
+            verification_time_ms=result.verification_time_ms,
+            sim_pushes_tried=int(result.sim_pushes_tried),
+            planner_scene_xml=result.planner_scene_xml,
+            object_mapping=result.object_mapping,
+            source_solution=source_solution,
+            origin_kind=origin_kind,
+            source_iteration=iteration - 1,
+        )
+        return {
+            "success": True,
+            "origin_kind": origin_kind,
+            "failed_step_index": result.failed_step_index,
+            "failure_reason": result.failure_reason,
+            "verification_time_ms": result.verification_time_ms,
+            "sim_pushes_tried": int(result.sim_pushes_tried),
+            "candidate_dir": str(candidate_dir),
+        }
+
+    reuse_attempts: list[dict[str, Any]] = []
+
+    if len(full_plan) > 1:
+        suffix_attempt = _verify(full_plan[1:], "reuse_suffix")
+        if suffix_attempt is not None:
+            reuse_attempts.append(suffix_attempt)
+        if suffix_attempt and suffix_attempt.get("success"):
+            return suffix_attempt
+        if suffix_attempt and suffix_attempt.get("failed_step_index") == 0:
+            full_attempt = _verify(full_plan, "reuse_full")
+            if full_attempt is not None:
+                reuse_attempts.append(full_attempt)
+            if full_attempt and full_attempt.get("success"):
+                return full_attempt
+        return {
+            "success": False,
+            "reuse_attempts": reuse_attempts,
+        }
+
+    full_attempt = _verify(full_plan, "reuse_full")
+    if full_attempt is not None:
+        reuse_attempts.append(full_attempt)
+    if full_attempt and full_attempt.get("success"):
+        return full_attempt
+    return {
+        "success": False,
+        "reuse_attempts": reuse_attempts,
+    }
 
 
 def _seed_sources_from_pre_migration(session_dir: Path, old_meta: dict[str, Any]) -> dict[str, Path]:
@@ -683,11 +1314,38 @@ def _write_run_status(iter_dir: Path, iteration: int, state: str, successful_sim
     _write_json_atomic(iter_dir / "status.json", payload)
 
 
-def _materialize_seed_run(
+def _write_run_meta(
+    run_dir: Path,
+    *,
+    session_dir: Path,
+    run_name: str,
+    strategy: str,
+    seed_source_run: Optional[str],
+    seed_source_path: Optional[Path],
+    seed_solution_success: bool,
+) -> None:
+    _, now_iso = _utc_now()
+    run_meta = {
+        "run_name": run_name,
+        "strategy": strategy,
+        "seed_source_run": seed_source_run,
+        "seed_source_path": str(seed_source_path) if seed_source_path is not None else None,
+        "iter_001_candidate_dir": "iter_001/sim_candidates/candidate1",
+        "seed_solution_success": seed_solution_success,
+        "shuffle_seed": _default_run_shuffle_seed(session_dir, run_name),
+        "created_at_utc": now_iso,
+    }
+    _write_json_atomic(run_dir / "run_meta.json", run_meta)
+
+
+def _materialize_run(
     session_dir: Path,
     start_state_dir: Path,
+    *,
     run_name: str,
-    seed_source: Path,
+    strategy: str,
+    seed_source: Optional[Path],
+    seed_source_run: Optional[str],
 ) -> None:
     run_dir = session_dir / run_name
     iter1_dir = _iter_dir(run_dir, 1)
@@ -696,35 +1354,195 @@ def _materialize_seed_run(
     real_push_dir = iter1_dir / "real_push"
     scene_after_dir = iter1_dir / "scene_after"
 
-    if not run_dir.exists():
-        run_dir.mkdir(parents=True, exist_ok=True)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    _clear_dir(scene_before_dir)
+    _copy_tree_contents(start_state_dir, scene_before_dir)
 
-    if not scene_before_dir.exists():
-        _clear_dir(scene_before_dir)
-        _copy_tree_contents(start_state_dir, scene_before_dir)
-
-    if not candidate_dir.exists():
+    if seed_source is not None:
+        if candidate_dir.exists():
+            shutil.rmtree(candidate_dir)
         candidate_dir.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(seed_source, candidate_dir)
+        solution_path = candidate_dir / "solution.yaml"
+        solution = yaml.safe_load(solution_path.read_text()) if solution_path.exists() else {}
+        seed_solution_success = bool((solution or {}).get("success"))
+        state = "seeded"
+        successful_candidates = ["candidate1"]
+    else:
+        if candidate_dir.parent.exists():
+            shutil.rmtree(candidate_dir.parent)
+        seed_solution_success = False
+        state = "awaiting_replan"
+        successful_candidates = []
 
     real_push_dir.mkdir(parents=True, exist_ok=True)
     scene_after_dir.mkdir(parents=True, exist_ok=True)
+    _write_run_meta(
+        run_dir,
+        session_dir=session_dir,
+        run_name=run_name,
+        strategy=strategy,
+        seed_source_run=seed_source_run,
+        seed_source_path=seed_source,
+        seed_solution_success=seed_solution_success,
+    )
+    _write_run_status(iter1_dir, 1, state, successful_candidates)
 
-    solution_path = candidate_dir / "solution.yaml"
-    solution = yaml.safe_load(solution_path.read_text()) if solution_path.exists() else {}
-    _, now_iso = _utc_now()
-    run_meta = {
-        "run_name": run_name,
-        "seed_source_run": run_name,
-        "seed_source_path": str(seed_source),
-        "iter_001_candidate_dir": "iter_001/sim_candidates/candidate1",
-        "seed_solution_success": bool((solution or {}).get("success")),
-        "created_at_utc": now_iso,
+
+def _materialize_seed_run(
+    session_dir: Path,
+    start_state_dir: Path,
+    run_name: str,
+    seed_source: Path,
+) -> None:
+    _materialize_run(
+        session_dir,
+        start_state_dir,
+        run_name=run_name,
+        strategy="random_rollout",
+        seed_source=seed_source,
+        seed_source_run=run_name,
+    )
+
+
+def _patch_relocated_run_artifacts(old_run_dir: Path, new_run_dir: Path, new_run_name: str) -> None:
+    old_prefix = str(old_run_dir)
+    new_prefix = str(new_run_dir)
+    for selected_plan_path in new_run_dir.glob("iter_*/selected_plan.json"):
+        payload = _read_json(selected_plan_path, default=None)
+        if isinstance(payload, dict):
+            payload = _replace_path_prefix(payload, old_prefix, new_prefix)
+            payload["run_name"] = new_run_name
+            _write_json_atomic(selected_plan_path, payload)
+    for launch_script_path in new_run_dir.glob("iter_*/launch_real_push.sh"):
+        text = _read_text(launch_script_path)
+        if text:
+            launch_script_path.write_text(text.replace(old_prefix, new_prefix))
+            launch_script_path.chmod(0o755)
+
+
+def _desired_run_specs(session_meta: dict[str, Any]) -> list[dict[str, Any]]:
+    random_root = _optional_path(session_meta.get("source_random_rollout_root"))
+    specs: list[dict[str, Any]] = []
+    for strategy in RUN_STRATEGIES:
+        for index in range(1, RUNS_PER_STRATEGY + 1):
+            seed_source_run: Optional[str] = None
+            seed_source_path: Optional[Path] = None
+            if strategy == "random_rollout":
+                seed_source_run = f"run{index}"
+                if random_root is not None:
+                    candidate = random_root / seed_source_run
+                    if candidate.is_dir() and _is_successful_seed_run(candidate):
+                        seed_source_path = candidate.resolve()
+            specs.append(
+                {
+                    "run_name": _strategy_run_name(strategy, index),
+                    "strategy": strategy,
+                    "seed_source_run": seed_source_run,
+                    "seed_source_path": seed_source_path,
+                    "index": index,
+                }
+            )
+    return specs
+
+
+def normalize_strategy_run_layout(session_dir: Path) -> dict[str, Any]:
+    session_dir = session_dir.resolve()
+    session_meta = _load_session_meta(session_dir)
+    start_state_dir = session_dir / str(session_meta.get("start_state_dir") or "start_state")
+    if not start_state_dir.is_dir():
+        raise RuntimeError(f"{start_state_dir} missing")
+
+    desired_specs = _desired_run_specs(session_meta)
+    desired_names = {str(spec["run_name"]) for spec in desired_specs}
+    removed_runs: list[str] = []
+    renamed_runs: list[dict[str, str]] = []
+    created_runs: list[str] = []
+    refreshed_runs: list[str] = []
+
+    existing_run_dirs = [p for p in session_dir.iterdir() if _is_run_dir(p)]
+    for run_dir in sorted(existing_run_dirs, key=lambda p: _run_sort_key(p.name)):
+        iter_dirs = [p for p in run_dir.iterdir() if p.is_dir() and p.name.startswith("iter_")]
+        if len(iter_dirs) > 1:
+            shutil.rmtree(run_dir)
+            removed_runs.append(run_dir.name)
+
+    for spec in desired_specs:
+        run_name = str(spec["run_name"])
+        strategy = str(spec["strategy"])
+        index = int(spec["index"])
+        seed_source_run = spec["seed_source_run"]
+        seed_source_path = spec["seed_source_path"]
+        target_dir = session_dir / run_name
+        legacy_dir = session_dir / f"run{index}"
+
+        if target_dir.exists():
+            _write_run_meta(
+                target_dir,
+                session_dir=session_dir,
+                run_name=run_name,
+                strategy=strategy,
+                seed_source_run=seed_source_run,
+                seed_source_path=seed_source_path,
+                seed_solution_success=bool(seed_source_path),
+            )
+            refreshed_runs.append(run_name)
+            continue
+
+        if strategy == "random_rollout" and legacy_dir.exists():
+            legacy_dir.rename(target_dir)
+            _patch_relocated_run_artifacts(legacy_dir, target_dir, run_name)
+            _write_run_meta(
+                target_dir,
+                session_dir=session_dir,
+                run_name=run_name,
+                strategy=strategy,
+                seed_source_run=seed_source_run,
+                seed_source_path=seed_source_path,
+                seed_solution_success=bool(seed_source_path),
+            )
+            renamed_runs.append({"from": legacy_dir.name, "to": run_name})
+            continue
+
+        _materialize_run(
+            session_dir,
+            start_state_dir,
+            run_name=run_name,
+            strategy=strategy,
+            seed_source=seed_source_path,
+            seed_source_run=seed_source_run,
+        )
+        created_runs.append(run_name)
+
+    for run_dir in sorted([p for p in session_dir.iterdir() if _is_run_dir(p)], key=lambda p: _run_sort_key(p.name)):
+        if run_dir.name not in desired_names:
+            shutil.rmtree(run_dir)
+            removed_runs.append(run_dir.name)
+
+    session_meta["strategy_seed_roots"] = {
+        "random_rollout": session_meta.get("source_random_rollout_root"),
+        "primitive": None,
     }
-    _write_json_atomic(run_dir / "run_meta.json", run_meta)
+    session_meta["run_specs"] = [
+        {
+            "run_name": spec["run_name"],
+            "strategy": spec["strategy"],
+            "seed_source_run": spec["seed_source_run"],
+            "seed_source_path": str(spec["seed_source_path"]) if spec["seed_source_path"] is not None else None,
+        }
+        for spec in desired_specs
+    ]
+    session_meta["initial_seed_runs"] = [str(spec["run_name"]) for spec in desired_specs]
+    _write_json_atomic(session_dir / "session_meta.json", session_meta)
 
-    if not (iter1_dir / "status.json").exists():
-        _write_run_status(iter1_dir, 1, "seeded", ["candidate1"])
+    return {
+        "session_dir": str(session_dir),
+        "removed_runs": removed_runs,
+        "renamed_runs": renamed_runs,
+        "created_runs": created_runs,
+        "refreshed_runs": refreshed_runs,
+        "run_names": [str(spec["run_name"]) for spec in desired_specs],
+    }
 
 
 def migrate_bootstrap_session(session_dir: Path) -> dict[str, Any]:
@@ -823,7 +1641,12 @@ def migrate_bootstrap_session(session_dir: Path) -> dict[str, Any]:
 def _load_session_meta(session_dir: Path) -> dict[str, Any]:
     meta = _read_json(session_dir / "session_meta.json", default=None)
     if not isinstance(meta, dict):
-        raise RuntimeError(f"{session_dir / 'session_meta.json'} missing or malformed")
+        raise RuntimeError(
+            f"{session_dir / 'session_meta.json'} missing or malformed. "
+            "Pass the session root directory that contains session_meta.json. "
+            "If you are using $SESSION, make sure it is set in the current shell; "
+            "an empty value resolves to the current working directory."
+        )
     if _session_layout_version(meta) != LAYOUT_VERSION:
         raise RuntimeError(f"{session_dir} has unsupported layout_version")
     return meta
@@ -841,6 +1664,35 @@ def _update_status(iter_dir: Path, patch: dict[str, Any]) -> dict[str, Any]:
     status.update(patch)
     _write_json_atomic(iter_dir / "status.json", status)
     return status
+
+
+def _clear_prepared_real_push_artifacts(iter_dir: Path) -> None:
+    for path in (
+        iter_dir / "selected_plan.json",
+        iter_dir / "selected_trial_spec.yaml",
+        iter_dir / "launch_real_push.sh",
+    ):
+        if path.exists():
+            path.unlink()
+
+
+def _unprepared_status_patch() -> dict[str, Any]:
+    return {
+        "state": "awaiting_replan",
+        "selected_candidate": None,
+        "selected_plan_path": None,
+        "selected_trial_spec_path": None,
+        "launch_real_push_script": None,
+        "selected_sim_push_steps": None,
+        "selected_real_push_steps": None,
+        "selected_push_steps_overridden_for_real": None,
+        "last_replan_exit_code": None,
+        "last_replan_driver_log": None,
+        "last_replan_rejections": [],
+        "last_replan_accepted_attempt": None,
+        "last_replan_strategy": None,
+        "last_replan_verification_ms": None,
+    }
 
 
 def _resolve_real_object_id(
@@ -885,6 +1737,11 @@ def prepare_real_push(session_dir: Path, run_name: str, iteration: int) -> dict[
     solution = yaml.safe_load(solution_path.read_text()) or {}
     if not bool(solution.get("success")):
         raise RuntimeError(f"{solution_path} is not a successful plan")
+    rejection_reason = _closed_loop_solution_rejection_reason(solution)
+    if rejection_reason is not None:
+        raise RuntimeError(
+            f"{solution_path} is not an acceptable closed-loop plan: {rejection_reason}"
+        )
 
     plan = solution.get("plan")
     if not isinstance(plan, list) or not plan:
@@ -908,7 +1765,9 @@ def prepare_real_push(session_dir: Path, run_name: str, iteration: int) -> dict[
 
     obstacle_target = [float(target["x_cm"]), float(target["y_cm"])]
     edge_idx = int(first_push["edge_idx"])
-    push_steps = int(first_push["push_steps"])
+    sim_push_steps = int(first_push["push_steps"])
+    push_steps = max(MIN_EXECUTION_PUSH_STEPS, sim_push_steps)
+    push_steps_overridden = push_steps != sim_push_steps
     goal_cm = session_meta.get("canonical_goal_cm")
     trial_spec = {
         "obstacle_target": obstacle_target,
@@ -932,10 +1791,13 @@ def prepare_real_push(session_dir: Path, run_name: str, iteration: int) -> dict[
         "full_plan": plan,
         "selected_push_index": 0,
         "selected_push": {
-            "sim_object_id": str(first_push["object_id"]),
+            "plan_object_id": str(first_push["object_id"]),
+            "sim_object_id": real_to_sim.get(real_object_id, str(first_push["object_id"])),
             "real_object_id": real_object_id,
             "edge_idx": edge_idx,
             "push_steps": push_steps,
+            "sim_push_steps": sim_push_steps,
+            "push_steps_overridden_for_real": push_steps_overridden,
         },
         "object_mapping": {
             "real_to_sim": real_to_sim,
@@ -961,6 +1823,7 @@ def prepare_real_push(session_dir: Path, run_name: str, iteration: int) -> dict[
         f"  --trial-spec {shlex_quote(str(trial_spec_path))} \\",
         f"  --diag-path {shlex_quote(str(iter_dir))} \\",
         "  --run-name real_push \\",
+        "  --headless \\",
         "  --capture-scene \\",
         "  --record-video \\",
         "  --nav-speed 0.4 \\",
@@ -980,6 +1843,9 @@ def prepare_real_push(session_dir: Path, run_name: str, iteration: int) -> dict[
             "selected_plan_path": "selected_plan.json",
             "selected_trial_spec_path": "selected_trial_spec.yaml",
             "launch_real_push_script": "launch_real_push.sh",
+            "selected_sim_push_steps": sim_push_steps,
+            "selected_real_push_steps": push_steps,
+            "selected_push_steps_overridden_for_real": push_steps_overridden,
         },
     )
     return {
@@ -989,6 +1855,8 @@ def prepare_real_push(session_dir: Path, run_name: str, iteration: int) -> dict[
         "selected_real_object_id": real_object_id,
         "edge_idx": edge_idx,
         "push_steps": push_steps,
+        "sim_push_steps": sim_push_steps,
+        "push_steps_overridden_for_real": push_steps_overridden,
         "launch_script": str(launch_script_path),
     }
 
@@ -1056,7 +1924,7 @@ def _generate_scene_bundle(
             "scene_after.json so env.xml and robot_pose_cm stay in sync."
         ),
     }
-    for name in sorted(objects.keys(), key=_object_sort_key):
+    for name in sorted(objects.keys()):
         obj = objects[name]
         if not isinstance(obj, dict):
             continue
@@ -1084,10 +1952,25 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
     real_push_dir = iter_dir / "real_push"
     scene_after_json = real_push_dir / "scene_after.json"
     scene_after_jpg = real_push_dir / "scene_after.jpg"
+    if not scene_after_json.exists() or not scene_after_jpg.exists():
+        recover_scene_after(
+            session_dir,
+            run_name,
+            iteration,
+            allow_overwrite=True,
+        )
     if not scene_after_json.exists():
-        raise FileNotFoundError(f"{scene_after_json} not found")
+        raise FileNotFoundError(
+            f"{scene_after_json} not found even after live recovery attempt. "
+            "Do not move the scene; make sure camera_service is still running "
+            "and the post-push scene is unchanged, then retry."
+        )
     if not scene_after_jpg.exists():
-        raise FileNotFoundError(f"{scene_after_jpg} not found")
+        raise FileNotFoundError(
+            f"{scene_after_jpg} not found even after live recovery attempt. "
+            "Do not move the scene; make sure camera_service is still running "
+            "and the post-push scene is unchanged, then retry."
+        )
 
     scene_after_payload = _read_json(scene_after_json, default=None)
     if not isinstance(scene_after_payload, dict):
@@ -1115,6 +1998,7 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
     )
     goal_reached_by_distance = dist < GOAL_TOLERANCE_CM
     goal_wavefront_reachable = _goal_wavefront_reachable(
+        session_dir,
         scene_after_dir / "env.xml",
         robot_pose_cm,
         goal_cm,
@@ -1176,7 +2060,7 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
     }
 
 
-def replan_iteration(session_dir: Path, run_name: str, iteration: int) -> dict[str, Any]:
+def _run_full_replan_search(session_dir: Path, run_name: str, iteration: int) -> dict[str, Any]:
     run_dir = session_dir / run_name
     iter_dir = _iter_dir(run_dir, iteration)
     scene_before_dir = iter_dir / "scene_before"
@@ -1184,13 +2068,18 @@ def replan_iteration(session_dir: Path, run_name: str, iteration: int) -> dict[s
     if not sim_xml_path.exists():
         raise FileNotFoundError(f"{sim_xml_path} not found")
 
+    _clear_prepared_real_push_artifacts(iter_dir)
+    _update_status(iter_dir, _unprepared_status_patch())
     candidate_dir = iter_dir / "sim_candidates" / "candidate1"
     if candidate_dir.exists():
         shutil.rmtree(candidate_dir)
     sim_candidates_dir = iter_dir / "sim_candidates"
     sim_candidates_dir.mkdir(parents=True, exist_ok=True)
     driver_log = iter_dir / "replan_candidate1_driver.log"
+    strategy = _run_strategy(run_dir)
+
     python_bin = os.environ.get("PYTHON_BIN") or sys.executable
+    planner_config_path = _planner_car_1x_config_path(session_dir)
     cmd = [
         python_bin,
         "scripts/run_namo.py",
@@ -1199,16 +2088,25 @@ def replan_iteration(session_dir: Path, run_name: str, iteration: int) -> dict[s
         str(sim_xml_path),
         "--sim-real-run-dir",
         str(scene_before_dir),
+        "--namo-config",
+        str(planner_config_path),
         "--strategy",
-        "random_rollout",
-        "--rollout-samples-per-state",
-        "36000",
+        strategy,
+        "--shuffle-seed",
+        str(_run_shuffle_seed(run_dir)),
         "--diag-path",
         str(sim_candidates_dir),
         "--run-name",
         "candidate1",
         "--allow-overwrite",
     ]
+    if strategy == "random_rollout":
+        cmd.extend(
+            [
+                "--rollout-samples-per-state",
+                "36000",
+            ]
+        )
     child_env = os.environ.copy()
     existing_pythonpath = child_env.get("PYTHONPATH")
     child_env["PYTHONPATH"] = (
@@ -1218,26 +2116,62 @@ def replan_iteration(session_dir: Path, run_name: str, iteration: int) -> dict[s
     )
 
     print(f"[closed-loop] replan {run_name} iter_{iteration:03d}")
-    with open(driver_log, "w") as log_file:
-        proc = subprocess.run(
-            cmd,
-            cwd=ROBOT_CONTROL_ROOT,
-            env=child_env,
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-            text=True,
-            check=False,
-        )
+    rejection_reasons: list[str] = []
+    proc: Optional[subprocess.CompletedProcess[str]] = None
+    successful = False
+    accepted_attempt: Optional[int] = None
 
-    successful = candidate_dir.is_dir() and _is_successful_seed_run(candidate_dir)
+    with open(driver_log, "w") as log_file:
+        for attempt in range(1, MAX_REPLAN_ATTEMPTS + 1):
+            if candidate_dir.exists():
+                shutil.rmtree(candidate_dir)
+            log_file.write(f"\n=== replan attempt {attempt}/{MAX_REPLAN_ATTEMPTS} ===\n")
+            log_file.flush()
+            proc = subprocess.run(
+                cmd,
+                cwd=ROBOT_CONTROL_ROOT,
+                env=child_env,
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                text=True,
+                check=False,
+            )
+
+            if not (candidate_dir.is_dir() and _is_successful_seed_run(candidate_dir)):
+                rejection_reasons.append(f"attempt_{attempt}: plan_not_successful")
+                continue
+
+            solution_path = candidate_dir / "solution.yaml"
+            solution = yaml.safe_load(solution_path.read_text()) or {}
+            rejection_reason = _closed_loop_solution_rejection_reason(solution)
+            if rejection_reason is None:
+                successful = True
+                accepted_attempt = attempt
+                break
+
+            rejection_reasons.append(f"attempt_{attempt}: {rejection_reason}")
+            log_file.write(
+                f"[closed-loop] rejecting candidate1 from attempt {attempt}: "
+                f"{rejection_reason}\n"
+            )
+            log_file.flush()
+            shutil.rmtree(candidate_dir)
+
+    if proc is None:
+        raise RuntimeError("replan_iteration did not launch any subprocess attempt")
+
     _update_status(
         iter_dir,
         {
+            **_unprepared_status_patch(),
             "state": "planned" if successful else "planning_failed",
             "successful_sim_candidates": ["candidate1"] if successful else [],
-            "selected_candidate": None,
             "last_replan_exit_code": proc.returncode,
             "last_replan_driver_log": driver_log.name,
+            "last_replan_rejections": rejection_reasons,
+            "last_replan_accepted_attempt": accepted_attempt,
+            "last_replan_strategy": strategy,
+            "last_replan_verification_ms": None,
         },
     )
     return {
@@ -1248,7 +2182,149 @@ def replan_iteration(session_dir: Path, run_name: str, iteration: int) -> dict[s
         "driver_log": str(driver_log),
         "exit_code": proc.returncode,
         "successful_plan": successful,
+        "accepted_attempt": accepted_attempt,
+        "rejections": rejection_reasons,
+        "strategy": strategy,
     }
+
+
+def replan_iteration(session_dir: Path, run_name: str, iteration: int) -> dict[str, Any]:
+    run_dir = session_dir / run_name
+    iter_dir = _iter_dir(run_dir, iteration)
+    _clear_prepared_real_push_artifacts(iter_dir)
+    _update_status(iter_dir, _unprepared_status_patch())
+    candidate_dir = iter_dir / "sim_candidates" / "candidate1"
+
+    reuse_result = _attempt_reuse_from_previous_plan(session_dir, run_name, iteration)
+    if reuse_result and reuse_result.get("success"):
+        _update_status(
+            iter_dir,
+            {
+                **_unprepared_status_patch(),
+                "state": "planned",
+                "successful_sim_candidates": ["candidate1"],
+                "last_replan_exit_code": 0,
+                "last_replan_driver_log": None,
+                "last_replan_rejections": [],
+                "last_replan_accepted_attempt": 0,
+                "last_replan_strategy": reuse_result["origin_kind"],
+                "last_replan_verification_ms": reuse_result["verification_time_ms"],
+            },
+        )
+        return {
+            "session_dir": str(session_dir),
+            "run_name": run_name,
+            "iteration": iteration,
+            "candidate_dir": str(candidate_dir),
+            "driver_log": None,
+            "exit_code": 0,
+            "successful_plan": True,
+            "accepted_attempt": 0,
+            "rejections": [],
+            "reused_plan": True,
+            "reuse_kind": reuse_result["origin_kind"],
+            "verification_time_ms": reuse_result["verification_time_ms"],
+        }
+
+    return _run_full_replan_search(session_dir, run_name, iteration)
+
+
+def _reuse_attempt_rejections(reuse_attempts: list[dict[str, Any]]) -> list[str]:
+    reasons: list[str] = []
+    for attempt in reuse_attempts:
+        if not isinstance(attempt, dict):
+            continue
+        origin = str(attempt.get("origin_kind") or "reuse")
+        if attempt.get("success"):
+            reasons.append(f"{origin}: success")
+            continue
+        failed_step = attempt.get("failed_step_index")
+        failure_reason = attempt.get("failure_reason") or "unknown_failure"
+        sim_pushes_tried = attempt.get("sim_pushes_tried")
+        reasons.append(
+            f"{origin}: failed_step={failed_step}, reason={failure_reason}, "
+            f"sim_pushes_tried={sim_pushes_tried}"
+        )
+    return reasons
+
+
+def replan_reuse_only(session_dir: Path, run_name: str, iteration: int) -> dict[str, Any]:
+    run_dir = session_dir / run_name
+    iter_dir = _iter_dir(run_dir, iteration)
+    scene_before_dir = iter_dir / "scene_before"
+    sim_xml_path = scene_before_dir / "env.xml"
+    if not sim_xml_path.exists():
+        raise FileNotFoundError(f"{sim_xml_path} not found")
+
+    _clear_prepared_real_push_artifacts(iter_dir)
+    _update_status(iter_dir, _unprepared_status_patch())
+    candidate_dir = iter_dir / "sim_candidates" / "candidate1"
+    if candidate_dir.exists():
+        shutil.rmtree(candidate_dir)
+    (iter_dir / "sim_candidates").mkdir(parents=True, exist_ok=True)
+
+    reuse_result = _attempt_reuse_from_previous_plan(session_dir, run_name, iteration)
+    if reuse_result and reuse_result.get("success"):
+        _update_status(
+            iter_dir,
+            {
+                **_unprepared_status_patch(),
+                "state": "planned",
+                "successful_sim_candidates": ["candidate1"],
+                "last_replan_exit_code": 0,
+                "last_replan_driver_log": None,
+                "last_replan_rejections": [],
+                "last_replan_accepted_attempt": 0,
+                "last_replan_strategy": reuse_result["origin_kind"],
+                "last_replan_verification_ms": reuse_result["verification_time_ms"],
+            },
+        )
+        return {
+            "session_dir": str(session_dir),
+            "run_name": run_name,
+            "iteration": iteration,
+            "candidate_dir": str(candidate_dir),
+            "successful_plan": True,
+            "accepted_attempt": 0,
+            "reused_plan": True,
+            "reuse_kind": reuse_result["origin_kind"],
+            "verification_time_ms": reuse_result["verification_time_ms"],
+            "sim_pushes_tried": reuse_result.get("sim_pushes_tried"),
+        }
+
+    reuse_attempts = []
+    if isinstance(reuse_result, dict):
+        raw_attempts = reuse_result.get("reuse_attempts")
+        if isinstance(raw_attempts, list):
+            reuse_attempts = raw_attempts
+
+    _update_status(
+        iter_dir,
+        {
+            **_unprepared_status_patch(),
+            "state": "awaiting_remote_replan",
+            "successful_sim_candidates": [],
+            "last_replan_exit_code": None,
+            "last_replan_driver_log": None,
+            "last_replan_rejections": _reuse_attempt_rejections(reuse_attempts),
+            "last_replan_accepted_attempt": None,
+            "last_replan_strategy": "reuse_failed",
+            "last_replan_verification_ms": None,
+        },
+    )
+    return {
+        "session_dir": str(session_dir),
+        "run_name": run_name,
+        "iteration": iteration,
+        "successful_plan": False,
+        "reused_plan": False,
+        "needs_remote_search": True,
+        "reuse_attempts": reuse_attempts,
+    }
+
+
+def replan_full_search_only(session_dir: Path, run_name: str, iteration: int) -> dict[str, Any]:
+    return _run_full_replan_search(session_dir, run_name, iteration)
 
 
 def session_status(session_dir: Path, run_name: Optional[str]) -> dict[str, Any]:
@@ -1257,7 +2333,7 @@ def session_status(session_dir: Path, run_name: Optional[str]) -> dict[str, Any]
     if run_name is not None:
         runs_root = [session_dir / run_name]
     else:
-        runs_root = [p for p in session_dir.iterdir() if p.is_dir() and p.name.startswith("run")]
+        runs_root = [p for p in session_dir.iterdir() if _is_run_dir(p)]
         runs_root.sort(key=lambda p: _run_sort_key(p.name))
 
     runs_payload: dict[str, Any] = {}
@@ -1313,10 +2389,52 @@ def _parse_args() -> argparse.Namespace:
     advance.add_argument("--iteration", type=int, required=True)
     advance.add_argument("--allow-overwrite", action="store_true")
 
+    recover = sub.add_parser(
+        "recover-scene-after",
+        help="Recover missing real_push/scene_after.{json,jpg} from the live camera_service.",
+    )
+    recover.add_argument("--session-dir", type=Path, required=True)
+    recover.add_argument("--run", type=str, required=True)
+    recover.add_argument("--iteration", type=int, required=True)
+    recover.add_argument("--allow-overwrite", action="store_true")
+
     replan = sub.add_parser("replan", help="Run one sim replan into sim_candidates/candidate1.")
     replan.add_argument("--session-dir", type=Path, required=True)
     replan.add_argument("--run", type=str, required=True)
     replan.add_argument("--iteration", type=int, required=True)
+
+    replan_reuse = sub.add_parser(
+        "replan-reuse-only",
+        help="Try only reuse ((a2..an), then (a1..an)) and stop before full search.",
+    )
+    replan_reuse.add_argument("--session-dir", type=Path, required=True)
+    replan_reuse.add_argument("--run", type=str, required=True)
+    replan_reuse.add_argument("--iteration", type=int, required=True)
+
+    replan_full = sub.add_parser(
+        "replan-full-search-only",
+        help="Skip reuse and run only the base-strategy full search into sim_candidates/candidate1.",
+    )
+    replan_full.add_argument("--session-dir", type=Path, required=True)
+    replan_full.add_argument("--run", type=str, required=True)
+    replan_full.add_argument("--iteration", type=int, required=True)
+
+    normalize = sub.add_parser(
+        "normalize-run-layout",
+        help="Convert a session to 3 primitive runs + 3 random_rollout runs.",
+    )
+    normalize.add_argument("--session-dir", type=Path, default=None, help="One session directory to normalize.")
+    normalize.add_argument(
+        "--all-under-root",
+        action="store_true",
+        help="Normalize every migrated session under closed_loop_sessions.",
+    )
+    normalize.add_argument(
+        "--closed-loop-root",
+        type=Path,
+        default=ROBOT_CONTROL_ROOT / "closed_loop_sessions",
+        help="closed_loop_sessions root (default: repo-local path).",
+    )
 
     status = sub.add_parser("status", help="Print session status JSON.")
     status.add_argument("--session-dir", type=Path, required=True)
@@ -1348,9 +2466,39 @@ def main() -> int:
         print(json.dumps(result, indent=2))
         return 0
 
+    if args.command == "recover-scene-after":
+        result = recover_scene_after(
+            args.session_dir.resolve(),
+            args.run,
+            args.iteration,
+            allow_overwrite=args.allow_overwrite,
+        )
+        print(json.dumps(result, indent=2))
+        return 0
+
     if args.command == "replan":
         result = replan_iteration(args.session_dir.resolve(), args.run, args.iteration)
         print(json.dumps(result, indent=2))
+        return 0
+
+    if args.command == "replan-reuse-only":
+        result = replan_reuse_only(args.session_dir.resolve(), args.run, args.iteration)
+        print(json.dumps(result, indent=2))
+        return 0
+
+    if args.command == "replan-full-search-only":
+        result = replan_full_search_only(args.session_dir.resolve(), args.run, args.iteration)
+        print(json.dumps(result, indent=2))
+        return 0
+
+    if args.command == "normalize-run-layout":
+        if args.session_dir is None and not args.all_under_root:
+            raise SystemExit("normalize-run-layout requires --session-dir or --all-under-root")
+        if args.session_dir is not None and args.all_under_root:
+            raise SystemExit("use either --session-dir or --all-under-root, not both")
+        targets = [args.session_dir.resolve()] if args.session_dir is not None else _bootstrap_sessions(args.closed_loop_root.resolve())
+        results = [normalize_strategy_run_layout(target) for target in targets]
+        print(json.dumps({"normalized_sessions": results}, indent=2))
         return 0
 
     if args.command == "status":
