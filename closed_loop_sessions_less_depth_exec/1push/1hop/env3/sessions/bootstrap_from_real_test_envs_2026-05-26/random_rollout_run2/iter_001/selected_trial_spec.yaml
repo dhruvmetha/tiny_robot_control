@@ -1,8 +1,0 @@
-obstacle_target:
-- 24.715554105684255
-- 18.56323586435765
-reset_tolerance_cm: 3.0
-trials:
-- object_id: obj_1
-  edge_idx: 26
-  push_steps: 2

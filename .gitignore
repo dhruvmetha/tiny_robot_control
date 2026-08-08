@@ -18,9 +18,9 @@ MUJOCO_LOG.TXT
 /real_test_envs/**/solution/random_rollout/
 /real_test_envs/**/solution/random_rollout_run*_driver.log
 
-# Closed-loop experiment sessions are large local outputs. Track the guide, not
-# the run artifacts.
-/closed_loop_sessions/*
+# Closed-loop experiment sessions are large local outputs. This covers the
+# standard workspace and named variants such as less-depth or execution roots.
+/closed_loop_sessions*/*
 !/closed_loop_sessions/README.md
 
 # Local verification scratch space.
