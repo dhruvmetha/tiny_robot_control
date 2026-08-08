@@ -1,40 +1,35 @@
-# robot_control - TODO / Missing Features
+# Current gaps
 
-## SimEnv
+This file retains its historical name for compatibility. It tracks verified
+gaps in the current checkout; detailed, reproducible bugs belong in
+[`KNOWN_ISSUES.md`](KNOWN_ISSUES.md).
 
-### Not Yet Implemented
+## Dependency and integration blockers
 
-| Feature | Description | Priority |
-|---------|-------------|----------|
-| Dynamic objects | Objects stored in SimEnv, updated at runtime | Medium |
-| Object physics | Collision detection, push simulation | Low |
-| Multi-robot | Multiple robots in same env | Low |
+- Restore `namo.services.NAMOPlanningService` in the sibling `namo_cpp`
+  package, or migrate `NAMOPlanBridge` to a supported replacement API, before
+  NAMO-backed entrypoints can run. The current failure is a missing in-process
+  Python class, not an unavailable network service.
+- Publish the existing two-line RVG C++17 compatibility change
+  (`[[nodiscard("...")]]` to `[[nodiscard]]` in `VisibilityGraph/Edge.h` and
+  `VisibilityGraph/Vertex.h`) from an owned fork or an accepted upstream
+  commit before updating the `controller/motion_planner/rvg` submodule pointer.
 
-### Current Limitation
+## Runtime and controller gaps
 
-- `objects` in `SimConfig` are static (pose set at init, never updated)
-- No collision detection (robot passes through objects/walls)
-- Single robot only
+- The runtime GUI can fail to auto-quit after autonomous completion. Keep the
+  symptom, reproduction, and proposed repair in the
+  [known-issue entry](KNOWN_ISSUES.md#1-runtime-auto-quit-on-quit_on_completetrue-is-racy)
+  rather than duplicating its analysis here.
+- The built-in `SimEnv` advances only the robot's differential-drive pose.
+  Object poses remain the static values from `SimConfig`, and the environment
+  does not implement collision or push dynamics.
 
----
+## Test coverage gaps
 
-## Framework
-
-### Not Yet Implemented
-
-| Component | Description | Priority |
-|-----------|-------------|----------|
-| Concrete Controllers | NavigationController, PushController | High |
-| Concrete Planners | Task-specific planners | High |
-| Concrete Subgoals | NavigateSubgoal, PushSubgoal | High |
-| RealEnv | Hardware interface (camera + UDP) | Medium |
-| StateEstimator | Sensor fusion, filtering | Medium |
-| GUI | Visualization | Low |
-
----
-
-## Notes
-
-- SimEnv physics identical to micromvp (DDR with ICC model)
-- Wall-clock time drives simulation (not fixed timestep)
-- `speed_scale` allows pause/fast-forward for testing
+- Automated coverage is limited to the current [`tests/`](../../tests) suite.
+  It does not exercise the unavailable in-process NAMO API boundary or a
+  real-hardware workflow end to end.
+- Bare `pytest` also collects vendored RVG tests and fails when their Python
+  bindings are unavailable. Use `python -m pytest tests` until pytest discovery
+  is scoped to the repository's own test directory.
