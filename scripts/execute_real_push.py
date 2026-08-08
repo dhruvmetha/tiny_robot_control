@@ -1094,6 +1094,13 @@ def parse_args() -> argparse.Namespace:
     # or lives in the trial-spec YAML.
     p.add_argument("--config", required=True, help="Path to real.yaml")
     p.add_argument(
+        "--objects-path",
+        default=None,
+        help="Optional path to objects.yaml. If omitted, defaults to "
+             "objects.yaml next to --config, with a fallback to "
+             "robot_control/config/objects.yaml.",
+    )
+    p.add_argument(
         "--camera-service",
         required=True,
         metavar="ADDRESS",
@@ -1188,6 +1195,25 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _resolve_objects_path(config_path_arg: str, objects_path_arg: Optional[str]) -> Path:
+    """Resolve objects.yaml robustly, independent of the caller's cwd."""
+    if objects_path_arg:
+        return Path(objects_path_arg).expanduser().resolve()
+
+    config_path = Path(config_path_arg).expanduser()
+    if not config_path.is_absolute():
+        config_path = (Path.cwd() / config_path).resolve()
+
+    candidates = [
+        config_path.with_name("objects.yaml"),
+        ROBOT_CONTROL_ROOT / "config" / "objects.yaml",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate.resolve()
+    return candidates[0].resolve()
+
+
 def main() -> int:
     args = parse_args()
 
@@ -1242,6 +1268,8 @@ def main() -> int:
         lock_filter=lock_filter,
         skip_reset=args.no_reset_check,
     )
+    objects_path = _resolve_objects_path(args.config, args.objects_path)
+    print(f"[collect] objects_path = {objects_path}")
 
     # Build a Runtime exactly the way run_namo does for real mode. The only
     # difference between this script and `run_namo --config config/real.yaml`
@@ -1249,6 +1277,7 @@ def main() -> int:
     runtime_config = RuntimeConfig(
         mode="real",
         config_path=args.config,
+        objects_path=str(objects_path),
         planner=planner,
         dry_run=args.dry_run,
         quit_on_complete=True,
