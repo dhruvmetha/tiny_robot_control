@@ -1,16 +1,19 @@
 # real_test_envs
 
-Captured NAMO scenes for planning experiments and sim replay. Each leaf
-directory is a self-contained scene with the common core files below.
+Captured NAMO scenes for planning experiments and sim replay. Each of the 15
+canonical benchmark directories in the inventory below is a self-contained
+scene with the four common files.
 
 > **Current checkout status:** Scene inspection and recapture instructions
-> below describe available tooling. `scripts/run_namo.py` remains this
-> checkout's intended planning entrypoint, but its NAMO-backed planning path
-> currently stops when it imports the absent in-process Python class
+> below describe available tooling. The documented `scripts/run_namo.py`
+> command enters fresh/full search, which currently stops when it imports the
+> absent in-process Python class
 > `namo.services.NAMOPlanningService` from the sibling `namo_cpp` checkout.
 > This is a missing API, not a camera or network service outage; the planning
 > command below is not operational until that dependency is restored or
-> replaced. Recapture separately requires the configured camera service.
+> replaced. Prior-chain verification and reuse are separate closed-loop paths
+> described in the [closed-loop guide](../closed_loop_sessions/README.md).
+> Recapture separately requires the configured camera service.
 
 ## Common scene layout
 
@@ -36,12 +39,15 @@ real_test_envs/
 └── 2push/2hop/{env1, multi_contact}/
 ```
 
-All listed leaves have the four common files and use the planning command
-below. Scene-specific diagnostic and generated-output subtrees vary.
+All 15 listed benchmark directories have the four common files and use the
+planning command below. Scene-specific diagnostic and generated-output
+subtrees vary. The tracked nested diagnostic directory
+`2push/1hop/env4/post_chain_scene_bundle/` is not a canonical benchmark and
+lacks `scene.jpg`, so it is outside the four-file contract.
 
 ## The scene file: `env.xml`
 
-Every env has one canonical scene file: **`env.xml`**.
+Every canonical benchmark has one scene file: **`env.xml`**.
 
 - 1× scale (MuJoCo meters; real-world workspace 49 × 77.5 cm).
 - Car robot via `<include file=".../little_car.xml"/>`.
@@ -77,7 +83,7 @@ non-empty `objects` is consumed — see
 }
 ```
 
-Every current env keeps `mid_obs.jsonl` at its root.
+Every current canonical benchmark keeps `mid_obs.jsonl` at its root.
 
 ## Plan against an env (canonical command)
 

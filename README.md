@@ -106,7 +106,7 @@ a complete closed-loop or hardware workflow.
 ### Architecture and maintenance
 
 - [Architecture](src/robot_control/ARCHITECTURE.md) — detailed runtime and component design.
-- [Known issues](src/robot_control/KNOWN_ISSUES.md) — reproducible problems and their status.
+- [Known issues and status](src/robot_control/KNOWN_ISSUES.md) — current issue status, repair history, and revalidation evidence.
 - [Current gaps](src/robot_control/TODO.md) — outstanding capability gaps and follow-up work.
 - [Contributor guidance](CLAUDE.md) — repository conventions and development context.
 
@@ -129,9 +129,11 @@ a complete closed-loop or hardware workflow.
 
 ## Current limitations
 
-- NAMO-backed planning is unavailable; see [Current status](#current-status).
+- NAMO-backed fresh/full search is unavailable; prior-chain verification and
+  reuse remain available under the conditions in [Current status](#current-status).
 - Ownership and durability of the two-line RVG C++17/GCC9 compatibility patch remain unresolved.
-- GUI auto-quit remains unreliable after runtime completion.
+- GUI auto-quit and run-end finalization remain intermittently unreliable after
+  autonomous completion; see the [current issue status](src/robot_control/KNOWN_ISSUES.md#runtime-auto-quit-revalidation).
 
 See the [architecture](src/robot_control/ARCHITECTURE.md), [known issues](src/robot_control/KNOWN_ISSUES.md),
 and [current gaps](src/robot_control/TODO.md) for detail.

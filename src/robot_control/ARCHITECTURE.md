@@ -7,10 +7,12 @@ NAMO workspace. It assembles observations, state, planners, controllers,
 simulation or hardware environments, an optional GUI, and diagnostics into one
 runtime.
 
-The NAMO adapter is implemented in this repository, but NAMO-backed operation
-is currently blocked. The sibling `namo_cpp` checkout does not provide the
-in-process Python class `namo.services.NAMOPlanningService` that
-`NAMOPlanBridge` imports. This is an API compatibility blocker, not a remote
+The NAMO boundary is partially operational. Scene conversion, object mapping,
+canonical binding loading, exact-chain simulation verification, and prior-plan
+reuse are implemented and do not use `NAMOPlanningService`. Fresh/full search
+is blocked because the sibling `namo_cpp` checkout does not provide the
+in-process Python class `namo.services.NAMOPlanningService` that the
+full-search path imports. This is an API compatibility blocker, not a remote
 service outage.
 
 ## Runtime data flow
@@ -94,8 +96,9 @@ controller.
 - [`planner/namo_planner.py`](planner/namo_planner.py) adapts NAMO results to the
   planner interface and maintains the push-subgoal execution state.
 - [`planner/namo_bridge.py`](planner/namo_bridge.py) owns scene conversion,
-  object-name mapping, calls into the NAMO API, and converts results to
-  `PushSubgoal` values.
+  object-name mapping, exact-chain verification through the canonical binding,
+  full-search calls through the service API, and conversion to `PushSubgoal`
+  values.
 - [`planner/namo_binding_loader.py`](planner/namo_binding_loader.py) resolves
   and verifies the canonical `namo_cpp/build_python` binding.
 
@@ -161,14 +164,23 @@ The repository contains the boundary code needed to:
 1. generate a MuJoCo scene XML from an observation;
 2. map real object names to simulator object names and back;
 3. locate and validate the canonical `namo_rl` binding; and
-4. convert planned pushes into `PushSubgoal` values for the runtime.
+4. simulate an exact push chain with `NAMOPlanBridge.verify_chain()` using the
+   compiled binding directly; and
+5. convert planned pushes into `PushSubgoal` values for the runtime.
 
-That boundary is not operational in the current workspace checkout. During
-planning, `NAMOPlanBridge` lazily imports
-`namo.services.NAMOPlanningService`, but the sibling `namo_cpp` package no
-longer exports that class. NAMO-backed entrypoints cannot run until the class is
-restored or the bridge is migrated to a supported replacement API. See
-[Current gaps](TODO.md).
+`verify_chain()` does not call the bridge's service loader. Consequently,
+`replan-reuse-only` and the reuse phase of `replan` can validate a prior plan
+when the current scene, prior plan, and canonical compiled binding are
+available. A successful verification produces the next simulation candidate;
+failed reuse-only reports `needs_remote_search` and stops.
+
+Fresh/full search does call the service loader, which lazily imports
+`namo.services.NAMOPlanningService`; the sibling `namo_cpp` package no longer
+exports that in-process Python class. Therefore `replan-full-search-only`,
+fresh `run_namo` search, and `replan` only when it falls back after failed
+reuse are blocked until the class is restored or the bridge is migrated to a
+supported replacement API. See the [closed-loop guide](../../closed_loop_sessions/README.md)
+for operator flow and [Current gaps](TODO.md) for the dependency work.
 
 ## External dependencies
 

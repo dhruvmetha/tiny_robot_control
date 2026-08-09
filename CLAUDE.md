@@ -9,16 +9,21 @@ before changing component boundaries or runtime flow.
 These documents describe only the current checkout. Do not infer support from
 workspace files, sibling-repository history, or generated experiment output.
 
-## Current blocker
+## Current full-search blocker
 
-`NAMOPlanBridge` and its scene/object/subgoal conversion code exist, but the
-current sibling `namo_cpp` checkout does not provide the in-process Python class
-`namo.services.NAMOPlanningService` that the bridge imports lazily.
+`NAMOPlanBridge` provides scene/object/subgoal conversion and can verify an
+exact prior chain directly with the canonical compiled `namo_rl` binding. The
+closed-loop `replan-reuse-only` command and reuse phase of `replan` use that
+path without `NAMOPlanningService` when a prior plan is available.
 
-This is a missing Python API, not an external or network service outage. Do not
-treat `scripts/run_namo.py` NAMO-backed modes, or commands that delegate to
-them, as operational until the API is restored or the bridge is migrated to a
-supported replacement.
+Fresh/full search is blocked because the current sibling `namo_cpp` checkout
+does not provide the in-process Python class
+`namo.services.NAMOPlanningService` that the full-search path imports lazily.
+This is a missing Python API, not an external or network service outage. Treat
+`scripts/run_namo.py` fresh/full search, `replan-full-search-only`, and
+`replan`'s fallback after failed reuse as unavailable until that API is
+restored or migrated. See the [closed-loop guide](closed_loop_sessions/README.md)
+for the command-level distinction.
 
 ## Repository commands
 
@@ -61,7 +66,7 @@ or real-robot operation end to end.
 | `src/robot_control/core/` | Shared types, topics, world state, serialization, and object definitions. |
 | `src/robot_control/environment/` | Simulation and real environments plus the real action-sender boundary. |
 | `src/robot_control/nodes/` | Simulation, local-camera, and remote observation nodes. |
-| `src/robot_control/planner/` | Planner interfaces, path planners, and the currently blocked NAMO adapter. |
+| `src/robot_control/planner/` | Planner interfaces, path planners, NAMO scene conversion, prior-chain verification/reuse, and the full-search adapter. |
 | `src/robot_control/controller/` | Keyboard, navigation, path-following, push, and contact-geometry control. |
 | `src/robot_control/camera/` | ArUco observation and workspace coordinates. |
 | `src/robot_control/diagnostics/` | Structured recording, scene capture, rendering, and replay. |
