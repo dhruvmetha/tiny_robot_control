@@ -10,8 +10,8 @@ simulation/real calibration tools.
 | Area | Status |
 | --- | --- |
 | Runtime, simulation, controllers, camera, diagnostics, and calibration | Implemented |
-| Captured-scene and closed-loop workspace helpers | Implemented; planning subcommands depend on the blocker below |
-| NAMO-backed planning through `NAMOPlanBridge` | Blocked: the sibling `namo_cpp` checkout does not provide the in-process Python API `namo.services.NAMOPlanningService` |
+| Captured-scene and closed-loop workspace helpers | Implemented; `replan-reuse-only` can verify a prior chain in simulation when the current scene, prior plan, and canonical compiled `namo_rl` binding are available |
+| NAMO-backed full search through `NAMOPlanBridge` | Blocked: the sibling `namo_cpp` checkout does not provide the in-process Python API `namo.services.NAMOPlanningService` |
 
 ## Architecture at a glance
 
@@ -20,8 +20,9 @@ Observation source -> WorldState -> Planner -> SubgoalExecutor -> Controller -> 
 ```
 
 Simulation nodes or camera/real nodes supply observations, and diagnostics
-records the lifecycle. The `NAMOPlanBridge` is present, but its required
-in-process `NAMOPlanningService` API is unavailable in this checkout.
+records the lifecycle. `NAMOPlanBridge` can verify an existing chain through
+the canonical `namo_rl` binding, but full search requires the unavailable
+in-process `NAMOPlanningService` API.
 
 ## Setup
 
@@ -64,18 +65,26 @@ command shown above for the package test suite.
 
 ### Currently blocked
 
-As summarized in [Current status](#current-status), `NAMOPlanBridge` requires
-the in-process Python class `namo.services.NAMOPlanningService`, which is
-missing from the sibling `namo_cpp` checkout. This non-success probe currently
-raises `ImportError`:
+As summarized in [Current status](#current-status), `NAMOPlanBridge`'s
+NAMO-backed full-search path requires the in-process Python class
+`namo.services.NAMOPlanningService`, which is missing from the sibling
+`namo_cpp` checkout. This non-success probe currently raises `ImportError`:
 
 ```bash
 python -c "from namo.services import NAMOPlanningService"
 ```
 
 No compatible `namo_cpp` revision is selected or supported by this checkout;
-recovery requires restoring or replacing that API. Do not treat `run_namo` or
-closed-loop planning subcommands as operational.
+recovery requires restoring or replacing that API. Consequently, `run_namo`
+full search and `replan-full-search-only` are blocked. The `replan` command
+tries prior-chain reuse first, but reaches the same blocker if reuse fails and
+it falls back to full search.
+
+`replan-reuse-only` does not use `NAMOPlanningService`: it verifies the prior
+iteration's plan against the current scene through `NAMOPlanBridge.verify_chain()`.
+It requires an existing scene and prior selected plan/chain plus the canonical
+compiled `namo_rl` binding. This path is source-verified here, not validated as
+a complete closed-loop or hardware workflow.
 
 ## Repository map
 
