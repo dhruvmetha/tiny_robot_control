@@ -192,6 +192,14 @@ python scripts/closed_loop_session.py prepare-real-push \
 The wrapper does not drive the robot automatically. It generates a launch
 script so the operator can explicitly run the push:
 
+> **WARNING — reruns replace diagnostics:** The generated launcher always
+> passes `--allow-overwrite`. `execute_real_push.py` passes
+> `<iteration-dir>/real_push/` to `DiagnosticsRecorder`, which recursively
+> deletes that existing directory before recreating it. This happens during
+> diagnostics bootstrap, before the trial spec is validated or robot execution
+> begins. Copy or move any real-push run that must be retained before rerunning
+> `launch_real_push.sh`; the flag does not merge with the prior run.
+
 ```bash
 cd robot_control
 bash closed_loop_sessions/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26/random_rollout_run1/iter_001/launch_real_push.sh
@@ -199,12 +207,27 @@ bash closed_loop_sessions/1push/1hop/env1/sessions/bootstrap_from_real_test_envs
 
 `launch_real_push.sh` calls `execute_real_push.py` with:
 
-- `--trial-spec selected_trial_spec.yaml`
-- `--diag-path <iter dir>`
+- `--config <robot-control-root>/config/real.yaml`
+- `--camera-service tcp://localhost:5556`
+- `--trial-spec <iteration-dir>/selected_trial_spec.yaml`
+- `--diag-path <iteration-dir>`
 - `--run-name real_push`
+- `--headless`
 - `--capture-scene`
 - `--record-video`
+- `--nav-speed 0.4`
+- `--push-speed 0.4`
 - `--no-reset-check`
+- `--allow-overwrite`
+
+The two `0.4` overrides are phase-specific controller caps, not a global
+wheel-command or hardware ceiling. `--nav-speed` applies to navigation path
+following used during approach and navigation-based retreat; it does not
+replace the navigation rotation speeds. `--push-speed` applies to the push
+path follower during `PUSHING`; `ADVANCING` and reverse retreat use their own
+push settings. See [Navigation and wheel commands](../docs/NAVIGATION_AND_WHEEL_COMMANDS.md)
+and [Push duration calibration](../docs/PUSH_DURATION_CALIBRATION.md) for the
+full command and tick semantics.
 
 ### 5. Advance the iteration from the real result
 

@@ -23,7 +23,30 @@ For a 12cm x 4cm object defined as width=12, depth=4:
 
 ## Edge Point Generation
 
-Edge points are robot approach positions for pushing. They are generated around the object perimeter at a `standoff` distance from each face.
+Edge points are robot approach positions for pushing. They are generated around
+the object perimeter at a `standoff` distance from each face. This contact
+geometry is separate from the short backup search used when an edge point is
+occupied.
+
+### Runtime Standoff
+
+[`PushController`](../src/robot_control/controller/push.py) computes the active
+runtime standoff once during construction:
+
+```text
+robot_radius_cm = max(abs(robot_width_cm), abs(robot_height_cm)) / 2
+standoff_cm = robot_radius_cm + edge_offset_margin_cm
+```
+
+The radius formula comes from
+[`effective_robot_radius_cm`](../src/robot_control/utils/robot_geometry.py).
+`push.edge_offset_margin_cm` is required; construction raises `ValueError` if
+it is missing. The checked-in
+[`config/controller.yaml`](../config/controller.yaml) sets it to `1.0 cm`.
+
+`push.standoff_multiplier: 0.6` is still parsed as a legacy compatibility
+field, but the current controller does not use it to place edge points. It is
+not an alternative runtime standoff policy.
 
 ### Index Layout
 
@@ -186,14 +209,14 @@ When validating/finding an approach position, we search **along the push line** 
    - Start from edge_pt
    - Step AWAY from object (increasing t)
    - Granularity = wavefront resolution (e.g., 0.5cm matching ~5mm wavefront)
-   - Max search distance (e.g., 15cm)
+   - Maximum distance = 5cm beyond `edge_pt`
 
 3. For each sample point:
    └── Query wavefront: is_free(sample_pt)?
    └── If FREE → return this point (first free = nearest valid to object)
    └── If BLOCKED → continue to next sample
 
-4. If no free position found within max distance → FAIL (approach not possible)
+4. If no free position is found within 5cm → FAIL (approach not possible)
 ```
 
 ### Visual Example
@@ -211,7 +234,7 @@ When validating/finding an approach position, we search **along the push line** 
                          (first free = nearest to object)
 
         Granularity: 0.5cm (matching wavefront resolution)
-        Max search: 15cm from edge_pt
+        Max search: 5cm beyond edge_pt
 ```
 
 ### Why This Approach?
@@ -302,7 +325,7 @@ def find_approach_on_push_line(
     edge_pt: Tuple[float, float],
     mid_pt: Tuple[float, float],
     step_cm: float = 0.5,      # Match wavefront resolution
-    max_dist_cm: float = 15.0,  # Max search distance
+    max_dist_cm: float = 5.0,   # Current PushController search limit
 ) -> Optional[Tuple[float, float]]:
     """Find nearest free approach position along the push line."""
 
@@ -346,15 +369,23 @@ wy = obj.y + lx * sin(theta) + ly * cos(theta)
 
 The push line direction transforms the same way, maintaining perpendicularity to the face in world coordinates.
 
-## Configuration Parameters
+## Current Runtime Parameters
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `standoff_multiplier` | Multiplier for standoff distance (standoff = multiplier * car_size) | 1.0 |
-| `points_per_face` | Number of sample points per face (1, 3, or 15) | 15 |
+| Parameter or constant | Current value | Effect |
+|---|---:|---|
+| `push.edge_offset_margin_cm` | `1.0 cm` | Required addition to the effective robot radius when placing edge points |
+| `push.points_per_face` | `15` | Generates 60 indexed edge points across four faces |
+| approach search step | `0.5 cm` | Samples outward on the same push line at the 5mm wavefront resolution |
+| approach search limit | `5.0 cm` | Stops validation 5cm beyond the original edge point |
+
+The last two values are constants in
+[`PushController._validate_approach_position`](../src/robot_control/controller/push.py),
+not YAML fields. Do not confuse the `5.0 cm` approach search limit with
+`push.retreat_max_dist: 15.0 cm`, which belongs to the later retreat phase.
 
 ## Related Files
 
-- `robot_control/src/robot_control/controller/edge_points.py` - Edge point generation
-- `robot_control/src/robot_control/controller/push.py` - Push controller implementation
-- `namo_cpp/src/planning/namo_push_controller.cpp` - Reference C++ implementation
+- [`controller/edge_points.py`](../src/robot_control/controller/edge_points.py) - edge point generation
+- [`controller/push.py`](../src/robot_control/controller/push.py) - push controller and approach validation
+- [`utils/robot_geometry.py`](../src/robot_control/utils/robot_geometry.py) - effective robot radius formula
+- `namo_cpp/src/planning/namo_push_controller.cpp` - sibling C++ implementation
