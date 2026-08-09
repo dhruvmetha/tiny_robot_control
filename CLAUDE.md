@@ -1,305 +1,101 @@
-# CLAUDE.md - robot_control
+# CLAUDE.md - robot_control contributor guide
 
-This file provides guidance to Claude Code when working with the robot_control framework.
+## Start here
 
-## Overview
+Read the repository [README](README.md) for setup, entrypoints, and the
+documentation index. Read the [architecture guide](src/robot_control/ARCHITECTURE.md)
+before changing component boundaries or runtime flow.
 
-**robot_control** is the real-robot execution bridge that sits between NAMO planning (namo_cpp) and physical hardware (micromvp). It provides a clean Sense-Plan-Act abstraction for executing push manipulation tasks on real MicroMVP robots.
+These documents describe only the current checkout. Do not infer support from
+workspace files, sibling-repository history, or generated experiment output.
 
-## Architecture
+## Current blocker
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         NAMO PLANNING (namo_cpp)                             │
-│                                                                             │
-│   StandardIDFS, TreeIDFS, MCTS → Plan: [(obj_id, edge_idx, depth), ...]    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    │ SIM2REAL bridge (planner/namo_bridge.py)
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         robot_control (this package)                         │
-│                                                                             │
-│   NAMOPlanner: Converts NAMO plan → sequence of Subgoals                   │
-│   Controllers: Execute Subgoals (NavigateSubgoal, PushSubgoal)             │
-│   Runtime: Sense-Plan-Act loop at 30 Hz                                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    │ wraps
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         micromvp (hardware abstraction)                      │
-│                                                                             │
-│   SimEnv, RealPushEnv, NavigationController, MVPWindow, RVG                │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+`NAMOPlanBridge` and its scene/object/subgoal conversion code exist, but the
+current sibling `namo_cpp` checkout does not provide the in-process Python class
+`namo.services.NAMOPlanningService` that the bridge imports lazily.
 
-## Quick Commands
+This is a missing Python API, not an external or network service outage. Do not
+treat `scripts/run_namo.py` NAMO-backed modes, or commands that delegate to
+them, as operational until the API is restored or the bridge is migrated to a
+supported replacement.
+
+## Repository commands
+
+The normal workspace layout places this repository and `namo-cpp.yml` next to
+each other. From the `robot_control` root, create the pinned environment and
+install the package with:
 
 ```bash
-cd robot_control && pip install -e .
-
-# Simulation with keyboard control
-python scripts/test_control.py --controller keyboard
-
-# Click-to-navigate with RVG path planning
-PYTHONPATH=src/robot_control/controller/motion_planner/rvg:$PYTHONPATH \
-    python scripts/test_navigation.py
-
-# Camera calibration and ArUco detection
-python scripts/test_camera.py
-
-# Generate ArUco markers for printing
-python scripts/generate_aruco_markers.py
-
-# Capture simulation state to MuJoCo XML
-python scripts/capture_to_xml.py --output env.xml
+git submodule update --init --recursive
+conda env create -f ../namo-cpp.yml
+conda activate namo-cpp
+python -m pip install -e ".[dev,gui,zmq]"
 ```
 
-## Directory Structure
+These CLI import/help checks are available in the current checkout:
 
-```
-robot_control/
-├── src/robot_control/
-│   ├── core/                    # Data types
-│   │   ├── types.py             # Observation, Action, Subgoal, WorkspaceConfig
-│   │   ├── topics.py            # Pub/sub topic names
-│   │   └── world_state.py       # Aggregated world state
-│   │
-│   ├── environment/             # Environment abstraction
-│   │   ├── base.py              # Environment ABC
-│   │   ├── sim.py               # SimEnvironment (wraps micromvp.SimEnv)
-│   │   ├── real.py              # RealEnvironment (camera + UDP)
-│   │   └── micromvp_adapter.py  # Only place that imports micromvp
-│   │
-│   ├── controller/              # Motion controllers
-│   │   ├── base.py              # Controller ABC: step(obs, subgoal) → Action
-│   │   ├── navigation.py        # Pure Pursuit + CTE-PD path following
-│   │   ├── push.py              # Push execution (approach → align → push)
-│   │   └── motion_planner/rvg/  # RVG library for obstacle-avoiding paths
-│   │
-│   ├── planner/                 # Task planners
-│   │   └── base.py              # Planner ABC: plan(obs) → Subgoal
-│   │
-│   ├── camera/                  # Vision system
-│   │   └── observer.py          # ArucoObserver: marker detection → poses
-│   │
-│   ├── nodes/                   # Pub/sub sensor nodes
-│   │   ├── sim_sensor.py        # Publishes simulation observations
-│   │   └── camera_sensor.py     # Publishes camera frames
-│   │
-│   ├── gui/                     # PyQt6/PySide6 visualization
-│   │   └── window.py            # Uses micromvp's MVPWindow
-│   │
-│   └── runtime.py               # Main Sense-Plan-Act loop
-│
-├── config/                      # YAML configuration
-│   ├── real.yaml                # Camera, markers, serial port
-│   ├── controller.yaml          # Speed presets, pure pursuit params
-│   └── objects.yaml             # Object marker definitions
-│
-└── scripts/                     # Test and example scripts
+```bash
+python scripts/test_control.py --help
+python scripts/camera_service.py --help
+python scripts/capture_to_xml.py --help
+python scripts/execute_real_push.py --help
+python scripts/execute_sim_push.py --help
+python scripts/closed_loop_session.py --help
 ```
 
-## Core Abstractions
+Run the repository-owned test suite explicitly; bare `pytest` also collects
+vendored RVG tests:
 
-### Runtime Loop (30 Hz)
-
-```python
-while running:
-    observation = env.observe()           # SENSE
-    if planner.is_complete(obs):
-        break
-    if controller.is_done(obs, subgoal):
-        subgoal = planner.plan(obs)       # PLAN
-        controller.reset()
-    action = controller.step(obs, subgoal) # ACT
-    env.apply(action)
+```bash
+python -m pytest tests
 ```
 
-### Data Types (`core/types.py`)
+Help output verifies argument parsing and imports, not camera, MuJoCo, serial,
+or real-robot operation end to end.
 
-| Type | Purpose |
-|------|---------|
-| `Observation` | Robot pose (x, y, θ) + object poses + goal position |
-| `Action` | Differential drive: `left_speed`, `right_speed` ∈ [-1, 1] |
-| `Subgoal` | Abstract target (NavigateSubgoal, PushSubgoal) |
-| `ObjectPose` | Object position, orientation, dimensions, is_static flag |
-| `WorkspaceConfig` | Workspace and robot geometry |
+## Package map
 
-### Controller Interface
+| Location | Responsibility |
+| --- | --- |
+| `src/robot_control/core/` | Shared types, topics, world state, serialization, and object definitions. |
+| `src/robot_control/environment/` | Simulation and real environments plus the real action-sender boundary. |
+| `src/robot_control/nodes/` | Simulation, local-camera, and remote observation nodes. |
+| `src/robot_control/planner/` | Planner interfaces, path planners, and the currently blocked NAMO adapter. |
+| `src/robot_control/controller/` | Keyboard, navigation, path-following, push, and contact-geometry control. |
+| `src/robot_control/camera/` | ArUco observation and workspace coordinates. |
+| `src/robot_control/diagnostics/` | Structured recording, scene capture, rendering, and replay. |
+| `src/robot_control/gui/` | PySide6 presentation. |
+| `src/robot_control/runtime.py` | Component setup and the control loop. |
+| `src/robot_control/coordinator.py` | Interactive controller routing. |
+| `src/robot_control/executor.py` | Autonomous subgoal dispatch. |
 
-```python
-class Controller(ABC):
-    def step(self, obs: Observation, subgoal: Subgoal) -> Action: ...
-    def is_done(self, obs: Observation, subgoal: Subgoal) -> bool: ...
-    def reset(self) -> None: ...
-```
+## Engineering notes
 
-### Planner Interface
+- The robot-control observation and controller boundary uses centimeters for
+  positions and degrees for headings. Workspace coordinates start at the
+  bottom-left, with +X right and +Y up. MuJoCo-facing code converts positions
+  to meters and headings to radians at the boundary. Wheel commands are
+  normalized to `[-1, 1]`.
+- Edge generation yields `4 * points_per_face` indices. Consecutive even/odd
+  indices are opposite-face mates at the same sample, and the current
+  `config/controller.yaml` value is `points_per_face: 15`. Keep the Python
+  layout aligned with the planner-side convention; use
+  [Push geometry](docs/PUSH_GEOMETRY.md) for the detailed construction.
+- The NAMO conversion sets `PushSubgoal.push_steps` to planner `depth + 1`.
+  `PushController` executes `PushSubgoal.push_steps * push.push_steps` control
+  ticks, so the similarly named field in `config/controller.yaml` is the
+  per-unit tick count, not the whole planned duration. See
+  [Push-duration calibration](docs/PUSH_DURATION_CALIBRATION.md) before changing
+  this relationship.
+- Generated `closed_loop_sessions*` output is ignored; keep the tracked
+  `closed_loop_sessions/README.md` as documentation rather than treating
+  session artifacts as source.
+- Preserve unrelated dirty submodule changes. Inspect submodule status before
+  updating, resetting, staging, or committing a gitlink.
 
-```python
-class Planner(ABC):
-    def plan(self, obs: Observation) -> Optional[Subgoal]: ...
-    def is_complete(self, obs: Observation) -> bool: ...
-    def reset(self) -> None: ...
-```
+## Focused documentation
 
-## Integration with micromvp
-
-robot_control **wraps** micromvp rather than extending it:
-
-| robot_control | micromvp (wrapped) |
-|---------------|-------------------|
-| Single-robot `observe() → Observation` | Multi-robot `observe() → Dict[int, RobotObs]` |
-| Subgoal-based control | Internal state machines |
-| Task-level planning | Reactive path following |
-
-**Single integration point**: `environment/micromvp_adapter.py`
-
-## Integration with namo_cpp (SIM2REAL)
-
-The integration is **live**. See `ROBOT_CONTROL_NAMO_INTEGRATION.md` at the
-workspace root for the full code-grounded reference. Brief summary:
-
-```
-namo_cpp plan output: [(object_id, edge_idx, depth), ...]
-                           │
-                           ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    NAMOPlanner (planner/namo_planner.py)     │
-│                                                              │
-│  1. Check direct reachability → NavigateSubgoal if clear     │
-│  2. Else call NAMOPlanBridge → NAMOPlanningService           │
-│  3. Convert (object_id, edge_idx, depth) → PushSubgoals      │
-│  4. Track queue, replan on failure with shuffle seeds        │
-└──────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-              NavigateSubgoal / PushSubgoal
-                           │
-                           ▼
-              NavigationController / PushController
-```
-
-### Key Translation: edge_idx → push direction
-
-namo_cpp uses `edge_idx` in `[0, 4 × points_per_face)` to specify the contact
-point on the object footprint. Production uses `points_per_face = 15`, so the
-valid range is **0–59**:
-
-- Indices 0..29: top/bottom face pairs sampled along the object's X axis
-  (even = top / +Y, odd = bottom / −Y).
-- Indices 30..59: right/left face pairs sampled along the object's Y axis
-  (even within this range = right / +X, odd = left / −X).
-- Pair mate for index `i` is `i XOR 1`. Push direction is edge → mid (toward
-  object center).
-
-Generated by `controller/edge_points.py` (Python mirror of
-`namo_cpp/src/planning/namo_push_controller.cpp:generate_rectangular_edge_points`).
-
-`push_steps = depth + 1` (depth is the recursion depth in search; passed 1:1
-to the executor — no bucketing).
-
-### State Correspondence
-
-| namo_cpp (simulation) | robot_control (real) |
-|-----------------------|---------------------|
-| MuJoCo qpos | Observation.robot_x/y/theta |
-| MuJoCo object positions | Observation.objects dict |
-| RLEnvironment.is_robot_goal_reachable() | Planner.is_complete() |
-
-## Integration with sage_learning (Future)
-
-sage_learning provides ML models for goal prediction that could enhance NAMO planning:
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    sage_learning models                       │
-│                                                              │
-│  Flow Matching / Diffusion → Predicted push goal positions   │
-└──────────────────────────────────────────────────────────────┘
-                           │
-                           │ inference
-                           ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    NAMOPlanner                                │
-│                                                              │
-│  Use ML predictions to:                                      │
-│  1. Select which object to push (learned heuristic)          │
-│  2. Predict goal positions for objects (goal inference)      │
-│  3. Guide search in namo_cpp (informed search)               │
-└──────────────────────────────────────────────────────────────┘
-```
-
-## RVG Motion Planning
-
-The **Rotation-stacked Visibility Graph** library (`controller/motion_planner/rvg/`) provides SE(2) path planning with obstacle avoidance:
-
-```python
-from rvg import RVG
-
-planner = RVG(workspace_polygon, obstacles, robot_radius)
-path = planner.plan(start=(x, y, θ), goal=(x, y, θ))
-```
-
-Used by NavigationController for collision-free navigation between push operations.
-
-## Vision System (Real Robot)
-
-ArUco marker-based pose estimation:
-
-| Marker Type | Dictionary | Purpose |
-|------------|------------|---------|
-| Workspace corners | 5×5 | Defines coordinate frame |
-| Robot | 4×4 | Robot pose tracking |
-| Objects | 6×6 | Object pose tracking |
-| Goal | 4×4 (ID 0) | Goal position |
-
-**Calibration workflow:**
-1. Camera intrinsics: `camera/calibrate_camera.py`
-2. Workspace detection: `camera/test_workspace_detection.py`
-3. Robot detection: `camera/test_aruco_code_detection.py`
-
-## Key Design Patterns
-
-1. **Wrapper Pattern**: Wraps micromvp without modifying it
-2. **Composition**: NavigationController uses FollowPathController internally
-3. **Protocol-based**: ActionSender is a Protocol, not ABC
-4. **Pub/sub decoupling**: Sensor nodes publish independently
-5. **Thread-safe state**: Locks protect shared state in SimEnv, ArucoObserver
-
-## Configuration
-
-All tuning parameters in YAML config files:
-
-```yaml
-# config/controller.yaml
-speed_presets:
-  slow: 0.3
-  normal: 0.5
-  fast: 0.8
-
-pure_pursuit:
-  lookahead_distance: 10.0  # cm
-  min_lookahead: 5.0
-
-rotation:
-  tolerance: 5.0  # degrees
-  speed: 0.3
-```
-
-## Coordinate System
-
-- **Origin**: Bottom-left corner of workspace
-- **X-axis**: Positive rightward
-- **Y-axis**: Positive upward
-- **Theta**: Counter-clockwise from +X axis (radians)
-- **Units**: Centimeters (cm) for positions
-
-## Development Notes
-
-- Environment setup: `pip install -e .` from `robot_control/`
-- GUI requires: `pip install -e ".[gui]"` for PySide6
-- Tests: `pytest` (requires `pip install -e ".[dev]"`)
-- Single-robot focus: All APIs designed for one robot
+Use the root README's [documentation index](README.md#documentation-index) for
+operator guides, controller details, calibration records, known issues, and
+current gaps. Link to those focused documents instead of duplicating them here.

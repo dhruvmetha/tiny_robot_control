@@ -1,38 +1,43 @@
 # real_test_envs
 
-Captured NAMO scenes for planning experiments and sim replay. Each
-sub-directory is a self-contained scene with a uniform layout.
+Captured NAMO scenes for planning experiments and sim replay. Each leaf
+directory is a self-contained scene with the common core files below.
 
-## Layout — every env directory looks the same
+> **Current checkout status:** Scene inspection and recapture instructions
+> below describe available tooling. `scripts/run_namo.py` remains this
+> checkout's intended planning entrypoint, but its NAMO-backed planning path
+> currently stops when it imports the absent in-process Python class
+> `namo.services.NAMOPlanningService` from the sibling `namo_cpp` checkout.
+> This is a missing API, not a camera or network service outage; the planning
+> command below is not operational until that dependency is restored or
+> replaced. Recapture separately requires the configured camera service.
+
+## Common scene layout
 
 ```
 <env>/
 ├── env.xml          ← THE scene file (1×-scale car scene)
 ├── env.png          ← wavefront grid visualization
 ├── scene.jpg        ← annotated camera frame at capture time
-├── mid_obs.jsonl    ← robot start pose source (first parseable record)
-└── solution/        ← planner outputs live here when present
-    └── random_rollout/run{N}/  ← plan + sim_push.mp4 + diagnostics
+└── mid_obs.jsonl    ← robot start pose source (first parseable record)
 ```
 
-Older checkouts may also have legacy `solution/real_push_execution/`,
-`solution/sim_push_execution/`, or `solution/trial_spec.yaml` artifacts,
-but they are not required for planning against these envs.
+Some scenes contain additional tracked diagnostic artifacts; those are not
+part of the common planning-input contract. Planner runs can also create
+ignored output under `<env>/solution/random_rollout/runN/`.
 
-Full tree:
+Current scene inventory:
 
 ```
 real_test_envs/
-├── 1push/1hop/{env1, env2, env3, multi_contact}/
+├── 1push/1hop/{env1, env2, env3, multi_contact, multi_contact3}/
 ├── 1push/2hop/{env1, env2, multi_contact}/
-├── 2push/1hop/{env1, env2, env3, multi_contact}/
+├── 2push/1hop/{env1, env2, env3, env4, multi_contact}/
 └── 2push/2hop/{env1, multi_contact}/
 ```
 
-All sub-directories — `envN` and `multi_contact` alike — use the same
-file format and the same planning command. The only thing that varies
-is whether the `solution/` subtree has been populated yet (i.e. whether
-a real-robot run has executed there).
+All listed leaves have the four common files and use the planning command
+below. Scene-specific diagnostic and generated-output subtrees vary.
 
 ## The scene file: `env.xml`
 
@@ -44,10 +49,6 @@ Every env has one canonical scene file: **`env.xml`**.
   `integrator=implicitfast`, `timestep=0.002`, `iterations=100`).
 - 1 or 2 movable obstacles depending on the scene; format is identical
   either way.
-
-Some older checkouts also contain
-`solution/sim_push_execution/run/initial_scene.xml`; when present it is
-a byte-identical historical copy of `env.xml`. Prefer `env.xml`.
 
 ## Where the robot pose lives
 
@@ -62,7 +63,7 @@ is pulled in via:
 MuJoCo `<include>` can't override a child body's pose. So the start
 pose lives in **`mid_obs.jsonl`** — the planner reads the first
 parseable record's `robot_pose_cm` and teleports the car there via
-`set_robot_se2()` before search begins.
+`RLEnvironment.set_robot_pose()` before search begins.
 
 Schema (one JSON object per line, only the first parseable record with
 non-empty `objects` is consumed — see
@@ -76,15 +77,13 @@ non-empty `objects` is consumed — see
 }
 ```
 
-Every env keeps a copy of `mid_obs.jsonl` at its root. Some older
-checkouts also have `solution/real_push_execution/mid_obs.jsonl`; that
-legacy copy is redundant with the env-root file.
+Every current env keeps `mid_obs.jsonl` at its root.
 
 ## Plan against an env (canonical command)
 
-```bash
-cd /home/dhruv/projects_dhruv/namo/robot_control
+Run this from the repository root:
 
+```bash
 python scripts/run_namo.py \
     --sim \
     --sim-xml          real_test_envs/1push/1hop/env1/env.xml \
@@ -96,16 +95,12 @@ python scripts/run_namo.py \
     --allow-overwrite
 ```
 
-`--sim-xml` automatically triggers plan-only mode
-(`run_namo.py:1852`) — the planner verifies every push primitive
-through the C++ MuJoCo controller, so a returned plan **is** a
-sim-success result. Outputs land in the diag dir: `solution.yaml`,
-`sim_push.mp4`, `config.json`, plus C++ diagnostics jsonls.
-
-Reference invocation per env lives at
-`<env>/solution/random_rollout/run1/config.json` → `command_line`.
-Those saved configs should point at the env-root paths shown above:
-`<env>/env.xml` for `--sim-xml` and `<env>` for `--sim-real-run-dir`.
+`--sim-xml` dispatches to `run_namo.py`'s `_run_plan_only_mode`. The planner
+verifies every push primitive through the C++ MuJoCo controller, so a returned
+plan is a sim-success result. A successful run writes generated output such as
+`solution.yaml`, `sim_push.mp4`, `config.json`, and diagnostic JSONL files
+under the selected `--diag-path/--run-name`. Random-rollout outputs below an
+env's `solution/` directory are ignored rather than tracked scene inputs.
 
 ### What changes per env
 
@@ -114,7 +109,7 @@ Those saved configs should point at the env-root paths shown above:
 | `--sim-xml`             | `<env>/env.xml`                                       |
 | `--sim-real-run-dir`    | `<env>` (env root; `mid_obs.jsonl` lives there)       |
 | `--diag-path/--run-name` | wherever you want plan outputs                       |
-| `--goal`                | optional override; defaults to the `<site name='goal'>` in the XML (production goal is `(37, 67) cm`) |
+| `--goal`                | optional override; otherwise uses `goal_cm` from the scene record when present, then the XML goal site |
 
 ## Re-capturing a scene
 
@@ -135,23 +130,20 @@ python -c "import zmq; s=zmq.Context().socket(zmq.REQ); \
     open('real_test_envs/1push/1hop/env1/scene.jpg','wb').write(s.recv())"
 ```
 
-`capture_to_xml.py` does **not** emit `mid_obs.jsonl`. Easiest path:
-edit the existing `mid_obs.jsonl` and replace `robot_pose_cm` with the
-pose `capture_to_xml.py` prints ("Robot: (X, Y) cm @ Θ°"); keep
-`objects` non-empty or the planner will skip the record. For an atomic
-capture pattern (env.xml + env.png + mid_obs.jsonl from one frame),
-re-use `_capture_from_camera_service()` from `scripts/capture_to_xml.py`
-and write the jsonl record alongside the generator call — see this
-README's git history for the recipe.
+`capture_to_xml.py` does **not** emit `mid_obs.jsonl`. Update the first
+parseable JSON record in the existing file from the script's captured-
+configuration output: set `robot_pose_cm` to the printed robot
+`[x_cm, y_cm, theta_deg]` and update the `objects` entries to the printed
+object poses and dimensions. Keep `objects` non-empty or the planner will skip
+the record. This keeps `env.xml` and `mid_obs.jsonl` tied to the same capture.
 
 ## Coordinate sanity
 
 - Bottom-left origin, +X right, +Y up.
 - θ in radians inside MuJoCo XML; degrees in `mid_obs.jsonl` and
   printouts.
-- Production goal `(37, 67) cm` is baked into every `env.xml`
-  (see `feedback/eps initial_scene.xml goal`). Override with `--goal X Y`
-  if needed.
+- Every checked-in `env.xml` currently has a goal site at `(37, 67) cm`.
+  Override it for planning with `--goal X Y` if needed.
 - "Trapped-start recovery" messages from the wavefront planner mean the
   robot capture pose landed inside an inflated-obstacle margin near a
   wall; local cells are cleared so BFS still works. Expected, not a bug.

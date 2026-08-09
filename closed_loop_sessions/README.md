@@ -2,6 +2,17 @@
 
 Session workspace for closed-loop real/sim evaluation runs.
 
+> **Current checkout status:** Layout, status, migration, normalization, and
+> real-push preparation helpers are available. `replan-reuse-only` and the
+> reuse phase of `replan` verify a prior chain directly with the canonical
+> compiled `namo_rl` binding; they do not require
+> `namo.services.NAMOPlanningService`. If reuse fails, `replan` falls back to
+> service-dependent full search, while `replan-full-search-only` starts there;
+> those full-search paths are blocked by the missing in-process Python class.
+> Real push execution additionally requires configured camera and robot
+> hardware services. Generated session contents are ignored experiment output;
+> this README documents their workspace layout and is tracked as source.
+
 This tree is intentionally separate from `real_test_envs/`:
 
 - `real_test_envs/` stays as the canonical benchmark scene bank.
@@ -13,9 +24,6 @@ The main entrypoint is:
 ```bash
 python scripts/closed_loop_session.py --help
 ```
-
-For a short copy/paste operator guide, see
-[MANUAL_LOOP_RUNBOOK.md](./MANUAL_LOOP_RUNBOOK.md).
 
 ## Layout
 
@@ -106,13 +114,24 @@ python scripts/closed_loop_session.py migrate-bootstrap \
 After migration:
 
 - `start_state/` is created from the old `iter_000/scene_before/`
-- successful bootstrap seeds are copied into
-  `random_rollout_runN/iter_001/sim_candidates/candidate1/`
+- each successful bootstrap seed is copied under its preserved source
+  directory name at
+  `<preserved-run-name>/iter_001/sim_candidates/candidate1/`
 - the old `iter_000/` tree is removed
 
 ### 1b. Normalize runs by strategy
 
-To convert a session to the current six-run layout:
+This separate step applies the strategy-based run names and converts a session
+to the current six-run layout:
+
+> **DANGER — destructive operation:** `normalize-run-layout` deletes every
+> recognized run directory containing more than one `iter_*` directory,
+> including already normalized `primitive_runN` and `random_rollout_runN`
+> directories with execution progress. It also deletes every recognized run
+> name outside the desired six. Make a backup and run normalization only
+> immediately after migration, before any execution or progress. Do not run it
+> on a progressed session. Do not use `--all-under-root` unless every targeted
+> session is freshly migrated, unprogressed, and backed up.
 
 ```bash
 python scripts/closed_loop_session.py normalize-run-layout --all-under-root
@@ -175,8 +194,7 @@ script so the operator can explicitly run the push:
 
 ```bash
 cd robot_control
-PYTHON_BIN=/home/dhruv/miniconda3/envs/namo312/bin/python \
-  closed_loop_sessions/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26/random_rollout_run1/iter_001/launch_real_push.sh
+bash closed_loop_sessions/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26/random_rollout_run1/iter_001/launch_real_push.sh
 ```
 
 `launch_real_push.sh` calls `execute_real_push.py` with:
@@ -190,7 +208,35 @@ PYTHON_BIN=/home/dhruv/miniconda3/envs/namo312/bin/python \
 
 ### 5. Advance the iteration from the real result
 
-After `execute_real_push.py` finishes, advance the session:
+> **Scene integrity warning:** Do not move the physical robot, objects, or
+> workspace after the push until both post-push artifacts are captured and
+> `advance-iteration` completes. Recovery observes the current physical scene,
+> not the scene at the time the push ended.
+
+`execute_real_push.py` normally writes `real_push/scene_after.json` and
+`real_push/scene_after.jpg`. To recover them explicitly, keep the configured
+camera service running and the scene unchanged, then run:
+
+```bash
+python scripts/closed_loop_session.py recover-scene-after \
+  --session-dir closed_loop_sessions/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26 \
+  --run random_rollout_run1 \
+  --iteration 1 \
+  --allow-overwrite
+```
+
+Recovery reads the camera-service address from the real-push diagnostics and
+captures both artifacts from the live scene. Without `--allow-overwrite`, it
+refuses to run if either artifact already exists; with the flag, it replaces
+both.
+
+If either artifact is missing when `advance-iteration` starts, the helper
+automatically invokes this live recovery with overwrite enabled. It can
+therefore replace the remaining artifact with data from the current physical
+scene. Ensure the camera service is running and the scene is unchanged before
+advancing or retrying.
+
+After the artifacts are complete, advance the session:
 
 ```bash
 python scripts/closed_loop_session.py advance-iteration \
@@ -218,34 +264,65 @@ post-push pose, the helper creates `iter_002/scene_before/` as a copy of
 
 ### 6. Replan the next iteration
 
-When `iter_002` exists, generate exactly one new sim candidate:
+For an iteration awaiting replanning, generate exactly one new sim candidate:
 
 ```bash
 cd robot_control
-PYTHON_BIN=/home/dhruv/miniconda3/envs/namo312/bin/python \
 python scripts/closed_loop_session.py replan \
   --session-dir closed_loop_sessions/1push/1hop/env1/sessions/bootstrap_from_real_test_envs_2026-05-26 \
   --run primitive_run1 \
   --iteration 2
 ```
 
-This shells out to:
+`replan` is reuse-first. Given a prior `selected_plan.json` and the current
+`scene_before/`, it uses `NAMOPlanBridge.verify_chain()` with the canonical
+compiled `namo_rl` binding. It first verifies the remaining suffix of a
+multi-action plan. If that suffix fails at its first step, it also checks the
+full prior plan; a one-action plan is checked in full. Successful reuse writes
+`sim_candidates/candidate1` without importing `NAMOPlanningService`.
+
+If no prior plan can be reused, `replan` falls back to full search. The two
+explicit modes are:
+
+```bash
+# Verify prior-plan reuse and stop; never enter full search.
+python scripts/closed_loop_session.py replan-reuse-only \
+  --session-dir <session-dir> --run <run-name> --iteration <N>
+
+# Skip reuse and enter full search directly.
+python scripts/closed_loop_session.py replan-full-search-only \
+  --session-dir <session-dir> --run <run-name> --iteration <N>
+```
+
+`replan-reuse-only` requires a prior plan/scene and the canonical compiled
+`namo_rl` binding, but not `NAMOPlanningService`. If reuse does not succeed, it
+sets the iteration state to `awaiting_remote_replan`, reports
+`needs_remote_search`, and stops.
+
+The fallback used by `replan`, and the direct path used by
+`replan-full-search-only`, invoke this command pattern:
 
 ```bash
 python scripts/run_namo.py --sim \
   --sim-xml <iter>/scene_before/env.xml \
   --sim-real-run-dir <iter>/scene_before \
-  --strategy random_rollout \
-  --rollout-samples-per-state 36000 \
+  --namo-config <car-1x-config> \
+  --strategy <primitive|random_rollout> \
+  --shuffle-seed <run-seed> \
   --diag-path <iter>/sim_candidates \
   --run-name candidate1 \
   --allow-overwrite
 ```
 
-The strategy depends on the run:
+The strategy comes from the run name:
 
 - `primitive_run*` -> `--strategy primitive`
-- `random_rollout_run*` -> `--strategy random_rollout`
+- `random_rollout_run*` -> `--strategy random_rollout` and
+  `--rollout-samples-per-state 36000`
+
+Full search retries up to `MAX_REPLAN_ATTEMPTS = 8`. It is currently blocked
+because `run_namo.py`'s full planner path imports the absent in-process Python
+class `namo.services.NAMOPlanningService`.
 
 Closed-loop replans keep the sim candidate as-is, but if the first push has
 `push_steps == 1`, `prepare-real-push` floors only the real execution spec to
@@ -275,7 +352,7 @@ Then repeat:
   it is created empty and waits for replanning.
 - `advance-iteration` intentionally does not use `real_push/scene_after.xml`.
   It regenerates `env.xml` from `real_push/scene_after.json`, because
-  `execute_real_push.py` does not currently produce usable XML on this path.
+  `execute_real_push.py` does not produce usable XML on this path.
 - The canonical mission goal is stored once in `session_meta.json`, sourced
   from `start_state/mid_obs.jsonl` when available and otherwise from the
   `<site name="goal">` in `start_state/env.xml`.
@@ -309,11 +386,5 @@ Then repeat:
 
 ## Notes
 
-- `_session_template/` mirrors the new layout with a shared `start_state/`
-  plus a per-seed `run_template/iter_001/` scaffold.
 - Session data should be created under `.../sessions/<session_name>/` so
   multiple evaluations of the same env do not collide.
-- The currently running `random_rollout` backfill under `real_test_envs/`
-  is intentionally untouched by this directory layout.
-- The pointer files under `real_test_envs/.../solution/closed_loop_session_pointer.txt`
-  point from the old env folders into the new closed-loop session layout.
