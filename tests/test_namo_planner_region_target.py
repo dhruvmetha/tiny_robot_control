@@ -54,15 +54,38 @@ def _plan(**overrides):
     return SimpleNamespace(**base)
 
 
+def _verification(success, chain=None):
+    return SimpleNamespace(
+        success=success,
+        verified_subgoals=list(chain or []),
+        sim_pushes_tried=1,
+        failed_step_index=None if success else 0,
+        failure_reason=None if success else "target_not_open_after_chain",
+        goal_reachable_after=False,
+        target_open_after=success,
+        verification_time_ms=1.0,
+        planner_scene_xml="<mujoco/>",
+        object_mapping={"real_to_sim": {}, "sim_to_real": {}},
+    )
+
+
 class _FakeBridge:
     def __init__(self, *args, **kwargs):
         self.select_results = [_choice()]
         self.solve_results = [_plan()]
+        # Reuse is attempted before a full solve; default to "no longer valid"
+        # so these tests exercise the solve path unless they say otherwise.
+        self.verify_results = []
         self.select_calls = 0
         self.solve_calls = []
+        self.verify_calls = []
         self.last_search_time_ms = 1.0
         self.last_algorithm_stats = {}
         self.last_xml_content = "<mujoco/>"
+
+    def verify_chain(self, **kwargs):
+        self.verify_calls.append(kwargs)
+        return self.verify_results.pop(0) if self.verify_results else _verification(False)
 
     def select_boundary(self, *args, **kwargs):
         self.select_calls += 1
@@ -221,3 +244,59 @@ def test_target_mode_off_never_selects_a_boundary(monkeypatch):
 
     assert bridge.select_calls == 0
     assert bridge.solve_calls == []
+
+
+# --- chain reuse, graded against the held boundary ---------------------------
+
+def test_a_still_valid_chain_is_reused_instead_of_re_solved(monkeypatch):
+    """The optimisation this closes: a cheap verify replaces a full search."""
+    planner, bridge = _planner(monkeypatch)
+    planner.plan(_obs())
+    solves_after_first_plan = len(bridge.solve_calls)
+    bridge.verify_results = [_verification(True, [PushSubgoal("obj_4", 22, 1)])]
+
+    planner.notify_subgoal_done(_obs(), failed=False)
+    subgoal = planner.plan(_obs())
+
+    assert len(bridge.verify_calls) == 1
+    assert len(bridge.solve_calls) == solves_after_first_plan  # no new search
+    assert subgoal == PushSubgoal("obj_4", 22, 1)
+
+
+def test_reuse_is_graded_against_the_held_boundarys_points(monkeypatch):
+    """Not against the final goal -- that is what made reuse unsafe here."""
+    planner, bridge = _planner(monkeypatch)
+    planner.plan(_obs())
+    bridge.verify_results = [_verification(True, [PushSubgoal("obj_4", 22, 1)])]
+
+    planner.notify_subgoal_done(_obs(), failed=False)
+    planner.plan(_obs())
+
+    call = bridge.verify_calls[0]
+    assert call["target_points"] == list(POINTS)
+    assert call["min_reachable"] == planner._active_target.minimum_reachable()
+
+
+def test_a_chain_that_no_longer_opens_the_boundary_falls_back_to_solving(monkeypatch):
+    planner, bridge = _planner(monkeypatch)
+    bridge.solve_results = [_plan(), _plan(subgoals=[PushSubgoal("obj_4", 31, 1)])]
+    planner.plan(_obs())
+
+    planner.notify_subgoal_done(_obs(), failed=False)
+    subgoal = planner.plan(_obs())
+
+    assert len(bridge.verify_calls) == 1
+    assert len(bridge.solve_calls) == 2
+    assert subgoal == PushSubgoal("obj_4", 31, 1)
+
+
+def test_without_a_held_target_reuse_is_graded_against_the_goal(monkeypatch):
+    planner, bridge = _planner(monkeypatch, hold=False)
+    planner._bridge.plan = lambda **kwargs: [PushSubgoal("obj_4", 17, 1)]
+    planner.plan(_obs())
+
+    planner.notify_subgoal_done(_obs(), failed=False)
+    planner.plan(_obs())
+
+    assert bridge.verify_calls[0]["target_points"] is None
+    assert bridge.verify_calls[0]["min_reachable"] is None

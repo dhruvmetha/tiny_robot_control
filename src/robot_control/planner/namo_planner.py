@@ -511,12 +511,6 @@ class NAMOPlanner(Planner):
         """Try suffix/full-chain reuse from the fresh post-push observation."""
         if self._execution_mode != "mpc":
             return False
-        if self._hold_region_target:
-            # Reuse verification asks whether the remaining chain makes the
-            # FINAL goal reachable. While a boundary is held that is the wrong
-            # question -- a chain can satisfy it while abandoning the boundary
-            # being opened. Re-solve against the frozen points instead.
-            return False
         if not self._pending_reuse_chain:
             return False
 
@@ -528,11 +522,18 @@ class NAMOPlanner(Planner):
         )
 
         def _verify_reuse(chain: List[PushSubgoal], reuse_kind: str):
+            # While a boundary is held, verification is graded against its
+            # frozen points rather than the final goal -- otherwise a chain
+            # could verify by making the goal reachable while abandoning the
+            # boundary being opened.
+            held = self._load_active_target() if self._hold_region_target else None
             result = self._bridge.verify_chain(
                 observation=obs,
                 robot_goal_cm=self._robot_goal_cm,
                 chain=chain,
                 allow_collisions=self._allow_collisions,
+                target_points=list(held.target_samples_m) if held else None,
+                min_reachable=held.minimum_reachable() if held else None,
             )
             self._plan_count += 1
             self._total_planning_ms += result.verification_time_ms
