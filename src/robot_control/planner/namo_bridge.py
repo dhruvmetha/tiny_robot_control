@@ -528,6 +528,30 @@ class NAMOPlanBridge:
             goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
             env.set_robot_goal(goal_sim[0], goal_sim[1], 0.0)
 
+            if target_points:
+                # A chain is graded by whether the boundary is open AFTER it.
+                # If it is already open before anything runs, that test proves
+                # nothing and any stale chain would pass, so the robot would
+                # execute a push against a boundary already finished. Refuse,
+                # and let the caller re-solve; it will see already_open and move
+                # to the next boundary.
+                open_before, _goal_before, _t = evaluate_chain_outcome(
+                    env, target_points, min_reachable
+                )
+                if open_before:
+                    return ChainVerificationResult(
+                        success=False,
+                        verified_subgoals=[],
+                        sim_pushes_tried=0,
+                        failed_step_index=None,
+                        failure_reason="target_already_open_before_chain",
+                        goal_reachable_after=_goal_before,
+                        target_open_after=True,
+                        verification_time_ms=(perf_counter() - t0) * 1000.0,
+                        planner_scene_xml=planner_scene_xml,
+                        object_mapping=self._serialize_object_mapping(),
+                    )
+
             verified_subgoals: List[PushSubgoal] = []
             for idx, subgoal in enumerate(normalized_chain):
                 sim_object_id = self._resolve_sim_object_id(subgoal.object_id)
