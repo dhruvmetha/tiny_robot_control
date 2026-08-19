@@ -21,6 +21,8 @@ from robot_control.planner.region_target import (
     ADVANCE_NO_PLAN,
     ADVANCE_PLANNED,
     MAX_BOUNDARY_ADVANCES,
+    STATUS_EXHAUSTED,
+    STATUS_OPENED,
     RegionOpeningTarget,
     advance_boundary,
 )
@@ -83,7 +85,7 @@ def _target():
 def test_with_no_target_it_selects_one_and_plans():
     bridge = _Bridge()
 
-    plan, target, status = _advance(bridge)
+    plan, target, status, _released = _advance(bridge)
 
     assert status == ADVANCE_PLANNED
     assert bridge.select_calls == 1
@@ -96,7 +98,7 @@ def test_a_held_target_is_reused_without_selecting():
     bridge = _Bridge()
     held = _target()
 
-    _plan_, target, status = _advance(bridge, target=held)
+    _plan_, target, status, _released = _advance(bridge, target=held)
 
     assert bridge.select_calls == 0
     assert target is held
@@ -109,7 +111,7 @@ def test_an_already_open_boundary_advances_to_the_next():
         plans=[_plan(already_open=True), _plan()],
     )
 
-    _plan_, target, status = _advance(bridge, target=_target())
+    _plan_, target, status, _released = _advance(bridge, target=_target())
 
     assert status == ADVANCE_PLANNED
     assert target.blocker_real_ids == ("obj_9",)
@@ -122,7 +124,7 @@ def test_an_exhausted_boundary_with_no_alternative_is_released():
         plans=[_plan(success=False, boundary_exhausted=True)],
     )
 
-    _plan_, target, status = _advance(bridge, target=_target())
+    _plan_, target, status, _released = _advance(bridge, target=_target())
 
     assert status == ADVANCE_EXHAUSTED
     assert target is None
@@ -133,7 +135,7 @@ def test_a_boundary_that_simply_fails_keeps_the_target():
     bridge = _Bridge(plans=[_plan(success=False, failure_reason="all_pushes_failed")])
     held = _target()
 
-    _plan_, target, status = _advance(bridge, target=held)
+    _plan_, target, status, _released = _advance(bridge, target=held)
 
     assert status == ADVANCE_NO_PLAN
     assert target is held
@@ -142,7 +144,7 @@ def test_a_boundary_that_simply_fails_keeps_the_target():
 def test_a_reachable_goal_means_no_boundary():
     bridge = _Bridge(choices=[_choice(found=False, goal_already_reachable=True)])
 
-    plan, target, status = _advance(bridge)
+    plan, target, status, _released = _advance(bridge)
 
     assert (plan, target, status) == (None, None, ADVANCE_NO_BOUNDARY)
 
@@ -159,7 +161,7 @@ def test_a_chain_of_already_open_boundaries_terminates():
         plans=[_plan(already_open=True) for _ in range(50)],
     )
 
-    _plan_, target, status = _advance(bridge)
+    _plan_, target, status, _released = _advance(bridge)
 
     assert status == ADVANCE_NO_BOUNDARY
     assert bridge.select_calls <= MAX_BOUNDARY_ADVANCES
@@ -190,7 +192,7 @@ def test_an_unresolvable_boundary_is_released(reason):
         plans=[_plan(success=False, failure_reason=reason), _plan()],
     )
 
-    _plan_, target, status = _advance(bridge, target=_target())
+    _plan_, target, status, _released = _advance(bridge, target=_target())
 
     assert status == ADVANCE_PLANNED
     assert target.blocker_real_ids == ("obj_9",)
@@ -201,7 +203,7 @@ def test_a_plain_push_failure_keeps_the_boundary():
     bridge = _Bridge(plans=[_plan(success=False, failure_reason="all_pushes_failed")])
     held = _target()
 
-    _plan_, target, status = _advance(bridge, target=held)
+    _plan_, target, status, _released = _advance(bridge, target=held)
 
     assert status == ADVANCE_NO_PLAN
     assert target is held
@@ -214,7 +216,7 @@ def test_an_exhausted_boundary_is_not_immediately_reselected():
         plans=[_plan(success=False, boundary_exhausted=True), _plan()],
     )
 
-    _plan_, target, status = _advance(bridge, target=_target())
+    _plan_, target, status, _released = _advance(bridge, target=_target())
 
     assert status == ADVANCE_PLANNED
     assert target.blocker_real_ids == ("obj_9",)
@@ -239,7 +241,81 @@ def test_running_out_of_alternatives_reports_no_boundary():
         plans=[_plan(success=False, boundary_exhausted=True)],
     )
 
-    _plan_, target, status = _advance(bridge, target=_target())
+    _plan_, target, status, _released = _advance(bridge, target=_target())
 
     assert status == ADVANCE_EXHAUSTED
     assert target is None
+
+
+# --- what happened to the target we were handed ------------------------------
+#
+# Callers used to infer this from the status, and got it wrong in two ways: a
+# transient failure looked like "opened", and advancing past an already-open
+# boundary then exhausting the next one marked the wrong record.
+
+def test_a_held_target_that_opened_is_reported_opened():
+    bridge = _Bridge(plans=[_plan(already_open=True), _plan()])
+
+    result = advance_boundary(
+        bridge, object(), GOAL_CM, target=_target(),
+        open_fraction=FRACTION, scale_factor=1.0,
+    )
+
+    assert result[3] == STATUS_OPENED
+
+
+def test_a_held_target_that_exhausted_is_reported_exhausted():
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[_plan(success=False, boundary_exhausted=True), _plan()],
+    )
+
+    result = advance_boundary(
+        bridge, object(), GOAL_CM, target=_target(),
+        open_fraction=FRACTION, scale_factor=1.0,
+    )
+
+    assert result[3] == STATUS_EXHAUSTED
+
+
+def test_a_held_target_still_being_worked_on_is_not_released():
+    bridge = _Bridge(plans=[_plan()])
+    held = _target()
+
+    result = advance_boundary(
+        bridge, object(), GOAL_CM, target=held,
+        open_fraction=FRACTION, scale_factor=1.0,
+    )
+
+    assert result[3] is None
+    assert result[1] is held
+
+
+def test_a_transient_failure_does_not_release_the_target():
+    """xml_generation_failed is not the boundary's fault."""
+    bridge = _Bridge(plans=[_plan(success=False, failure_reason="xml_generation_failed")])
+    held = _target()
+
+    result = advance_boundary(
+        bridge, object(), GOAL_CM, target=held,
+        open_fraction=FRACTION, scale_factor=1.0,
+    )
+
+    assert result[3] is None
+    assert result[1] is held
+
+
+def test_exhausting_the_second_boundary_does_not_mislabel_the_first():
+    """The first one opened. Only the second is exhausted."""
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"]),
+                 _choice(found=False, failure_reason="region_path_exhausted")],
+        plans=[_plan(already_open=True), _plan(success=False, boundary_exhausted=True)],
+    )
+
+    result = advance_boundary(
+        bridge, object(), GOAL_CM, target=_target(),
+        open_fraction=FRACTION, scale_factor=1.0,
+    )
+
+    assert result[3] == STATUS_OPENED

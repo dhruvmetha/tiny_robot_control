@@ -1020,7 +1020,7 @@ class NAMOPlanner(Planner):
         drives the same loop from a separate process.
         """
         before = self._load_active_target()
-        plan, target, status = advance_boundary(
+        plan, target, status, released = advance_boundary(
             self._bridge,
             obs,
             self._robot_goal_cm,
@@ -1034,15 +1034,12 @@ class NAMOPlanner(Planner):
         self._plan_count += 1
         self._total_planning_ms += self._bridge.last_search_time_ms
 
-        if status == ADVANCE_EXHAUSTED:
-            self._release_active_target(STATUS_EXHAUSTED)
-            self._subgoals = []
-            return
+        # advance_boundary reports what became of the target it was handed, so
+        # a transient failure no longer looks like the boundary opened.
+        if released is not None:
+            self._release_active_target(released)
+
         if target is None:
-            # Either nothing left to open, or the held boundary opened and the
-            # next selection found none.
-            if before is not None:
-                self._release_active_target(STATUS_OPENED)
             self._subgoals = []
             return
 

@@ -287,7 +287,7 @@ def advance_boundary(
     iteration: int = 0,
     max_advances: int = MAX_BOUNDARY_ADVANCES,
     planner_kwargs: Optional[Dict[str, Any]] = None,
-) -> Tuple[Any, Optional[RegionOpeningTarget], str]:
+) -> Tuple[Any, Optional[RegionOpeningTarget], str, Optional[str]]:
     """One step of the inner loop: solve the held boundary, or pick the next.
 
     Pure with respect to storage -- it takes the current target and returns the
@@ -303,10 +303,22 @@ def advance_boundary(
     call entirely, so without forwarding them here every option is silently
     dropped and repeated attempts become identical searches.
 
-    Returns ``(plan, target, status)``.
+    Returns ``(plan, target, status, released)``, where ``released`` says what
+    happened to the target that was passed in: ``STATUS_OPENED``,
+    ``STATUS_EXHAUSTED``, or ``None`` if it is still being worked on. Callers
+    used to infer this from the status and got it wrong twice: a transient
+    failure looked like the boundary had opened, and advancing past one
+    already-open boundary before exhausting the next marked the wrong record.
     """
     blocked: List[Tuple[str, str]] = []
     last_plan = None
+    incoming = target
+    released: Optional[str] = None
+
+    def _release(status: str) -> None:
+        nonlocal released
+        if target is incoming and incoming is not None and released is None:
+            released = status
 
     for _advance in range(max_advances):
         if target is None:
@@ -316,7 +328,8 @@ def advance_boundary(
             if choice.goal_already_reachable or not choice.found:
                 # Nothing selectable. If we got here by discarding a boundary,
                 # say so, because the caller has one to mark dead.
-                return last_plan, None, ADVANCE_EXHAUSTED if blocked else ADVANCE_NO_BOUNDARY
+                status = ADVANCE_EXHAUSTED if blocked else ADVANCE_NO_BOUNDARY
+                return last_plan, None, status, released
             target = target_from_selection(
                 choice,
                 open_fraction=open_fraction,
@@ -332,6 +345,7 @@ def advance_boundary(
         if plan.already_open:
             # Opened with no push -- often by an earlier push in this same
             # subproblem. Release it and look at the next boundary.
+            _release(STATUS_OPENED)
             target = None
             continue
 
@@ -341,11 +355,13 @@ def advance_boundary(
             pair = _boundary_label_pair(target, plan.resolved_target)
             if pair is not None:
                 blocked.append(pair)
+            _release(STATUS_EXHAUSTED)
             target = None
             continue
 
         if plan.success and plan.subgoals:
-            return plan, target, ADVANCE_PLANNED
-        return plan, target, ADVANCE_NO_PLAN
+            return plan, target, ADVANCE_PLANNED, released
+        return plan, target, ADVANCE_NO_PLAN, released
 
-    return last_plan, None, ADVANCE_EXHAUSTED if blocked else ADVANCE_NO_BOUNDARY
+    status = ADVANCE_EXHAUSTED if blocked else ADVANCE_NO_BOUNDARY
+    return last_plan, None, status, released

@@ -1326,7 +1326,7 @@ def _run_plan_only_mode(args) -> int:
     active_target_path = Path(args.active_target) if args.active_target else None
     if active_target_path is not None or args.hold_region_target:
         held = RegionOpeningTarget.load(active_target_path) if active_target_path else None
-        boundary_plan, target, status = advance_boundary(
+        boundary_plan, target, status, released = advance_boundary(
             bridge,
             obs,
             goal_cm,
@@ -1335,12 +1335,14 @@ def _run_plan_only_mode(args) -> int:
             scale_factor=args.scale_factor,
             planner_kwargs={"goal_strategy": args.strategy, **extra_kwargs},
         )
-        if target is not None and active_target_path is not None:
-            target.save(active_target_path)
-        elif held is not None and active_target_path is not None:
-            held.released(
-                STATUS_EXHAUSTED if status == ADVANCE_EXHAUSTED else STATUS_OPENED
-            ).save(active_target_path)
+        if active_target_path is not None:
+            # `released` names what happened to the target we were handed, so a
+            # transient failure leaves a live subproblem alone instead of
+            # marking it opened.
+            if held is not None and released is not None:
+                held.released(released).save(active_target_path)
+            if target is not None:
+                target.save(active_target_path)
 
         plan_subgoals = list(boundary_plan.subgoals) if status == ADVANCE_PLANNED else []
         boundary_outcome = {
