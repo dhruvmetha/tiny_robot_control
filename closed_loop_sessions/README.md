@@ -66,6 +66,58 @@ closed_loop_sessions/
 - `iter_K/scene_after/` becomes `iter_{K+1}/scene_before/` when the goal was
   neither physically reached nor made planner-wavefront-reachable in reality.
 
+### Region-opening control contract
+
+The model-guided full NAMO integration must use two nested closed-loop
+replanning levels. This is the required control contract, not the behavior of
+the current planner bridge yet.
+
+The outer full-NAMO loop uses the latest observed scene to build the region
+connectivity graph, finds a path from the robot region to the final mission-goal
+region, and selects only the immediate next region, `path[1]`. The rest of that
+region path is advisory and must not be committed because moving the blocking
+object can change the graph, its regions, and the best path.
+
+Selecting `path[1]` starts one region-opening subproblem. The subproblem keeps
+the following identity fixed until it is solved:
+
+- sampled points from the selected target region
+- the selected blocking object
+- failure feedback accumulated while opening that boundary
+
+The sampled points, rather than the region label, identify the target across
+physical pushes. Region labels may change when the scene changes. The points
+must be sampled once at the start of the subproblem and must not be resampled
+after setup pushes.
+
+The inner region-opening loop then repeats:
+
+1. Rebuild the planning scene from the latest physical observation.
+2. Solve the same region-opening subproblem with the fixed target samples and
+   blocking object.
+3. Require the solver to return its winning local push chain, the simulated
+   post-solution state, search statistics, and failure status.
+4. Execute only the first push of that local chain on the physical robot.
+5. Observe the changed scene and test whether the fixed target samples are now
+   reachable using the region-opening success criterion.
+
+A one-push opening completes this inner loop immediately. For a two-push
+opening, the first setup push does not return control to global region-path
+selection: the next planning call remains conditioned on the same target
+samples and blocker. It may produce a new local push chain from the observed
+post-push scene; the unexecuted suffix of the previous simulated chain is not a
+physical commitment.
+
+Only after the target region has been opened does the system discard the active
+subproblem, return to the outer loop, and recompute the entire region graph and
+region path from the changed scene.
+
+The current `NAMOPlanner` MPC behavior replans at the top level after every
+physical push and does not persist this active region-opening state. Therefore,
+returning the best-first search's internal `it["plan"]` is necessary but not
+sufficient: the integration must also preserve the target samples and blocker
+across inner-loop replans.
+
 ### Directory meanings
 
 - `start_state/`

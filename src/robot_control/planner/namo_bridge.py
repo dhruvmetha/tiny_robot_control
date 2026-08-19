@@ -13,6 +13,7 @@ import math
 import os
 import sys
 import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
@@ -72,6 +73,32 @@ class ChainVerificationResult:
     verification_time_ms: float
     planner_scene_xml: str
     object_mapping: Dict[str, Dict[str, str]]
+
+
+@dataclass
+class BoundaryChoice:
+    """Which boundary namo_cpp says to open next, in real-object naming."""
+
+    found: bool = False
+    target_points_m: List[Tuple[float, float]] = field(default_factory=list)
+    blocker_real_ids: List[str] = field(default_factory=list)
+    region_path: List[str] = field(default_factory=list)
+    goal_already_reachable: bool = False
+    failure_reason: str = ""
+
+
+@dataclass
+class BoundaryPlan:
+    """Result of asking namo_cpp to open one pinned boundary."""
+
+    subgoals: List[PushSubgoal] = field(default_factory=list)
+    success: bool = False
+    # The boundary already cleared its bar with no pushes: success, nothing to do.
+    already_open: bool = False
+    # Every push against this boundary failed; the caller should stop trying it.
+    boundary_exhausted: bool = False
+    failure_reason: str = ""
+    resolved_target: str = ""
 
 
 class NAMOPlanBridge:
@@ -829,6 +856,149 @@ class NAMOPlanBridge:
                     Path(xml_path).unlink()
                 except OSError:
                     pass
+
+    @contextmanager
+    def _scene_session(self, observation: Observation, robot_goal_cm: Tuple[float, float]):
+        """Build the scene and enter namo_cpp's directory for the call.
+
+        Yields ``(xml_path, goal_sim, service)``, or ``None`` when the scene
+        could not be generated. The chdir is required because namo_cpp resolves
+        motion-primitive paths relative to its own root, and the temp XML is
+        removed afterwards unless a debug path was configured.
+
+        ``plan()`` predates this and still inlines the same sequence; it is left
+        alone deliberately, as the live path, rather than refactored alongside a
+        feature change.
+        """
+        xml_content = self._generate_xml(observation, robot_goal_cm)
+        if xml_content is None:
+            yield None
+            return
+        self.last_xml_content = xml_content
+
+        xml_path = self._write_xml(xml_content)
+        if xml_path is None:
+            yield None
+            return
+
+        namo_cpp_dir = Path(__file__).resolve().parents[4] / "namo_cpp"
+        original_cwd = os.getcwd()
+        os.chdir(str(namo_cpp_dir))
+        try:
+            goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
+            yield xml_path, goal_sim, self._get_planning_service()
+        finally:
+            os.chdir(original_cwd)
+            if self._debug_xml_path is None:
+                try:
+                    Path(xml_path).unlink()
+                except OSError:
+                    pass
+
+    def select_boundary(
+        self,
+        observation: Observation,
+        robot_goal_cm: Tuple[float, float],
+        *,
+        blocked_boundaries: Optional[Sequence[Tuple[str, str]]] = None,
+        **kwargs: Any,
+    ) -> BoundaryChoice:
+        """Ask which boundary to open next, translated into real object names.
+
+        The blocking objects come back in simulator naming, which is a rank over
+        the movables present in this one observation. They are mapped to real
+        ids here because that is what survives a rescan.
+        """
+        with self._scene_session(observation, robot_goal_cm) as session:
+            if session is None:
+                return BoundaryChoice(failure_reason="xml_generation_failed")
+            xml_path, goal_sim, service = session
+
+            selection = service.select_boundary_from_xml(
+                xml_path,
+                (goal_sim[0], goal_sim[1], 0.0),
+                blocked_boundaries=blocked_boundaries,
+                **kwargs,
+            )
+            if selection.goal_already_reachable:
+                return BoundaryChoice(goal_already_reachable=True)
+            if not selection.found:
+                return BoundaryChoice(failure_reason=selection.failure_reason)
+
+            return BoundaryChoice(
+                found=True,
+                target_points_m=[tuple(p) for p in selection.target_points],
+                blocker_real_ids=[
+                    self._object_mapping.get_real_name(sim_id)
+                    for sim_id in selection.blocking_objects
+                ],
+                region_path=list(selection.region_path),
+                failure_reason="",
+            )
+
+    def solve_boundary(
+        self,
+        observation: Observation,
+        robot_goal_cm: Tuple[float, float],
+        target: Any,
+        **kwargs: Any,
+    ) -> BoundaryPlan:
+        """Open one pinned boundary, graded against the target's frozen points.
+
+        ``target`` is a RegionOpeningTarget. Its blockers are stored in real
+        naming and resolved to simulator ids against the mapping built for
+        *this* scene, because those ids shift whenever the set of visible
+        movables changes.
+        """
+        with self._scene_session(observation, robot_goal_cm) as session:
+            if session is None:
+                return BoundaryPlan(failure_reason="xml_generation_failed")
+            xml_path, goal_sim, service = session
+
+            solve_kwargs = target.as_solve_kwargs()
+            blocking_sim_ids = []
+            for real_id in solve_kwargs.pop("blocking_objects", []):
+                try:
+                    blocking_sim_ids.append(self._resolve_sim_object_id(real_id))
+                except KeyError:
+                    # The blocker is not in this observation -- occluded, or it
+                    # left the scene. The boundary cannot be identified from it,
+                    # so report rather than silently opening a different one.
+                    return BoundaryPlan(failure_reason="blocker_not_observed")
+
+            if target.failed_pushes:
+                blacklist: Dict[str, Set[int]] = {}
+                for real_id, edge_idx in target.failed_pushes:
+                    try:
+                        sim_id = self._resolve_sim_object_id(real_id)
+                    except KeyError:
+                        continue
+                    blacklist.setdefault(sim_id, set()).add(int(edge_idx))
+                if blacklist:
+                    kwargs["external_edge_blacklist"] = blacklist
+
+            result = service.solve_boundary_from_xml(
+                xml_path,
+                (goal_sim[0], goal_sim[1], 0.0),
+                blocking_objects=blocking_sim_ids,
+                **solve_kwargs,
+                **kwargs,
+            )
+            self.last_search_time_ms = result.search_time_ms
+            self.last_algorithm_stats = {
+                "resolved_target": result.resolved_target,
+                "simulations_used": result.simulations_used,
+                "target_summary": result.target_summary,
+            }
+
+            return BoundaryPlan(
+                subgoals=self._convert_to_subgoals(result.actions),
+                success=bool(result.success),
+                already_open=bool(result.already_open),
+                boundary_exhausted=bool(result.boundary_exhausted),
+                failure_reason=result.failure_reason,
+                resolved_target=result.resolved_target,
+            )
 
     def _generate_xml(
         self,

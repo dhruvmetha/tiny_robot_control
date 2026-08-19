@@ -200,7 +200,7 @@ def target_path_for_run(run_dir: Path) -> Path:
 
 
 def target_from_selection(
-    selection: Any,
+    choice: Any,
     *,
     open_fraction: float,
     iteration: int = 0,
@@ -208,20 +208,22 @@ def target_from_selection(
     scale_factor: float = 1.0,
     target_id: str = "",
 ) -> RegionOpeningTarget:
-    """Freeze a namo_cpp BoundarySelection into a durable target.
+    """Freeze a bridge BoundaryChoice into a durable target.
 
-    Accepts anything exposing ``target_points``, ``blocking_objects`` and
-    ``region_path`` so this module does not import namo_cpp.
+    Takes the bridge's already-translated choice -- blockers in real naming --
+    rather than namo_cpp's raw selection, so this module needs no knowledge of
+    the planner package. Duck-typed on ``target_points_m``, ``blocker_real_ids``
+    and ``region_path``.
     """
-    points: Sequence[Sequence[float]] = selection.target_points
+    points: Sequence[Sequence[float]] = choice.target_points_m
     return RegionOpeningTarget(
         target_samples_m=tuple((float(p[0]), float(p[1])) for p in points),
-        blocker_real_ids=tuple(str(o) for o in selection.blocking_objects),
+        blocker_real_ids=tuple(str(o) for o in choice.blocker_real_ids),
         open_fraction=float(open_fraction),
         target_id=target_id or f"ro-{iteration:04d}",
         selected_iteration=int(iteration),
         last_iteration=int(iteration),
-        source_region_path=tuple(str(r) for r in getattr(selection, "region_path", ())),
+        source_region_path=tuple(str(r) for r in getattr(choice, "region_path", ())),
         sample_seed=int(sample_seed),
         scale_factor=float(scale_factor),
     )

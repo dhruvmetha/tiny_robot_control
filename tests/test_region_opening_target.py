@@ -173,7 +173,7 @@ def test_solve_kwargs_match_the_service_signature():
 
 def test_freezing_a_selection_keeps_its_points_and_blockers():
     selection = type(
-        "Sel", (), {"target_points": list(POINTS), "blocking_objects": list(BLOCKERS),
+        "Sel", (), {"target_points_m": list(POINTS), "blocker_real_ids": list(BLOCKERS),
                     "region_path": ["robot", "goal"]}
     )()
 

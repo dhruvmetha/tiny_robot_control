@@ -12,10 +12,23 @@ Now includes reachability checking:
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 
 from robot_control.core.types import NavigateSubgoal, Observation, PushSubgoal, Subgoal
 from robot_control.planner.base import Planner
+# The opening bar a region target is chosen under. Mirrors namo_cpp's
+# CANONICAL_MIN_REACHABLE_FRACTION: a boundary counts as open when 20% of its
+# sampled points are reachable. Recorded on the target so a later config change
+# cannot silently re-grade a subproblem already in flight.
+CANONICAL_OPEN_FRACTION = 0.2
+
+from robot_control.planner.region_target import (
+    STATUS_EXHAUSTED,
+    STATUS_OPENED,
+    RegionOpeningTarget,
+    target_from_selection,
+)
 from robot_control.planner.search_config import LocalSearchConfig
 from robot_control.planner.namo_bridge import NAMOPlanBridge
 
@@ -104,6 +117,11 @@ class NAMOPlanner(Planner):
         ml_sampler_method: Optional[str] = None,
         # Which local search namo_cpp runs per region boundary.
         local_search: Optional[LocalSearchConfig] = None,
+        # Hold one region boundary across pushes instead of re-choosing
+        # every replan. Off by default: unchanged runs keep the whole-problem
+        # planning path exactly as it was.
+        hold_region_target: bool = False,
+        active_target_path: Optional[str] = None,
         # Retry budgets — see [Runtime] section in run_namo.py docstring.
         max_planning_retries: int = 5,
         max_replan_attempts: int = 20,
@@ -201,6 +219,10 @@ class NAMOPlanner(Planner):
         self._ml_goal_model_path = ml_goal_model_path
         self._ml_device = ml_device
         self._local_search = local_search or LocalSearchConfig()
+        self._scale_factor = float(scale_factor)
+        self._hold_region_target = bool(hold_region_target)
+        self._active_target_path = Path(active_target_path) if active_target_path else None
+        self._active_target: Optional[RegionOpeningTarget] = None
         self._ml_samples = ml_samples
         self._ml_num_steps = ml_num_steps
         self._ml_sampler_method = ml_sampler_method
@@ -486,6 +508,12 @@ class NAMOPlanner(Planner):
         """Try suffix/full-chain reuse from the fresh post-push observation."""
         if self._execution_mode != "mpc":
             return False
+        if self._hold_region_target:
+            # Reuse verification asks whether the remaining chain makes the
+            # FINAL goal reachable. While a boundary is held that is the wrong
+            # question -- a chain can satisfy it while abandoning the boundary
+            # being opened. Re-solve against the frozen points instead.
+            return False
         if not self._pending_reuse_chain:
             return False
 
@@ -666,6 +694,12 @@ class NAMOPlanner(Planner):
                 )
                 if blacklist_entry not in self._failed_pushes:
                     self._failed_pushes.add(blacklist_entry)
+                    if self._active_target is not None:
+                        # Also against the subproblem, so the failure outlives
+                        # this planner instance and reaches the next process.
+                        self._store_active_target(
+                            self._active_target.with_failed_push(*blacklist_entry)
+                        )
                     print(
                         f"[NAMOPlanner] Blacklisted ({blacklist_entry[0]}, edge={blacklist_entry[1]}); "
                         f"blacklist size now {len(self._failed_pushes)}"
@@ -920,6 +954,98 @@ class NAMOPlanner(Planner):
 
         return reachable
 
+    # A plan call may cross several boundaries that turn out to be already
+    # open -- opening one can merge regions and clear the next. Bounded so a
+    # graph/opener disagreement cannot spin here instead of returning.
+    MAX_BOUNDARY_ADVANCES_PER_PLAN = 4
+
+    def _load_active_target(self) -> Optional[RegionOpeningTarget]:
+        """Prefer the persisted target, so a separate process sees the same one."""
+        if self._active_target_path is not None:
+            return RegionOpeningTarget.load(self._active_target_path)
+        return self._active_target if (self._active_target and self._active_target.is_active) else None
+
+    def _store_active_target(self, target: Optional[RegionOpeningTarget]) -> None:
+        self._active_target = target
+        if self._active_target_path is not None and target is not None:
+            target.save(self._active_target_path)
+
+    def _release_active_target(self, status: str) -> None:
+        if self._active_target is not None:
+            released = self._active_target.released(status)
+            if self._active_target_path is not None:
+                released.save(self._active_target_path)
+            print(f"[NAMOPlanner] Region target {released.target_id} released: {status}")
+        self._active_target = None
+
+    def _select_region_target(self, obs: Observation) -> Optional[RegionOpeningTarget]:
+        choice = self._bridge.select_boundary(obs, self._robot_goal_cm)
+        if choice.goal_already_reachable or not choice.found:
+            if choice.failure_reason:
+                print(f"[NAMOPlanner] No boundary to open: {choice.failure_reason}")
+            return None
+        target = target_from_selection(
+            choice,
+            open_fraction=CANONICAL_OPEN_FRACTION,
+            iteration=self._plan_count,
+            scale_factor=self._scale_factor,
+        )
+        print(
+            f"[NAMOPlanner] Selected region target {target.target_id}: "
+            f"blockers={list(target.blocker_real_ids)}, "
+            f"{len(target.target_samples_m)} points, path={list(target.source_region_path)}"
+        )
+        return target
+
+    def _generate_plan_holding_target(self, obs: Observation) -> None:
+        """Plan against one held boundary, advancing only when it opens."""
+        target = self._load_active_target()
+
+        for _advance in range(self.MAX_BOUNDARY_ADVANCES_PER_PLAN):
+            if target is None:
+                target = self._select_region_target(obs)
+                if target is None:
+                    self._subgoals = []
+                    return
+                self._store_active_target(target)
+
+            result = self._bridge.solve_boundary(obs, self._robot_goal_cm, target)
+            self._plan_count += 1
+            self._total_planning_ms += self._bridge.last_search_time_ms
+
+            if result.already_open:
+                # Opened with no push -- possibly by an earlier push in this
+                # same subproblem. Move on to the next boundary.
+                self._release_active_target(STATUS_OPENED)
+                target = None
+                continue
+
+            if result.boundary_exhausted:
+                self._release_active_target(STATUS_EXHAUSTED)
+                self._subgoals = []
+                return
+
+            if result.success and result.subgoals:
+                self._queue_mpc_chain(
+                    obs=obs,
+                    chain=result.subgoals,
+                    origin="region_target",
+                    attempt_index=0,
+                    xml_content=self._bridge.last_xml_content,
+                    object_mapping=None,
+                )
+                return
+
+            print(
+                f"[NAMOPlanner] Boundary {result.resolved_target or '?'} produced no plan "
+                f"({result.failure_reason or 'unknown'})"
+            )
+            self._subgoals = []
+            return
+
+        print("[NAMOPlanner] Too many already-open boundaries in one plan call")
+        self._subgoals = []
+
     def _generate_plan(self, obs: Observation) -> None:
         """Generate subgoal queue via NAMO planning.
 
@@ -927,6 +1053,9 @@ class NAMOPlanner(Planner):
         when planning returns no solution (empty subgoals or exception).
         """
         self._plan_generated = True
+        if self._hold_region_target:
+            self._generate_plan_holding_target(obs)
+            return
         max_retries = self._max_planning_retries
 
         # Aggregate diagnostic stats across all attempts so the failure
