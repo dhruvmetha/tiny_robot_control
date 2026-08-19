@@ -112,3 +112,78 @@ def test_reset_still_clears_everything(monkeypatch):
     planner.reset()
 
     assert planner._failed_pushes == set()
+
+
+# --- the rule applies to every object that moved, not just the pushed one ----
+#
+# A push shoves its neighbours. Their body frames move too, so their entries are
+# just as meaningless, and keeping them locks the planner out of edges that are
+# viable again.
+
+from robot_control.core.types import ObjectPose
+
+NUDGED = "obj_3"
+
+
+def _obs_with(objects):
+    return Observation(
+        robot_x=0.0, robot_y=0.0, robot_theta=0.0, objects=objects, timestamp=0.0
+    )
+
+
+def _pose(x, y, theta=0.0):
+    return ObjectPose(x=x, y=y, theta=theta, width=5.0, depth=5.0)
+
+
+def _push_with_observations(planner, object_id, before, after):
+    subgoal = PushSubgoal(object_id, 4, 1)
+    planner._subgoals = [subgoal]
+    planner._current_idx = 0
+    planner._committed_chain = [subgoal]
+    planner._observation_at_commit = before
+    planner.notify_subgoal_done(after, failed=False)
+
+
+def test_an_object_shoved_aside_loses_its_entries(monkeypatch):
+    planner = _planner(monkeypatch)
+    planner._failed_pushes = {(PUSHED, 4), (NUDGED, 9), (UNTOUCHED, 12)}
+    before = _obs_with({PUSHED: _pose(10, 10), NUDGED: _pose(20, 20), UNTOUCHED: _pose(30, 30)})
+    after = _obs_with({PUSHED: _pose(14, 10), NUDGED: _pose(23, 20), UNTOUCHED: _pose(30, 30)})
+
+    _push_with_observations(planner, PUSHED, before, after)
+
+    assert planner._failed_pushes == {(UNTOUCHED, 12)}
+
+
+def test_a_rotated_object_also_loses_its_entries(monkeypatch):
+    """edge_idx is in the body frame, so rotation invalidates it as much as translation."""
+    planner = _planner(monkeypatch)
+    planner._failed_pushes = {(NUDGED, 9)}
+    before = _obs_with({PUSHED: _pose(10, 10), NUDGED: _pose(20, 20, theta=0.0)})
+    after = _obs_with({PUSHED: _pose(14, 10), NUDGED: _pose(20, 20, theta=25.0)})
+
+    _push_with_observations(planner, PUSHED, before, after)
+
+    assert planner._failed_pushes == set()
+
+
+def test_measurement_jitter_does_not_clear_the_blacklist(monkeypatch):
+    """Camera noise is not a displacement; clearing on it would defeat the point."""
+    planner = _planner(monkeypatch)
+    planner._failed_pushes = {(UNTOUCHED, 12)}
+    before = _obs_with({PUSHED: _pose(10, 10), UNTOUCHED: _pose(30.0, 30.0)})
+    after = _obs_with({PUSHED: _pose(14, 10), UNTOUCHED: _pose(30.05, 30.02)})
+
+    _push_with_observations(planner, PUSHED, before, after)
+
+    assert planner._failed_pushes == {(UNTOUCHED, 12)}
+
+
+def test_without_a_before_observation_only_the_pushed_object_is_dropped(monkeypatch):
+    """Fall back to the old rule rather than guessing."""
+    planner = _planner(monkeypatch)
+    planner._failed_pushes = {(PUSHED, 4), (NUDGED, 9)}
+
+    _succeed_push_on(planner, PUSHED)
+
+    assert planner._failed_pushes == {(NUDGED, 9)}

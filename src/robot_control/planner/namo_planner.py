@@ -23,6 +23,14 @@ from robot_control.planner.base import Planner
 # cannot silently re-grade a subproblem already in flight.
 CANONICAL_OPEN_FRACTION = 0.2
 
+# What counts as an object having moved, for deciding whether its blacklisted
+# edges are still meaningful. Matches the tolerances closed_loop_session uses to
+# match objects between a scene and its XML (0.5 cm, 5 degrees), which is the
+# repo's existing statement of "the same object, unmoved" against real camera
+# measurements. Anything tighter would clear the blacklist on marker jitter.
+OBJECT_MOVED_TOLERANCE_CM = 0.5
+OBJECT_ROTATED_TOLERANCE_DEG = 5.0
+
 from robot_control.planner.region_target import (
     ADVANCE_EXHAUSTED,
     ADVANCE_PLANNED,
@@ -226,6 +234,9 @@ class NAMOPlanner(Planner):
         self._hold_region_target = bool(hold_region_target)
         self._active_target_path = Path(active_target_path) if active_target_path else None
         self._active_target: Optional[RegionOpeningTarget] = None
+        # Scene as it was when the current chain was committed, so a push's
+        # side effects on other objects can be detected afterwards.
+        self._observation_at_commit: Optional[Observation] = None
         self._ml_samples = ml_samples
         self._ml_num_steps = ml_num_steps
         self._ml_sampler_method = ml_sampler_method
@@ -374,6 +385,7 @@ class NAMOPlanner(Planner):
         object_mapping: Optional[Dict[str, Dict[str, str]]] = None,
     ) -> None:
         """Preserve the full chain, but queue only its first push for MPC."""
+        self._observation_at_commit = obs
         self._committed_chain = self._copy_push_chain(chain)
         self._committed_chain_origin = origin
         self._subgoals = [self._committed_chain[0]]
@@ -753,14 +765,17 @@ class NAMOPlanner(Planner):
         # discarding the only failure memory the planner has.
         pushed = self._subgoals[self._current_idx] if self._current_idx < len(self._subgoals) else None
         pushed_object_id = getattr(pushed, "object_id", None)
+        moved = self._objects_that_moved(self._observation_at_commit, obs)
         if pushed_object_id is not None:
-            stale = {entry for entry in self._failed_pushes if entry[0] == pushed_object_id}
+            moved.add(pushed_object_id)
+        if moved:
+            stale = {entry for entry in self._failed_pushes if entry[0] in moved}
             if stale:
                 self._failed_pushes -= stale
                 print(
                     f"[NAMOPlanner] Dropped {len(stale)} blacklist entry/entries for "
-                    f"{pushed_object_id} (its body frame moved); "
-                    f"{len(self._failed_pushes)} retained for other objects"
+                    f"{sorted(moved)} (their body frames moved); "
+                    f"{len(self._failed_pushes)} retained"
                 )
 
         if self._execution_mode == "mpc":
@@ -991,6 +1006,33 @@ class NAMOPlanner(Planner):
                 released.save(self._active_target_path)
             print(f"[NAMOPlanner] Region target {released.target_id} released: {status}")
         self._active_target = None
+
+    @staticmethod
+    def _objects_that_moved(
+        before: Optional[Observation], after: Observation
+    ) -> Set[str]:
+        """Objects whose pose changed enough to invalidate a body-frame edge.
+
+        A push shoves its neighbours, not only its target. Their blacklisted
+        edges are just as meaningless afterwards, since edge_idx is measured in
+        the object's own frame. Without a before-observation this returns
+        nothing and the caller falls back to dropping only the pushed object.
+        """
+        if before is None:
+            return set()
+        moved: Set[str] = set()
+        for name, after_pose in (after.objects or {}).items():
+            before_pose = (before.objects or {}).get(name)
+            if before_pose is None:
+                continue
+            shifted = (
+                abs(after_pose.x - before_pose.x) > OBJECT_MOVED_TOLERANCE_CM
+                or abs(after_pose.y - before_pose.y) > OBJECT_MOVED_TOLERANCE_CM
+            )
+            turned = abs(after_pose.theta - before_pose.theta) > OBJECT_ROTATED_TOLERANCE_DEG
+            if shifted or turned:
+                moved.add(name)
+        return moved
 
     def _held_mode_planner_kwargs(self) -> Dict[str, Any]:
         """Options that would reach the planner through bridge.plan.
