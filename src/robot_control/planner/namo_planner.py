@@ -700,18 +700,30 @@ class NAMOPlanner(Planner):
         self._replan_attempt = 0
         self._failed_subgoal = None
 
-        # Reset the push blacklist on success. World state has changed
-        # (object moved, robot moved), so previously failed (object, edge)
-        # pairs may now be viable. The blacklist key is in object body frame,
-        # which becomes a different world-frame approach as objects rotate.
-        # Cost of re-trying is just planning time; cost of staying blacklisted
-        # locks the planner out of valid solutions.
-        if self._failed_pushes:
-            print(
-                f"[NAMOPlanner] Resetting blacklist of {len(self._failed_pushes)} "
-                f"entry/entries after successful push (world state changed)"
-            )
-            self._failed_pushes.clear()
+        # Drop blacklist entries for the object we just pushed, and only those.
+        #
+        # The key is (object_id, edge_idx) with edge_idx in the object's BODY
+        # frame, so moving or rotating an object makes its own stale entries
+        # meaningless -- edge 17 is a different world-frame approach afterwards.
+        # That is why these must go.
+        #
+        # Entries for every OTHER object stay. This push did not change their
+        # body frames, so a push that physically failed on them is still just
+        # as unavailable, and forgetting it means the next plan can propose it
+        # again -- which on the real robot is a loop, since one push is
+        # executed per replan. Clearing the whole set on any success was
+        # discarding the only failure memory the planner has.
+        pushed = self._subgoals[self._current_idx] if self._current_idx < len(self._subgoals) else None
+        pushed_object_id = getattr(pushed, "object_id", None)
+        if pushed_object_id is not None:
+            stale = {entry for entry in self._failed_pushes if entry[0] == pushed_object_id}
+            if stale:
+                self._failed_pushes -= stale
+                print(
+                    f"[NAMOPlanner] Dropped {len(stale)} blacklist entry/entries for "
+                    f"{pushed_object_id} (its body frame moved); "
+                    f"{len(self._failed_pushes)} retained for other objects"
+                )
 
         if self._execution_mode == "mpc":
             executed_chain = self._copy_push_chain(self._committed_chain)
