@@ -251,6 +251,31 @@ ADVANCE_NO_PLAN = "no_plan"
 MAX_BOUNDARY_ADVANCES = 4
 
 
+# Failure reasons meaning "this boundary cannot be worked on from here", as
+# opposed to "this attempt failed". namo_cpp documents the first as a normal
+# outcome the caller must re-choose after. Retrying either one produces the
+# identical failure on every replan.
+UNUSABLE_BOUNDARY_REASONS = frozenset(
+    {"target_not_immediate_neighbor", "blocker_not_observed", "no_blocking_objects"}
+)
+
+
+def _boundary_label_pair(target: "RegionOpeningTarget", resolved: str) -> Optional[Tuple[str, str]]:
+    """The (source, target) labels to exclude from the next selection.
+
+    Labels are ordinal, so this is only sound while the scene is static. It is:
+    no push runs between the selections inside one advance call. A target
+    carried over from an earlier process may name stale labels, in which case
+    the worst case is excluding a boundary that no longer exists, and the BFS
+    simply routes as if it were absent.
+    """
+    source = target.source_region_path[0] if target.source_region_path else None
+    other = resolved or (
+        target.source_region_path[1] if len(target.source_region_path) > 1 else None
+    )
+    return (source, other) if source and other else None
+
+
 def advance_boundary(
     bridge: Any,
     observation: Any,
@@ -274,11 +299,18 @@ def advance_boundary(
 
     Returns ``(plan, target, status)``.
     """
+    blocked: List[Tuple[str, str]] = []
+    last_plan = None
+
     for _advance in range(max_advances):
         if target is None:
-            choice = bridge.select_boundary(observation, robot_goal_cm)
+            choice = bridge.select_boundary(
+                observation, robot_goal_cm, blocked_boundaries=blocked or None
+            )
             if choice.goal_already_reachable or not choice.found:
-                return None, None, ADVANCE_NO_BOUNDARY
+                # Nothing selectable. If we got here by discarding a boundary,
+                # say so, because the caller has one to mark dead.
+                return last_plan, None, ADVANCE_EXHAUSTED if blocked else ADVANCE_NO_BOUNDARY
             target = target_from_selection(
                 choice,
                 open_fraction=open_fraction,
@@ -287,16 +319,25 @@ def advance_boundary(
             )
 
         plan = bridge.solve_boundary(observation, robot_goal_cm, target)
+        last_plan = plan
 
         if plan.already_open:
             # Opened with no push -- often by an earlier push in this same
             # subproblem. Release it and look at the next boundary.
             target = None
             continue
-        if plan.boundary_exhausted:
-            return plan, None, ADVANCE_EXHAUSTED
+
+        if plan.boundary_exhausted or plan.failure_reason in UNUSABLE_BOUNDARY_REASONS:
+            # Selection is deterministic, so simply dropping this boundary would
+            # pick the same one straight back. Exclude it, then look again.
+            pair = _boundary_label_pair(target, plan.resolved_target)
+            if pair is not None:
+                blocked.append(pair)
+            target = None
+            continue
+
         if plan.success and plan.subgoals:
             return plan, target, ADVANCE_PLANNED
         return plan, target, ADVANCE_NO_PLAN
 
-    return None, None, ADVANCE_NO_BOUNDARY
+    return last_plan, None, ADVANCE_EXHAUSTED if blocked else ADVANCE_NO_BOUNDARY

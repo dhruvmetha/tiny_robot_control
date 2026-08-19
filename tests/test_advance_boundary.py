@@ -49,10 +49,12 @@ class _Bridge:
         self.choices = list(choices or [_choice()])
         self.plans = list(plans or [_plan()])
         self.select_calls = 0
+        self.select_blocked_args = []
         self.solved_targets = []
 
     def select_boundary(self, *a, **k):
         self.select_calls += 1
+        self.select_blocked_args.append(k.get("blocked_boundaries"))
         return self.choices.pop(0) if self.choices else _choice(found=False)
 
     def solve_boundary(self, obs, goal, target, **k):
@@ -68,8 +70,13 @@ def _advance(bridge, target=None):
 
 
 def _target():
+    # source_region_path is what names the boundary when it has to be excluded
+    # from a later selection, so a realistic target carries one.
     return RegionOpeningTarget(
-        target_samples_m=tuple(POINTS), blocker_real_ids=("obj_4",), open_fraction=FRACTION
+        target_samples_m=tuple(POINTS),
+        blocker_real_ids=("obj_4",),
+        open_fraction=FRACTION,
+        source_region_path=("robot", "goal"),
     )
 
 
@@ -109,8 +116,11 @@ def test_an_already_open_boundary_advances_to_the_next():
     assert bridge.select_calls == 1
 
 
-def test_an_exhausted_boundary_releases_the_target():
-    bridge = _Bridge(plans=[_plan(success=False, boundary_exhausted=True)])
+def test_an_exhausted_boundary_with_no_alternative_is_released():
+    bridge = _Bridge(
+        choices=[_choice(found=False, failure_reason="region_path_exhausted")],
+        plans=[_plan(success=False, boundary_exhausted=True)],
+    )
 
     _plan_, target, status = _advance(bridge, target=_target())
 
@@ -162,3 +172,74 @@ def test_the_step_does_not_persist_anything(tmp_path):
     _advance(bridge)
 
     assert list(tmp_path.iterdir()) == []
+
+
+# --- boundaries that cannot be used must be dropped, not retried forever -----
+#
+# namo_cpp documents target_not_immediate_neighbor as "the caller must re-choose
+# at the outer level; this is a normal outcome". Holding the target instead
+# means every later replan repeats the identical failing solve.
+
+UNRESOLVABLE = ["target_not_immediate_neighbor", "blocker_not_observed"]
+
+
+@pytest.mark.parametrize("reason", UNRESOLVABLE)
+def test_an_unresolvable_boundary_is_released(reason):
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[_plan(success=False, failure_reason=reason), _plan()],
+    )
+
+    _plan_, target, status = _advance(bridge, target=_target())
+
+    assert status == ADVANCE_PLANNED
+    assert target.blocker_real_ids == ("obj_9",)
+
+
+def test_a_plain_push_failure_keeps_the_boundary():
+    """all_pushes_failed is worth retrying next replan; it is not unusable."""
+    bridge = _Bridge(plans=[_plan(success=False, failure_reason="all_pushes_failed")])
+    held = _target()
+
+    _plan_, target, status = _advance(bridge, target=held)
+
+    assert status == ADVANCE_NO_PLAN
+    assert target is held
+
+
+def test_an_exhausted_boundary_is_not_immediately_reselected():
+    """Selection is deterministic, so without blocking we would pick it again."""
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[_plan(success=False, boundary_exhausted=True), _plan()],
+    )
+
+    _plan_, target, status = _advance(bridge, target=_target())
+
+    assert status == ADVANCE_PLANNED
+    assert target.blocker_real_ids == ("obj_9",)
+
+
+def test_the_exhausted_boundary_is_excluded_from_the_next_selection():
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[_plan(success=False, boundary_exhausted=True), _plan()],
+    )
+    held = _target()
+
+    _advance(bridge, target=held)
+
+    assert bridge.select_blocked_args
+    assert bridge.select_blocked_args[-1], "next selection got no blocked boundaries"
+
+
+def test_running_out_of_alternatives_reports_no_boundary():
+    bridge = _Bridge(
+        choices=[_choice(found=False, failure_reason="region_path_exhausted")],
+        plans=[_plan(success=False, boundary_exhausted=True)],
+    )
+
+    _plan_, target, status = _advance(bridge, target=_target())
+
+    assert status == ADVANCE_EXHAUSTED
+    assert target is None

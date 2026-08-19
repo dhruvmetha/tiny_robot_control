@@ -321,10 +321,11 @@ def _seed_active_target(tmp_path):
     return target
 
 
-def test_an_exhausted_boundary_is_marked_exhausted_on_disk(monkeypatch, tmp_path):
+def test_an_exhausted_boundary_with_no_alternative_is_released_on_disk(monkeypatch, tmp_path):
     """Otherwise the next process resumes a boundary already proven dead."""
     _seed_active_target(tmp_path)
     planner, bridge = _planner(monkeypatch, tmp_path=tmp_path)
+    bridge.select_results = [_choice(found=False, failure_reason="region_path_exhausted")]
     bridge.solve_results = [_plan(success=False, boundary_exhausted=True)]
 
     planner.plan(_obs())
@@ -335,6 +336,7 @@ def test_an_exhausted_boundary_is_marked_exhausted_on_disk(monkeypatch, tmp_path
 def test_a_dead_boundary_is_not_resumed_by_the_next_process(monkeypatch, tmp_path):
     _seed_active_target(tmp_path)
     first, first_bridge = _planner(monkeypatch, tmp_path=tmp_path)
+    first_bridge.select_results = [_choice(found=False, failure_reason="region_path_exhausted")]
     first_bridge.solve_results = [_plan(success=False, boundary_exhausted=True)]
     first.plan(_obs())
 
@@ -343,6 +345,20 @@ def test_a_dead_boundary_is_not_resumed_by_the_next_process(monkeypatch, tmp_pat
 
     assert second_bridge.select_calls == 1
     assert second_bridge.solve_calls[0].target_id != "ro-0001"
+
+
+def test_an_exhausted_boundary_is_swapped_for_a_live_one_on_disk(monkeypatch, tmp_path):
+    """When an alternative exists the run keeps going against that instead."""
+    _seed_active_target(tmp_path)
+    planner, bridge = _planner(monkeypatch, tmp_path=tmp_path)
+    bridge.select_results = [_choice(blocker_real_ids=["obj_9"])]
+    bridge.solve_results = [_plan(success=False, boundary_exhausted=True), _plan()]
+
+    planner.plan(_obs())
+
+    revived = RegionOpeningTarget.load(tmp_path / "active.json")
+    assert revived is not None
+    assert revived.blocker_real_ids == ("obj_9",)
 
 
 def test_an_opened_boundary_is_marked_opened_on_disk(monkeypatch, tmp_path):
