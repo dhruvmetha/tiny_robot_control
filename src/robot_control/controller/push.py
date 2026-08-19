@@ -220,6 +220,9 @@ class PushController(Controller):
         # Retreat phase state
         self._retreat_target: Optional[Point] = None
         self._retreat_is_backward: bool = False
+        # Robot pose when the retreat began, so the outcome can report how far
+        # the robot actually travelled and not only whether it arrived.
+        self._retreat_start_pose: Optional[Tuple[float, float]] = None
 
         # Push outcome telemetry: object pose at PUSHING entry, for Δ reporting at PUSH COMPLETE
         self._push_start_obj_pose: Optional[Tuple[float, float, float]] = None
@@ -704,6 +707,32 @@ class PushController(Controller):
         retreat_speed = -self._push_config.retreat_speed
         return Action(left_speed=retreat_speed, right_speed=retreat_speed)
 
+    def _report_retreat_outcome(self, obs: Observation, dist: float, arrived: bool) -> None:
+        """Say how far the robot actually travelled, not only whether it arrived.
+
+        Both exits from the retreat set PushState.FINISHED, so downstream code
+        cannot tell them apart. The number that matters is displacement: across
+        the real runs under closed_loop_sessions/, arriving retreats moved 3.0 cm
+        while timing-out ones moved 0.2-0.5 cm despite commanding a clean reverse
+        on all 199 ticks. That gap is the signal to watch on hardware, and the
+        old log reported neither figure.
+        """
+        moved = 0.0
+        if self._retreat_start_pose is not None:
+            moved = math.hypot(
+                obs.robot_x - self._retreat_start_pose[0],
+                obs.robot_y - self._retreat_start_pose[1],
+            )
+        outcome = "reached target" if arrived else "TIMEOUT"
+        print(
+            f"[PUSH] Retreat {outcome} after {self._retreat_step_count} steps: "
+            f"moved {moved:.1f} cm, stopped {dist:.1f} cm from target "
+            f"(tolerance {self._push_config.retreat_tolerance:.1f} cm, "
+            f"commanded speed {self._push_config.retreat_speed:.2f}), "
+            f"robot at ({obs.robot_x:.1f}, {obs.robot_y:.1f}), "
+            f"target ({self._retreat_target[0]:.1f}, {self._retreat_target[1]:.1f})"
+        )
+
     def _handle_retreating(self, obs: Observation) -> Action:
         """Back up to nearest free cell after pushing.
 
@@ -723,6 +752,7 @@ class PushController(Controller):
 
             self._retreat_target = target
             self._retreat_is_backward = is_backward
+            self._retreat_start_pose = (obs.robot_x, obs.robot_y)
             direction = "BACKWARD" if is_backward else "FORWARD"
             print(f"[PUSH] Retreat target: ({target[0]:.1f}, {target[1]:.1f}) [{direction}]")
 
@@ -748,6 +778,7 @@ class PushController(Controller):
             obs.robot_y - self._retreat_target[1],
         )
         if dist < self._push_config.retreat_tolerance:
+            self._report_retreat_outcome(obs, dist, arrived=True)
             self._state = PushState.FINISHED
             if self._nav_controller is not None:
                 self._nav_controller.cancel()
@@ -756,17 +787,7 @@ class PushController(Controller):
         # Safety: don't retreat forever (max 2x fallback steps)
         self._retreat_step_count += 1
         if self._retreat_step_count >= self._push_config.retreat_steps * 2:
-            # Log where the robot actually stopped, not only that it ran out of
-            # steps. FINISHED is the same state a reached-target retreat sets,
-            # so without this number nothing downstream can tell a 2 cm
-            # near-miss from a robot that never left the object it just pushed.
-            print(
-                f"[PUSH] Retreat timeout after {self._retreat_step_count} steps: "
-                f"stopped {dist:.1f} cm from target "
-                f"(tolerance {self._push_config.retreat_tolerance:.1f} cm), "
-                f"robot at ({obs.robot_x:.1f}, {obs.robot_y:.1f}), "
-                f"target ({self._retreat_target[0]:.1f}, {self._retreat_target[1]:.1f})"
-            )
+            self._report_retreat_outcome(obs, dist, arrived=False)
             self._state = PushState.FINISHED
             if self._nav_controller is not None:
                 self._nav_controller.cancel()
@@ -1212,6 +1233,7 @@ class PushController(Controller):
         # Reset retreat state
         self._retreat_target = None
         self._retreat_is_backward = False
+        self._retreat_start_pose = None
 
         # Reset push outcome telemetry
         self._push_start_obj_pose = None

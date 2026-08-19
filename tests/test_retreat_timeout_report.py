@@ -1,15 +1,17 @@
-"""What the retreat reports when it runs out of steps.
+"""What the retreat reports when it ends.
 
 The retreat sets PushState.FINISHED on two paths, reaching its target and
 running out of steps. Both look identical from outside the controller, so a
 push that left the robot sitting against the object it just moved is
-indistinguishable from a clean one. Six of ten real closed-loop pushes in
-closed_loop_sessions/ took the timeout path, every one of them burning the full
+indistinguishable from a clean one. Six of ten real closed-loop pushes under
+closed_loop_sessions/ took the timeout path, every one burning the full
 200-step budget, so this is the common case rather than an edge case.
 
-The timeout line therefore has to carry where the robot actually stopped. That
-number is what decides whether the tolerance is set below what the controller
-can hold, or whether the robot is not reversing at all.
+Displacement is the number that separates them. Recovering it from those runs
+by joining wheel_commands.jsonl, mid_obs.jsonl and run.log gave 3.0 cm for
+every arriving retreat and 0.2-0.5 cm for every timing-out one, while the
+commanded wheel speeds were a clean -0.150 on both. Neither figure appeared in
+any log, so both exits now report it.
 """
 
 from types import SimpleNamespace
@@ -23,6 +25,9 @@ from robot_control.controller.push import PushController, PushState
 RETREAT_STEPS = 100
 RETREAT_TOLERANCE_CM = 2.0
 TARGET = (10.0, 20.0)
+# 5 cm below the target, matching retreat_min_dist: every real retreat in the
+# session logs aimed at a target exactly that far away.
+RETREAT_START = (10.0, 15.0)
 
 
 def _retreating_controller(step_count):
@@ -37,6 +42,7 @@ def _retreating_controller(step_count):
     controller._retreat_target = TARGET
     controller._retreat_is_backward = True
     controller._retreat_step_count = step_count
+    controller._retreat_start_pose = RETREAT_START
     controller._nav_controller = None
     controller._state = PushState.RETREATING
     return controller
@@ -46,19 +52,40 @@ def _obs(x, y):
     return SimpleNamespace(robot_x=x, robot_y=y, robot_theta=0.0)
 
 
-def test_the_timeout_line_says_how_far_off_the_robot_stopped(capsys):
-    """A near-miss and a robot that never moved must not log the same thing."""
+def test_a_timeout_reports_how_far_the_robot_actually_travelled(capsys):
+    """The real failures moved 0.2-0.5 cm; that is the number to watch."""
     controller = _retreating_controller(RETREAT_STEPS * 2 - 1)
 
-    controller._handle_retreating(_obs(TARGET[0], TARGET[1] - 12.0))
+    controller._handle_retreating(_obs(RETREAT_START[0], RETREAT_START[1] + 0.3))
 
     line = capsys.readouterr().out
-    assert "Retreat timeout" in line
-    assert "stopped 12.0 cm from target" in line
-    assert "tolerance 2.0 cm" in line
+    assert "Retreat TIMEOUT" in line
+    assert "moved 0.3 cm" in line
+    assert "stopped 4.7 cm from target" in line
 
 
-def test_the_timeout_line_records_both_poses_for_the_run_log(capsys):
+def test_an_arriving_retreat_reports_the_same_two_numbers(capsys):
+    """Both exits set FINISHED, so both have to say what happened."""
+    controller = _retreating_controller(0)
+
+    controller._handle_retreating(_obs(TARGET[0], TARGET[1] - 1.0))
+
+    line = capsys.readouterr().out
+    assert "Retreat reached target" in line
+    assert "moved 4.0 cm" in line
+    assert "stopped 1.0 cm from target" in line
+
+
+def test_the_report_carries_the_speed_that_produced_it(capsys):
+    """The commanded speed is the suspect, so it belongs beside the outcome."""
+    controller = _retreating_controller(RETREAT_STEPS * 2 - 1)
+
+    controller._handle_retreating(_obs(RETREAT_START[0], RETREAT_START[1] + 0.3))
+
+    assert "commanded speed 0.15" in capsys.readouterr().out
+
+
+def test_the_report_records_both_poses_for_the_run_log(capsys):
     controller = _retreating_controller(RETREAT_STEPS * 2 - 1)
 
     controller._handle_retreating(_obs(4.0, 20.0))
@@ -66,6 +93,16 @@ def test_the_timeout_line_records_both_poses_for_the_run_log(capsys):
     line = capsys.readouterr().out
     assert "robot at (4.0, 20.0)" in line
     assert "target (10.0, 20.0)" in line
+
+
+def test_a_retreat_with_no_recorded_start_still_reports(capsys):
+    """Displacement is unknown after a restart mid-retreat, not a crash."""
+    controller = _retreating_controller(RETREAT_STEPS * 2 - 1)
+    controller._retreat_start_pose = None
+
+    controller._handle_retreating(_obs(4.0, 20.0))
+
+    assert "moved 0.0 cm" in capsys.readouterr().out
 
 
 def test_timing_out_still_finishes_the_push():
@@ -78,13 +115,13 @@ def test_timing_out_still_finishes_the_push():
     assert (action.left_speed, action.right_speed) == (0.0, 0.0)
 
 
-def test_reaching_the_target_finishes_without_a_timeout_line(capsys):
+def test_reaching_the_target_is_not_reported_as_a_timeout(capsys):
     controller = _retreating_controller(0)
 
     controller._handle_retreating(_obs(TARGET[0], TARGET[1] - 1.0))
 
     assert controller._state is PushState.FINISHED
-    assert "Retreat timeout" not in capsys.readouterr().out
+    assert "TIMEOUT" not in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("steps_remaining", [1, 5, 50])
@@ -96,4 +133,4 @@ def test_a_retreat_with_budget_left_keeps_driving(steps_remaining, capsys):
 
     assert controller._state is PushState.RETREATING
     assert (action.left_speed, action.right_speed) != (0.0, 0.0)
-    assert "Retreat timeout" not in capsys.readouterr().out
+    assert "Retreat" not in capsys.readouterr().out
