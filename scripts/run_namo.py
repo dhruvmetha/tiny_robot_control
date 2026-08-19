@@ -47,6 +47,16 @@ import yaml
 
 from robot_control import Runtime, RuntimeConfig, SimConfig
 from robot_control.core.object_defs import ObjectDef
+from robot_control.planner.namo_planner import CANONICAL_OPEN_FRACTION
+from robot_control.planner.region_target import (
+    ADVANCE_EXHAUSTED,
+    ADVANCE_NO_BOUNDARY,
+    ADVANCE_PLANNED,
+    STATUS_EXHAUSTED,
+    STATUS_OPENED,
+    RegionOpeningTarget,
+    advance_boundary,
+)
 from robot_control.planner import (
     BEST_FIRST_PRIOR_CHOICES,
     DEFAULT_BEST_FIRST_PRIOR,
@@ -636,6 +646,7 @@ def _emit_plan_only_solution_yaml(
     sim_pushes_tried: Optional[int] = None,
     object_mapping: Optional[Dict[str, Dict[str, str]]] = None,
     planner_scene_xml: Optional[str] = None,
+    outcome_override: Optional[str] = None,
 ) -> None:
     """Write solution.yaml from a planner-returned chain (plan-only mode).
 
@@ -656,7 +667,8 @@ def _emit_plan_only_solution_yaml(
     success = bool(plan_list)
     payload = {
         "success": success,
-        "outcome": "success" if success else "planner returned no plan",
+        "outcome": outcome_override
+        or ("success" if success else "planner returned no plan"),
         "goal_cm": [float(goal_cm[0]), float(goal_cm[1])],
         "algorithm": algorithm,
         "strategy": strategy,
@@ -1049,6 +1061,8 @@ def run_interactive_mode(args):
         ml_num_steps=args.ml_num_steps,
         ml_sampler_method=args.ml_sampler_method,
         local_search=local_search_from_args(args),
+        hold_region_target=bool(args.hold_region_target or args.active_target),
+        active_target_path=args.active_target,
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
         shuffle_edges=not args.no_shuffle_edges,
@@ -1306,20 +1320,53 @@ def _run_plan_only_mode(args) -> int:
 
     extra_kwargs.update(local_search_from_args(args).as_planner_kwargs())
 
-    plan_subgoals = bridge.plan(
-        observation=obs,
-        robot_goal_cm=goal_cm,
-        algorithm=args.algorithm,
-        goal_strategy=args.strategy,
-        max_chain_depth=args.max_chain_depth,
-        allow_collisions=args.allow_collisions,
-        frontier_beam_width=args.frontier_beam_width,
-        chain_link_cost=args.chain_link_cost,
-        selection_strategy=args.selection_strategy,
-        goals_per_region=args.goals_per_region,
-        failed_pushes=set(),
-        **extra_kwargs,
-    )
+    # Held-boundary mode: resume the subproblem the previous process left,
+    # rather than re-deriving which boundary to open. Same advance step the
+    # in-process planner uses -- the two share no other code.
+    active_target_path = Path(args.active_target) if args.active_target else None
+    if active_target_path is not None or args.hold_region_target:
+        held = RegionOpeningTarget.load(active_target_path) if active_target_path else None
+        boundary_plan, target, status = advance_boundary(
+            bridge,
+            obs,
+            goal_cm,
+            target=held,
+            open_fraction=CANONICAL_OPEN_FRACTION,
+            scale_factor=args.scale_factor,
+        )
+        if target is not None and active_target_path is not None:
+            target.save(active_target_path)
+        elif held is not None and active_target_path is not None:
+            held.released(
+                STATUS_EXHAUSTED if status == ADVANCE_EXHAUSTED else STATUS_OPENED
+            ).save(active_target_path)
+
+        plan_subgoals = list(boundary_plan.subgoals) if status == ADVANCE_PLANNED else []
+        boundary_outcome = {
+            ADVANCE_PLANNED: None,
+            ADVANCE_EXHAUSTED: "boundary exhausted",
+            ADVANCE_NO_BOUNDARY: "no boundary left to open",
+        }.get(status, "boundary produced no plan")
+        print(
+            f"[run_namo plan-only] held-boundary status={status} "
+            f"target={getattr(target, 'target_id', None)} pushes={len(plan_subgoals)}"
+        )
+    else:
+        boundary_outcome = None
+        plan_subgoals = bridge.plan(
+            observation=obs,
+            robot_goal_cm=goal_cm,
+            algorithm=args.algorithm,
+            goal_strategy=args.strategy,
+            max_chain_depth=args.max_chain_depth,
+            allow_collisions=args.allow_collisions,
+            frontier_beam_width=args.frontier_beam_width,
+            chain_link_cost=args.chain_link_cost,
+            selection_strategy=args.selection_strategy,
+            goals_per_region=args.goals_per_region,
+            failed_pushes=set(),
+            **extra_kwargs,
+        )
 
     recorder = getattr(args, "_diagnostics_recorder", None)
     if recorder is None or not getattr(recorder, "enabled", False):
@@ -1350,6 +1397,7 @@ def _run_plan_only_mode(args) -> int:
         sim_pushes_tried=bridge.last_sim_pushes_tried,
         object_mapping=object_mapping,
         planner_scene_xml=planner_scene_path.name if planner_scene_path is not None else None,
+        outcome_override=boundary_outcome,
     )
 
     # If a plan was found, render the MP4 of the chain executing in MuJoCo
@@ -1542,6 +1590,8 @@ def run_automatic_mode(args):
         ml_num_steps=args.ml_num_steps,
         ml_sampler_method=args.ml_sampler_method,
         local_search=local_search_from_args(args),
+        hold_region_target=bool(args.hold_region_target or args.active_target),
+        active_target_path=args.active_target,
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
         shuffle_edges=not args.no_shuffle_edges,
@@ -1871,6 +1921,20 @@ def main():
         type=str,
         default=None,
         help="Sampler method: ddpm/ddim (diffusion) or euler/midpoint/rk4/dopri5 (flow matching)",
+    )
+    parser.add_argument(
+        "--hold-region-target",
+        action="store_true",
+        help="Keep working on one region boundary until it opens, instead of "
+             "re-choosing after every push. Implied by --active-target.",
+    )
+    parser.add_argument(
+        "--active-target",
+        type=str,
+        default=None,
+        help="Path to the active-target JSON. Persists the held boundary so a "
+             "later process (e.g. closed_loop_session's per-replan subprocess) "
+             "resumes the same subproblem instead of starting a new one.",
     )
     parser.add_argument(
         "--local-search",

@@ -227,3 +227,66 @@ def target_from_selection(
         sample_seed=int(sample_seed),
         scale_factor=float(scale_factor),
     )
+
+
+# Outcomes of one advance step, for callers that must branch on them.
+ADVANCE_PLANNED = "planned"
+ADVANCE_NO_BOUNDARY = "no_boundary"
+ADVANCE_EXHAUSTED = "exhausted"
+ADVANCE_NO_PLAN = "no_plan"
+
+# One call may cross several boundaries that turn out to be already open --
+# opening one can merge regions and clear the next. Bounded so a graph/opener
+# disagreement cannot spin here instead of returning.
+MAX_BOUNDARY_ADVANCES = 4
+
+
+def advance_boundary(
+    bridge: Any,
+    observation: Any,
+    robot_goal_cm: Tuple[float, float],
+    *,
+    target: Optional[RegionOpeningTarget],
+    open_fraction: float,
+    scale_factor: float = 1.0,
+    iteration: int = 0,
+    max_advances: int = MAX_BOUNDARY_ADVANCES,
+) -> Tuple[Any, Optional[RegionOpeningTarget], str]:
+    """One step of the inner loop: solve the held boundary, or pick the next.
+
+    Pure with respect to storage -- it takes the current target and returns the
+    one the caller should now hold (``None`` once released). Persisting it, and
+    doing something with the plan, are the caller's business.
+
+    Both entry points use this. The in-process planner and the plan-only
+    subprocess share no other code, and a second copy of this logic would drift
+    the way the two chain-reuse ladders in this repo already have.
+
+    Returns ``(plan, target, status)``.
+    """
+    for _advance in range(max_advances):
+        if target is None:
+            choice = bridge.select_boundary(observation, robot_goal_cm)
+            if choice.goal_already_reachable or not choice.found:
+                return None, None, ADVANCE_NO_BOUNDARY
+            target = target_from_selection(
+                choice,
+                open_fraction=open_fraction,
+                iteration=iteration,
+                scale_factor=scale_factor,
+            )
+
+        plan = bridge.solve_boundary(observation, robot_goal_cm, target)
+
+        if plan.already_open:
+            # Opened with no push -- often by an earlier push in this same
+            # subproblem. Release it and look at the next boundary.
+            target = None
+            continue
+        if plan.boundary_exhausted:
+            return plan, None, ADVANCE_EXHAUSTED
+        if plan.success and plan.subgoals:
+            return plan, target, ADVANCE_PLANNED
+        return plan, target, ADVANCE_NO_PLAN
+
+    return None, None, ADVANCE_NO_BOUNDARY

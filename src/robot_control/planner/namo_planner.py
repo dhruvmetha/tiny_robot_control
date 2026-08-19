@@ -24,10 +24,13 @@ from robot_control.planner.base import Planner
 CANONICAL_OPEN_FRACTION = 0.2
 
 from robot_control.planner.region_target import (
+    ADVANCE_EXHAUSTED,
+    ADVANCE_PLANNED,
+    MAX_BOUNDARY_ADVANCES,
     STATUS_EXHAUSTED,
     STATUS_OPENED,
     RegionOpeningTarget,
-    target_from_selection,
+    advance_boundary,
 )
 from robot_control.planner.search_config import LocalSearchConfig
 from robot_control.planner.namo_bridge import NAMOPlanBridge
@@ -957,7 +960,7 @@ class NAMOPlanner(Planner):
     # A plan call may cross several boundaries that turn out to be already
     # open -- opening one can merge regions and clear the next. Bounded so a
     # graph/opener disagreement cannot spin here instead of returning.
-    MAX_BOUNDARY_ADVANCES_PER_PLAN = 4
+    MAX_BOUNDARY_ADVANCES_PER_PLAN = MAX_BOUNDARY_ADVANCES
 
     def _load_active_target(self) -> Optional[RegionOpeningTarget]:
         """Prefer the persisted target, so a separate process sees the same one."""
@@ -978,73 +981,55 @@ class NAMOPlanner(Planner):
             print(f"[NAMOPlanner] Region target {released.target_id} released: {status}")
         self._active_target = None
 
-    def _select_region_target(self, obs: Observation) -> Optional[RegionOpeningTarget]:
-        choice = self._bridge.select_boundary(obs, self._robot_goal_cm)
-        if choice.goal_already_reachable or not choice.found:
-            if choice.failure_reason:
-                print(f"[NAMOPlanner] No boundary to open: {choice.failure_reason}")
-            return None
-        target = target_from_selection(
-            choice,
-            open_fraction=CANONICAL_OPEN_FRACTION,
-            iteration=self._plan_count,
-            scale_factor=self._scale_factor,
-        )
-        print(
-            f"[NAMOPlanner] Selected region target {target.target_id}: "
-            f"blockers={list(target.blocker_real_ids)}, "
-            f"{len(target.target_samples_m)} points, path={list(target.source_region_path)}"
-        )
-        return target
-
     def _generate_plan_holding_target(self, obs: Observation) -> None:
-        """Plan against one held boundary, advancing only when it opens."""
-        target = self._load_active_target()
+        """Plan against one held boundary, advancing only when it opens.
 
-        for _advance in range(self.MAX_BOUNDARY_ADVANCES_PER_PLAN):
-            if target is None:
-                target = self._select_region_target(obs)
-                if target is None:
-                    self._subgoals = []
-                    return
-                self._store_active_target(target)
+        The advance step itself is shared with run_namo's plan-only mode, which
+        drives the same loop from a separate process.
+        """
+        before = self._load_active_target()
+        plan, target, status = advance_boundary(
+            self._bridge,
+            obs,
+            self._robot_goal_cm,
+            target=before,
+            open_fraction=CANONICAL_OPEN_FRACTION,
+            scale_factor=self._scale_factor,
+            iteration=self._plan_count,
+            max_advances=self.MAX_BOUNDARY_ADVANCES_PER_PLAN,
+        )
+        self._plan_count += 1
+        self._total_planning_ms += self._bridge.last_search_time_ms
 
-            result = self._bridge.solve_boundary(obs, self._robot_goal_cm, target)
-            self._plan_count += 1
-            self._total_planning_ms += self._bridge.last_search_time_ms
-
-            if result.already_open:
-                # Opened with no push -- possibly by an earlier push in this
-                # same subproblem. Move on to the next boundary.
+        if status == ADVANCE_EXHAUSTED:
+            self._release_active_target(STATUS_EXHAUSTED)
+            self._subgoals = []
+            return
+        if target is None:
+            # Either nothing left to open, or the held boundary opened and the
+            # next selection found none.
+            if before is not None:
                 self._release_active_target(STATUS_OPENED)
-                target = None
-                continue
+            self._subgoals = []
+            return
 
-            if result.boundary_exhausted:
-                self._release_active_target(STATUS_EXHAUSTED)
-                self._subgoals = []
-                return
-
-            if result.success and result.subgoals:
-                self._queue_mpc_chain(
-                    obs=obs,
-                    chain=result.subgoals,
-                    origin="region_target",
-                    attempt_index=0,
-                    xml_content=self._bridge.last_xml_content,
-                    object_mapping=None,
-                )
-                return
-
+        self._store_active_target(target)
+        if status != ADVANCE_PLANNED:
             print(
-                f"[NAMOPlanner] Boundary {result.resolved_target or '?'} produced no plan "
-                f"({result.failure_reason or 'unknown'})"
+                f"[NAMOPlanner] Boundary {getattr(plan, 'resolved_target', '?') or '?'} "
+                f"produced no plan ({getattr(plan, 'failure_reason', '') or 'unknown'})"
             )
             self._subgoals = []
             return
 
-        print("[NAMOPlanner] Too many already-open boundaries in one plan call")
-        self._subgoals = []
+        self._queue_mpc_chain(
+            obs=obs,
+            chain=plan.subgoals,
+            origin="region_target",
+            attempt_index=0,
+            xml_content=self._bridge.last_xml_content,
+            object_mapping=None,
+        )
 
     def _generate_plan(self, obs: Observation) -> None:
         """Generate subgoal queue via NAMO planning.
