@@ -756,7 +756,17 @@ class PushController(Controller):
         # Safety: don't retreat forever (max 2x fallback steps)
         self._retreat_step_count += 1
         if self._retreat_step_count >= self._push_config.retreat_steps * 2:
-            print(f"[PUSH] Retreat timeout after {self._retreat_step_count} steps")
+            # Log where the robot actually stopped, not only that it ran out of
+            # steps. FINISHED is the same state a reached-target retreat sets,
+            # so without this number nothing downstream can tell a 2 cm
+            # near-miss from a robot that never left the object it just pushed.
+            print(
+                f"[PUSH] Retreat timeout after {self._retreat_step_count} steps: "
+                f"stopped {dist:.1f} cm from target "
+                f"(tolerance {self._push_config.retreat_tolerance:.1f} cm), "
+                f"robot at ({obs.robot_x:.1f}, {obs.robot_y:.1f}), "
+                f"target ({self._retreat_target[0]:.1f}, {self._retreat_target[1]:.1f})"
+            )
             self._state = PushState.FINISHED
             if self._nav_controller is not None:
                 self._nav_controller.cancel()
