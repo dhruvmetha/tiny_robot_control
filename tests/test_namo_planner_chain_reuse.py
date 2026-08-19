@@ -8,6 +8,18 @@ from types import SimpleNamespace
 
 
 def _load_module(module_name: str):
+    """Import a robot_control module, standing in for optional dependencies.
+
+    The stand-in packages are installed only if the real import fails. They are
+    bare namespace modules, so shadowing a real package would break any later
+    test that imports a name from its __init__ -- which is collection-order
+    dependent and therefore invisible until an unrelated test file is added.
+    """
+    try:
+        return importlib.import_module(module_name)
+    except ImportError:
+        pass
+
     root = Path(__file__).resolve().parents[1] / "src" / "robot_control"
     robot_control_pkg = sys.modules.get("robot_control")
     if robot_control_pkg is None:
