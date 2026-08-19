@@ -88,7 +88,7 @@ class NAMOPlanner(Planner):
         frontier_beam_width: int = 10000,
         chain_link_cost: int = 11,
         selection_strategy: str = "cost_first",
-        goals_per_region: int = 10,
+        goals_per_region: Optional[int] = None,
         shuffle_edges: bool = True,
         shuffle_seed: Optional[int] = None,
         rollout_samples_per_state: Optional[int] = None,
@@ -140,7 +140,8 @@ class NAMOPlanner(Planner):
             frontier_beam_width: Beam width for frontier search
             chain_link_cost: Additional cost per chain link
             selection_strategy: Frontier priority ("cost_first" or "ml_first")
-            goals_per_region: Goal samples per region for validation
+            goals_per_region: Goal samples per region for validation.
+                None defers to namo_cpp's canonical 100.
             shuffle_edges: Randomize edge ordering during planning (default True)
             shuffle_seed: Random seed for reproducible shuffling (None = random)
             verbose: Enable verbose logging

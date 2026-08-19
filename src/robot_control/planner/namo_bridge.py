@@ -570,7 +570,7 @@ class NAMOPlanBridge:
         frontier_beam_width: int = 10000,
         chain_link_cost: int = 11,
         selection_strategy: str = "cost_first",
-        goals_per_region: int = 10,
+        goals_per_region: Optional[int] = None,
         failed_pushes: Optional[Set[Tuple[str, int]]] = None,
         **kwargs,
     ) -> List[PushSubgoal]:
@@ -586,7 +586,8 @@ class NAMOPlanBridge:
             frontier_beam_width: Beam width for frontier search
             chain_link_cost: Additional cost per chain link
             selection_strategy: Frontier priority ("cost_first" or "ml_first")
-            goals_per_region: Goal samples per region for validation
+            goals_per_region: Goal samples per region for validation.
+                None defers to namo_cpp's canonical 100.
             failed_pushes: Set of (real_object_id, edge_idx) pairs to blacklist.
                 If any action in the returned plan matches a blacklisted pair,
                 the entire plan is discarded (returns []). This is the failure-

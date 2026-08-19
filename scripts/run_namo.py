@@ -1471,7 +1471,11 @@ def run_automatic_mode(args):
         print(f"Frontier beam width: {args.frontier_beam_width}")
         print(f"Chain link cost: {args.chain_link_cost}")
         print(f"Selection strategy: {args.selection_strategy}")
-        print(f"Goals per region: {args.goals_per_region}")
+        print(
+            "Goals per region: "
+            + (str(args.goals_per_region) if args.goals_per_region is not None
+               else "canonical (namo_cpp default)")
+        )
         print(f"Replan on completion: {not args.no_replan}")
         print("=" * 60)
         sys.stdout.flush()
@@ -1945,8 +1949,9 @@ def main():
     parser.add_argument(
         "--goals-per-region",
         type=int,
-        default=10,
-        help="Goal samples per region for validation (default: 10)",
+        default=None,
+        help="Goal samples per region for validation. Omit to use "
+             "namo_cpp's canonical 100, which the 20%% opening bar assumes.",
     )
     parser.add_argument(
         "--region-success-min-reachable",
