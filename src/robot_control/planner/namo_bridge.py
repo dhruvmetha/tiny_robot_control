@@ -902,8 +902,12 @@ class NAMOPlanBridge:
     def _scene_session(self, observation: Observation, robot_goal_cm: Tuple[float, float]):
         """Build the scene and enter namo_cpp's directory for the call.
 
-        Yields ``(xml_path, goal_sim, service)``, or ``None`` when the scene
-        could not be generated. The chdir is required because namo_cpp resolves
+        Yields ``(xml_path, goal_sim, starting_robot_pose, service)``, or
+        ``None`` when the scene could not be generated.
+
+        The pose is not optional for the car. Its MuJoCo model has a fixed
+        freejoint spawn at (0, 0, 0.01), so without it the service builds the
+        region graph around a robot at the origin and picks the wrong boundary. The chdir is required because namo_cpp resolves
         motion-primitive paths relative to its own root, and the temp XML is
         removed afterwards unless a debug path was configured.
 
@@ -927,7 +931,8 @@ class NAMOPlanBridge:
         os.chdir(str(namo_cpp_dir))
         try:
             goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
-            yield xml_path, goal_sim, self._get_planning_service()
+            starting_robot_pose = self._starting_robot_pose_sim(observation)
+            yield xml_path, goal_sim, starting_robot_pose, self._get_planning_service()
         finally:
             os.chdir(original_cwd)
             if self._debug_xml_path is None:
@@ -953,12 +958,13 @@ class NAMOPlanBridge:
         with self._scene_session(observation, robot_goal_cm) as session:
             if session is None:
                 return BoundaryChoice(failure_reason="xml_generation_failed")
-            xml_path, goal_sim, service = session
+            xml_path, goal_sim, starting_robot_pose, service = session
 
             selection = service.select_boundary_from_xml(
                 xml_path,
                 (goal_sim[0], goal_sim[1], 0.0),
                 blocked_boundaries=blocked_boundaries,
+                starting_robot_pose=starting_robot_pose,
                 **kwargs,
             )
             if selection.goal_already_reachable:
@@ -994,7 +1000,7 @@ class NAMOPlanBridge:
         with self._scene_session(observation, robot_goal_cm) as session:
             if session is None:
                 return BoundaryPlan(failure_reason="xml_generation_failed")
-            xml_path, goal_sim, service = session
+            xml_path, goal_sim, starting_robot_pose, service = session
 
             solve_kwargs = target.as_solve_kwargs()
             blocking_sim_ids = []
@@ -1022,6 +1028,7 @@ class NAMOPlanBridge:
                 xml_path,
                 (goal_sim[0], goal_sim[1], 0.0),
                 blocking_objects=blocking_sim_ids,
+                starting_robot_pose=starting_robot_pose,
                 **solve_kwargs,
                 **kwargs,
             )

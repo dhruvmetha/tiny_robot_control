@@ -394,11 +394,20 @@ its body frame — and wrong for everything else.
 **Off by default.** `hold_region_target=False`, and the session path opts in via
 `run_meta.json`. A run that does not ask for a held boundary is unchanged.
 
-**Known gap.** Chain reuse is skipped while a target is held, because
-`verify_chain` asks whether the remaining chain makes the *final goal*
-reachable — a chain can satisfy that while abandoning the boundary being
-opened. A target-conditioned reuse check would restore the optimisation; there
-are two copies of that ladder and both would need it.
+**Chain reuse works in held mode** (`89e1bd4`, `b736fc2`, `c347894`). It was
+initially skipped because `verify_chain` asked whether the remaining chain makes
+the *final goal* reachable — a chain can satisfy that while abandoning the
+boundary being opened. It now takes optional `target_points` / `min_reachable`
+and grades against the boundary's frozen points instead, with the bar taken from
+the target's own recorded fraction so a subproblem is never re-graded underneath
+itself. Both copies of the ladder pass it, so reuse does not mean two different
+things depending on entry point.
+
+That mattered for cost, not just correctness: with reuse off, every replan in
+held mode paid a full boundary search (900 simulations by default) where a cheap
+verification would often have done — the opposite of what the ranking work is
+for. The saving is not yet measured; counting simulator calls per push, held
+mode with and without reuse, is the honest next step.
 
 ### R1 — persist the active region-opening target
 
