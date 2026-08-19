@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 
 from robot_control.core.types import NavigateSubgoal, Observation, PushSubgoal, Subgoal
 from robot_control.planner.base import Planner
+from robot_control.planner.search_config import LocalSearchConfig
 from robot_control.planner.namo_bridge import NAMOPlanBridge
 
 
@@ -101,6 +102,8 @@ class NAMOPlanner(Planner):
         ml_samples: Optional[int] = None,
         ml_num_steps: Optional[int] = None,
         ml_sampler_method: Optional[str] = None,
+        # Which local search namo_cpp runs per region boundary.
+        local_search: Optional[LocalSearchConfig] = None,
         # Retry budgets — see [Runtime] section in run_namo.py docstring.
         max_planning_retries: int = 5,
         max_replan_attempts: int = 20,
@@ -146,6 +149,9 @@ class NAMOPlanner(Planner):
             pause_after_load: Pause after loading XML for interactive viewer inspection
             ml_goal_model_path: Path to trained ML goal model (for ml strategies)
             ml_device: PyTorch device for ML model ("cuda" or "cpu")
+            local_search: Which local search namo_cpp runs per region
+                boundary (region_bfs or best_first). Defaults to region_bfs
+                and forwards nothing, so existing runs are unaffected.
             workspace_width_cm: Workspace width for reachability check (must match navigation)
             workspace_height_cm: Workspace height for reachability check (must match navigation)
             robot_width_cm: Robot width for reachability check
@@ -193,6 +199,7 @@ class NAMOPlanner(Planner):
         self._rollout_samples_per_state = rollout_samples_per_state
         self._ml_goal_model_path = ml_goal_model_path
         self._ml_device = ml_device
+        self._local_search = local_search or LocalSearchConfig()
         self._ml_samples = ml_samples
         self._ml_num_steps = ml_num_steps
         self._ml_sampler_method = ml_sampler_method
@@ -945,6 +952,7 @@ class NAMOPlanner(Planner):
                 }
                 if self._rollout_samples_per_state is not None:
                     extra_kwargs["rollout_samples_per_state"] = self._rollout_samples_per_state
+                extra_kwargs.update(self._local_search.as_planner_kwargs())
                 if self._ml_goal_model_path:
                     extra_kwargs["ml_goal_model_path"] = self._ml_goal_model_path
                     extra_kwargs["ml_device"] = self._ml_device

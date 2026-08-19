@@ -47,13 +47,37 @@ import yaml
 
 from robot_control import Runtime, RuntimeConfig, SimConfig
 from robot_control.core.object_defs import ObjectDef
-from robot_control.planner import NAMOPlanner
+from robot_control.planner import (
+    BEST_FIRST_PRIOR_CHOICES,
+    DEFAULT_BEST_FIRST_PRIOR,
+    DEFAULT_LOCAL_SEARCH,
+    LOCAL_SEARCH_CHOICES,
+    LocalSearchConfig,
+    NAMOPlanner,
+)
 from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
 
 
 # Sentinel for --record-video when passed with no value. Resolved to
 # <diag-root>/recordings/ after diagnostics bootstrap.
 _RECORD_VIDEO_DEFAULT_SENTINEL = "__USE_DIAG_PATH__"
+
+
+def local_search_from_args(args) -> LocalSearchConfig:
+    """Resolve the local-search selection from parsed CLI args.
+
+    Constructed once per run so an invalid combination (best_first + model with
+    no checkpoint) raises before the robot moves, rather than deep inside the
+    planner on the first replan.
+    """
+    return LocalSearchConfig(
+        local_search=args.local_search,
+        best_first_prior=args.best_first_prior,
+        scorer_ckpt=args.scorer_ckpt,
+        best_first_hmax=args.best_first_hmax,
+        keyhole_simulation_budget=args.keyhole_simulation_budget,
+        ml_device=args.ml_device,
+    )
 
 
 def find_namo_config(scale_factor: float = 6.0, robot_model: str = "sphere") -> str:
@@ -1024,6 +1048,7 @@ def run_interactive_mode(args):
         ml_samples=args.ml_samples,
         ml_num_steps=args.ml_num_steps,
         ml_sampler_method=args.ml_sampler_method,
+        local_search=local_search_from_args(args),
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
         shuffle_edges=not args.no_shuffle_edges,
@@ -1279,6 +1304,8 @@ def _run_plan_only_mode(args) -> int:
         if getattr(args, "ml_sampler_method", None) is not None:
             extra_kwargs["ml_sampler_method"] = args.ml_sampler_method
 
+    extra_kwargs.update(local_search_from_args(args).as_planner_kwargs())
+
     plan_subgoals = bridge.plan(
         observation=obs,
         robot_goal_cm=goal_cm,
@@ -1438,6 +1465,7 @@ def run_automatic_mode(args):
         print(f"NAMO config: {namo_config_path}")
         print(f"Algorithm: {args.algorithm}")
         print(f"Strategy: {args.strategy}")
+        print(f"{local_search_from_args(args).describe()}")
         print(f"Max chain depth: {args.max_chain_depth}")
         print(f"Allow collisions: {args.allow_collisions}")
         print(f"Frontier beam width: {args.frontier_beam_width}")
@@ -1509,6 +1537,7 @@ def run_automatic_mode(args):
         ml_samples=args.ml_samples,
         ml_num_steps=args.ml_num_steps,
         ml_sampler_method=args.ml_sampler_method,
+        local_search=local_search_from_args(args),
         max_planning_retries=args.max_planning_retries,
         max_replan_attempts=args.max_replan_attempts,
         shuffle_edges=not args.no_shuffle_edges,
@@ -1838,6 +1867,43 @@ def main():
         type=str,
         default=None,
         help="Sampler method: ddpm/ddim (diffusion) or euler/midpoint/rk4/dopri5 (flow matching)",
+    )
+    parser.add_argument(
+        "--local-search",
+        type=str,
+        default=DEFAULT_LOCAL_SEARCH,
+        choices=list(LOCAL_SEARCH_CHOICES),
+        help="Local search run per region boundary. region_bfs = chain BFS "
+             "(default); best_first = single global priority queue over pushes.",
+    )
+    parser.add_argument(
+        "--best-first-prior",
+        type=str,
+        default=DEFAULT_BEST_FIRST_PRIOR,
+        choices=list(BEST_FIRST_PRIOR_CHOICES),
+        help="Ordering for best_first: model = learned ranker (needs "
+             "--scorer-ckpt); uniform = random order, the ablation baseline.",
+    )
+    parser.add_argument(
+        "--scorer-ckpt",
+        type=str,
+        default=None,
+        help="Ranker checkpoint for --best-first-prior model. Seeds are "
+             "independent models: pick one explicitly, never average them.",
+    )
+    parser.add_argument(
+        "--best-first-hmax",
+        type=int,
+        default=None,
+        help="Max pushes per local plan for best_first. Omit to use namo_cpp's "
+             "canonical value (2), which every registered evaluation used.",
+    )
+    parser.add_argument(
+        "--keyhole-simulation-budget",
+        type=int,
+        default=None,
+        help="Simulator calls allowed per region boundary. Omit to use "
+             "namo_cpp's canonical value (900).",
     )
     parser.add_argument(
         "--max-chain-depth",
