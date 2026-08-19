@@ -103,7 +103,11 @@ def evaluate_chain_outcome(
 
     reachable_count, _first = env.count_reachable_points(list(target_points))
     target_open_after = int(reachable_count) >= int(min_reachable or 1)
-    return target_open_after, goal_reachable_after, target_open_after
+    # Either ends the chain's job. Opening the boundary advances the subproblem;
+    # making the goal reachable ends the whole problem, and a push can do that by
+    # re-partitioning free space along a different route than the one being
+    # worked on. Rejecting that would discard a solution to the actual task.
+    return (target_open_after or goal_reachable_after), goal_reachable_after, target_open_after
 
 
 @dataclass

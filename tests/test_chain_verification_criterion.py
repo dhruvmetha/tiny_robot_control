@@ -61,16 +61,19 @@ def test_without_target_points_nothing_is_counted():
 
 # --- with a target: the boundary decides -------------------------------------
 
-def test_a_chain_that_reaches_the_goal_but_leaves_the_boundary_shut_fails():
-    """The whole reason reuse was disabled in held mode."""
-    env = _Env(goal_reachable=True, reachable_count=0)
+def test_a_chain_that_opens_neither_the_boundary_nor_the_goal_fails():
+    """The reason reuse needed a boundary-aware criterion at all.
+
+    Without it the check was "did the goal become reachable", which a chain can
+    fail while still being the right chain for this subproblem, and vice versa.
+    """
+    env = _Env(goal_reachable=False, reachable_count=0)
 
     succeeded, goal_after, target_after = evaluate_chain_outcome(env, POINTS, min_reachable=1)
 
     assert succeeded is False
     assert target_after is False
-    # Still reported, so no existing reader of this field changes meaning.
-    assert goal_after is True
+    assert goal_after is False
 
 
 def test_an_opened_boundary_verifies_even_if_the_goal_is_still_blocked():
@@ -134,3 +137,33 @@ def test_the_bar_comes_from_the_target_not_from_current_config():
     lenient = _target(100, 0.05)
 
     assert lenient.minimum_reachable() == 5
+
+
+# --- reaching the mission goal ends the problem ------------------------------
+
+def test_reaching_the_mission_goal_counts_even_if_the_boundary_missed():
+    """The goal is the terminal condition of the whole system.
+
+    A push can re-partition free space and open a different route than the one
+    being worked on. Rejecting that chain for missing the boundary's bar throws
+    away a solution to the actual problem.
+    """
+    env = _Env(goal_reachable=True, reachable_count=0)
+
+    succeeded, goal_after, target_after = evaluate_chain_outcome(env, POINTS, min_reachable=1)
+
+    assert succeeded is True
+    assert goal_after is True
+    assert target_after is False
+
+
+def test_the_boundary_still_counts_on_its_own():
+    env = _Env(goal_reachable=False, reachable_count=len(POINTS))
+
+    assert evaluate_chain_outcome(env, POINTS, min_reachable=1)[0] is True
+
+
+def test_neither_means_failure():
+    env = _Env(goal_reachable=False, reachable_count=0)
+
+    assert evaluate_chain_outcome(env, POINTS, min_reachable=1)[0] is False
