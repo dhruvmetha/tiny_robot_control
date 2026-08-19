@@ -1030,6 +1030,18 @@ class NAMOPlanBridge:
                 return BoundaryPlan(failure_reason="xml_generation_failed")
             xml_path, goal_sim, starting_robot_pose, service = session
 
+            target_scale = getattr(target, "scale_factor", None)
+            if target_scale is not None and float(target_scale) != float(self._scale_factor):
+                # target_samples_m are cm/100 times the scale factor. Grading
+                # them under a different scale silently compares points in one
+                # frame against a world built in another.
+                if self._verbose:
+                    print(
+                        f"[NAMOBridge] Active target was recorded at scale "
+                        f"{target_scale}, this bridge runs at {self._scale_factor}"
+                    )
+                return BoundaryPlan(failure_reason="scale_factor_mismatch")
+
             solve_kwargs = target.as_solve_kwargs()
             blocking_sim_ids = []
             for real_id in solve_kwargs.pop("blocking_objects", []):

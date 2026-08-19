@@ -217,3 +217,24 @@ def test_the_session_ladder_uses_the_same_bar_as_the_planner(tmp_path):
     loaded = cls_mod._load_active_region_target(run_dir)
 
     assert loaded.minimum_reachable() == target.minimum_reachable() == 20
+
+
+# --- a damaged or foreign target must not kill the command -------------------
+
+def test_a_truncated_target_file_is_treated_as_no_target(tmp_path):
+    """A job killed mid-write leaves half a file. The session still has work."""
+    run_dir = _run_dir(tmp_path)
+    (run_dir / cls_mod.ACTIVE_TARGET_FILENAME).write_text('{"schema_version": 1, "targ')
+
+    assert cls_mod._load_active_region_target(run_dir) is None
+
+
+def test_a_future_schema_is_treated_as_no_target(tmp_path):
+    import json
+
+    run_dir = _run_dir(tmp_path)
+    payload = {"schema_version": 99, "target_samples_m": [[0.1, 0.2]],
+               "blocker_real_ids": ["obj_4"], "open_fraction": 0.2}
+    (run_dir / cls_mod.ACTIVE_TARGET_FILENAME).write_text(json.dumps(payload))
+
+    assert cls_mod._load_active_region_target(run_dir) is None

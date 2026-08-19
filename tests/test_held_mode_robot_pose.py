@@ -153,3 +153,37 @@ def test_the_local_search_key_is_translated_to_the_service_parameter(bridge_and_
     assert service.solve_kwargs["local_search"] == "best_first"
     assert "full_namo_local_search" not in service.solve_kwargs
     assert service.solve_kwargs["best_first_prior"] == "uniform"
+
+
+# --- a target from a differently scaled run must not be graded here ----------
+
+def test_a_target_recorded_under_another_scale_is_refused(bridge_and_service):
+    """target_samples_m are simulator metres, cm/100 times the scale factor.
+
+    Resuming under a different scale would grade the frozen points in a
+    different frame, silently, and every open/shut verdict would be wrong.
+    """
+    bridge, service = bridge_and_service
+    target = SimpleNamespace(
+        as_solve_kwargs=lambda: {"target_points": [(0.3, 0.4)], "blocking_objects": []},
+        failed_pushes=(),
+        scale_factor=6.0,
+    )
+
+    result = bridge.solve_boundary(_obs(), GOAL_CM, target)
+
+    assert result.failure_reason == "scale_factor_mismatch"
+    assert service.solve_kwargs is None
+
+
+def test_a_matching_scale_is_accepted(bridge_and_service):
+    bridge, service = bridge_and_service
+    target = SimpleNamespace(
+        as_solve_kwargs=lambda: {"target_points": [(0.3, 0.4)], "blocking_objects": []},
+        failed_pushes=(),
+        scale_factor=1.0,
+    )
+
+    bridge.solve_boundary(_obs(), GOAL_CM, target)
+
+    assert service.solve_kwargs is not None

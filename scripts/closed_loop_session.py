@@ -222,7 +222,14 @@ def _load_active_region_target(run_dir: Path):
         from robot_control.planner.region_target import RegionOpeningTarget
     except ImportError:
         return None
-    return RegionOpeningTarget.load(run_dir / ACTIVE_TARGET_FILENAME)
+    try:
+        return RegionOpeningTarget.load(run_dir / ACTIVE_TARGET_FILENAME)
+    except (ValueError, json.JSONDecodeError, OSError) as exc:
+        # A job killed mid-write leaves half a file; a schema bump raises. The
+        # session still has work to do, so treat either as no held target rather
+        # than killing the command.
+        print(f"[closed_loop] ignoring unreadable active target: {exc}")
+        return None
 
 
 def _hold_region_target_enabled(run_dir: Path) -> bool:
