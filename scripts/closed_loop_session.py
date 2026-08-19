@@ -40,6 +40,13 @@ DEFAULT_SESSION_GLOB = "bootstrap_from_real_test_envs_*"
 GOAL_TOLERANCE_CM = 5.0
 RESET_TOLERANCE_CM = 3.0
 MIN_EXECUTION_PUSH_STEPS = 2
+
+# The held region-opening target lives at RUN level, not iteration level.
+# Creating iter_N+1 rewrites status.json from a fixed literal and regenerates
+# scene_after/ wholesale, so anything stored there is lost at the boundary. A
+# run-level file also survives `shutil.rmtree(next_iter_dir)` and rides along
+# in the Amarel submit rsync, which copies the whole run directory.
+ACTIVE_TARGET_FILENAME = "active_region_opening.json"
 MAX_REPLAN_ATTEMPTS = 8
 EXPECTED_SCENE_FILES = ("env.xml", "mid_obs.jsonl", "env.png", "scene.jpg")
 RUN_STRATEGIES = ("primitive", "random_rollout")
@@ -203,6 +210,23 @@ def _load_run_meta(run_dir: Path) -> dict[str, Any]:
     if isinstance(meta, dict):
         return meta
     return {}
+
+
+def _hold_region_target_enabled(run_dir: Path) -> bool:
+    """Whether this run keeps working on one boundary across pushes.
+
+    Enabled by run_meta.json's "hold_region_target", or by the target file
+    already existing (so a run that has started a subproblem keeps driving it
+    even if the flag is dropped from a later invocation).
+    """
+    meta_path = run_dir / "run_meta.json"
+    if meta_path.is_file():
+        try:
+            if bool(_read_json(meta_path).get("hold_region_target", False)):
+                return True
+        except Exception:
+            pass
+    return (run_dir / ACTIVE_TARGET_FILENAME).is_file()
 
 
 def _run_strategy(run_dir: Path) -> str:
@@ -2100,6 +2124,13 @@ def _run_full_replan_search(session_dir: Path, run_name: str, iteration: int) ->
         "candidate1",
         "--allow-overwrite",
     ]
+    # Hand the child the run-level target file. It resumes the boundary the
+    # previous process was opening instead of re-deriving one, and writes back
+    # the target to hold next time. Opt-in: without the marker file this is a
+    # normal whole-problem replan, exactly as before.
+    active_target_path = run_dir / ACTIVE_TARGET_FILENAME
+    if _hold_region_target_enabled(run_dir):
+        cmd.extend(["--active-target", str(active_target_path)])
     if strategy == "random_rollout":
         cmd.extend(
             [
