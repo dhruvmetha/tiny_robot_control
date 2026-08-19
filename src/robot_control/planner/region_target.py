@@ -255,8 +255,16 @@ MAX_BOUNDARY_ADVANCES = 4
 # opposed to "this attempt failed". namo_cpp documents the first as a normal
 # outcome the caller must re-choose after. Retrying either one produces the
 # identical failure on every replan.
+# "ambiguous_boundary" is namo_cpp refusing to guess: two neighbours match the
+# pinned objects equally well, so the object set names no single boundary.
+# Re-solving the same target repeats the tie, so drop it and re-select.
 UNUSABLE_BOUNDARY_REASONS = frozenset(
-    {"target_not_immediate_neighbor", "blocker_not_observed", "no_blocking_objects"}
+    {
+        "target_not_immediate_neighbor",
+        "blocker_not_observed",
+        "no_blocking_objects",
+        "ambiguous_boundary",
+    }
 )
 
 

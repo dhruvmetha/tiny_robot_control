@@ -23,6 +23,7 @@ from robot_control.planner.region_target import (
     MAX_BOUNDARY_ADVANCES,
     STATUS_EXHAUSTED,
     STATUS_OPENED,
+    UNUSABLE_BOUNDARY_REASONS,
     RegionOpeningTarget,
     advance_boundary,
 )
@@ -182,7 +183,9 @@ def test_the_step_does_not_persist_anything(tmp_path):
 # at the outer level; this is a normal outcome". Holding the target instead
 # means every later replan repeats the identical failing solve.
 
-UNRESOLVABLE = ["target_not_immediate_neighbor", "blocker_not_observed"]
+# Derived rather than restated, so a reason added to the planner's set cannot
+# quietly stop being covered here.
+UNRESOLVABLE = sorted(UNUSABLE_BOUNDARY_REASONS)
 
 
 @pytest.mark.parametrize("reason", UNRESOLVABLE)
@@ -196,6 +199,25 @@ def test_an_unresolvable_boundary_is_released(reason):
 
     assert status == ADVANCE_PLANNED
     assert target.blocker_real_ids == ("obj_9",)
+
+
+def test_an_ambiguous_boundary_is_dropped_rather_than_re_solved():
+    """namo_cpp refuses to guess when two neighbours match the pinned objects.
+
+    The scene has not changed between replans, so re-solving the same target
+    hits the identical tie. The only way forward is to re-select.
+    """
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[_plan(success=False, failure_reason="ambiguous_boundary"), _plan()],
+    )
+    held = _target()
+
+    _plan_, target, status, released = _advance(bridge, target=held)
+
+    assert status == ADVANCE_PLANNED
+    assert target is not held
+    assert released == STATUS_EXHAUSTED
 
 
 def test_a_plain_push_failure_keeps_the_boundary():
