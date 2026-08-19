@@ -109,3 +109,47 @@ def test_a_sphere_robot_still_passes_none(bridge_and_service, monkeypatch):
     bridge.select_boundary(_obs(), GOAL_CM)
 
     assert service.select_kwargs["starting_robot_pose"] is None
+
+
+# --- planner options must survive the held-boundary path ---------------------
+#
+# In held mode the plan-only branch bypasses bridge.plan(), which is where every
+# option used to be applied. If they are not forwarded here they vanish, and the
+# session's eight retries become eight identical searches.
+
+def test_solve_forwards_planner_options(bridge_and_service):
+    bridge, service = bridge_and_service
+    target = SimpleNamespace(
+        as_solve_kwargs=lambda: {"target_points": [(0.3, 0.4)], "blocking_objects": []},
+        failed_pushes=(),
+    )
+
+    bridge.solve_boundary(
+        _obs(), GOAL_CM, target,
+        goal_strategy="random_rollout", shuffle_seed=7, rollout_samples_per_state=36000,
+    )
+
+    assert service.solve_kwargs["goal_strategy"] == "random_rollout"
+    assert service.solve_kwargs["shuffle_seed"] == 7
+    assert service.solve_kwargs["rollout_samples_per_state"] == 36000
+
+
+def test_the_local_search_key_is_translated_to_the_service_parameter(bridge_and_service):
+    """as_planner_kwargs emits full_namo_local_search, which the service reads
+    from algorithm_params. solve_boundary_from_xml instead takes local_search as
+    its own parameter, so the key has to be renamed or the opener choice is
+    silently ignored while the banner claims it was applied."""
+    bridge, service = bridge_and_service
+    target = SimpleNamespace(
+        as_solve_kwargs=lambda: {"target_points": [(0.3, 0.4)], "blocking_objects": []},
+        failed_pushes=(),
+    )
+
+    bridge.solve_boundary(
+        _obs(), GOAL_CM, target,
+        full_namo_local_search="best_first", best_first_prior="uniform",
+    )
+
+    assert service.solve_kwargs["local_search"] == "best_first"
+    assert "full_namo_local_search" not in service.solve_kwargs
+    assert service.solve_kwargs["best_first_prior"] == "uniform"

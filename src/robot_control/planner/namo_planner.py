@@ -992,6 +992,27 @@ class NAMOPlanner(Planner):
             print(f"[NAMOPlanner] Region target {released.target_id} released: {status}")
         self._active_target = None
 
+    def _held_mode_planner_kwargs(self) -> Dict[str, Any]:
+        """Options that would reach the planner through bridge.plan.
+
+        Held mode does not call bridge.plan, so anything not listed here is
+        dropped: goal strategy, seeds, rollout width, the ML model, the opener
+        choice.
+        """
+        kwargs: Dict[str, Any] = {
+            "goal_strategy": self._goal_strategy,
+            "shuffle_edges": self._shuffle_edges,
+        }
+        if self._shuffle_seed is not None:
+            kwargs["shuffle_seed"] = self._shuffle_seed
+        if self._rollout_samples_per_state is not None:
+            kwargs["rollout_samples_per_state"] = self._rollout_samples_per_state
+        if self._ml_goal_model_path:
+            kwargs["ml_goal_model_path"] = self._ml_goal_model_path
+            kwargs["ml_device"] = self._ml_device
+        kwargs.update(self._local_search.as_planner_kwargs())
+        return kwargs
+
     def _generate_plan_holding_target(self, obs: Observation) -> None:
         """Plan against one held boundary, advancing only when it opens.
 
@@ -1008,6 +1029,7 @@ class NAMOPlanner(Planner):
             scale_factor=self._scale_factor,
             iteration=self._plan_count,
             max_advances=self.MAX_BOUNDARY_ADVANCES_PER_PLAN,
+            planner_kwargs=self._held_mode_planner_kwargs(),
         )
         self._plan_count += 1
         self._total_planning_ms += self._bridge.last_search_time_ms

@@ -1333,6 +1333,7 @@ def _run_plan_only_mode(args) -> int:
             target=held,
             open_fraction=CANONICAL_OPEN_FRACTION,
             scale_factor=args.scale_factor,
+            planner_kwargs={"goal_strategy": args.strategy, **extra_kwargs},
         )
         if target is not None and active_target_path is not None:
             target.save(active_target_path)

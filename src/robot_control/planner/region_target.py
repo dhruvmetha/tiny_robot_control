@@ -286,6 +286,7 @@ def advance_boundary(
     scale_factor: float = 1.0,
     iteration: int = 0,
     max_advances: int = MAX_BOUNDARY_ADVANCES,
+    planner_kwargs: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Any, Optional[RegionOpeningTarget], str]:
     """One step of the inner loop: solve the held boundary, or pick the next.
 
@@ -296,6 +297,11 @@ def advance_boundary(
     Both entry points use this. The in-process planner and the plan-only
     subprocess share no other code, and a second copy of this logic would drift
     the way the two chain-reuse ladders in this repo already have.
+
+    ``planner_kwargs`` are the strategy, seed and opener options that would
+    otherwise reach the planner through ``bridge.plan``. Held mode bypasses that
+    call entirely, so without forwarding them here every option is silently
+    dropped and repeated attempts become identical searches.
 
     Returns ``(plan, target, status)``.
     """
@@ -318,7 +324,9 @@ def advance_boundary(
                 scale_factor=scale_factor,
             )
 
-        plan = bridge.solve_boundary(observation, robot_goal_cm, target)
+        plan = bridge.solve_boundary(
+            observation, robot_goal_cm, target, **(planner_kwargs or {})
+        )
         last_plan = plan
 
         if plan.already_open:

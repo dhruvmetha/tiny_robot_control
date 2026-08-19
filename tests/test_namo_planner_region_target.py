@@ -78,6 +78,7 @@ class _FakeBridge:
         self.verify_results = []
         self.select_calls = 0
         self.solve_calls = []
+        self.solve_kwargs = []
         self.verify_calls = []
         self.last_search_time_ms = 1.0
         self.last_algorithm_stats = {}
@@ -93,6 +94,7 @@ class _FakeBridge:
 
     def solve_boundary(self, obs, goal, target, **kwargs):
         self.solve_calls.append(target)
+        self.solve_kwargs.append(kwargs)
         return self.solve_results.pop(0) if self.solve_results else _plan(success=False)
 
     def analyze_reachability(self, **kwargs):
@@ -372,3 +374,26 @@ def test_an_opened_boundary_is_marked_opened_on_disk(monkeypatch, tmp_path):
     revived = RegionOpeningTarget.load(tmp_path / "active.json")
     assert revived is not None
     assert revived.blocker_real_ids == ("obj_9",)
+
+
+def test_planner_options_reach_the_held_boundary_solve(monkeypatch, tmp_path):
+    """Held mode bypasses bridge.plan, so anything not forwarded here is lost."""
+    monkeypatch.setattr(planner_mod, "NAMOPlanBridge", _FakeBridge)
+    planner = planner_mod.NAMOPlanner(
+        robot_goal_cm=GOAL_CM,
+        namo_config_path="unused.yaml",
+        execution_mode="mpc",
+        hold_region_target=True,
+        goal_strategy="random_rollout",
+        shuffle_seed=7,
+        rollout_samples_per_state=36000,
+        verbose=False,
+    )
+    planner._is_goal_reachable = lambda obs: False
+
+    planner.plan(_obs())
+
+    kwargs = planner._bridge.solve_kwargs[0]
+    assert kwargs["goal_strategy"] == "random_rollout"
+    assert kwargs["shuffle_seed"] == 7
+    assert kwargs["rollout_samples_per_state"] == 36000

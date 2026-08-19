@@ -1024,6 +1024,14 @@ class NAMOPlanBridge:
                 if blacklist:
                     kwargs["external_edge_blacklist"] = blacklist
 
+            # LocalSearchConfig emits full_namo_local_search, the key full_namo
+            # reads out of algorithm_params. solve_boundary_from_xml selects the
+            # opener from its own local_search parameter instead, so without this
+            # rename the choice lands in algorithm_params and is ignored while
+            # the startup banner reports it as applied.
+            if "full_namo_local_search" in kwargs:
+                kwargs["local_search"] = kwargs.pop("full_namo_local_search")
+
             result = service.solve_boundary_from_xml(
                 xml_path,
                 (goal_sim[0], goal_sim[1], 0.0),
