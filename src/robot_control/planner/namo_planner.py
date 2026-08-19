@@ -964,9 +964,19 @@ class NAMOPlanner(Planner):
     MAX_BOUNDARY_ADVANCES_PER_PLAN = MAX_BOUNDARY_ADVANCES
 
     def _load_active_target(self) -> Optional[RegionOpeningTarget]:
-        """Prefer the persisted target, so a separate process sees the same one."""
+        """Prefer the persisted target, so a separate process sees the same one.
+
+        The loaded target is adopted as this instance's, not just returned. The
+        common case is that an earlier process wrote the file, and without this
+        _release_active_target has nothing to release: it would find
+        self._active_target still None and quietly skip the write, leaving a
+        dead boundary marked active for the next process to pick up again.
+        """
         if self._active_target_path is not None:
-            return RegionOpeningTarget.load(self._active_target_path)
+            loaded = RegionOpeningTarget.load(self._active_target_path)
+            if loaded is not None:
+                self._active_target = loaded
+            return loaded
         return self._active_target if (self._active_target and self._active_target.is_active) else None
 
     def _store_active_target(self, target: Optional[RegionOpeningTarget]) -> None:

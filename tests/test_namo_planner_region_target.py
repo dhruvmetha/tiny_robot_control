@@ -300,3 +300,59 @@ def test_without_a_held_target_reuse_is_graded_against_the_goal(monkeypatch):
 
     assert bridge.verify_calls[0]["target_points"] is None
     assert bridge.verify_calls[0]["min_reachable"] is None
+
+
+# --- releasing a target written by an earlier process ------------------------
+#
+# The session runs each replan in a fresh process, so the common case is that
+# the target on disk was written by someone else. These drive two planner
+# instances against one file and assert on what the SECOND one does, which is
+# the path the earlier tests never exercised.
+
+def _seed_active_target(tmp_path):
+    """Write an active target the way a previous process would have."""
+    target = RegionOpeningTarget(
+        target_samples_m=tuple(POINTS),
+        blocker_real_ids=("obj_4",),
+        open_fraction=0.2,
+        target_id="ro-0001",
+    )
+    target.save(tmp_path / "active.json")
+    return target
+
+
+def test_an_exhausted_boundary_is_marked_exhausted_on_disk(monkeypatch, tmp_path):
+    """Otherwise the next process resumes a boundary already proven dead."""
+    _seed_active_target(tmp_path)
+    planner, bridge = _planner(monkeypatch, tmp_path=tmp_path)
+    bridge.solve_results = [_plan(success=False, boundary_exhausted=True)]
+
+    planner.plan(_obs())
+
+    assert RegionOpeningTarget.load(tmp_path / "active.json") is None
+
+
+def test_a_dead_boundary_is_not_resumed_by_the_next_process(monkeypatch, tmp_path):
+    _seed_active_target(tmp_path)
+    first, first_bridge = _planner(monkeypatch, tmp_path=tmp_path)
+    first_bridge.solve_results = [_plan(success=False, boundary_exhausted=True)]
+    first.plan(_obs())
+
+    second, second_bridge = _planner(monkeypatch, tmp_path=tmp_path)
+    second.plan(_obs())
+
+    assert second_bridge.select_calls == 1
+    assert second_bridge.solve_calls[0].target_id != "ro-0001"
+
+
+def test_an_opened_boundary_is_marked_opened_on_disk(monkeypatch, tmp_path):
+    _seed_active_target(tmp_path)
+    planner, bridge = _planner(monkeypatch, tmp_path=tmp_path)
+    bridge.select_results = [_choice(blocker_real_ids=["obj_9"])]
+    bridge.solve_results = [_plan(already_open=True), _plan()]
+
+    planner.plan(_obs())
+
+    revived = RegionOpeningTarget.load(tmp_path / "active.json")
+    assert revived is not None
+    assert revived.blocker_real_ids == ("obj_9",)
