@@ -171,3 +171,49 @@ def test_a_run_that_did_not_opt_in_gets_the_old_argv(monkeypatch, tmp_path):
     argv, _run_dir = _drive_replan(monkeypatch, tmp_path, hold=False)
 
     assert "--active-target" not in argv
+
+
+# --- reuse is graded against the held boundary -------------------------------
+
+def _write_target(run_dir, points=((0.3, 0.4), (0.31, 0.4)), fraction=0.2):
+    from robot_control.planner.region_target import RegionOpeningTarget
+
+    target = RegionOpeningTarget(
+        target_samples_m=tuple(points), blocker_real_ids=("obj_4",), open_fraction=fraction
+    )
+    target.save(run_dir / cls_mod.ACTIVE_TARGET_FILENAME)
+    return target
+
+
+def test_a_held_boundary_is_loaded_from_the_run_directory(tmp_path):
+    run_dir = _run_dir(tmp_path)
+    written = _write_target(run_dir)
+
+    loaded = cls_mod._load_active_region_target(run_dir)
+
+    assert loaded == written
+
+
+def test_no_target_file_means_no_held_boundary(tmp_path):
+    assert cls_mod._load_active_region_target(_run_dir(tmp_path)) is None
+
+
+def test_a_released_boundary_is_not_loaded(tmp_path):
+    from robot_control.planner.region_target import STATUS_OPENED
+
+    run_dir = _run_dir(tmp_path)
+    _write_target(run_dir).released(STATUS_OPENED).save(
+        run_dir / cls_mod.ACTIVE_TARGET_FILENAME
+    )
+
+    assert cls_mod._load_active_region_target(run_dir) is None
+
+
+def test_the_session_ladder_uses_the_same_bar_as_the_planner(tmp_path):
+    """Both ladders must ask the same question, or reuse means two things."""
+    run_dir = _run_dir(tmp_path)
+    target = _write_target(run_dir, points=[(i / 100.0, 0.0) for i in range(100)])
+
+    loaded = cls_mod._load_active_region_target(run_dir)
+
+    assert loaded.minimum_reachable() == target.minimum_reachable() == 20

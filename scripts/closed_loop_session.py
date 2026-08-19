@@ -212,6 +212,19 @@ def _load_run_meta(run_dir: Path) -> dict[str, Any]:
     return {}
 
 
+def _load_active_region_target(run_dir: Path):
+    """The boundary this run is holding, or None.
+
+    Imported lazily so the pure-filesystem subcommands keep working without the
+    planner package on sys.path.
+    """
+    try:
+        from robot_control.planner.region_target import RegionOpeningTarget
+    except ImportError:
+        return None
+    return RegionOpeningTarget.load(run_dir / ACTIVE_TARGET_FILENAME)
+
+
 def _hold_region_target_enabled(run_dir: Path) -> bool:
     """Whether this run keeps working on one boundary across pushes.
 
@@ -1175,12 +1188,20 @@ def _attempt_reuse_from_previous_plan(
     observation = _observation_from_scene_before(iter_dir / "scene_before", fallback_goal_cm=goal_cm)
     bridge = _instantiate_closed_loop_bridge(session_dir)
 
+    # While this run is holding a boundary, a reused chain has to still open
+    # THAT boundary. Verifying against the final goal instead would accept a
+    # chain that abandons the subproblem -- the same reason the in-process
+    # ladder passes these two arguments.
+    held_target = _load_active_region_target(session_dir / run_name)
+
     def _verify(chain: list[Any], origin_kind: str) -> Optional[dict[str, Any]]:
         result = bridge.verify_chain(
             observation=observation,
             robot_goal_cm=goal_cm,
             chain=chain,
             allow_collisions=True,
+            target_points=list(held_target.target_samples_m) if held_target else None,
+            min_reachable=held_target.minimum_reachable() if held_target else None,
         )
         if not result.success:
             return {
