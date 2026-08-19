@@ -73,6 +73,37 @@ class ChainVerificationResult:
     verification_time_ms: float
     planner_scene_xml: str
     object_mapping: Dict[str, Dict[str, str]]
+    # None when the chain was verified against the final goal rather than a
+    # held boundary. Populated only when target points were supplied.
+    target_open_after: Optional[bool] = None
+
+
+def evaluate_chain_outcome(
+    env: Any,
+    target_points: Optional[Sequence[Tuple[float, float]]] = None,
+    min_reachable: Optional[int] = None,
+) -> Tuple[bool, bool, Optional[bool]]:
+    """Decide whether a simulated chain succeeded.
+
+    Returns ``(succeeded, goal_reachable_after, target_open_after)``.
+
+    Without target points the question is the one this has always asked: does
+    the final state make the robot's goal reachable. While a boundary is held
+    that is the wrong question -- a chain can make the goal reachable while
+    abandoning the boundary being opened, and accepting it would silently undo
+    the subproblem. So when points are supplied they decide instead.
+
+    The goal check is still evaluated and reported either way, so no existing
+    reader of ``goal_reachable_after`` changes meaning. It costs one extra
+    wavefront update (~7 ms) against a ~160 ms simulated push.
+    """
+    goal_reachable_after = bool(env.is_robot_goal_reachable())
+    if not target_points:
+        return goal_reachable_after, goal_reachable_after, None
+
+    reachable_count, _first = env.count_reachable_points(list(target_points))
+    target_open_after = int(reachable_count) >= int(min_reachable or 1)
+    return target_open_after, goal_reachable_after, target_open_after
 
 
 @dataclass
@@ -420,6 +451,8 @@ class NAMOPlanBridge:
         chain: Sequence[Any],
         *,
         allow_collisions: bool = True,
+        target_points: Optional[Sequence[Tuple[float, float]]] = None,
+        min_reachable: Optional[int] = None,
     ) -> ChainVerificationResult:
         """Sim-verify an exact push chain from the current observation.
 
@@ -541,15 +574,22 @@ class NAMOPlanBridge:
 
                 verified_subgoals.append(subgoal)
 
-            goal_reachable_after = bool(env.is_robot_goal_reachable())
-            if not goal_reachable_after:
+            succeeded, goal_reachable_after, target_open_after = evaluate_chain_outcome(
+                env, target_points, min_reachable
+            )
+            if not succeeded:
                 return ChainVerificationResult(
                     success=False,
                     verified_subgoals=verified_subgoals,
                     sim_pushes_tried=len(normalized_chain),
                     failed_step_index=None,
-                    failure_reason="goal_not_reachable_after_chain",
-                    goal_reachable_after=False,
+                    failure_reason=(
+                        "target_not_open_after_chain"
+                        if target_points
+                        else "goal_not_reachable_after_chain"
+                    ),
+                    goal_reachable_after=goal_reachable_after,
+                    target_open_after=target_open_after,
                     verification_time_ms=(perf_counter() - t0) * 1000.0,
                     planner_scene_xml=planner_scene_xml,
                     object_mapping=self._serialize_object_mapping(),
@@ -561,7 +601,8 @@ class NAMOPlanBridge:
                 sim_pushes_tried=len(normalized_chain),
                 failed_step_index=None,
                 failure_reason=None,
-                goal_reachable_after=True,
+                goal_reachable_after=goal_reachable_after,
+                target_open_after=target_open_after,
                 verification_time_ms=(perf_counter() - t0) * 1000.0,
                 planner_scene_xml=planner_scene_xml,
                 object_mapping=self._serialize_object_mapping(),

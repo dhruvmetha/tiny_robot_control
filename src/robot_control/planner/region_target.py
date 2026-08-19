@@ -33,6 +33,7 @@ the rewriting that other artefacts in this repo need.
 from __future__ import annotations
 
 import json
+import math
 import os
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -112,6 +113,15 @@ class RegionOpeningTarget:
         if status not in TERMINAL_STATUSES:
             raise ValueError(f"Release status must be one of {TERMINAL_STATUSES}")
         return replace(self, status=status)
+
+    def minimum_reachable(self) -> int:
+        """How many of the frozen points must be reachable to call this open.
+
+        The fraction is the one recorded on the target, not whatever the config
+        says now: a subproblem in flight must not be re-graded underneath itself.
+        Mirrors namo_cpp's _minimum_needed -- ceil of the fraction, floored at 1.
+        """
+        return max(1, math.ceil(self.open_fraction * len(self.target_samples_m)))
 
     # --- what the planner call needs ---------------------------------------
 

@@ -363,35 +363,42 @@ real class. Untested: constructor param parsing, `_boundary_objects`,
 `finally: set_full_state(baseline)` contract, budget accounting, and the
 sandbox import.
 
-### D10 — `robot_control` replans at the wrong level — PHASE 1 DONE
+### D10 — `robot_control` replans at the wrong level — RESOLVED
 
-namo_cpp can now be *told* which boundary to open. `solve_boundary_from_xml`
-(namo_cpp `79a096e`) takes the target points and blocking objects as input;
-`region_target_points` (`fab8b60`) makes both openers grade against a
-caller-supplied list instead of re-sampling; the opening-bar sample size is
-now canonical on both sides (`1395646` + robot_control `3207848`).
+Both ways of running the robot can now hold one region boundary until it opens
+or is exhausted, instead of re-deriving the whole problem every replan.
 
-Region labels are ordinal and renumber whenever free space changes, so the
-durable handle is (blocking objects, fixed points) and the label is
-re-resolved per call. Verified live: resolution from objects alone lands on
-the same boundary as an explicit label, a stale label returns a typed
-failure, and both search arms grade against the pinned points.
+**namo_cpp** — `select_boundary_from_xml` (`7c42575`) chooses the next boundary
+and samples its points once, reusing `full_namo`'s own `path[1]` rule via a
+shared `find_region_path`. `solve_boundary_from_xml` + `region_target_points`
+(Phase 1) then grade every later call against those frozen points.
 
-**Still open — Phase 2/3.** robot_control is unchanged. It does not yet hold
-a target across pushes, its blacklist is still cleared on every successful
-push, and the target is not serialised for closed_loop_session's separate
-per-iteration processes. The nested loops are not built.
+**robot_control** — `RegionOpeningTarget` (`5d45df4`) is the durable record:
+points as identity rather than a region label (labels are ordinal and renumber
+after a push), and blockers in real naming rather than simulator naming
+(simulator ids are a rank over the movables in one observation). `NAMOPlanner`
+holds one (`60ca1be`); `run_namo --active-target` honours it on both entry
+points (`a2c7545`); `closed_loop_session` hands it to the replan subprocess
+(`7f89a08`), at run level because iteration creation rewrites `status.json`
+and regenerates `scene_after/` wholesale.
 
-Independent of everything above. `NAMOPlanner` executes one physical push and
-then invokes top-level planning again, without remembering which boundary it
-was opening or which target points defined it. A setup push can therefore cause
-a new global path and a new target selection before the original boundary is
-open.
+The select/solve/release step is `advance_boundary`, called by both paths —
+they share no other code, and a second copy would drift the way the two
+chain-reuse ladders already have.
 
-Ranking makes this worse, not better: the ranker's value is re-ranking within a
-*fixed* subproblem. Re-deriving the subproblem every push discards that.
+Also fixed on the way: the failed-push blacklist was cleared on *every*
+successful push, including for objects that had not moved (`564d96a`). The
+stated reason for clearing was right for the pushed object — `edge_idx` is in
+its body frame — and wrong for everything else.
 
-## Required design
+**Off by default.** `hold_region_target=False`, and the session path opts in via
+`run_meta.json`. A run that does not ask for a held boundary is unchanged.
+
+**Known gap.** Chain reuse is skipped while a target is held, because
+`verify_chain` asks whether the remaining chain makes the *final goal*
+reachable — a chain can satisfy that while abandoning the boundary being
+opened. A target-conditioned reuse check would restore the optimisation; there
+are two copies of that ladder and both would need it.
 
 ### R1 — persist the active region-opening target
 
