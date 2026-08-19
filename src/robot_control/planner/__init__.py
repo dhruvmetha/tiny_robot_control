@@ -4,6 +4,11 @@ from robot_control.planner.base import Planner
 from robot_control.planner.rvg_planner import RVGPlanner
 from robot_control.planner.sequence_planner import SequencePlanner, SequencePlannerConfig
 from robot_control.planner.namo_planner import NAMOPlanner
+from robot_control.planner.region_target import (
+    RegionOpeningTarget,
+    target_from_selection,
+    target_path_for_run,
+)
 from robot_control.planner.search_config import (
     BEST_FIRST_PRIOR_CHOICES,
     DEFAULT_BEST_FIRST_PRIOR,
@@ -20,6 +25,9 @@ __all__ = [
     "SequencePlanner",
     "SequencePlannerConfig",
     "NAMOPlanner",
+    "RegionOpeningTarget",
+    "target_from_selection",
+    "target_path_for_run",
     "LocalSearchConfig",
     "LOCAL_SEARCH_CHOICES",
     "BEST_FIRST_PRIOR_CHOICES",
