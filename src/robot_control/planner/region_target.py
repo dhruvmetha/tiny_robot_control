@@ -32,6 +32,7 @@ the rewriting that other artefacts in this repo need.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -45,6 +46,15 @@ SCHEMA_VERSION = 1
 # status.json from a fixed literal and regenerates scene_after/ wholesale, so
 # anything held there is lost at the boundary.
 ACTIVE_TARGET_FILENAME = "active_region_opening.json"
+
+# Target-id fingerprint. Rounding to a micron is far below both the sampler's
+# grid and anything physically meaningful, so it cannot merge two genuinely
+# different targets; it makes the id survive a change in how points are
+# formatted on disk. Twelve hex characters collide only after billions of
+# distinct point sets, and still fit in a log line next to the status.
+TARGET_ID_PRECISION_M = 6
+TARGET_ID_DIGEST_CHARS = 12
+TARGET_ID_PREFIX = "ro-"
 
 STATUS_ACTIVE = "active"
 STATUS_OPENED = "opened"
@@ -204,6 +214,30 @@ class RegionOpeningTarget:
         return target if target.is_active else None
 
 
+def fingerprint_samples(samples: Sequence[Sequence[float]]) -> str:
+    """A stable name for a target, derived from the points that define it.
+
+    The id was a per-iteration counter, so "the replan after a setup push is
+    still working the same boundary" compared ro-0001 against ro-0001. That
+    passes whichever boundary the planner actually landed on, which is the one
+    thing the check exists to catch.
+
+    The frozen samples are the identity, for the reason in the module docstring,
+    so deriving the name from them makes the comparison mean something. The same
+    samples give the same name across replans and across processes, and a
+    different boundary cannot borrow it.
+
+    Order is part of the identity. The list is the caller's frozen criterion and
+    a reordering is a different persisted record, so this does not sort.
+    """
+    payload = ";".join(
+        "{:.{p}f},{:.{p}f}".format(float(x), float(y), p=TARGET_ID_PRECISION_M)
+        for x, y in samples
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return f"{TARGET_ID_PREFIX}{digest[:TARGET_ID_DIGEST_CHARS]}"
+
+
 def target_path_for_run(run_dir: Path) -> Path:
     """Where a run's active target lives."""
     return Path(run_dir) / ACTIVE_TARGET_FILENAME
@@ -226,11 +260,15 @@ def target_from_selection(
     and ``region_path``.
     """
     points: Sequence[Sequence[float]] = choice.target_points_m
+    samples = tuple((float(p[0]), float(p[1])) for p in points)
     return RegionOpeningTarget(
-        target_samples_m=tuple((float(p[0]), float(p[1])) for p in points),
+        target_samples_m=samples,
         blocker_real_ids=tuple(str(o) for o in choice.blocker_real_ids),
         open_fraction=float(open_fraction),
-        target_id=target_id or f"ro-{iteration:04d}",
+        # Not the iteration counter it used to be: a counter makes every
+        # cross-push identity check vacuous. An explicit target_id still wins,
+        # so a caller reviving an older record keeps the name it was stored under.
+        target_id=target_id or fingerprint_samples(samples),
         selected_iteration=int(iteration),
         last_iteration=int(iteration),
         source_region_path=tuple(str(r) for r in getattr(choice, "region_path", ())),

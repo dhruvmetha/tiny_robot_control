@@ -22,6 +22,7 @@ from robot_control.planner.region_target import (
     STATUS_EXHAUSTED,
     STATUS_OPENED,
     RegionOpeningTarget,
+    fingerprint_samples,
     target_from_selection,
     target_path_for_run,
 )
@@ -41,6 +42,86 @@ def _target(**overrides):
     )
     kwargs.update(overrides)
     return RegionOpeningTarget(**kwargs)
+
+
+# --- the name the identity check compares ------------------------------------
+#
+# target_id was f"ro-{iteration:04d}". Acceptance criterion 6 of
+# MODEL_GUIDED_RO_INTEGRATION.local.md asks that the replan after a setup push
+# carry the same target_id, which a counter satisfies no matter which boundary
+# the planner actually landed on. These pin the properties that make the
+# comparison worth making.
+
+def _selection(points=POINTS, blockers=BLOCKERS, region_path=("robot", "goal")):
+    return type(
+        "Sel", (), {"target_points_m": list(points),
+                    "blocker_real_ids": list(blockers),
+                    "region_path": list(region_path)}
+    )()
+
+
+def _freeze(points=POINTS, blockers=BLOCKERS, **over):
+    kwargs = dict(open_fraction=CANONICAL_FRACTION, iteration=0)
+    kwargs.update(over)
+    return target_from_selection(_selection(points, blockers), **kwargs)
+
+
+def test_the_same_points_get_the_same_name_at_different_iterations():
+    """The regression: a counter made two pushes of one boundary look distinct."""
+    first = _freeze(iteration=1)
+    second = _freeze(iteration=7)
+
+    assert first.target_id == second.target_id
+    assert first.selected_iteration != second.selected_iteration
+
+
+def test_a_different_boundary_cannot_borrow_the_name():
+    moved = tuple((x + 0.05, y) for x, y in POINTS)
+
+    assert _freeze().target_id != _freeze(moved).target_id
+
+
+def test_reordering_the_points_is_a_different_target():
+    """Order is part of the frozen criterion, so the fingerprint does not sort."""
+    assert _freeze().target_id != _freeze(tuple(reversed(POINTS))).target_id
+
+
+def test_the_name_survives_a_save_and_load(tmp_path):
+    original = _freeze()
+    path = tmp_path / ACTIVE_TARGET_FILENAME
+    original.save(path)
+
+    revived = RegionOpeningTarget.load(path)
+
+    assert revived.target_id == original.target_id
+    assert revived.target_id == fingerprint_samples(POINTS)
+
+
+def test_only_the_points_decide_the_name():
+    """The doc calls this the target-sample hash; blockers are checked separately."""
+    other = _freeze(blockers=("obj_99",), open_fraction=0.5)
+
+    assert other.target_id == _freeze().target_id
+
+
+def test_a_difference_below_a_micron_is_the_same_target():
+    """Guards the id against a change in how points get formatted on disk."""
+    jittered = tuple((x + 1e-9, y - 1e-9) for x, y in POINTS)
+
+    assert _freeze(jittered).target_id == _freeze().target_id
+
+
+def test_an_explicit_name_still_wins():
+    """A caller reviving an older record keeps the name it was stored under."""
+    assert _freeze(target_id="ro-0001").target_id == "ro-0001"
+
+
+def test_the_name_is_readable_in_a_log_line():
+    name = fingerprint_samples(POINTS)
+
+    assert name.startswith("ro-")
+    assert len(name) == len("ro-") + 12
+    assert name[3:].isalnum()
 
 
 # --- round trip --------------------------------------------------------------
@@ -182,4 +263,4 @@ def test_freezing_a_selection_keeps_its_points_and_blockers():
     assert target.target_samples_m == POINTS
     assert target.blocker_real_ids == BLOCKERS
     assert target.source_region_path == ("robot", "goal")
-    assert target.target_id == "ro-0002"
+    assert target.target_id == fingerprint_samples(POINTS)
