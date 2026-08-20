@@ -1295,7 +1295,19 @@ def _run_plan_only_mode(args) -> int:
         robot_model=args.robot_model,
     )
 
-    extra_kwargs: Dict[str, Any] = {}
+    # Every search option both paths must send. The held path used to build its
+    # own shorter list, so a held boundary fell back to namo_cpp's opener
+    # defaults; region_max_chain_depth defaults to 1, at which no
+    # setup-then-finish chain exists, which is the only reason to hold one.
+    # Mirrors NAMOPlanner._search_planner_kwargs, which the in-process path uses.
+    extra_kwargs: Dict[str, Any] = {
+        "max_chain_depth": args.max_chain_depth,
+        "allow_collisions": args.allow_collisions,
+        "frontier_beam_width": args.frontier_beam_width,
+        "chain_link_cost": args.chain_link_cost,
+        "selection_strategy": args.selection_strategy,
+        "goals_per_region": args.goals_per_region,
+    }
     if getattr(args, "rollout_samples_per_state", None) is not None:
         extra_kwargs["rollout_samples_per_state"] = args.rollout_samples_per_state
     if getattr(args, "shuffle_seed", None) is not None:
@@ -1361,12 +1373,6 @@ def _run_plan_only_mode(args) -> int:
             robot_goal_cm=goal_cm,
             algorithm=args.algorithm,
             goal_strategy=args.strategy,
-            max_chain_depth=args.max_chain_depth,
-            allow_collisions=args.allow_collisions,
-            frontier_beam_width=args.frontier_beam_width,
-            chain_link_cost=args.chain_link_cost,
-            selection_strategy=args.selection_strategy,
-            goals_per_region=args.goals_per_region,
             failed_pushes=set(),
             **extra_kwargs,
         )

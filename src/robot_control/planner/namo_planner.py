@@ -1034,26 +1034,49 @@ class NAMOPlanner(Planner):
                 moved.add(name)
         return moved
 
-    def _held_mode_planner_kwargs(self) -> Dict[str, Any]:
-        """Options that would reach the planner through bridge.plan.
+    def _search_planner_kwargs(self, shuffle_seed: Optional[int]) -> Dict[str, Any]:
+        """Every planner option both the whole-problem and held paths must send.
 
-        Held mode does not call bridge.plan, so anything not listed here is
-        dropped: goal strategy, seeds, rollout width, the ML model, the opener
-        choice.
+        bridge.plan names most of these and solve_boundary forwards them as
+        kwargs, but both land in the same service, which maps them through one
+        table. Held mode used to build its own shorter list. Anything it left
+        out fell back to namo_cpp's opener defaults, and region_max_chain_depth
+        defaults to 1: no setup-then-finish chain can exist at that depth, which
+        is the only reason to hold a boundary across pushes. Building one dict
+        here is what stops the two paths searching differently again.
         """
         kwargs: Dict[str, Any] = {
             "goal_strategy": self._goal_strategy,
+            "max_chain_depth": self._max_chain_depth,
+            "allow_collisions": self._allow_collisions,
+            "frontier_beam_width": self._frontier_beam_width,
+            "chain_link_cost": self._chain_link_cost,
+            "selection_strategy": self._selection_strategy,
+            "goals_per_region": self._goals_per_region,
             "shuffle_edges": self._shuffle_edges,
+            "shuffle_seed": shuffle_seed,
         }
-        if self._shuffle_seed is not None:
-            kwargs["shuffle_seed"] = self._shuffle_seed
         if self._rollout_samples_per_state is not None:
             kwargs["rollout_samples_per_state"] = self._rollout_samples_per_state
+        kwargs.update(self._local_search.as_planner_kwargs())
         if self._ml_goal_model_path:
             kwargs["ml_goal_model_path"] = self._ml_goal_model_path
             kwargs["ml_device"] = self._ml_device
-        kwargs.update(self._local_search.as_planner_kwargs())
+            if self._ml_samples is not None:
+                kwargs["ml_samples"] = self._ml_samples
+            if self._ml_num_steps is not None:
+                kwargs["ml_num_steps"] = self._ml_num_steps
+            if self._ml_sampler_method is not None:
+                kwargs["ml_sampler_method"] = self._ml_sampler_method
         return kwargs
+
+    def _held_mode_planner_kwargs(self) -> Dict[str, Any]:
+        """The same options the whole-problem path sends, at the base seed.
+
+        Held mode does not retry with a bumped seed the way the whole-problem
+        path does; a held boundary is re-solved on the next replan instead.
+        """
+        return self._search_planner_kwargs(self._shuffle_seed)
 
     def _generate_plan_holding_target(self, obs: Observation) -> None:
         """Plan against one held boundary, advancing only when it opens.
@@ -1144,37 +1167,12 @@ class NAMOPlanner(Planner):
                 effective_seed = self._shuffle_seed
 
             try:
-                # Build extra kwargs for ML strategies
-                extra_kwargs: Dict[str, Any] = {
-                    "shuffle_edges": self._shuffle_edges,
-                    "shuffle_seed": effective_seed,
-                }
-                if self._rollout_samples_per_state is not None:
-                    extra_kwargs["rollout_samples_per_state"] = self._rollout_samples_per_state
-                extra_kwargs.update(self._local_search.as_planner_kwargs())
-                if self._ml_goal_model_path:
-                    extra_kwargs["ml_goal_model_path"] = self._ml_goal_model_path
-                    extra_kwargs["ml_device"] = self._ml_device
-                    if self._ml_samples is not None:
-                        extra_kwargs["ml_samples"] = self._ml_samples
-                    if self._ml_num_steps is not None:
-                        extra_kwargs["ml_num_steps"] = self._ml_num_steps
-                    if self._ml_sampler_method is not None:
-                        extra_kwargs["ml_sampler_method"] = self._ml_sampler_method
-
                 subgoals = self._bridge.plan(
                     observation=obs,
                     robot_goal_cm=self._robot_goal_cm,
                     algorithm=self._algorithm,
-                    goal_strategy=self._goal_strategy,
-                    max_chain_depth=self._max_chain_depth,
-                    allow_collisions=self._allow_collisions,
-                    frontier_beam_width=self._frontier_beam_width,
-                    chain_link_cost=self._chain_link_cost,
-                    selection_strategy=self._selection_strategy,
-                    goals_per_region=self._goals_per_region,
                     failed_pushes=self._failed_pushes,
-                    **extra_kwargs,
+                    **self._search_planner_kwargs(effective_seed),
                 )
 
                 # Accumulate planning time
