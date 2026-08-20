@@ -381,3 +381,92 @@ def test_a_missing_scene_capture_forgets_nothing(tmp_path):
     revived = RegionOpeningTarget.load(run_dir / ACTIVE_TARGET_FILENAME)
     assert revived.failed_pushes == ((PUSHED, 17),)
     assert revived.physical_pushes_attempted == 1
+
+
+# --- what counts as movement -------------------------------------------------
+#
+# objects_that_moved claimed to mirror closed_loop_session's scene-to-XML
+# matcher and did not. It compared each axis on its own instead of the straight
+# line, and subtracted headings without wrapping. Both thresholds were right;
+# the arithmetic under them was not, and the two errors pull opposite ways.
+
+from robot_control.planner.region_target import (  # noqa: E402
+    OBJECT_MOVED_TOLERANCE_CM,
+    OBJECT_ROTATED_TOLERANCE_DEG,
+    angle_diff_deg,
+    objects_that_moved,
+    pose_delta,
+)
+
+AT_REST = {PUSHED: (10.0, 20.0, 0.0)}
+
+
+def _moved(x, y, theta, start=(10.0, 20.0, 0.0)):
+    return objects_that_moved({PUSHED: start}, {PUSHED: (x, y, theta)})
+
+
+@pytest.mark.parametrize("before,after", [(359.0, 1.0), (1.0, 359.0)])
+def test_a_heading_crossing_zero_is_not_a_rotation(before, after):
+    """Two degrees, not 358. Unwrapped, this cleared valid failure memory."""
+    assert _moved(10.0, 20.0, after, start=(10.0, 20.0, before)) == set()
+
+
+def test_a_real_rotation_still_counts():
+    assert _moved(10.0, 20.0, 6.0) == {PUSHED}
+
+
+def test_a_rotation_at_the_threshold_does_not_count():
+    """Strict >, so exactly the tolerance is still at rest."""
+    assert _moved(10.0, 20.0, OBJECT_ROTATED_TOLERANCE_DEG) == set()
+
+
+def test_a_diagonal_shove_counts_even_when_each_axis_is_small():
+    """0.4 on each axis is 0.57 cm of real movement. Per-axis called it unmoved."""
+    assert _moved(10.4, 20.4, 0.0) == {PUSHED}
+
+
+def test_a_move_of_exactly_the_tolerance_does_not_count():
+    """(0.3, 0.4) is 0.5 cm on the nose, and the boundary stays exclusive."""
+    assert _moved(10.3, 20.4, 0.0) == set()
+
+
+def test_jitter_below_the_tolerance_does_not_count():
+    assert _moved(10.2, 20.2, 2.0) == set()
+
+
+@pytest.mark.parametrize("a,b,expected", [(359.0, 1.0, 2.0), (0.0, 180.0, 180.0),
+                                          (90.0, 0.0, 90.0), (-179.0, 179.0, 2.0)])
+def test_the_angle_difference_wraps(a, b, expected):
+    assert angle_diff_deg(a, b) == pytest.approx(expected)
+
+
+def test_the_pose_delta_is_a_straight_line_not_two_axes():
+    distance, turn = pose_delta((10.4, 20.4, 359.0), (10.0, 20.0, 1.0))
+
+    assert distance == pytest.approx(0.5657, abs=1e-3)
+    assert turn == pytest.approx(2.0)
+
+
+def test_the_settlement_clears_a_diagonally_shoved_object(tmp_path):
+    """The whole point: a shove the old rule missed kept a stale exclusion."""
+    revived, result = _settle(
+        tmp_path,
+        _target(failed_pushes=((PUSHED, 17),)),
+        AT_REST,
+        {PUSHED: (10.4, 20.4, 0.0)},
+    )
+
+    assert revived.failed_pushes == ()
+    assert result["moved_objects"] == [PUSHED]
+
+
+def test_the_settlement_keeps_memory_across_a_zero_crossing(tmp_path):
+    """And a heading wrap the old rule read as a full turn wiped a good one."""
+    revived, _ = _settle(
+        tmp_path,
+        _target(failed_pushes=((PUSHED, 17),)),
+        {PUSHED: (10.0, 20.0, 359.0)},
+        {PUSHED: (10.0, 20.0, 1.0)},
+    )
+
+    assert revived.failed_pushes == ((PUSHED, 17),)

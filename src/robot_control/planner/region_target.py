@@ -239,6 +239,36 @@ OBJECT_MOVED_TOLERANCE_CM = 0.5
 OBJECT_ROTATED_TOLERANCE_DEG = 5.0
 
 
+def angle_diff_deg(a_deg: float, b_deg: float) -> float:
+    """Smallest angle between two headings, in degrees.
+
+    Wrapped, so 359 and 1 are two degrees apart rather than 358. Unwrapped, a
+    rotation across the zero crossing reads as most of a full turn and any
+    "did it move" test built on it fires on an object that barely twitched.
+    """
+    return abs((a_deg - b_deg + 180.0) % 360.0 - 180.0)
+
+
+def pose_delta(
+    after: Sequence[float], before: Sequence[float]
+) -> Tuple[float, float]:
+    """(distance_cm, angle_deg) between two (x_cm, y_cm, theta_deg) poses.
+
+    Straight-line distance, not per-axis. A diagonal shove of 0.4 cm on each
+    axis is 0.57 cm of real movement, and comparing the axes separately calls
+    that unmoved.
+
+    One implementation, because two callers ask the same question. The
+    scene-to-XML matcher decides whether two records describe the same object,
+    and objects_that_moved decides whether one object stayed put between two
+    frames. Same thresholds, same arithmetic, and they used to differ on both.
+    """
+    return (
+        math.hypot(after[0] - before[0], after[1] - before[1]),
+        angle_diff_deg(after[2], before[2]),
+    )
+
+
 def objects_that_moved(
     before: Optional[Dict[str, Sequence[float]]],
     after: Optional[Dict[str, Sequence[float]]],
@@ -259,12 +289,11 @@ def objects_that_moved(
         prior = (before or {}).get(name)
         if prior is None:
             continue
-        shifted = (
-            abs(pose[0] - prior[0]) > OBJECT_MOVED_TOLERANCE_CM
-            or abs(pose[1] - prior[1]) > OBJECT_MOVED_TOLERANCE_CM
-        )
-        turned = abs(pose[2] - prior[2]) > OBJECT_ROTATED_TOLERANCE_DEG
-        if shifted or turned:
+        shifted_cm, turned_deg = pose_delta(pose, prior)
+        if (
+            shifted_cm > OBJECT_MOVED_TOLERANCE_CM
+            or turned_deg > OBJECT_ROTATED_TOLERANCE_DEG
+        ):
             moved.add(str(name))
     return moved
 

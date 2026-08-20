@@ -1005,17 +1005,17 @@ def _mapping_from_scene_objects(scene_objects: dict[str, Any]) -> tuple[dict[str
     return real_to_sim, sim_to_real
 
 
-def _angle_diff_deg(a_deg: float, b_deg: float) -> float:
-    diff = (a_deg - b_deg + 180.0) % 360.0 - 180.0
-    return abs(diff)
-
-
 def _mapping_from_scene_env_xml(
     scene_objects: dict[str, Any],
     env_xml_path: Path,
 ) -> tuple[dict[str, str], dict[str, str]]:
     if not env_xml_path.exists():
         raise FileNotFoundError(f"{env_xml_path} not found")
+
+    # Same arithmetic objects_that_moved uses, against the same thresholds.
+    # This matcher is where those thresholds came from, and the two drifted
+    # apart on both the distance and the angle when the rule was copied.
+    from robot_control.planner.region_target import pose_delta
 
     real_specs: dict[str, dict[str, float]] = {}
     for real_name, raw_obj in scene_objects.items():
@@ -1067,15 +1067,14 @@ def _mapping_from_scene_env_xml(
         best_score: Optional[tuple[float, float, float]] = None
         for real_name in sorted(unmatched_real):
             real_spec = real_specs[real_name]
-            pos_err = math.hypot(
-                sim_spec["x_cm"] - real_spec["x_cm"],
-                sim_spec["y_cm"] - real_spec["y_cm"],
+            pos_err, theta_err = pose_delta(
+                (sim_spec["x_cm"], sim_spec["y_cm"], sim_spec["theta_deg"]),
+                (real_spec["x_cm"], real_spec["y_cm"], real_spec["theta_deg"]),
             )
             size_err = max(
                 abs(sim_spec["width_cm"] - real_spec["width_cm"]),
                 abs(sim_spec["depth_cm"] - real_spec["depth_cm"]),
             )
-            theta_err = _angle_diff_deg(sim_spec["theta_deg"], real_spec["theta_deg"])
             score = (pos_err, size_err, theta_err)
             if best_score is None or score < best_score:
                 best_score = score
