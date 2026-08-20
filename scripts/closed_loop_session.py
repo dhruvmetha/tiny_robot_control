@@ -232,11 +232,13 @@ def _load_active_region_target(run_dir: Path):
         return None
 
 
-def _dispatched_push(real_push_dir: Path) -> Optional[tuple[str, int]]:
-    """The (object, edge) the robot was told to push, in real naming.
+def _dispatched_push(real_push_dir: Path) -> Optional[tuple[str, int, Optional[float]]]:
+    """The last push the executor dispatched: (object, edge, dispatch epoch).
 
-    subgoals.jsonl records what the executor dispatched, which is the pair a
-    physical failure has to be recorded against.
+    subgoals.jsonl records what went out, in real naming. The dispatch timestamp
+    identifies the physical attempt rather than the run of the settlement code,
+    which is what makes settling twice safe. It is written once and read back
+    from JSON, so comparing it exactly is comparing the same number.
     """
     path = real_push_dir / "subgoals.jsonl"
     if not path.is_file():
@@ -253,7 +255,13 @@ def _dispatched_push(real_push_dir: Path) -> Optional[tuple[str, int]]:
         object_id, edge_idx = rec.get("object_id"), rec.get("edge_idx")
         if object_id is None or edge_idx is None:
             return None
-        return str(object_id), int(edge_idx)
+        dispatched = rec.get("dispatched") or {}
+        at_epoch = dispatched.get("at_epoch")
+        return (
+            str(object_id),
+            int(edge_idx),
+            None if at_epoch is None else float(at_epoch),
+        )
     return None
 
 
@@ -288,6 +296,7 @@ def _settle_target_after_push(
     iteration: int,
     scene_before_dir: Path,
     scene_after_dir: Path,
+    real_push_dir: Optional[Path] = None,
 ) -> dict:
     """Advance the held boundary's bookkeeping for a push that physically ran.
 
@@ -305,14 +314,24 @@ def _settle_target_after_push(
 
     target = _load_active_region_target(run_dir)
     if target is None:
-        return {"moved_objects": None, "forgotten_pushes": None}
+        return {
+            "moved_objects": None,
+            "forgotten_pushes": None,
+            "settled_dispatch_epoch": None,
+            "counted_attempt": False,
+        }
 
     moved = sorted(
         objects_that_moved(
             _scene_object_poses(scene_before_dir), _scene_object_poses(scene_after_dir)
         )
     )
-    updated = target.forgetting_moved(moved).with_push_attempted(iteration)
+    # Pruning runs every time because it is already idempotent: an object that
+    # moved has no entries left to drop on the second pass. Counting is not, so
+    # it keys on the dispatch that produced this scene.
+    dispatched = _dispatched_push(real_push_dir) if real_push_dir else None
+    at_epoch = dispatched[2] if dispatched else None
+    updated = target.forgetting_moved(moved).with_push_attempted(iteration, at_epoch)
     forgotten = sorted(set(target.failed_pushes) - set(updated.failed_pushes))
     updated.save(run_dir / ACTIVE_TARGET_FILENAME)
     if forgotten:
@@ -323,6 +342,9 @@ def _settle_target_after_push(
     return {
         "moved_objects": moved,
         "forgotten_pushes": [list(e) for e in forgotten] or None,
+        "settled_dispatch_epoch": at_epoch,
+        "counted_attempt": updated.physical_pushes_attempted
+        != target.physical_pushes_attempted,
     }
 
 
@@ -339,9 +361,10 @@ def _record_failed_push_on_target(run_dir: Path, real_push_dir: Path) -> Optiona
     target = _load_active_region_target(run_dir)
     if target is None:
         return None
-    pair = _dispatched_push(real_push_dir)
-    if pair is None:
+    dispatched = _dispatched_push(real_push_dir)
+    if dispatched is None:
         return None
+    pair = (dispatched[0], dispatched[1])
     updated = target.with_failed_push(*pair)
     if updated is target:
         return pair
@@ -2185,7 +2208,7 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
     # whatever the outcome was. Only the in-process planner used to do this, and
     # the session workflow never constructs it.
     settled = _settle_target_after_push(
-        run_dir, iteration, iter_dir / "scene_before", scene_after_dir
+        run_dir, iteration, iter_dir / "scene_before", scene_after_dir, real_push_dir
     )
     excluded_push = None
     if replan_same_iteration:

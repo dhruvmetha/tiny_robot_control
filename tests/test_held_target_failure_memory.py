@@ -291,15 +291,21 @@ def _scene(dir_path, poses):
     return dir_path
 
 
-def _settle(tmp_path, target, before, after, iteration=2):
-    run_dir = tmp_path / "run"
+def _settle(tmp_path, target, before, after, iteration=2, at_epoch=None, run_dir=None):
+    run_dir = run_dir or (tmp_path / "run")
     run_dir.mkdir(parents=True, exist_ok=True)
     target.save(run_dir / ACTIVE_TARGET_FILENAME)
+    push_dir = None
+    if at_epoch is not None:
+        push_dir = run_dir / "real_push"
+        push_dir.mkdir(exist_ok=True)
+        _dispatch(run_dir, dispatched={"at_epoch": at_epoch})
     result = closed_loop._settle_target_after_push(
         run_dir,
         iteration,
         _scene(tmp_path / "before", before),
         _scene(tmp_path / "after", after),
+        push_dir,
     )
     return RegionOpeningTarget.load(run_dir / ACTIVE_TARGET_FILENAME), result
 
@@ -365,7 +371,9 @@ def test_settling_without_a_held_boundary_is_fine(tmp_path):
         run_dir, 1, _scene(tmp_path / "b", STILL), _scene(tmp_path / "a", STILL)
     )
 
-    assert result == {"moved_objects": None, "forgotten_pushes": None}
+    assert result["moved_objects"] is None
+    assert result["forgotten_pushes"] is None
+    assert result["counted_attempt"] is False
 
 
 def test_a_missing_scene_capture_forgets_nothing(tmp_path):
@@ -470,3 +478,124 @@ def test_the_settlement_keeps_memory_across_a_zero_crossing(tmp_path):
     )
 
     assert revived.failed_pushes == ((PUSHED, 17),)
+
+
+# --- settling the same physical push twice -----------------------------------
+#
+# Settlement is replayable. Re-running an iteration with --allow-overwrite, or
+# resuming after a crash between saving the target and finishing, reads the same
+# artifacts again. Counting on every pass turned one physical push into two.
+#
+# Keying on the iteration would be wrong: an approach_unreachable retry runs a
+# second real attempt inside the same iteration. The dispatch timestamp names
+# the attempt, and subgoals.jsonl already carries it.
+
+FIRST_DISPATCH = 1780009628.5292249
+SECOND_DISPATCH = 1780009755.1180003
+
+
+def test_settling_the_same_attempt_twice_counts_it_once(tmp_path):
+    """The regression: --allow-overwrite made one push read as two."""
+    run_dir = tmp_path / "run"
+    once, _ = _settle(tmp_path, _target(), AT_REST, AT_REST,
+                      at_epoch=FIRST_DISPATCH, run_dir=run_dir)
+    twice, result = _settle(tmp_path, once, AT_REST, AT_REST,
+                            at_epoch=FIRST_DISPATCH, run_dir=run_dir)
+
+    assert once.physical_pushes_attempted == 1
+    assert twice.physical_pushes_attempted == 1
+    assert result["counted_attempt"] is False
+
+
+def test_two_attempts_in_one_iteration_both_count(tmp_path):
+    """An unreachable approach retries inside the iteration, so iteration is no key."""
+    run_dir = tmp_path / "run"
+    first, _ = _settle(tmp_path, _target(), AT_REST, AT_REST, iteration=3,
+                       at_epoch=FIRST_DISPATCH, run_dir=run_dir)
+    second, result = _settle(tmp_path, first, AT_REST, AT_REST, iteration=3,
+                             at_epoch=SECOND_DISPATCH, run_dir=run_dir)
+
+    assert second.physical_pushes_attempted == 2
+    assert result["counted_attempt"] is True
+    assert second.last_settled_dispatch_epoch == SECOND_DISPATCH
+
+
+def test_replaying_after_a_crash_does_not_double_count(tmp_path):
+    """The target was saved, the command died, the operator re-ran it."""
+    run_dir = tmp_path / "run"
+    saved, _ = _settle(tmp_path, _target(), AT_REST, AT_REST,
+                       at_epoch=FIRST_DISPATCH, run_dir=run_dir)
+
+    replayed, _ = _settle(tmp_path, saved, AT_REST, AT_REST,
+                          at_epoch=FIRST_DISPATCH, run_dir=run_dir)
+
+    assert replayed.physical_pushes_attempted == 1
+
+
+def test_exclusions_stay_correct_across_a_replay(tmp_path):
+    """Pruning is idempotent on its own, and must not regress with the counter."""
+    run_dir = tmp_path / "run"
+    moved_after = {PUSHED: (10.0, 26.0, 0.0)}
+    once, _ = _settle(tmp_path, _target(failed_pushes=((PUSHED, 17), (UNTOUCHED, 5))),
+                      AT_REST, moved_after, at_epoch=FIRST_DISPATCH, run_dir=run_dir)
+    twice, _ = _settle(tmp_path, once, AT_REST, moved_after,
+                       at_epoch=FIRST_DISPATCH, run_dir=run_dir)
+
+    assert once.failed_pushes == ((UNTOUCHED, 5),)
+    assert twice.failed_pushes == ((UNTOUCHED, 5),)
+
+
+def test_a_dispatch_without_a_timestamp_still_counts(tmp_path):
+    """No key to compare, so counting beats silently skipping a real push."""
+    revived, result = _settle(tmp_path, _target(), AT_REST, AT_REST)
+
+    assert revived.physical_pushes_attempted == 1
+    assert result["settled_dispatch_epoch"] is None
+
+
+def test_the_in_process_planner_still_counts_without_a_dispatch():
+    """It settles once per commit and has nothing to replay."""
+    counted = _target().with_push_attempted(2).with_push_attempted(3)
+
+    assert counted.physical_pushes_attempted == 2
+    assert counted.last_iteration == 3
+
+
+# --- reading a target written by the previous build --------------------------
+
+def test_a_v1_record_loads_and_counts_normally(tmp_path):
+    """Refusing old records would discard an active boundary mid-deployment."""
+    path = tmp_path / ACTIVE_TARGET_FILENAME
+    stored = _target(failed_pushes=((PUSHED, 17),), physical_pushes_attempted=2).to_dict()
+    stored["schema_version"] = 1
+    del stored["last_settled_dispatch_epoch"]
+    path.write_text(json.dumps(stored), encoding="utf-8")
+
+    revived = RegionOpeningTarget.load(path)
+
+    assert revived.last_settled_dispatch_epoch is None
+    assert revived.physical_pushes_attempted == 2
+    assert revived.with_push_attempted(1, FIRST_DISPATCH).physical_pushes_attempted == 3
+
+
+def test_an_upgraded_record_saves_at_the_new_version(tmp_path):
+    path = tmp_path / ACTIVE_TARGET_FILENAME
+    stored = _target().to_dict()
+    stored["schema_version"] = 1
+    path.write_text(json.dumps(stored), encoding="utf-8")
+
+    RegionOpeningTarget.load(path).with_push_attempted(1, FIRST_DISPATCH).save(path)
+
+    written = json.loads(path.read_text(encoding="utf-8"))
+    assert written["schema_version"] == 2
+    assert written["last_settled_dispatch_epoch"] == FIRST_DISPATCH
+
+
+def test_a_version_from_the_future_still_fails_loudly(tmp_path):
+    path = tmp_path / ACTIVE_TARGET_FILENAME
+    stored = _target().to_dict()
+    stored["schema_version"] = 99
+    path.write_text(json.dumps(stored), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="schema_version 99"):
+        RegionOpeningTarget.load(path)

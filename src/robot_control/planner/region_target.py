@@ -40,7 +40,12 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-SCHEMA_VERSION = 1
+# v2 adds last_settled_dispatch_epoch. A v1 record loads with it unset, which
+# reads as "never settled", so the first settlement after an upgrade counts
+# normally. Reading old records matters: a schema bump that refused them would
+# throw away an active boundary mid-deployment.
+SCHEMA_VERSION = 2
+SUPPORTED_SCHEMA_VERSIONS = (1, 2)
 
 # The file lives at run level, not iteration level: creating iter_N+1 rewrites
 # status.json from a fixed literal and regenerates scene_after/ wholesale, so
@@ -89,6 +94,13 @@ class RegionOpeningTarget:
     # discarded with the subproblem rather than on the next unrelated success.
     failed_pushes: Tuple[Tuple[str, int], ...] = ()
     physical_pushes_attempted: int = 0
+    # The dispatch timestamp of the last push counted against this subproblem.
+    # Settlement is replayable: re-running an iteration with --allow-overwrite,
+    # or resuming after a crash between saving and finishing, reads the same
+    # artifacts again. Keying on the dispatch identifies the physical attempt
+    # rather than the run of the code, so a replay counts nothing new while a
+    # genuine retry inside one iteration still counts.
+    last_settled_dispatch_epoch: Optional[float] = None
 
     def __post_init__(self) -> None:
         if not self.target_samples_m:
@@ -129,11 +141,33 @@ class RegionOpeningTarget:
             return self
         return replace(self, failed_pushes=kept)
 
-    def with_push_attempted(self, iteration: int) -> "RegionOpeningTarget":
+    def with_push_attempted(
+        self, iteration: int, dispatched_at_epoch: Optional[float] = None
+    ) -> "RegionOpeningTarget":
+        """Count one physical push, unless this exact dispatch was already counted.
+
+        Exact float equality is the right test here. The value is written once
+        when the push is dispatched and read back from JSON on every later
+        settlement, so it is the same number rather than a recomputed one.
+
+        Without a dispatch to key on, the count advances. The caller that cannot
+        supply one is the in-process planner, which settles once per commit and
+        has nothing to replay.
+        """
+        if (
+            dispatched_at_epoch is not None
+            and dispatched_at_epoch == self.last_settled_dispatch_epoch
+        ):
+            return self
         return replace(
             self,
             physical_pushes_attempted=self.physical_pushes_attempted + 1,
             last_iteration=int(iteration),
+            last_settled_dispatch_epoch=(
+                dispatched_at_epoch
+                if dispatched_at_epoch is not None
+                else self.last_settled_dispatch_epoch
+            ),
         )
 
     def released(self, status: str) -> "RegionOpeningTarget":
@@ -180,15 +214,17 @@ class RegionOpeningTarget:
             "scale_factor": float(self.scale_factor),
             "failed_pushes": [[obj, int(edge)] for obj, edge in self.failed_pushes],
             "physical_pushes_attempted": int(self.physical_pushes_attempted),
+            "last_settled_dispatch_epoch": self.last_settled_dispatch_epoch,
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "RegionOpeningTarget":
         version = int(data.get("schema_version", SCHEMA_VERSION))
-        if version != SCHEMA_VERSION:
+        if version not in SUPPORTED_SCHEMA_VERSIONS:
             raise ValueError(
                 f"Unsupported active-target schema_version {version}; "
-                f"this build writes {SCHEMA_VERSION}"
+                f"this build reads {SUPPORTED_SCHEMA_VERSIONS} and writes "
+                f"{SCHEMA_VERSION}"
             )
         return cls(
             target_samples_m=tuple(
@@ -207,6 +243,11 @@ class RegionOpeningTarget:
                 (str(entry[0]), int(entry[1])) for entry in data.get("failed_pushes", ())
             ),
             physical_pushes_attempted=int(data.get("physical_pushes_attempted", 0)),
+            last_settled_dispatch_epoch=(
+                None
+                if data.get("last_settled_dispatch_epoch") is None
+                else float(data["last_settled_dispatch_epoch"])
+            ),
         )
 
     def save(self, path: Path) -> None:
