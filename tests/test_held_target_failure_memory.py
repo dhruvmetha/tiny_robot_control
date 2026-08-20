@@ -18,6 +18,7 @@ them back, which can hide the finish push a setup push just made available.
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -181,3 +182,92 @@ def test_nothing_to_record_against_is_not_an_error(tmp_path, missing):
         _dispatch(run_dir)
 
     assert closed_loop._record_failed_push_on_target(run_dir, run_dir / "real_push") is None
+
+
+# --- counting the pushes actually spent on this boundary ---------------------
+#
+# with_push_attempted existed with no production caller, so
+# physical_pushes_attempted stayed at 0 and last_iteration stayed at the
+# iteration the target was created in, for the whole life of the subproblem.
+# Both get read back from disk by the next process.
+
+def _planner_with_target(target, plan_count):
+    from robot_control.planner.namo_planner import NAMOPlanner
+
+    planner = NAMOPlanner.__new__(NAMOPlanner)
+    planner._active_target = target
+    planner._plan_count = plan_count
+    planner._active_target_path = None
+    planner._verbose = False
+    planner._execution_mode = "mpc"
+    planner._observation_at_commit = None
+    planner._committed_chain = []
+    planner._committed_chain_origin = None
+    planner._subgoals = []
+    planner._current_idx = 0
+    planner._plan_generated = False
+    planner._pending_reuse_chain = None
+    planner._pending_reuse_origin = None
+    planner._copy_push_chain = list
+    planner._emit_sim_capture_for_plan = lambda **kw: None
+    return planner
+
+
+def _commit_one_push(planner, chain_length=1):
+    chain = [
+        SimpleNamespace(object_id=PUSHED, edge_idx=6 + i, push_steps=2)
+        for i in range(chain_length)
+    ]
+    planner._queue_mpc_chain(
+        obs=SimpleNamespace(), chain=chain, origin="region_target", attempt_index=0
+    )
+
+
+def test_committing_a_push_counts_it_against_the_held_boundary():
+    planner = _planner_with_target(_target(), plan_count=3)
+
+    _commit_one_push(planner)
+
+    assert planner._active_target.physical_pushes_attempted == 1
+    assert planner._active_target.last_iteration == 3
+
+
+def test_the_count_accumulates_across_pushes():
+    """A two-push boundary must read as two, which is what a cap would use."""
+    planner = _planner_with_target(_target(), plan_count=1)
+
+    _commit_one_push(planner)
+    planner._plan_count = 2
+    _commit_one_push(planner)
+
+    assert planner._active_target.physical_pushes_attempted == 2
+    assert planner._active_target.last_iteration == 2
+
+
+def test_a_multi_push_chain_still_counts_one_push():
+    """MPC queues only the first push of a chain, so only one is attempted."""
+    planner = _planner_with_target(_target(), plan_count=1)
+
+    _commit_one_push(planner, chain_length=3)
+
+    assert planner._active_target.physical_pushes_attempted == 1
+
+
+def test_committing_without_a_held_boundary_is_fine():
+    planner = _planner_with_target(None, plan_count=1)
+
+    _commit_one_push(planner)
+
+    assert planner._active_target is None
+
+
+def test_the_counters_survive_a_save_and_load(tmp_path):
+    planner = _planner_with_target(_target(), plan_count=4)
+    _commit_one_push(planner)
+
+    path = tmp_path / ACTIVE_TARGET_FILENAME
+    planner._active_target.save(path)
+
+    revived = RegionOpeningTarget.load(path)
+    assert revived.physical_pushes_attempted == 1
+    assert revived.last_iteration == 4

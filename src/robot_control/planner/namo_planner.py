@@ -394,6 +394,17 @@ class NAMOPlanner(Planner):
         self._pending_reuse_chain = None
         self._pending_reuse_origin = None
 
+        # Exactly one physical push leaves here per commit, whatever produced
+        # the chain, so this is where a held subproblem's counters advance.
+        # with_push_attempted had no caller at all, which left
+        # physical_pushes_attempted at 0 and last_iteration frozen at the
+        # iteration the target was created in, for the whole life of the
+        # subproblem. Both are read back from disk by the next process.
+        if self._active_target is not None:
+            self._store_active_target(
+                self._active_target.with_push_attempted(self._plan_count)
+            )
+
         if len(chain) > 1:
             print(
                 f"[NAMOPlanner] MPC mode: preserving {len(chain)} pushes from {origin}, "
