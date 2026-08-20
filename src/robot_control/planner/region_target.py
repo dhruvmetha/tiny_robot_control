@@ -390,27 +390,25 @@ UNUSABLE_BOUNDARY_REASONS = frozenset(
 )
 
 
-def _boundary_label_pair(target: "RegionOpeningTarget", resolved: str) -> Optional[Tuple[str, str]]:
+def _boundary_label_pair(plan: Any) -> Optional[Tuple[str, str]]:
     """The (source, target) labels to exclude from the next selection.
 
-    Labels are ordinal, so this is only sound while the scene is static. It is:
-    no push runs between the selections inside one advance call.
+    Both come from the solve that just ran, so both describe the same snapshot.
+    The earlier version took the source from ``target.source_region_path[0]``,
+    persisted before the last push, and paired it with the target label from the
+    current solve. Labels are ordinal and get reassigned rather than retired, so
+    that mix could name a live boundary that is not the one being excluded, and
+    nothing in the pair says which case you are in. The blocked list being local
+    to one advance call did not save it, because the staleness was inside the
+    pair rather than in how long the list lived.
 
-    A target carried over from an earlier process is a different matter, and an
-    earlier version of this comment got it wrong. It claimed the worst case was
-    excluding a boundary that no longer exists, which the BFS simply routes
-    around. Labels are reassigned rather than retired, so a stale pair can also
-    land on a real boundary that is not the one it was recorded against, and
-    exclude that instead. Nothing in the pair itself distinguishes the two
-    cases. namo_cpp reports the pairs it can prove name no edge, which
-    BoundaryChoice carries as ``stale_blocked_boundaries``; a pair that aliases
-    onto a live boundary looks valid from here and will not appear there.
+    Returns None when the solve could not resolve both ends. Emitting nothing
+    means the next selection may re-pick this boundary, which costs a wasted
+    call; guessing from persisted labels can silently exclude the wrong one.
     """
-    source = target.source_region_path[0] if target.source_region_path else None
-    other = resolved or (
-        target.source_region_path[1] if len(target.source_region_path) > 1 else None
-    )
-    return (source, other) if source and other else None
+    source = str(getattr(plan, "resolved_source", "") or "")
+    target = str(getattr(plan, "resolved_target", "") or "")
+    return (source, target) if source and target else None
 
 
 def advance_boundary(
@@ -489,7 +487,7 @@ def advance_boundary(
         if plan.boundary_exhausted or plan.failure_reason in UNUSABLE_BOUNDARY_REASONS:
             # Selection is deterministic, so simply dropping this boundary would
             # pick the same one straight back. Exclude it, then look again.
-            pair = _boundary_label_pair(target, plan.resolved_target)
+            pair = _boundary_label_pair(plan)
             if pair is not None:
                 blocked.append(pair)
             _release(STATUS_EXHAUSTED)

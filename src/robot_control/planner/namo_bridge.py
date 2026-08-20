@@ -138,6 +138,12 @@ class BoundaryPlan:
     # Every push against this boundary failed; the caller should stop trying it.
     boundary_exhausted: bool = False
     failure_reason: str = ""
+    # Both ends of the boundary as namo_cpp labelled them in THIS call. A caller
+    # excluding this boundary from its next selection needs two labels from one
+    # snapshot; mixing one of these with a label persisted before the last push
+    # can name a live boundary that is not this one, because labels get
+    # reassigned rather than retired.
+    resolved_source: str = ""
     resolved_target: str = ""
 
 
@@ -1118,6 +1124,7 @@ class NAMOPlanBridge:
                 already_open=bool(result.already_open),
                 boundary_exhausted=bool(result.boundary_exhausted),
                 failure_reason=result.failure_reason,
+                resolved_source=str(getattr(result, "resolved_source", "") or ""),
                 resolved_target=result.resolved_target,
             )
 

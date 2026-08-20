@@ -41,8 +41,12 @@ def _choice(**over):
 
 
 def _plan(**over):
+    # resolved_source is not optional in the fake: the exclusion pair is built
+    # from both ends of the solve that just ran, and a fake that omits one is
+    # not modelling what the bridge returns.
     base = dict(subgoals=["push"], success=True, already_open=False,
-                boundary_exhausted=False, failure_reason="", resolved_target="goal")
+                boundary_exhausted=False, failure_reason="",
+                resolved_source="robot", resolved_target="goal")
     base.update(over)
     return SimpleNamespace(**base)
 
@@ -72,15 +76,18 @@ def _advance(bridge, target=None):
     )
 
 
-def _target():
-    # source_region_path is what names the boundary when it has to be excluded
-    # from a later selection, so a realistic target carries one.
-    return RegionOpeningTarget(
+def _target(**over):
+    # source_region_path is diagnostics only. It used to supply half the
+    # exclusion pair, which is how a label persisted before a push could end up
+    # naming a boundary in the current snapshot.
+    kwargs = dict(
         target_samples_m=tuple(POINTS),
         blocker_real_ids=("obj_4",),
         open_fraction=FRACTION,
         source_region_path=("robot", "goal"),
     )
+    kwargs.update(over)
+    return RegionOpeningTarget(**kwargs)
 
 
 def test_with_no_target_it_selects_one_and_plans():
@@ -399,3 +406,80 @@ def test_no_stale_pairs_is_an_empty_report_not_a_missing_one():
     )
 
     assert _choice_from(selection).stale_blocked_boundaries == []
+
+
+# --- which labels the exclusion pair is built from ---------------------------
+#
+# The pair used to take its source from target.source_region_path[0], persisted
+# before the last push, and its target from the current solve. Labels are
+# ordinal and get reassigned rather than retired, so that mix could exclude a
+# live boundary that was not the one being dropped. The blocked list being local
+# to one advance call did not help: the staleness was inside the pair.
+
+def test_the_exclusion_uses_the_labels_from_the_solve_that_just_ran():
+    """The regression. The held target's stored source label must not appear."""
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[
+            _plan(success=False, boundary_exhausted=True,
+                  resolved_source="region_7", resolved_target="region_3"),
+            _plan(),
+        ],
+    )
+    held = _target(source_region_path=("region_1", "region_3"))
+
+    _advance(bridge, target=held)
+
+    blocked = bridge.select_blocked_args[-1]
+    assert list(blocked) == [("region_7", "region_3")]
+
+
+def test_a_reassigned_old_label_is_never_excluded():
+    """region_1 now names something unrelated, so it must stay selectable."""
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[
+            _plan(success=False, boundary_exhausted=True,
+                  resolved_source="region_7", resolved_target="region_3"),
+            _plan(),
+        ],
+    )
+
+    _advance(bridge, target=_target(source_region_path=("region_1", "region_3")))
+
+    excluded = {label for pair in bridge.select_blocked_args[-1] for label in pair}
+    assert "region_1" not in excluded
+
+
+@pytest.mark.parametrize("missing", [{"resolved_source": ""}, {"resolved_target": ""}])
+def test_half_a_pair_excludes_nothing(missing):
+    """Better to re-pick this boundary and waste a call than exclude the wrong one."""
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[
+            _plan(success=False, boundary_exhausted=True, **missing),
+            _plan(),
+        ],
+    )
+
+    _advance(bridge, target=_target(source_region_path=("region_1", "region_3")))
+
+    assert not bridge.select_blocked_args[-1]
+
+
+def test_dropping_the_boundary_still_happens_without_a_pair():
+    """No pair to exclude does not mean keep working an unusable boundary."""
+    bridge = _Bridge(
+        choices=[_choice(blocker_real_ids=["obj_9"])],
+        plans=[
+            _plan(success=False, boundary_exhausted=True, resolved_source=""),
+            _plan(),
+        ],
+    )
+    held = _target()
+
+    _plan_, target, status, released = _advance(bridge, target=held)
+
+    assert released == STATUS_EXHAUSTED
+    assert target is not held
+    assert status == ADVANCE_PLANNED
