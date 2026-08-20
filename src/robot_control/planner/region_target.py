@@ -112,6 +112,23 @@ class RegionOpeningTarget:
             return self
         return replace(self, failed_pushes=self.failed_pushes + (entry,))
 
+    def forgetting_moved(self, moved_object_ids: Sequence[str]) -> "RegionOpeningTarget":
+        """Drop failures recorded against objects that have since moved.
+
+        An edge index names a contact point in the object's own body frame, so
+        once the object moves, an exclusion recorded before the move points
+        somewhere else in the world. NAMOPlanner prunes its in-memory blacklist
+        exactly this way after a successful push. Without the same prune here,
+        the persisted copy outlives the planner instance and the next process
+        sends stale exclusions back to namo_cpp, which can hide the very finish
+        push the setup push just made available.
+        """
+        moved = {str(o) for o in moved_object_ids}
+        kept = tuple(e for e in self.failed_pushes if e[0] not in moved)
+        if len(kept) == len(self.failed_pushes):
+            return self
+        return replace(self, failed_pushes=kept)
+
     def with_push_attempted(self, iteration: int) -> "RegionOpeningTarget":
         return replace(
             self,

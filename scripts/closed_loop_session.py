@@ -232,6 +232,54 @@ def _load_active_region_target(run_dir: Path):
         return None
 
 
+def _dispatched_push(real_push_dir: Path) -> Optional[tuple[str, int]]:
+    """The (object, edge) the robot was told to push, in real naming.
+
+    subgoals.jsonl records what the executor dispatched, which is the pair a
+    physical failure has to be recorded against.
+    """
+    path = real_push_dir / "subgoals.jsonl"
+    if not path.is_file():
+        return None
+    for line in reversed(path.read_text(encoding="utf-8").splitlines()):
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if rec.get("type") != "push":
+            continue
+        object_id, edge_idx = rec.get("object_id"), rec.get("edge_idx")
+        if object_id is None or edge_idx is None:
+            return None
+        return str(object_id), int(edge_idx)
+    return None
+
+
+def _record_failed_push_on_target(run_dir: Path, real_push_dir: Path) -> Optional[tuple[str, int]]:
+    """Exclude a push that failed physically from the held boundary's next plan.
+
+    A replan in the same iteration re-solves the same target with the same
+    run-level shuffle seed, so a deterministic strategy proposes the identical
+    approach again and fails the identical way. Only the target survives between
+    those two processes, so the failure has to land there.
+
+    Returns the pair recorded, or None when there is nothing to record against.
+    """
+    target = _load_active_region_target(run_dir)
+    if target is None:
+        return None
+    pair = _dispatched_push(real_push_dir)
+    if pair is None:
+        return None
+    updated = target.with_failed_push(*pair)
+    if updated is target:
+        return pair
+    updated.save(run_dir / ACTIVE_TARGET_FILENAME)
+    return pair
+
+
 def _hold_region_target_enabled(run_dir: Path) -> bool:
     """Whether this run keeps working on one boundary across pushes.
 
@@ -2065,6 +2113,17 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
     )
     real_failure_mode = _real_push_failure_mode(real_push_dir)
     replan_same_iteration = (not goal_reached) and (real_failure_mode == "approach_unreachable")
+    excluded_push = None
+    if replan_same_iteration:
+        # The replan below reuses this run's shuffle seed and resumes the same
+        # target, so without recording the failure the next plan can propose the
+        # approach that just proved physically unreachable.
+        excluded_push = _record_failed_push_on_target(run_dir, real_push_dir)
+        if excluded_push is not None:
+            print(
+                f"[closed_loop] excluded ({excluded_push[0]}, edge={excluded_push[1]}) "
+                f"from the held boundary: approach unreachable"
+            )
     _update_status(
         iter_dir,
         {
@@ -2076,6 +2135,7 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
             "goal_success_criterion": goal_success_criterion,
             "real_failure_mode": real_failure_mode,
             "replan_same_iteration": replan_same_iteration,
+            "excluded_push": list(excluded_push) if excluded_push else None,
             "final_distance_to_goal_cm": dist,
         },
     )
@@ -2106,6 +2166,7 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
         "goal_success_criterion": goal_success_criterion,
         "real_failure_mode": real_failure_mode,
         "replan_same_iteration": replan_same_iteration,
+        "excluded_push": list(excluded_push) if excluded_push else None,
         "final_distance_to_goal_cm": dist,
         "next_iteration_dir": created_next_iter,
         "scene_after_robot_pose_cm": synthetic_rec["robot_pose_cm"],

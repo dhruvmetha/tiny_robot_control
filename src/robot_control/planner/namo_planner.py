@@ -769,6 +769,12 @@ class NAMOPlanner(Planner):
         if pushed_object_id is not None:
             moved.add(pushed_object_id)
         if moved:
+            # The persisted target carries its own copy of these entries and is
+            # what the next process reads, so it has to forget them too.
+            if self._active_target is not None:
+                pruned = self._active_target.forgetting_moved(sorted(moved))
+                if pruned is not self._active_target:
+                    self._store_active_target(pruned)
             stale = {entry for entry in self._failed_pushes if entry[0] in moved}
             if stale:
                 self._failed_pushes -= stale
