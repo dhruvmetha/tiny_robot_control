@@ -1,7 +1,8 @@
 """What the retreat reports when it ends.
 
-The retreat sets PushState.FINISHED on two paths, reaching its target and
-running out of steps. Both look identical from outside the controller, so a
+The retreat sets PushState.FINISHED on four paths: reaching its target, running
+out of steps, the blind reverse fallback finishing, and the forward navigator
+reporting done. Both look identical from outside the controller, so a
 push that left the robot sitting against the object it just moved is
 indistinguishable from a clean one. Six of ten real closed-loop pushes under
 closed_loop_sessions/ took the timeout path, every one burning the full
@@ -134,3 +135,75 @@ def test_a_retreat_with_budget_left_keeps_driving(steps_remaining, capsys):
     assert controller._state is PushState.RETREATING
     assert (action.left_speed, action.right_speed) != (0.0, 0.0)
     assert "Retreat" not in capsys.readouterr().out
+
+
+# --- the two exits that used to end silently ---------------------------------
+#
+# The blind fallback runs when the wavefront search finds no free cell to aim
+# at, and the forward branch runs when the retreat target is ahead of the robot.
+# Neither fired in the ten real runs under closed_loop_sessions/, all of which
+# were BACKWARD with a target found, which is why they were easy to miss.
+
+def test_the_blind_fallback_reports_when_it_runs_out_of_steps(capsys):
+    """It has no target to measure against, so displacement is all there is."""
+    controller = _retreating_controller(RETREAT_STEPS)
+    controller._retreat_target = None
+
+    controller._blind_retreat(_obs(RETREAT_START[0], RETREAT_START[1] + 0.4))
+
+    line = capsys.readouterr().out
+    assert "Retreat blind reverse ended" in line
+    assert "moved 0.4 cm" in line
+    assert "no retreat target" in line
+    assert "commanded speed 0.15" in line
+
+
+def test_the_blind_fallback_still_finishes_the_push(capsys):
+    controller = _retreating_controller(RETREAT_STEPS)
+    controller._retreat_target = None
+
+    action = controller._blind_retreat(_obs(*RETREAT_START))
+
+    assert controller._state is PushState.FINISHED
+    assert (action.left_speed, action.right_speed) == (0.0, 0.0)
+
+
+def test_the_blind_fallback_with_budget_left_says_nothing(capsys):
+    controller = _retreating_controller(RETREAT_STEPS - 1)
+    controller._retreat_target = None
+
+    action = controller._blind_retreat(_obs(*RETREAT_START))
+
+    assert controller._state is PushState.RETREATING
+    assert action.left_speed < 0
+    assert "Retreat" not in capsys.readouterr().out
+
+
+def test_the_forward_navigator_reports_when_it_finishes(capsys):
+    """A forward retreat hands driving to the navigator, which owns the ending."""
+    controller = _retreating_controller(0)
+    controller._retreat_is_backward = False
+    controller._nav_controller = SimpleNamespace(
+        is_done=lambda obs, subgoal: True,
+        cancel=lambda: None,
+        step=lambda obs, subgoal: None,
+    )
+
+    controller._handle_retreating(_obs(TARGET[0], TARGET[1] - 3.0))
+
+    line = capsys.readouterr().out
+    assert "Retreat navigation reported done" in line
+    assert "moved 2.0 cm" in line
+    assert "stopped 3.0 cm from target" in line
+    assert controller._state is PushState.FINISHED
+
+
+def test_a_retreat_that_never_recorded_a_start_reports_zero(capsys):
+    """Displacement is unknown after a restart mid-retreat, not a crash."""
+    controller = _retreating_controller(RETREAT_STEPS)
+    controller._retreat_target = None
+    controller._retreat_start_pose = None
+
+    controller._blind_retreat(_obs(*RETREAT_START))
+
+    assert "moved 0.0 cm" in capsys.readouterr().out

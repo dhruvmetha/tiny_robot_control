@@ -700,6 +700,7 @@ class PushController(Controller):
     def _blind_retreat(self, obs: Observation) -> Action:
         """Fallback: blind reverse for fixed number of steps."""
         if self._retreat_step_count >= self._push_config.retreat_steps:
+            self._report_retreat_outcome(obs, self.RETREAT_BLIND_DONE)
             self._state = PushState.FINISHED
             return Action.stop()
 
@@ -707,15 +708,26 @@ class PushController(Controller):
         retreat_speed = -self._push_config.retreat_speed
         return Action(left_speed=retreat_speed, right_speed=retreat_speed)
 
-    def _report_retreat_outcome(self, obs: Observation, dist: float, arrived: bool) -> None:
-        """Say how far the robot actually travelled, not only whether it arrived.
+    # Every way the retreat can end. All four set PushState.FINISHED, which is
+    # why the outcome has to be said out loud: downstream sees one state.
+    RETREAT_ARRIVED = "reached target"
+    RETREAT_TIMEOUT = "TIMEOUT"
+    RETREAT_BLIND_DONE = "blind reverse ended"
+    RETREAT_NAV_DONE = "navigation reported done"
 
-        Both exits from the retreat set PushState.FINISHED, so downstream code
-        cannot tell them apart. The number that matters is displacement: across
-        the real runs under closed_loop_sessions/, arriving retreats moved 3.0 cm
-        while timing-out ones moved 0.2-0.5 cm despite commanding a clean reverse
-        on all 199 ticks. That gap is the signal to watch on hardware, and the
-        old log reported neither figure.
+    def _report_retreat_outcome(self, obs: Observation, outcome: str) -> None:
+        """Say how far the robot actually travelled, not only that it stopped.
+
+        Displacement is the number that separates a clean retreat from one that
+        left the robot against the object it just pushed. Across the real runs
+        under closed_loop_sessions/, arriving retreats moved 3.0 cm while
+        timing-out ones moved 0.2-0.5 cm despite commanding a clean reverse on
+        all 199 ticks.
+
+        The blind fallback has no target, because it runs precisely when the
+        wavefront search found no free cell to aim at. It still reports, since
+        that path ending silently is how a push with nowhere to retreat to looks
+        exactly like a good one.
         """
         moved = 0.0
         if self._retreat_start_pose is not None:
@@ -723,14 +735,30 @@ class PushController(Controller):
                 obs.robot_x - self._retreat_start_pose[0],
                 obs.robot_y - self._retreat_start_pose[1],
             )
-        outcome = "reached target" if arrived else "TIMEOUT"
+        if self._retreat_target is None:
+            where = (
+                f"no retreat target (commanded speed "
+                f"{self._push_config.retreat_speed:.2f})"
+            )
+            target = ""
+        else:
+            dist = math.hypot(
+                obs.robot_x - self._retreat_target[0],
+                obs.robot_y - self._retreat_target[1],
+            )
+            where = (
+                f"stopped {dist:.1f} cm from target "
+                f"(tolerance {self._push_config.retreat_tolerance:.1f} cm, "
+                f"commanded speed {self._push_config.retreat_speed:.2f})"
+            )
+            target = (
+                f", target ({self._retreat_target[0]:.1f}, "
+                f"{self._retreat_target[1]:.1f})"
+            )
         print(
             f"[PUSH] Retreat {outcome} after {self._retreat_step_count} steps: "
-            f"moved {moved:.1f} cm, stopped {dist:.1f} cm from target "
-            f"(tolerance {self._push_config.retreat_tolerance:.1f} cm, "
-            f"commanded speed {self._push_config.retreat_speed:.2f}), "
-            f"robot at ({obs.robot_x:.1f}, {obs.robot_y:.1f}), "
-            f"target ({self._retreat_target[0]:.1f}, {self._retreat_target[1]:.1f})"
+            f"moved {moved:.1f} cm, {where}, "
+            f"robot at ({obs.robot_x:.1f}, {obs.robot_y:.1f}){target}"
         )
 
     def _handle_retreating(self, obs: Observation) -> Action:
@@ -744,6 +772,11 @@ class PushController(Controller):
         """
         # On first call, find retreat target
         if self._retreat_target is None:
+            # Recorded before the search, so the blind fallback below can still
+            # report displacement. It has no target to measure against, which is
+            # exactly when knowing whether the robot moved matters most.
+            if self._retreat_start_pose is None:
+                self._retreat_start_pose = (obs.robot_x, obs.robot_y)
             target, is_backward = self._find_retreat_target(obs)
             if target is None:
                 # No free cell found - fall back to blind reverse
@@ -752,7 +785,6 @@ class PushController(Controller):
 
             self._retreat_target = target
             self._retreat_is_backward = is_backward
-            self._retreat_start_pose = (obs.robot_x, obs.robot_y)
             direction = "BACKWARD" if is_backward else "FORWARD"
             print(f"[PUSH] Retreat target: ({target[0]:.1f}, {target[1]:.1f}) [{direction}]")
 
@@ -778,7 +810,7 @@ class PushController(Controller):
             obs.robot_y - self._retreat_target[1],
         )
         if dist < self._push_config.retreat_tolerance:
-            self._report_retreat_outcome(obs, dist, arrived=True)
+            self._report_retreat_outcome(obs, self.RETREAT_ARRIVED)
             self._state = PushState.FINISHED
             if self._nav_controller is not None:
                 self._nav_controller.cancel()
@@ -787,7 +819,7 @@ class PushController(Controller):
         # Safety: don't retreat forever (max 2x fallback steps)
         self._retreat_step_count += 1
         if self._retreat_step_count >= self._push_config.retreat_steps * 2:
-            self._report_retreat_outcome(obs, dist, arrived=False)
+            self._report_retreat_outcome(obs, self.RETREAT_TIMEOUT)
             self._state = PushState.FINISHED
             if self._nav_controller is not None:
                 self._nav_controller.cancel()
@@ -800,6 +832,7 @@ class PushController(Controller):
             # Forward target - use navigation controller
             if self._nav_controller is not None:
                 if self._nav_controller.is_done(obs, None):
+                    self._report_retreat_outcome(obs, self.RETREAT_NAV_DONE)
                     self._state = PushState.FINISHED
                     return Action.stop()
                 return self._nav_controller.step(obs, None)
