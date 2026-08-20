@@ -341,3 +341,61 @@ def test_exhausting_the_second_boundary_does_not_mislabel_the_first():
     )
 
     assert result[3] == STATUS_OPENED
+
+
+# --- what namo_cpp says about a stale blocklist ------------------------------
+#
+# select_boundary_from_xml reports the blocked pairs that name no edge in the
+# scene it just looked at. The bridge dropped that report on the floor, so a
+# caller carrying a blocklist across a push could route around nothing and
+# never hear about it.
+
+def _choice_from(selection):
+    """Run the bridge's translation with only the mapping it reads."""
+    from robot_control.planner.namo_bridge import NAMOPlanBridge
+
+    bridge = NAMOPlanBridge.__new__(NAMOPlanBridge)
+    bridge._object_mapping = SimpleNamespace(get_real_name=lambda sim_id: "obj_1")
+    # __del__ cleans up a generated config file; give it the "nothing to do"
+    # value so garbage collection stays quiet.
+    bridge._generated_config_path = None
+    return bridge._choice_from_selection(selection)
+
+
+def test_the_choice_carries_the_stale_blocklist_report():
+    selection = SimpleNamespace(
+        goal_already_reachable=False, found=True,
+        target_points=list(POINTS), blocking_objects=["obstacle_1_movable"],
+        region_path=["robot", "goal"], failure_reason="",
+        stale_blocked_boundaries=[("robot", "region_9")],
+    )
+
+    choice = _choice_from(selection)
+
+    assert choice.stale_blocked_boundaries == [("robot", "region_9")]
+
+
+def test_a_failed_selection_still_carries_the_report():
+    """Knowing the blocklist went stale is most useful when nothing was found."""
+    selection = SimpleNamespace(
+        goal_already_reachable=False, found=False,
+        target_points=[], blocking_objects=[], region_path=[],
+        failure_reason="region_path_exhausted",
+        stale_blocked_boundaries=[("robot", "region_9")],
+    )
+
+    choice = _choice_from(selection)
+
+    assert choice.failure_reason == "region_path_exhausted"
+    assert choice.stale_blocked_boundaries == [("robot", "region_9")]
+
+
+def test_no_stale_pairs_is_an_empty_report_not_a_missing_one():
+    selection = SimpleNamespace(
+        goal_already_reachable=False, found=True,
+        target_points=list(POINTS), blocking_objects=["obstacle_1_movable"],
+        region_path=["robot", "goal"], failure_reason="",
+        stale_blocked_boundaries=[],
+    )
+
+    assert _choice_from(selection).stale_blocked_boundaries == []

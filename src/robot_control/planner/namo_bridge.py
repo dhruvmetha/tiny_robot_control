@@ -119,6 +119,11 @@ class BoundaryChoice:
     blocker_real_ids: List[str] = field(default_factory=list)
     region_path: List[str] = field(default_factory=list)
     goal_already_reachable: bool = False
+    # Blocked pairs namo_cpp says name no edge in the scene it just looked at.
+    # A caller carrying a blocklist across a push learns here that some of it
+    # stopped meaning anything, instead of routing around nothing and calling
+    # that success.
+    stale_blocked_boundaries: List[Tuple[str, str]] = field(default_factory=list)
     failure_reason: str = ""
 
 
@@ -995,21 +1000,41 @@ class NAMOPlanBridge:
                 starting_robot_pose=starting_robot_pose,
                 **kwargs,
             )
-            if selection.goal_already_reachable:
-                return BoundaryChoice(goal_already_reachable=True)
-            if not selection.found:
-                return BoundaryChoice(failure_reason=selection.failure_reason)
+            return self._choice_from_selection(selection)
 
+    def _choice_from_selection(self, selection: Any) -> BoundaryChoice:
+        """Translate namo_cpp's BoundarySelection into real-object naming.
+
+        Every branch carries stale_blocked_boundaries. It is most useful on the
+        paths that found nothing, because "no route" and "no route once I
+        excluded pairs that no longer exist" are different problems and used to
+        look identical from here.
+        """
+        stale = [
+            (str(a), str(b))
+            for a, b in getattr(selection, "stale_blocked_boundaries", ())
+        ]
+        if selection.goal_already_reachable:
             return BoundaryChoice(
-                found=True,
-                target_points_m=[tuple(p) for p in selection.target_points],
-                blocker_real_ids=[
-                    self._object_mapping.get_real_name(sim_id)
-                    for sim_id in selection.blocking_objects
-                ],
-                region_path=list(selection.region_path),
-                failure_reason="",
+                goal_already_reachable=True, stale_blocked_boundaries=stale
             )
+        if not selection.found:
+            return BoundaryChoice(
+                failure_reason=selection.failure_reason,
+                stale_blocked_boundaries=stale,
+            )
+
+        return BoundaryChoice(
+            found=True,
+            target_points_m=[tuple(p) for p in selection.target_points],
+            blocker_real_ids=[
+                self._object_mapping.get_real_name(sim_id)
+                for sim_id in selection.blocking_objects
+            ],
+            region_path=list(selection.region_path),
+            stale_blocked_boundaries=stale,
+            failure_reason="",
+        )
 
     def solve_boundary(
         self,

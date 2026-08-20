@@ -327,10 +327,17 @@ def _boundary_label_pair(target: "RegionOpeningTarget", resolved: str) -> Option
     """The (source, target) labels to exclude from the next selection.
 
     Labels are ordinal, so this is only sound while the scene is static. It is:
-    no push runs between the selections inside one advance call. A target
-    carried over from an earlier process may name stale labels, in which case
-    the worst case is excluding a boundary that no longer exists, and the BFS
-    simply routes as if it were absent.
+    no push runs between the selections inside one advance call.
+
+    A target carried over from an earlier process is a different matter, and an
+    earlier version of this comment got it wrong. It claimed the worst case was
+    excluding a boundary that no longer exists, which the BFS simply routes
+    around. Labels are reassigned rather than retired, so a stale pair can also
+    land on a real boundary that is not the one it was recorded against, and
+    exclude that instead. Nothing in the pair itself distinguishes the two
+    cases. namo_cpp reports the pairs it can prove name no edge, which
+    BoundaryChoice carries as ``stale_blocked_boundaries``; a pair that aliases
+    onto a live boundary looks valid from here and will not appear there.
     """
     source = target.source_region_path[0] if target.source_region_path else None
     other = resolved or (
