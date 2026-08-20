@@ -231,6 +231,44 @@ class RegionOpeningTarget:
         return target if target.is_active else None
 
 
+# "The same object, unmoved" against real camera measurements. Mirrors the
+# scene/XML matcher's thresholds, which is the repo's existing statement of the
+# same idea. Tighter and marker jitter clears the blacklist; looser and a real
+# shove goes unnoticed.
+OBJECT_MOVED_TOLERANCE_CM = 0.5
+OBJECT_ROTATED_TOLERANCE_DEG = 5.0
+
+
+def objects_that_moved(
+    before: Optional[Dict[str, Sequence[float]]],
+    after: Optional[Dict[str, Sequence[float]]],
+) -> set:
+    """Names whose pose changed enough to invalidate a body-frame edge index.
+
+    Takes ``{name: (x_cm, y_cm, theta_deg)}`` from either side, because the
+    in-process planner reads Observation objects while the session subprocess
+    reads mid_obs.jsonl records. One rule, two thin adapters: the two paths
+    disagreeing about what "moved" means is how a stale exclusion survives on
+    one of them.
+
+    A push shoves its neighbours, not only its target, and their exclusions are
+    just as meaningless afterwards.
+    """
+    moved = set()
+    for name, pose in (after or {}).items():
+        prior = (before or {}).get(name)
+        if prior is None:
+            continue
+        shifted = (
+            abs(pose[0] - prior[0]) > OBJECT_MOVED_TOLERANCE_CM
+            or abs(pose[1] - prior[1]) > OBJECT_MOVED_TOLERANCE_CM
+        )
+        turned = abs(pose[2] - prior[2]) > OBJECT_ROTATED_TOLERANCE_DEG
+        if shifted or turned:
+            moved.add(str(name))
+    return moved
+
+
 def fingerprint_samples(samples: Sequence[Sequence[float]]) -> str:
     """A stable name for a target, derived from the points that define it.
 

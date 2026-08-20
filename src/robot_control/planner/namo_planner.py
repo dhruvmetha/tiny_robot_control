@@ -25,13 +25,10 @@ CANONICAL_OPEN_FRACTION = 0.2
 
 # What counts as an object having moved, for deciding whether its blacklisted
 # edges are still meaningful. Matches the tolerances closed_loop_session uses to
-# match objects between a scene and its XML (0.5 cm, 5 degrees), which is the
-# repo's existing statement of "the same object, unmoved" against real camera
-# measurements. Anything tighter would clear the blacklist on marker jitter.
-OBJECT_MOVED_TOLERANCE_CM = 0.5
-OBJECT_ROTATED_TOLERANCE_DEG = 5.0
-
+# match objects between a scene and its XML, which is the repo's existing
+# statement of "the same object, unmoved" against real camera measurements.
 from robot_control.planner.region_target import (
+    objects_that_moved,
     ADVANCE_EXHAUSTED,
     ADVANCE_PLANNED,
     MAX_BOUNDARY_ADVANCES,
@@ -1028,28 +1025,20 @@ class NAMOPlanner(Planner):
     def _objects_that_moved(
         before: Optional[Observation], after: Observation
     ) -> Set[str]:
-        """Objects whose pose changed enough to invalidate a body-frame edge.
+        """Adapter onto the shared rule, from this path's Observation objects.
 
-        A push shoves its neighbours, not only its target. Their blacklisted
-        edges are just as meaningless afterwards, since edge_idx is measured in
-        the object's own frame. Without a before-observation this returns
-        nothing and the caller falls back to dropping only the pushed object.
+        Without a before-observation this returns nothing and the caller falls
+        back to dropping only the pushed object.
         """
         if before is None:
             return set()
-        moved: Set[str] = set()
-        for name, after_pose in (after.objects or {}).items():
-            before_pose = (before.objects or {}).get(name)
-            if before_pose is None:
-                continue
-            shifted = (
-                abs(after_pose.x - before_pose.x) > OBJECT_MOVED_TOLERANCE_CM
-                or abs(after_pose.y - before_pose.y) > OBJECT_MOVED_TOLERANCE_CM
-            )
-            turned = abs(after_pose.theta - before_pose.theta) > OBJECT_ROTATED_TOLERANCE_DEG
-            if shifted or turned:
-                moved.add(name)
-        return moved
+
+        def poses(obs: Observation) -> Dict[str, Tuple[float, float, float]]:
+            return {
+                name: (p.x, p.y, p.theta) for name, p in (obs.objects or {}).items()
+            }
+
+        return objects_that_moved(poses(before), poses(after))
 
     def _search_planner_kwargs(self, shuffle_seed: Optional[int]) -> Dict[str, Any]:
         """Every planner option both the whole-problem and held paths must send.

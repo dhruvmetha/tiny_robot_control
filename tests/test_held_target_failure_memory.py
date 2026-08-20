@@ -271,3 +271,113 @@ def test_the_counters_survive_a_save_and_load(tmp_path):
     revived = RegionOpeningTarget.load(path)
     assert revived.physical_pushes_attempted == 1
     assert revived.last_iteration == 4
+
+
+# --- the same bookkeeping on the path that drives the robot -------------------
+#
+# NAMOPlanner does all of this in-process, and the session workflow never
+# constructs it: closed_loop_session spawns run_namo per replan. So both halves
+# were missing on the only path that touches real hardware.
+
+def _scene(dir_path, poses):
+    dir_path.mkdir(parents=True, exist_ok=True)
+    rec = {
+        "robot_pose_cm": [0.0, 0.0, 0.0],
+        "objects": {
+            name: {"x_cm": x, "y_cm": y, "theta_deg": t} for name, (x, y, t) in poses.items()
+        },
+    }
+    (dir_path / "mid_obs.jsonl").write_text(json.dumps(rec) + "\n", encoding="utf-8")
+    return dir_path
+
+
+def _settle(tmp_path, target, before, after, iteration=2):
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    target.save(run_dir / ACTIVE_TARGET_FILENAME)
+    result = closed_loop._settle_target_after_push(
+        run_dir,
+        iteration,
+        _scene(tmp_path / "before", before),
+        _scene(tmp_path / "after", after),
+    )
+    return RegionOpeningTarget.load(run_dir / ACTIVE_TARGET_FILENAME), result
+
+
+STILL = {PUSHED: (10.0, 20.0, 0.0), UNTOUCHED: (30.0, 40.0, 0.0)}
+
+
+def test_a_moved_object_loses_its_exclusions_on_the_real_path(tmp_path):
+    """The regression: only the in-process planner used to do this."""
+    after = dict(STILL, **{PUSHED: (10.0, 26.0, 0.0)})
+
+    revived, result = _settle(
+        tmp_path, _target(failed_pushes=((PUSHED, 17), (UNTOUCHED, 5))), STILL, after
+    )
+
+    assert revived.failed_pushes == ((UNTOUCHED, 5),)
+    assert result["moved_objects"] == [PUSHED]
+    assert result["forgotten_pushes"] == [[PUSHED, 17]]
+
+
+def test_a_shoved_neighbour_loses_its_exclusions_too(tmp_path):
+    """A push moves more than its target, and their edges are just as stale."""
+    after = {PUSHED: (10.0, 26.0, 0.0), UNTOUCHED: (30.0, 47.0, 0.0)}
+
+    revived, _ = _settle(
+        tmp_path, _target(failed_pushes=((PUSHED, 17), (UNTOUCHED, 5))), STILL, after
+    )
+
+    assert revived.failed_pushes == ()
+
+
+def test_marker_jitter_does_not_clear_the_exclusions(tmp_path):
+    """Below the tolerance nothing moved, and forgetting here loses real memory."""
+    after = {PUSHED: (10.2, 20.2, 2.0), UNTOUCHED: (30.0, 40.0, 0.0)}
+
+    revived, result = _settle(
+        tmp_path, _target(failed_pushes=((PUSHED, 17),)), STILL, after
+    )
+
+    assert revived.failed_pushes == ((PUSHED, 17),)
+    assert result["moved_objects"] == []
+
+
+def test_the_real_path_counts_the_push(tmp_path):
+    revived, _ = _settle(tmp_path, _target(), STILL, STILL, iteration=4)
+
+    assert revived.physical_pushes_attempted == 1
+    assert revived.last_iteration == 4
+
+
+def test_the_count_advances_even_when_nothing_moved(tmp_path):
+    """A push that shifted nothing still cost an attempt."""
+    revived, _ = _settle(tmp_path, _target(), STILL, STILL)
+
+    assert revived.physical_pushes_attempted == 1
+
+
+def test_settling_without_a_held_boundary_is_fine(tmp_path):
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+
+    result = closed_loop._settle_target_after_push(
+        run_dir, 1, _scene(tmp_path / "b", STILL), _scene(tmp_path / "a", STILL)
+    )
+
+    assert result == {"moved_objects": None, "forgotten_pushes": None}
+
+
+def test_a_missing_scene_capture_forgets_nothing(tmp_path):
+    """No comparison possible, so keep the memory rather than guessing."""
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    _target(failed_pushes=((PUSHED, 17),)).save(run_dir / ACTIVE_TARGET_FILENAME)
+
+    closed_loop._settle_target_after_push(
+        run_dir, 1, tmp_path / "absent", _scene(tmp_path / "a", STILL)
+    )
+
+    revived = RegionOpeningTarget.load(run_dir / ACTIVE_TARGET_FILENAME)
+    assert revived.failed_pushes == ((PUSHED, 17),)
+    assert revived.physical_pushes_attempted == 1

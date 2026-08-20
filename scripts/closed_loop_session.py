@@ -257,6 +257,75 @@ def _dispatched_push(real_push_dir: Path) -> Optional[tuple[str, int]]:
     return None
 
 
+def _scene_object_poses(scene_dir: Path) -> Optional[dict]:
+    """{name: (x_cm, y_cm, theta_deg)} from a captured scene's first frame."""
+    path = scene_dir / "mid_obs.jsonl"
+    if not path.is_file():
+        return None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        objects = rec.get("objects")
+        if not objects:
+            continue
+        return {
+            str(name): (
+                float(o.get("x_cm", 0.0)),
+                float(o.get("y_cm", 0.0)),
+                float(o.get("theta_deg", 0.0)),
+            )
+            for name, o in objects.items()
+        }
+    return None
+
+
+def _settle_target_after_push(
+    run_dir: Path,
+    iteration: int,
+    scene_before_dir: Path,
+    scene_after_dir: Path,
+) -> dict:
+    """Advance the held boundary's bookkeeping for a push that physically ran.
+
+    The in-process planner does this in NAMOPlanner, which the session workflow
+    never constructs: it spawns run_namo per replan, so both halves were missing
+    on the path that actually drives the robot.
+
+    Two things happen. Exclusions recorded against an object that has since moved
+    are dropped, because an edge index names a contact point in that object's own
+    frame and stops meaning the same place once it shifts. Keeping them can hide
+    the finish push the setup push just made available. And the attempt counters
+    advance, so physical_pushes_attempted stops reading zero on real runs.
+    """
+    from robot_control.planner.region_target import objects_that_moved
+
+    target = _load_active_region_target(run_dir)
+    if target is None:
+        return {"moved_objects": None, "forgotten_pushes": None}
+
+    moved = sorted(
+        objects_that_moved(
+            _scene_object_poses(scene_before_dir), _scene_object_poses(scene_after_dir)
+        )
+    )
+    updated = target.forgetting_moved(moved).with_push_attempted(iteration)
+    forgotten = sorted(set(target.failed_pushes) - set(updated.failed_pushes))
+    updated.save(run_dir / ACTIVE_TARGET_FILENAME)
+    if forgotten:
+        print(
+            f"[closed_loop] dropped {len(forgotten)} exclusion(s) for {moved} "
+            f"(their body frames moved)"
+        )
+    return {
+        "moved_objects": moved,
+        "forgotten_pushes": [list(e) for e in forgotten] or None,
+    }
+
+
 def _record_failed_push_on_target(run_dir: Path, real_push_dir: Path) -> Optional[tuple[str, int]]:
     """Exclude a push that failed physically from the held boundary's next plan.
 
@@ -2113,6 +2182,12 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
     )
     real_failure_mode = _real_push_failure_mode(real_push_dir)
     replan_same_iteration = (not goal_reached) and (real_failure_mode == "approach_unreachable")
+    # The push physically ran, so the held boundary's bookkeeping advances
+    # whatever the outcome was. Only the in-process planner used to do this, and
+    # the session workflow never constructs it.
+    settled = _settle_target_after_push(
+        run_dir, iteration, iter_dir / "scene_before", scene_after_dir
+    )
     excluded_push = None
     if replan_same_iteration:
         # The replan below reuses this run's shuffle seed and resumes the same
@@ -2136,6 +2211,8 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
             "real_failure_mode": real_failure_mode,
             "replan_same_iteration": replan_same_iteration,
             "excluded_push": list(excluded_push) if excluded_push else None,
+            "moved_objects": settled["moved_objects"],
+            "forgotten_pushes": settled["forgotten_pushes"],
             "final_distance_to_goal_cm": dist,
         },
     )
@@ -2167,6 +2244,8 @@ def advance_iteration(session_dir: Path, run_name: str, iteration: int, allow_ov
         "real_failure_mode": real_failure_mode,
         "replan_same_iteration": replan_same_iteration,
         "excluded_push": list(excluded_push) if excluded_push else None,
+        "moved_objects": settled["moved_objects"],
+        "forgotten_pushes": settled["forgotten_pushes"],
         "final_distance_to_goal_cm": dist,
         "next_iteration_dir": created_next_iter,
         "scene_after_robot_pose_cm": synthetic_rec["robot_pose_cm"],
