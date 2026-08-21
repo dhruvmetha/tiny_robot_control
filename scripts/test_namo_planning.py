@@ -24,6 +24,7 @@ from pathlib import Path
 
 from robot_control.planner.namo_binding_loader import (
     load_canonical_namo_rl,
+    resolve_namo_cpp_dir,
     resolve_namo_root,
 )
 
@@ -215,7 +216,7 @@ def main():
 
     # Change to namo_cpp directory for relative paths
     import os
-    os.chdir(str(namo_root / "namo_cpp"))
+    os.chdir(str(resolve_namo_cpp_dir(script_path)))
 
     # Determine XML path
     if args.xml:

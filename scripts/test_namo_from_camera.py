@@ -29,6 +29,7 @@ import yaml
 
 from robot_control.planner.namo_binding_loader import (
     load_canonical_namo_rl,
+    resolve_namo_cpp_dir,
     resolve_namo_root,
 )
 
@@ -175,7 +176,7 @@ def capture_scene(camera_config, observer_config, stable_frames=10):
 def run_namo_planning(obs, goal_cm, scale_factor=6.0, max_chain_depth=1, visualize=True, verbose=True, enable_viewer=True):
     """Generate XML and run NAMO planning."""
     import os
-    os.chdir(str(namo_root / "namo_cpp"))
+    os.chdir(str(resolve_namo_cpp_dir(script_path)))
 
     import namo_rl
     from namo.core import PlannerConfig

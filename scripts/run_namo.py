@@ -65,7 +65,10 @@ from robot_control.planner import (
     LocalSearchConfig,
     NAMOPlanner,
 )
-from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
+from robot_control.planner.namo_binding_loader import (
+    load_canonical_namo_rl,
+    resolve_namo_cpp_dir,
+)
 
 
 # Sentinel for --record-video when passed with no value. Resolved to
@@ -121,14 +124,7 @@ def find_namo_config(scale_factor: float = 6.0, robot_model: str = "sphere") -> 
     script_dir = Path(__file__).parent
     robot_control_dir = script_dir.parent
 
-    # Try relative to robot_control
-    namo_config = robot_control_dir.parent / "namo_cpp" / "config" / config_name
-    if namo_config.exists():
-        return str(namo_config)
-
-    # Try from workspace root
-    workspace_root = robot_control_dir.parent
-    namo_config = workspace_root / "namo_cpp" / "config" / config_name
+    namo_config = resolve_namo_cpp_dir(script_dir) / "config" / config_name
     if namo_config.exists():
         return str(namo_config)
 
@@ -156,9 +152,8 @@ def get_namo_paths() -> Tuple[Path, Path, Path]:
     """Get important paths for NAMO integration."""
     script_dir = Path(__file__).parent
     robot_control_dir = script_dir.parent
-    namo_root = robot_control_dir.parent
-    namo_cpp_dir = namo_root / "namo_cpp"
-    return robot_control_dir, namo_root, namo_cpp_dir
+    namo_cpp_dir = resolve_namo_cpp_dir(Path(__file__).resolve())
+    return robot_control_dir, namo_cpp_dir.parent, namo_cpp_dir
 
 
 def setup_namo_imports():

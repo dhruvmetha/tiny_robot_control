@@ -26,6 +26,7 @@ from robot_control.core.types import Observation, PushSubgoal
 from robot_control.planner.namo_binding_loader import (
     ensure_namo_cpp_paths,
     load_canonical_namo_rl,
+    resolve_namo_cpp_dir,
 )
 from robot_control.utils import NAMOXMLGenerator
 from robot_control.utils.robot_geometry import (
@@ -226,7 +227,7 @@ class NAMOPlanBridge:
         if primitive_data_dir is None:
             # Auto-detect: namo_cpp/data/ relative to this file
             bridge_path = Path(__file__).resolve()
-            namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
+            namo_cpp_dir = resolve_namo_cpp_dir(bridge_path)
             self._primitive_data_dir = str(namo_cpp_dir / "data")
         else:
             self._primitive_data_dir = primitive_data_dir
@@ -291,12 +292,12 @@ class NAMOPlanBridge:
             return path.resolve()
 
         bridge_path = Path(__file__).resolve()
-        namo_root = bridge_path.parents[4]
-        candidate = namo_root / path_str
+        namo_cpp_dir = resolve_namo_cpp_dir(bridge_path)
+        candidate = namo_cpp_dir.parent / path_str
         if candidate.exists():
             return candidate.resolve()
 
-        candidate2 = namo_root / "namo_cpp" / path_str
+        candidate2 = namo_cpp_dir / path_str
         if candidate2.exists():
             return candidate2.resolve()
 
@@ -526,7 +527,7 @@ class NAMOPlanBridge:
             )
 
         bridge_path = Path(__file__).resolve()
-        namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
+        namo_cpp_dir = resolve_namo_cpp_dir(bridge_path)
         original_cwd = os.getcwd()
         os.chdir(str(namo_cpp_dir))
 
@@ -736,7 +737,7 @@ class NAMOPlanBridge:
         # Change to namo_cpp directory so relative paths in config work
         # (e.g., motion_primitives_file: "data/motion_primitives_15.dat")
         bridge_path = Path(__file__).resolve()
-        namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
+        namo_cpp_dir = resolve_namo_cpp_dir(bridge_path)
         original_cwd = os.getcwd()
         os.chdir(str(namo_cpp_dir))
 
@@ -891,7 +892,7 @@ class NAMOPlanBridge:
             }
 
         bridge_path = Path(__file__).resolve()
-        namo_cpp_dir = bridge_path.parents[4] / "namo_cpp"
+        namo_cpp_dir = resolve_namo_cpp_dir(bridge_path)
         original_cwd = os.getcwd()
         os.chdir(str(namo_cpp_dir))
 
@@ -955,7 +956,7 @@ class NAMOPlanBridge:
             yield None
             return
 
-        namo_cpp_dir = Path(__file__).resolve().parents[4] / "namo_cpp"
+        namo_cpp_dir = resolve_namo_cpp_dir(Path(__file__).resolve())
         original_cwd = os.getcwd()
         os.chdir(str(namo_cpp_dir))
         try:

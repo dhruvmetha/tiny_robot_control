@@ -170,12 +170,10 @@ class NAMOXMLGenerator:
             # Anchor: namo_cpp/test_xml/little-car-modeling-package/assets/
             # mjcf/little_car.xml relative to this repo's workspace root.
             from pathlib import Path as _P
+            from robot_control.planner.namo_binding_loader import resolve_namo_cpp_dir
             here = _P(__file__).resolve()
-            # …/robot_control/src/robot_control/utils/xml_generator.py
-            workspace_root = here.parents[4]
             candidate = (
-                workspace_root
-                / "namo_cpp"
+                resolve_namo_cpp_dir(here)
                 / "test_xml"
                 / "little-car-modeling-package"
                 / "assets"

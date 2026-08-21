@@ -1406,7 +1406,8 @@ class Runtime:
                 if bridge is not None else None
             )
 
-            namo_cpp_dir = _Path2(__file__).resolve().parents[3] / "namo_cpp"
+            from robot_control.planner.namo_binding_loader import resolve_namo_cpp_dir
+            namo_cpp_dir = resolve_namo_cpp_dir(_Path2(__file__).resolve())
             prev_cwd = _os.getcwd()
             try:
                 if namo_cpp_dir.is_dir():
