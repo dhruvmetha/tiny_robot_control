@@ -34,6 +34,9 @@ SRC = ROBOT_CONTROL_ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from robot_control.planner.namo_binding_loader import resolve_namo_cpp_dir  # noqa: E402
+from robot_control.utils.scene_xml import portable_scene_path  # noqa: E402
+
 
 LAYOUT_VERSION = 2
 DEFAULT_SESSION_GLOB = "bootstrap_from_real_test_envs_*"
@@ -581,8 +584,7 @@ def _planner_car_1x_config_path(session_dir: Optional[Path] = None) -> Path:
                     config_path = config_path.resolve()
                 if not config_path.exists():
                     fallback = (
-                        ROBOT_CONTROL_ROOT.parent
-                        / "namo_cpp"
+                        resolve_namo_cpp_dir(Path(__file__).resolve())
                         / "config"
                         / config_path.name
                     )
@@ -593,8 +595,7 @@ def _planner_car_1x_config_path(session_dir: Optional[Path] = None) -> Path:
                 return config_path
 
     config_path = (
-        ROBOT_CONTROL_ROOT.parent
-        / "namo_cpp"
+        resolve_namo_cpp_dir(Path(__file__).resolve())
         / "config"
         / "namo_config_complete_skill15_car_1x.yaml"
     )
@@ -642,7 +643,7 @@ def _goal_wavefront_reachable(
     python_bin = _goal_probe_python_bin()
     config_path = _planner_car_1x_config_path(session_dir)
     loader_path = SRC / "robot_control" / "planner" / "namo_binding_loader.py"
-    namo_cpp_dir = ROBOT_CONTROL_ROOT.parent / "namo_cpp"
+    namo_cpp_dir = resolve_namo_cpp_dir(Path(__file__).resolve())
     probe_code = r"""
 import importlib.util
 import math
@@ -679,26 +680,27 @@ try:
 finally:
     os.chdir(original_cwd)
 """
-    proc = subprocess.run(
-        [
-            str(python_bin),
-            "-c",
-            probe_code,
-            str(Path(__file__).resolve()),
-            str(env_xml_path),
-            str(config_path),
-            str(robot_pose_cm[0]),
-            str(robot_pose_cm[1]),
-            str(robot_pose_cm[2]),
-            str(goal_cm[0]),
-            str(goal_cm[1]),
-            str(loader_path),
-            str(namo_cpp_dir),
-        ],
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    with portable_scene_path(env_xml_path) as loadable_xml:
+        proc = subprocess.run(
+            [
+                str(python_bin),
+                "-c",
+                probe_code,
+                str(Path(__file__).resolve()),
+                str(loadable_xml),
+                str(config_path),
+                str(robot_pose_cm[0]),
+                str(robot_pose_cm[1]),
+                str(robot_pose_cm[2]),
+                str(goal_cm[0]),
+                str(goal_cm[1]),
+                str(loader_path),
+                str(namo_cpp_dir),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
     if proc.returncode != 0:
         raise RuntimeError(
             "goal wavefront probe failed "

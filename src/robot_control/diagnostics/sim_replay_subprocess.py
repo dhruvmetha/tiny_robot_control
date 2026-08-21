@@ -638,6 +638,22 @@ def _write_calibration_artifacts(
 
 
 def main() -> int:
+    """Keep one portable scene copy alive for every replay consumer."""
+    if len(sys.argv) < 4:
+        return _main()
+
+    from robot_control.utils.scene_xml import portable_scene_path
+
+    original_xml = sys.argv[1]
+    with portable_scene_path(Path(original_xml)) as loadable_xml:
+        sys.argv[1] = str(loadable_xml)
+        try:
+            return _main()
+        finally:
+            sys.argv[1] = original_xml
+
+
+def _main() -> int:
     if len(sys.argv) < 4:
         print(
             "usage: sim_replay_subprocess.py <xml> <chain.json> <output_mp4> [namo_config]",
@@ -682,7 +698,9 @@ def main() -> int:
 
     defer_warmup = starting_robot_pose_sim is not None
     try:
-        env = namo_rl.RLEnvironment(xml_path, namo_config, False, defer_warmup)
+        env = namo_rl.RLEnvironment(
+            xml_path, namo_config, False, defer_warmup
+        )
     except Exception as exc:
         print(f"[sim_replay_subprocess] RLEnvironment ctor failed: {exc!r}", flush=True)
         return 1

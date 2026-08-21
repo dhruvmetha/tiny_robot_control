@@ -173,6 +173,45 @@ def test_a_run_that_did_not_opt_in_gets_the_old_argv(monkeypatch, tmp_path):
     assert "--active-target" not in argv
 
 
+def test_goal_probe_loads_a_portable_scene_copy(monkeypatch, tmp_path):
+    """The child must never receive the capture's stale absolute include."""
+    from types import SimpleNamespace
+    from robot_control.utils import scene_xml
+
+    source = tmp_path / "capture" / "env.xml"
+    source.parent.mkdir()
+    source.write_text(
+        '<mujoco><include file="/old/namo_cpp/test_xml/car/little_car.xml"/></mujoco>'
+    )
+    namo_dir = tmp_path / "checkout_named_namo"
+    config = namo_dir / "config" / "namo_config.yaml"
+    config.parent.mkdir(parents=True)
+    config.write_text("planning: {}")
+    captured = {}
+
+    def fake_run(argv, **_kwargs):
+        loadable = Path(argv[4])
+        captured["path"] = loadable
+        captured["xml"] = loadable.read_text()
+        captured["namo_dir"] = argv[12]
+        return SimpleNamespace(returncode=0, stdout="1\n", stderr="")
+
+    monkeypatch.setattr(scene_xml, "resolve_namo_cpp_dir", lambda _anchor: namo_dir)
+    monkeypatch.setattr(cls_mod, "resolve_namo_cpp_dir", lambda _anchor: namo_dir)
+    monkeypatch.setattr(cls_mod, "_planner_car_1x_config_path", lambda _session: config)
+    monkeypatch.setattr(cls_mod, "_goal_probe_python_bin", lambda: Path("python"))
+    monkeypatch.setattr(cls_mod.subprocess, "run", fake_run)
+
+    reachable = cls_mod._goal_wavefront_reachable(
+        tmp_path, source, (10.0, 20.0, 30.0), (40.0, 50.0)
+    )
+
+    assert reachable is True
+    assert f'{namo_dir}/test_xml/car/little_car.xml' in captured["xml"]
+    assert captured["namo_dir"] == str(namo_dir)
+    assert not captured["path"].exists()
+
+
 # --- reuse is graded against the held boundary -------------------------------
 
 def _write_target(run_dir, points=((0.3, 0.4), (0.31, 0.4)), fraction=0.2):

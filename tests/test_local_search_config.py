@@ -158,3 +158,13 @@ def test_run_namo_rejects_every_noncanonical_robot_profile(
 
     with pytest.raises(ValueError, match="only --robot-model car"):
         run_namo.find_namo_config(scale_factor, robot_model)
+
+
+def test_primitive_data_dir_uses_the_resolved_checkout(monkeypatch, tmp_path):
+    from importlib import import_module
+
+    run_namo = import_module("run_namo")
+    checkout = tmp_path / "checkout_named_namo"
+    monkeypatch.setattr(run_namo, "resolve_namo_cpp_dir", lambda _anchor: checkout)
+
+    assert run_namo.find_primitive_data_dir() == str(checkout / "data")

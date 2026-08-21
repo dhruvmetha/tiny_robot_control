@@ -41,6 +41,28 @@ def run_planning_with_visualization(
     visualize: bool = True,
     verbose: bool = True,
 ):
+    """Run NAMO planning from a portable copy of the requested scene."""
+    from robot_control.utils.scene_xml import portable_scene_path
+
+    with portable_scene_path(Path(xml_path)) as loadable_xml:
+        return _run_planning_with_visualization(
+            str(loadable_xml),
+            config_path,
+            goal=goal,
+            max_chain_depth=max_chain_depth,
+            visualize=visualize,
+            verbose=verbose,
+        )
+
+
+def _run_planning_with_visualization(
+    xml_path: str,
+    config_path: str,
+    goal: tuple = None,
+    max_chain_depth: int = 1,
+    visualize: bool = True,
+    verbose: bool = True,
+):
     """Run NAMO planning and optionally visualize."""
     import namo_rl
     from namo.core import PlannerConfig

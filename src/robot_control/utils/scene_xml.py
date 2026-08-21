@@ -13,8 +13,11 @@ machine's checkout, resolved through the same loader the runtime uses.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import re
+import tempfile
 from pathlib import Path
+from typing import Iterator
 
 from robot_control.planner.namo_binding_loader import resolve_namo_cpp_dir
 
@@ -39,3 +42,20 @@ def portable_scene(scene_path: Path, out_dir: Path) -> Path:
     out = Path(out_dir) / Path(scene_path).name
     out.write_text(_ABSOLUTE_INCLUDE.sub(_repoint, text))
     return out
+
+
+@contextmanager
+def portable_scene_path(scene_path: Path) -> Iterator[Path]:
+    """Yield a loadable temporary copy of a captured scene.
+
+    Scenes without the captured-car include stay at their original path, which
+    preserves any unrelated relative assets. Keep the context open for as long
+    as a consumer may reopen the XML; replay does so after running the push.
+    """
+    scene_path = Path(scene_path)
+    if _ABSOLUTE_INCLUDE.search(scene_path.read_text()) is None:
+        yield scene_path
+        return
+
+    with tempfile.TemporaryDirectory(prefix="robot_control_scene_") as tmp_dir:
+        yield portable_scene(scene_path, Path(tmp_dir))

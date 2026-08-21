@@ -117,17 +117,8 @@ def find_namo_config(scale_factor: float = 1.0, robot_model: str = "car") -> str
 
 
 def find_primitive_data_dir() -> str:
-    """Find primitive data directory relative to this script."""
-    script_dir = Path(__file__).parent
-    robot_control_dir = script_dir.parent
-
-    # Try relative to robot_control
-    data_dir = robot_control_dir.parent / "namo_cpp" / "data"
-    if data_dir.exists():
-        return str(data_dir)
-
-    # Fallback to "data" (relative to namo_cpp)
-    return "data"
+    """Find the primitive data directory in the resolved NAMO checkout."""
+    return str(resolve_namo_cpp_dir(Path(__file__).resolve()) / "data")
 
 
 def get_namo_paths() -> Tuple[Path, Path, Path]:
@@ -586,11 +577,9 @@ def _render_plan_only_mp4(
     # sim_replay_subprocess resolves motion-primitive db paths from cwd
     # (same constraint NAMOPlanBridge has). Chdir into namo_cpp/ for the
     # duration of the call so those resolve correctly.
-    here = Path(__file__).resolve()
-    namo_cpp_dir = here.parents[2] / "namo_cpp"
+    namo_cpp_dir = resolve_namo_cpp_dir(Path(__file__).resolve())
     prior_cwd = os.getcwd()
-    if namo_cpp_dir.exists():
-        os.chdir(str(namo_cpp_dir))
+    os.chdir(str(namo_cpp_dir))
     try:
         rendered = render_chain_to_mp4(
             start_xml=abs_sim_xml,

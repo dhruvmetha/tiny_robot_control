@@ -49,7 +49,16 @@ from _diag_setup import bootstrap_diagnostics  # type: ignore  # noqa: E402
 from execute_real_push import export_tier2_push_trials  # noqa: E402
 
 from robot_control.controller.edge_points import get_edge_point  # noqa: E402
+from robot_control.planner.namo_binding_loader import resolve_namo_cpp_dir  # noqa: E402
 from robot_control.utils import NAMOXMLGenerator  # noqa: E402
+
+
+def _namo_cpp_runtime_paths() -> tuple[Path, Path]:
+    namo_cpp_dir = resolve_namo_cpp_dir(Path(__file__).resolve())
+    config_path = (
+        namo_cpp_dir / "config" / "namo_config_complete_skill15_car_1x.yaml"
+    )
+    return namo_cpp_dir, config_path
 
 
 # ----------------------------------------------- real-run rewind helpers
@@ -851,10 +860,7 @@ def _run_trial_spec_mode(args, recorder, log_file) -> int:
     from robot_control.diagnostics.sim_replay import render_chain_to_mp4
 
     output_mp4 = str(Path(recorder.root) / "sim_push.mp4")
-    namo_cpp_config = (
-        ROBOT_CONTROL_ROOT.parent / "namo_cpp" / "config"
-        / "namo_config_complete_skill15_car_1x.yaml"
-    )
+    namo_cpp_dir, namo_cpp_config = _namo_cpp_runtime_paths()
     if not namo_cpp_config.exists():
         print(f"Error: required C++ config not found: {namo_cpp_config}",
               file=sys.stderr)
@@ -862,9 +868,7 @@ def _run_trial_spec_mode(args, recorder, log_file) -> int:
 
     import os as _os
     prior_cwd = _os.getcwd()
-    namo_cpp_dir = ROBOT_CONTROL_ROOT.parent / "namo_cpp"
-    if namo_cpp_dir.exists():
-        _os.chdir(str(namo_cpp_dir))
+    _os.chdir(str(namo_cpp_dir))
     try:
         rendered = render_chain_to_mp4(
             start_xml=str(initial_xml),
@@ -1107,10 +1111,7 @@ def main() -> int:
     # Without a config, C++ falls back to points_per_edge=3 (12 edge points
     # total), so any edge >= 12 is reported as "not reachable". For
     # points_per_face=15 (60 edge points), use the skill15_car_1x config.
-    namo_cpp_config = (
-        ROBOT_CONTROL_ROOT.parent / "namo_cpp" / "config"
-        / "namo_config_complete_skill15_car_1x.yaml"
-    )
+    namo_cpp_dir, namo_cpp_config = _namo_cpp_runtime_paths()
     if not namo_cpp_config.exists():
         print(f"Error: required C++ config not found: {namo_cpp_config}",
               file=sys.stderr)
@@ -1127,9 +1128,7 @@ def main() -> int:
     # (sim_replay_subprocess inherits CWD; same constraint NAMOPlanBridge has).
     import os as _os
     prior_cwd = _os.getcwd()
-    namo_cpp_dir = ROBOT_CONTROL_ROOT.parent / "namo_cpp"
-    if namo_cpp_dir.exists():
-        _os.chdir(str(namo_cpp_dir))
+    _os.chdir(str(namo_cpp_dir))
     try:
         rendered = render_chain_to_mp4(
             start_xml=str(args.mujoco_xml),
