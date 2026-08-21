@@ -34,8 +34,12 @@ import pytest
 
 from robot_control.controller.edge_points import get_edge_point
 from robot_control.core.types import ObjectPose
-from robot_control.planner.namo_binding_loader import load_canonical_namo_rl
+from robot_control.planner.namo_binding_loader import (
+    load_canonical_namo_rl,
+    resolve_namo_cpp_dir,
+)
 from robot_control.utils.robot_geometry import effective_robot_size_cm
+from robot_control.utils.scene_xml import portable_scene
 
 # ─── Named constants ────────────────────────────────────────────────────
 
@@ -43,8 +47,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENE_ROOT = REPO_ROOT / "real_test_envs"
 # Car + 1x primitives. run_namo.find_namo_config() picks this same file for
 # (scale_factor=1.0, robot_model="car"), which is what these scenes are.
+# Resolved through the loader: the checkout is not called namo_cpp everywhere.
 NAMO_CONFIG = (
-    REPO_ROOT.parent / "namo_cpp" / "config" / "namo_config_complete_skill15_car_1x.yaml"
+    resolve_namo_cpp_dir(Path(__file__).resolve())
+    / "config"
+    / "namo_config_complete_skill15_car_1x.yaml"
 )
 
 # The scenes bake the car's spawn into the included little_car.xml, which puts
@@ -103,15 +110,19 @@ if not NAMO_CONFIG.is_file():  # pragma: no cover - environment-dependent
 # ─── Helpers ────────────────────────────────────────────────────────────
 
 
-def _make_env(scene: str):
+def _make_env(scene: str, tmp_dir: Path):
     """Fresh environment at the start pose. Fresh per test, never shared.
 
     A cached environment would let one test's residue explain another's pass,
     which is the whole thing under examination here.
+
+    The scene is loaded through portable_scene because the committed copies
+    carry an absolute include from the box that captured them.
     """
-    xml = SCENE_ROOT / scene / "env.xml"
-    if not xml.is_file():
-        pytest.skip(f"missing scene: {xml}")
+    source = SCENE_ROOT / scene / "env.xml"
+    if not source.is_file():
+        pytest.skip(f"missing scene: {source}")
+    xml = portable_scene(source, tmp_dir)
     env = namo_rl.RLEnvironment(str(xml), str(NAMO_CONFIG), False)
     env.reset()
     env.set_robot_pose(*START_POSE_M)
@@ -192,7 +203,7 @@ CASE_IDS = [f"{scene}-e{edge}-d{depth}" for scene, _, edge, depth in PUSH_CASES]
 
 
 @pytest.mark.parametrize("scene,object_id,edge_idx,depth", PUSH_CASES, ids=CASE_IDS)
-def test_restore_replays_qpos_exactly_and_zeroes_qvel(scene, object_id, edge_idx, depth):
+def test_restore_replays_qpos_exactly_and_zeroes_qvel(scene, object_id, edge_idx, depth, tmp_path):
     """save -> push -> restore -> read back. Isolates restore from replay.
 
     Restore is not a full round trip and is not meant to be: rl_env.cpp:382
@@ -204,7 +215,7 @@ def test_restore_replays_qpos_exactly_and_zeroes_qvel(scene, object_id, edge_idx
     When this fails, the replay tests below are failing for a reason that has
     nothing to do with the physics step.
     """
-    env = _make_env(scene)
+    env = _make_env(scene, tmp_path)
     _place_robot_at_edge_point(env, object_id, edge_idx)
     saved = env.get_full_state()
 
@@ -220,8 +231,8 @@ def test_restore_replays_qpos_exactly_and_zeroes_qvel(scene, object_id, edge_idx
 
 
 @pytest.mark.parametrize("scene,object_id,edge_idx,depth", PUSH_CASES, ids=CASE_IDS)
-def test_the_same_push_from_a_restored_state_is_bit_exact(scene, object_id, edge_idx, depth):
-    env = _make_env(scene)
+def test_the_same_push_from_a_restored_state_is_bit_exact(scene, object_id, edge_idx, depth, tmp_path):
+    env = _make_env(scene, tmp_path)
     _place_robot_at_edge_point(env, object_id, edge_idx)
     saved = env.get_full_state()
 
@@ -237,7 +248,7 @@ def test_the_same_push_from_a_restored_state_is_bit_exact(scene, object_id, edge
 
 
 @pytest.mark.parametrize("scene,object_id,edge_idx,depth", PUSH_CASES, ids=CASE_IDS)
-def test_an_unrelated_push_between_replays_changes_nothing(scene, object_id, edge_idx, depth):
+def test_an_unrelated_push_between_replays_changes_nothing(scene, object_id, edge_idx, depth, tmp_path):
     """Dirty the simulator between the two replays, then demand the same answer.
 
     Back-to-back replays can agree while restore still leaks, if both runs
@@ -245,7 +256,7 @@ def test_an_unrelated_push_between_replays_changes_nothing(scene, object_id, edg
     leak something distinguishable to carry, which is how the ``ctrl`` /
     ``qacc_warmstart`` bug would show itself.
     """
-    env = _make_env(scene)
+    env = _make_env(scene, tmp_path)
     _place_robot_at_edge_point(env, object_id, edge_idx)
     saved = env.get_full_state()
 
