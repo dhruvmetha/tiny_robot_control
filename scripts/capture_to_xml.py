@@ -210,8 +210,9 @@ def main():
     parser.add_argument(
         "--scale-factor", "-s",
         type=float,
-        default=6.0,
-        help="Scale factor for simulation (6.0 = real 2.5cm robot -> sim 15cm robot)"
+        default=1.0,
+        choices=(1.0,),
+        help="Runtime scale, fixed at 1x"
     )
     parser.add_argument(
         "--camera-service",
@@ -224,11 +225,9 @@ def main():
     )
     parser.add_argument(
         "--robot-model",
-        choices=("sphere", "car"),
-        default="sphere",
-        help="Which robot body to embed in the generated XML. 'car' emits "
-             "the diff-drive little_car body and requires pairing with the "
-             "car namo_config (e.g. namo_config_complete_skill15_car_1x.yaml).",
+        choices=("car",),
+        default="car",
+        help="Robot body, fixed at the diff-drive car",
     )
     args = parser.parse_args()
 

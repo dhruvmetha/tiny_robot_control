@@ -93,33 +93,15 @@ def local_search_from_args(args) -> LocalSearchConfig:
     )
 
 
-def find_namo_config(scale_factor: float = 6.0, robot_model: str = "sphere") -> str:
-    """Find NAMO config file relative to this script.
-
-    Picks the config based on (scale_factor, robot_model):
-      sphere + 1×   → namo_config_complete_skill15_1x.yaml
-      sphere + 6×   → namo_config_complete_skill15.yaml  (legacy)
-      car    + 1×   → namo_config_complete_skill15_car_1x.yaml
-      car    + 6×   → unsupported (only the 1× car primitives exist)
-
-    The car config sets robot_type: diff_drive so the C++ side instantiates
-    DiffDriveAdapter, and points to the car-specific motion_primitives_1x_car
-    .dat files. Mixing sphere config with --robot-model car would load
-    sphere primitives — useless for car physics.
-    """
+def find_namo_config(scale_factor: float = 1.0, robot_model: str = "car") -> str:
+    """Find the canonical car 1x d5 NAMO config."""
     one_x = abs(scale_factor - 1.0) < 1e-9
-    if robot_model == "car":
-        if not one_x:
-            raise ValueError(
-                f"--robot-model car only supports --scale-factor 1.0 today "
-                f"(got {scale_factor}); the 6× car primitive set was not "
-                f"generated."
-            )
-        config_name = "namo_config_complete_skill15_car_1x.yaml"
-    elif one_x:
-        config_name = "namo_config_complete_skill15_1x.yaml"
-    else:
-        config_name = "namo_config_complete_skill15.yaml"
+    if robot_model != "car" or not one_x:
+        raise ValueError(
+            "NAMO supports only --robot-model car --scale-factor 1.0 "
+            "with the d5 primitive table"
+        )
+    config_name = "namo_config_complete_skill15_car_1x.yaml"
 
     script_dir = Path(__file__).parent
     robot_control_dir = script_dir.parent
@@ -1802,26 +1784,20 @@ def main():
         "--scale-factor",
         type=float,
         default=1.0,
+        choices=[1.0],
         help=(
-            "Multiplier from real cm to MuJoCo simulation units (default: 1.0). "
-            "1.0 keeps the planner in real-world meters/cm (production path). "
-            "Pass 6.0 to use the legacy 6×-scaled config + primitives for "
-            "regression or fallback. The scale picks which namo config and "
-            "primitive .dat set get loaded; see SCALE_UNIFICATION_PLAN.md."
+            "Multiplier from real cm to MuJoCo simulation units. "
+            "Fixed at the supported 1x runtime scale."
         ),
     )
     parser.add_argument(
         "--robot-model",
         type=str,
         default="car",
-        choices=["sphere", "car"],
+        choices=["car"],
         help=(
-            "Robot body model for the planning simulator (default: car). "
-            "'car' = diff-drive little_car body, matches real-robot physics, "
-            "uses the 1x_car primitive set under "
-            "namo_cpp/data/motion_primitives_1x_car_{square,wide,tall}.dat. "
-            "'sphere' = legacy holonomic point robot (faster search, less "
-            "physically accurate). Both use a 7 cm footprint."
+            "Robot body model for the planning simulator. Fixed at the "
+            "diff-drive car used by the real system."
         ),
     )
     parser.add_argument(

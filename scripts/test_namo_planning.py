@@ -209,7 +209,7 @@ def main():
 
     # Config paths
     parser.add_argument("--config", type=str,
-                       default="config/namo_config_complete_skill15.yaml",
+                       default="config/namo_config_complete_skill15_car_1x.yaml",
                        help="NAMO config path")
 
     args = parser.parse_args()

@@ -244,7 +244,7 @@ def run_namo_planning(obs, goal_cm, scale_factor=6.0, max_chain_depth=1, visuali
     print("STEP 3: Loading NAMO Environment...")
     print(f"{'='*60}")
 
-    config_path = "config/namo_config_complete_skill15.yaml"
+    config_path = "config/namo_config_complete_skill15_car_1x.yaml"
     env = namo_rl.RLEnvironment(xml_path, config_path, enable_viewer)
     print(f"Environment loaded from: {xml_path}")
     print(f"Config: {config_path}")

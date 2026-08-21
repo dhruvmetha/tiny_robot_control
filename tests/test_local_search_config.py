@@ -140,3 +140,21 @@ def test_args_mapping_round_trips():
         "best_first_hmax": 2,
         "ml_device": "cpu",
     }
+
+
+@pytest.mark.parametrize(
+    "scale_factor,robot_model",
+    [(6.0, "car"), (1.0, "sphere"), (6.0, "sphere")],
+)
+def test_run_namo_rejects_every_noncanonical_robot_profile(
+    scale_factor, robot_model
+):
+    from importlib import import_module
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    run_namo = import_module("run_namo")
+
+    with pytest.raises(ValueError, match="only --robot-model car"):
+        run_namo.find_namo_config(scale_factor, robot_model)

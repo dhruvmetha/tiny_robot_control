@@ -3,7 +3,7 @@
 Usage:
     python scripts/test_xml_generation.py
     python scripts/test_xml_generation.py --output /tmp/test_env.xml
-    python scripts/test_xml_generation.py --scale-factor 6.0  # simulation scale
+    python scripts/test_xml_generation.py --scale-factor 1.0
 """
 
 from __future__ import annotations
@@ -25,8 +25,9 @@ def main():
     parser.add_argument(
         "--scale-factor", "-s",
         type=float,
-        default=6.0,
-        help="Scale factor (6.0 = real 2.5cm robot -> sim 15cm robot)"
+        default=1.0,
+        choices=(1.0,),
+        help="Runtime scale, fixed at 1x"
     )
     parser.add_argument(
         "--show-wavefront",

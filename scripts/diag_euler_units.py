@@ -1,10 +1,9 @@
 """Verify: does MuJoCo interpret obj_4's euler as degrees or radians,
 and is the <include> of little_car.xml's <compiler angle="radian"/> the cause?
 
-Loads three variants of the same scene and reports obj_4's live theta:
+Loads two car variants of the same scene and reports obj_4's live theta:
   A) car-mode XML (current xml_generator output, includes little_car)
   B) car-mode XML with explicit <compiler angle="degree"/> injected BEFORE the include
-  C) sphere-mode XML (no include)
 """
 from __future__ import annotations
 import math
@@ -28,7 +27,6 @@ GOAL_CM = (40.0, 60.0)
 WS_BOUNDS_CM = (0.0, 49.0, 0.0, 77.5)
 
 CONF_CAR = Path(__file__).resolve().parents[2] / "namo_cpp" / "config" / "namo_config_complete_skill15_car_1x.yaml"
-CONF_SPH = Path(__file__).resolve().parents[2] / "namo_cpp" / "config" / "namo_config_complete_skill15_1x.yaml"
 
 
 def gen_xml(model: str) -> str:
@@ -84,10 +82,6 @@ def main():
     pb = write(xml_b, "B_car_compiler_deg")
     load_and_probe(pb, str(CONF_CAR), "B: car-mode with explicit <compiler angle='degree'/>")
 
-    # C) sphere-mode
-    xml_c = gen_xml("sphere")
-    pc = write(xml_c, "C_sphere")
-    load_and_probe(pc, str(CONF_SPH), "C: sphere-mode (no <include>)")
 
     print("\n=== Conclusion ===")
     print("If A says 'as-radians' but B and C say 'as-degrees', the bug is:")

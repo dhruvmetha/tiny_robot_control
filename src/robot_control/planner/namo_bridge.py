@@ -156,8 +156,8 @@ class NAMOPlanBridge:
 
     Usage:
         bridge = NAMOPlanBridge(
-            namo_config_path="namo_cpp/config/namo_config_complete_skill15.yaml",
-            scale_factor=6.0,
+            namo_config_path="namo_cpp/config/namo_config_complete_skill15_car_1x.yaml",
+            scale_factor=1.0,
         )
 
         subgoals = bridge.plan(
@@ -176,17 +176,16 @@ class NAMOPlanBridge:
         debug_xml_path: Optional[str] = None,
         enable_viewer: bool = False,
         pause_after_load: bool = False,
-        robot_width_cm: float = 6.0,
-        robot_height_cm: float = 6.0,
-        robot_model: str = "sphere",
+        robot_width_cm: float = 7.0,
+        robot_height_cm: float = 7.0,
+        robot_model: str = "car",
         manual_primitives_file: Optional[str] = None,
     ):
         """Initialize the NAMO bridge.
 
         Args:
             namo_config_path: Path to NAMO config YAML
-            scale_factor: Scale factor for simulation (1.0 = real meters/cm,
-                production path; 6.0 = legacy 6×-scaled mode)
+            scale_factor: Fixed at 1.0.
             primitive_data_dir: Directory containing motion primitive data.
                                If None, uses namo_cpp/data/ (auto-detected).
             verbose: Enable verbose logging
@@ -195,17 +194,13 @@ class NAMOPlanBridge:
             pause_after_load: Pause for user input after loading XML (for inspection)
             robot_width_cm: Robot width in cm (for XML generation)
             robot_height_cm: Robot height in cm (for XML generation)
-            robot_model: Robot body to embed in the generated XML.
-                "sphere" = holonomic point robot (legacy default).
-                "car" = diff-drive little_car body. Requires the matching
-                namo config (namo_config_complete_skill15_car_1x.yaml) to
-                pick up car primitives — handled by run_namo's
-                find_namo_config(robot_model="car"). When car, the bridge
-                also passes starting_robot_pose to plan_from_xml so the
-                env teleports to the live observation pose before physics
-                warmup runs (little_car.xml's fixed spawn would otherwise
-                cause the warmup to integrate from inside an obstacle).
+            robot_model: Fixed at ``car``.
         """
+        if robot_model != "car" or abs(scale_factor - 1.0) > 1e-9:
+            raise ValueError(
+                "NAMOPlanBridge supports only robot_model='car' "
+                "with scale_factor=1.0"
+            )
         self._namo_config_path = namo_config_path
         self._scale_factor = scale_factor
         self._verbose = verbose

@@ -84,8 +84,6 @@ class NAMOXMLGenerator:
 
     # Robot parameters (real robot scale - will be multiplied by scale_factor)
     ROBOT_RADIUS_BASE = 0.03  # 3cm radius sphere (inflated from 2.5cm for safety margin)
-    ROBOT_MASS = 5.0
-    ROBOT_FRICTION = "1.0 0.005 0.0001"
 
     # Object parameters (real robot scale - will be multiplied by scale_factor)
     OBJECT_HEIGHT_BASE = 0.025  # 2.5cm half-height (5cm total)
@@ -114,41 +112,24 @@ class NAMOXMLGenerator:
     MIN_SEPARATION_BASE = 0.005
     COLLISION_EXTRA_MARGIN = 0.08
 
-    # Velocity-actuator parameters for the holonomic robot's slide joints.
-    # Match the inline values in namo_cpp/data/*.xml so captured-from-real
-    # scenes have identical actuator semantics to the canonical sim scenes.
-    # Values rationale (see namo/velocity_actuator_experiment_log.md):
-    #   kv=50         : empirical — tracks commanded velocity tightly without overshoot
-    #   ctrlrange=0.5 : caps commanded velocity at 0.5 m/s (sim units)
-    #   forcerange=20 : actuator can apply up to 20 N to track its velocity target;
-    #                    real-motor-saturation analog preventing infinite acceleration
-    ACTUATOR_KV = "50"
-    ACTUATOR_CTRLRANGE = "-0.5 0.5"
-    ACTUATOR_FORCERANGE = "-20 20"
-
     def __init__(
         self,
         scale_factor: float = 1.0,
         robot_radius_cm: Optional[float] = None,
-        robot_model: str = "sphere",
+        robot_model: str = "car",
     ):
         """Initialize generator with optional scale factor.
 
         Args:
-            scale_factor: Multiply all positions and sizes by this factor.
-                          Use 6.0 to scale from real robot (2.5cm) to simulation (15cm).
-                          Physics parameters (mass, friction) remain unchanged.
+            scale_factor: Fixed at 1.0.
             robot_radius_cm: Robot radius in cm. If None, uses ROBOT_RADIUS_BASE (3cm).
                             For rectangular robots, use the rotation-safe diagonal radius.
-            robot_model: Which robot body to emit. "sphere" inlines a slide-joint
-                          sphere geom (the holonomic planner robot). "car" embeds
-                          the diff-drive little_car body via <include>. Only
-                          "sphere" is functional today; "car" raises until the
-                          car-primitive follow-up phase lands.
+            robot_model: Fixed at ``car``.
         """
-        if robot_model not in ("sphere", "car"):
+        if robot_model != "car" or abs(scale_factor - 1.0) > 1e-9:
             raise ValueError(
-                f"robot_model must be 'sphere' or 'car', got {robot_model!r}"
+                "NAMO XML generation supports only robot_model='car' "
+                "with scale_factor=1.0"
             )
         self._robot_model = robot_model
 
@@ -165,28 +146,24 @@ class NAMOXMLGenerator:
         # so the 3 physics ticks integrate from the correct starting state
         # instead of from inside whatever obstacle happens to be at the
         # workspace origin.
-        self._car_xml_abs_path: Optional[str] = None
-        if robot_model == "car":
-            # Anchor: namo_cpp/test_xml/little-car-modeling-package/assets/
-            # mjcf/little_car.xml relative to this repo's workspace root.
-            from pathlib import Path as _P
-            from robot_control.planner.namo_binding_loader import resolve_namo_cpp_dir
-            here = _P(__file__).resolve()
-            candidate = (
-                resolve_namo_cpp_dir(here)
-                / "test_xml"
-                / "little-car-modeling-package"
-                / "assets"
-                / "mjcf"
-                / "little_car.xml"
+        from pathlib import Path as _P
+        from robot_control.planner.namo_binding_loader import resolve_namo_cpp_dir
+        here = _P(__file__).resolve()
+        candidate = (
+            resolve_namo_cpp_dir(here)
+            / "test_xml"
+            / "little-car-modeling-package"
+            / "assets"
+            / "mjcf"
+            / "little_car.xml"
+        )
+        if not candidate.exists():
+            raise FileNotFoundError(
+                f"robot_model='car' requires little_car.xml at "
+                f"{candidate}, but the file is not there. Check the "
+                f"NAMO checkout is available."
             )
-            if not candidate.exists():
-                raise FileNotFoundError(
-                    f"robot_model='car' requires little_car.xml at "
-                    f"{candidate}, but the file is not there. Check the "
-                    f"namo_cpp submodule is checked out."
-                )
-            self._car_xml_abs_path = str(candidate)
+        self._car_xml_abs_path = str(candidate)
         self.scale_factor = scale_factor
 
         # Use provided robot radius or default
@@ -390,14 +367,11 @@ class NAMOXMLGenerator:
         # Store resolved robot position for later access
         self._last_robot_pos = (robot.x, robot.y)
 
-        # Robot. Sphere is emitted inline here with the resolved pose baked
-        # into the geom's pos= attribute. Car is included at top level above
-        # (its body lives inside little_car.xml with a fixed spawn pos), and
+        # The car is included at top level above. Its body lives inside
+        # little_car.xml with a fixed spawn pos, and
         # the planning_service teleports it to (robot.x, robot.y) after env
         # construction — before warm_up runs — so the physics warm-up sees
         # the correct starting state.
-        if self._robot_model == "sphere":
-            self._add_robot(worldbody, robot)
 
         # Objects
         for name, obj in objects.items():
@@ -410,20 +384,6 @@ class NAMOXMLGenerator:
                       size=f"{goal_size} {goal_size} {goal_size}",
                       rgba="0 1 0 0.5",
                       pos=f"{goal.x} {goal.y} 0.0")
-
-        # Actuator block. Sphere needs <velocity> actuators on its slide
-        # joints. Car's wheel actuators come from little_car.xml's own
-        # <actuator> block (merged in via <include>), so we emit nothing
-        # extra here for car.
-        if self._robot_model == "sphere":
-            actuator = ET.SubElement(root, "actuator")
-            for axis in ("x", "y"):
-                ET.SubElement(actuator, "velocity",
-                              name=f"actuator_{axis}",
-                              joint=f"joint_{axis}",
-                              kv=self.ACTUATOR_KV,
-                              ctrlrange=self.ACTUATOR_CTRLRANGE,
-                              forcerange=self.ACTUATOR_FORCERANGE)
 
         # Pretty print
         xml_str = ET.tostring(root, encoding="unicode")
@@ -494,25 +454,6 @@ class NAMOXMLGenerator:
                               rgba=self.WALL_COLOR,
                               size=f"{hw} {hd} {self.WALL_HEIGHT}",
                               type="box")
-
-    def _add_robot(self, worldbody: ET.Element, robot: RobotSpec) -> None:
-        """Add robot body with slide joints."""
-        robot_body = ET.SubElement(worldbody, "body", name="robot")
-
-        ET.SubElement(robot_body, "joint",
-                      name="joint_x", type="slide",
-                      pos="0 0 0", axis="1 0 0")
-        ET.SubElement(robot_body, "joint",
-                      name="joint_y", type="slide",
-                      pos="0 0 0", axis="0 1 0")
-
-        ET.SubElement(robot_body, "geom",
-                      name="robot", type="sphere",
-                      pos=f"{robot.x} {robot.y} {self.ROBOT_RADIUS}",
-                      size=f"{self.ROBOT_RADIUS} {self.ROBOT_RADIUS} {self.ROBOT_RADIUS}",
-                      mass=str(self.ROBOT_MASS),
-                      friction=self.ROBOT_FRICTION,
-                      condim="4")
 
     def _add_object(self, worldbody: ET.Element, name: str, obj: ObjectSpec) -> None:
         """Add object body (static or movable)."""

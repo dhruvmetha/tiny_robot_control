@@ -85,7 +85,7 @@ class NAMOPlanner(Planner):
     Usage:
         planner = NAMOPlanner(
             robot_goal_cm=(50.0, 40.0),
-            namo_config_path="namo_cpp/config/namo_config_complete_skill15.yaml",
+            namo_config_path="namo_cpp/config/namo_config_complete_skill15_car_1x.yaml",
         )
 
         # In runtime loop:
@@ -135,10 +135,10 @@ class NAMOPlanner(Planner):
         # Workspace config for reachability checking (must match navigation planner)
         workspace_width_cm: float = 70.0,
         workspace_height_cm: float = 55.0,
-        robot_width_cm: float = 8.0,
-        robot_height_cm: float = 10.0,
+        robot_width_cm: float = 7.0,
+        robot_height_cm: float = 7.0,
         # Robot body model for the planning simulator
-        robot_model: str = "sphere",
+        robot_model: str = "car",
         # Path to manual primitive sequence YAML, only meaningful when
         # goal_strategy == "manual_primitives".
         manual_primitives_file: Optional[str] = None,
@@ -157,7 +157,7 @@ class NAMOPlanner(Planner):
                 without reaching the goal — fewer planning calls, but
                 commits to the simulator's predicted future across pushes.
             goal_strategy: Goal sampling strategy ("primitive", "ml", etc.)
-            scale_factor: Scale factor for simulation (6.0 default)
+            scale_factor: Fixed at 1.0.
             primitive_data_dir: Directory containing motion primitive data
             replan_on_completion: If True, replan when subgoal queue is empty
             max_chain_depth: Maximum chain depth for multi-push solutions (1 or 2)
