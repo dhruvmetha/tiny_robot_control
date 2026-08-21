@@ -1046,7 +1046,6 @@ def run_interactive_mode(args):
         primitive_data_dir=primitive_data_dir,
         replan_on_completion=not args.no_replan,
         max_chain_depth=args.max_chain_depth,
-        allow_collisions=args.allow_collisions,
         frontier_beam_width=args.frontier_beam_width,
         chain_link_cost=args.chain_link_cost,
         selection_strategy=args.selection_strategy,
@@ -1302,7 +1301,6 @@ def _run_plan_only_mode(args) -> int:
     # Mirrors NAMOPlanner._search_planner_kwargs, which the in-process path uses.
     extra_kwargs: Dict[str, Any] = {
         "max_chain_depth": args.max_chain_depth,
-        "allow_collisions": args.allow_collisions,
         "frontier_beam_width": args.frontier_beam_width,
         "chain_link_cost": args.chain_link_cost,
         "selection_strategy": args.selection_strategy,
@@ -1524,7 +1522,6 @@ def run_automatic_mode(args):
         print(f"Strategy: {args.strategy}")
         print(f"{local_search_from_args(args).describe()}")
         print(f"Max chain depth: {args.max_chain_depth}")
-        print(f"Allow collisions: {args.allow_collisions}")
         print(f"Frontier beam width: {args.frontier_beam_width}")
         print(f"Chain link cost: {args.chain_link_cost}")
         print(f"Selection strategy: {args.selection_strategy}")
@@ -1584,7 +1581,6 @@ def run_automatic_mode(args):
         primitive_data_dir=primitive_data_dir,
         replan_on_completion=not args.no_replan,
         max_chain_depth=args.max_chain_depth,
-        allow_collisions=args.allow_collisions,
         frontier_beam_width=args.frontier_beam_width,
         chain_link_cost=args.chain_link_cost,
         selection_strategy=args.selection_strategy,
@@ -1987,18 +1983,6 @@ def main():
         type=int,
         default=2,
         help="Maximum chain depth for multi-push solutions (default: 2)",
-    )
-    parser.add_argument(
-        "--allow-collisions",
-        action="store_true",
-        default=True,
-        help="Allow collisions during push (default: True)",
-    )
-    parser.add_argument(
-        "--no-allow-collisions",
-        dest="allow_collisions",
-        action="store_false",
-        help="Terminate push on collision",
     )
     parser.add_argument(
         "--frontier-beam-width",

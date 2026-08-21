@@ -105,7 +105,6 @@ class NAMOPlanner(Planner):
         primitive_data_dir: str = "data",
         replan_on_completion: bool = True,
         max_chain_depth: int = 2,
-        allow_collisions: bool = True,
         frontier_beam_width: int = 10000,
         chain_link_cost: int = 11,
         selection_strategy: str = "cost_first",
@@ -162,7 +161,6 @@ class NAMOPlanner(Planner):
             primitive_data_dir: Directory containing motion primitive data
             replan_on_completion: If True, replan when subgoal queue is empty
             max_chain_depth: Maximum chain depth for multi-push solutions (1 or 2)
-            allow_collisions: Allow collisions during push
             frontier_beam_width: Beam width for frontier search
             chain_link_cost: Additional cost per chain link
             selection_strategy: Frontier priority ("cost_first" or "ml_first")
@@ -216,7 +214,6 @@ class NAMOPlanner(Planner):
         self._manual_primitives_file = manual_primitives_file
         self._replan_on_completion = replan_on_completion
         self._max_chain_depth = max_chain_depth
-        self._allow_collisions = allow_collisions
         self._frontier_beam_width = frontier_beam_width
         self._chain_link_cost = chain_link_cost
         self._selection_strategy = selection_strategy
@@ -551,7 +548,6 @@ class NAMOPlanner(Planner):
                 observation=obs,
                 robot_goal_cm=self._robot_goal_cm,
                 chain=chain,
-                allow_collisions=self._allow_collisions,
                 target_points=list(held.target_samples_m) if held else None,
                 min_reachable=held.minimum_reachable() if held else None,
             )
@@ -1054,7 +1050,6 @@ class NAMOPlanner(Planner):
         kwargs: Dict[str, Any] = {
             "goal_strategy": self._goal_strategy,
             "max_chain_depth": self._max_chain_depth,
-            "allow_collisions": self._allow_collisions,
             "frontier_beam_width": self._frontier_beam_width,
             "chain_link_cost": self._chain_link_cost,
             "selection_strategy": self._selection_strategy,

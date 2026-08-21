@@ -31,9 +31,6 @@ class _Env:
         self.reachable_count = reachable_count
         self.steps = 0
 
-    def set_collision_checking(self, _enabled):
-        return None
-
     def set_robot_goal(self, *_a):
         return None
 

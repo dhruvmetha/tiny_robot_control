@@ -31,7 +31,6 @@ def _planner(**overrides):
     attrs = dict(
         _goal_strategy="primitive",
         _max_chain_depth=2,
-        _allow_collisions=True,
         _frontier_beam_width=10000,
         _chain_link_cost=11,
         _selection_strategy="cost_first",
@@ -73,7 +72,6 @@ def test_the_chain_depth_reaches_the_held_path():
 @pytest.mark.parametrize(
     "key,value",
     [
-        ("allow_collisions", False),
         ("frontier_beam_width", 25),
         ("chain_link_cost", 7),
         ("selection_strategy", "depth_first"),

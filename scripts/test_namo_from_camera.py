@@ -265,7 +265,6 @@ def run_namo_planning(obs, goal_cm, scale_factor=6.0, max_chain_depth=1, visuali
         "region_max_chain_depth": max_chain_depth,
         "region_max_solutions_per_neighbor": 1,
         "region_max_recorded_solutions_per_neighbor": 1,
-        "region_allow_collisions": True,
         "region_frontier_beam_width": 10000,
         "region_chain_link_cost": 11,
         "region_selection_strategy": "cost_first",
@@ -275,7 +274,6 @@ def run_namo_planning(obs, goal_cm, scale_factor=6.0, max_chain_depth=1, visuali
     print(f"Algorithm parameters:")
     print(f"  goal_strategy: primitive")
     print(f"  max_chain_depth: {max_chain_depth}")
-    print(f"  allow_collisions: True")
     print(f"  frontier_beam_width: 10000")
 
     config = PlannerConfig(

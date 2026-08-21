@@ -465,7 +465,6 @@ class NAMOPlanBridge:
         robot_goal_cm: Tuple[float, float],
         chain: Sequence[Any],
         *,
-        allow_collisions: bool = True,
         target_points: Optional[Sequence[Tuple[float, float]]] = None,
         min_reachable: Optional[int] = None,
     ) -> ChainVerificationResult:
@@ -535,11 +534,6 @@ class NAMOPlanBridge:
             namo_rl, _, _ = load_canonical_namo_rl(bridge_path)
             starting_robot_pose = self._starting_robot_pose_sim(observation)
             env = self._build_rl_env_for_scene(namo_rl, xml_path, starting_robot_pose)
-            try:
-                env.set_collision_checking(not allow_collisions)
-            except Exception:
-                pass
-
             goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
             env.set_robot_goal(goal_sim[0], goal_sim[1], 0.0)
 
@@ -673,7 +667,6 @@ class NAMOPlanBridge:
         algorithm: str = "full_namo",
         goal_strategy: str = "primitive",
         max_chain_depth: int = 2,
-        allow_collisions: bool = True,
         frontier_beam_width: int = 10000,
         chain_link_cost: int = 11,
         selection_strategy: str = "cost_first",
@@ -689,7 +682,6 @@ class NAMOPlanBridge:
             algorithm: Planning algorithm
             goal_strategy: Goal sampling strategy ("primitive", "ml", etc.)
             max_chain_depth: Maximum chain depth for multi-push solutions (1 or 2)
-            allow_collisions: Allow collisions during push
             frontier_beam_width: Beam width for frontier search
             chain_link_cost: Additional cost per chain link
             selection_strategy: Frontier priority ("cost_first" or "ml_first")
@@ -722,7 +714,6 @@ class NAMOPlanBridge:
             return self._simulate_manual_chain(
                 observation=observation,
                 robot_goal_cm=robot_goal_cm,
-                allow_collisions=allow_collisions,
             )
 
         # Generate XML and object mapping
@@ -796,7 +787,6 @@ class NAMOPlanBridge:
                 algorithm=algorithm,
                 goal_strategy=goal_strategy,
                 max_chain_depth=max_chain_depth,
-                allow_collisions=allow_collisions,
                 frontier_beam_width=frontier_beam_width,
                 chain_link_cost=chain_link_cost,
                 selection_strategy=selection_strategy,
@@ -1256,7 +1246,6 @@ class NAMOPlanBridge:
         self,
         observation: Observation,
         robot_goal_cm: Tuple[float, float],
-        allow_collisions: bool,
     ) -> List[PushSubgoal]:
         """Apply a YAML-specified push chain in sim and return subgoals on success.
 
@@ -1315,7 +1304,6 @@ class NAMOPlanBridge:
             observation=observation,
             robot_goal_cm=robot_goal_cm,
             chain=entries,
-            allow_collisions=allow_collisions,
         )
         self.last_search_time_ms = result.verification_time_ms
         self.last_sim_pushes_tried = result.sim_pushes_tried

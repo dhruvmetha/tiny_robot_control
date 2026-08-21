@@ -699,16 +699,6 @@ def main() -> int:
             )
             return 1
 
-    # Mirror the planner-side setting so the push primitive doesn't abort
-    # on wall contact and the qpos dump captures the full chain motion.
-    try:
-        env.set_collision_checking(False)
-    except Exception as exc:
-        print(
-            f"[sim_replay_subprocess] set_collision_checking failed: {exc!r}",
-            flush=True,
-        )
-
     prior_nav_log = os.environ.get("NAMO_NAV_LOG")
     saved_stderr_fd: Optional[int] = None
     nav_log_fd: Optional[int] = None

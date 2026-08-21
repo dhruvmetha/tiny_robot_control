@@ -89,7 +89,6 @@ def run_planning_with_visualization(
         "region_max_chain_depth": max_chain_depth,
         "region_max_solutions_per_neighbor": 1,
         "region_max_recorded_solutions_per_neighbor": 1,
-        "region_allow_collisions": True,
         "region_frontier_beam_width": 10000,
         "region_chain_link_cost": 11,
         "region_selection_strategy": "cost_first",

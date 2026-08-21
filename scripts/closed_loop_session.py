@@ -1345,7 +1345,6 @@ def _attempt_reuse_from_previous_plan(
             observation=observation,
             robot_goal_cm=goal_cm,
             chain=chain,
-            allow_collisions=True,
             target_points=list(held_target.target_samples_m) if held_target else None,
             min_reachable=held_target.minimum_reachable() if held_target else None,
         )
