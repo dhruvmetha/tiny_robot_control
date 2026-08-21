@@ -12,14 +12,13 @@ depth 2. Plain ``region_bfs`` is not what the robot runs and cannot finish these
 scenes in reasonable time; it burned 4,768 candidates in 40 minutes here without
 returning.
 
-Grading uses the state the solver verified, not a replay of its chain. Those are
-not the same thing, and the difference is recorded rather than assumed: on
-``2push/2hop/env1`` the verified state reaches 22 of 100 target points while
-replaying the same chain from the same start reaches 18, either side of a bar of
-20. The robot ends 4 mm apart. The search passes through ``set_full_state``
-between pushes, which zeroes ``qvel``; a straight replay carries residual
-velocity from one push into the next. Until that is settled, a test that graded
-a replay would be pinning the divergence.
+Grading uses ``resulting_state``, because a restore is what the search performs
+between chain steps. Do not hand-roll a check by stepping the returned actions
+back to back. ``set_full_state`` does more than move ``qpos``. It also
+zeroes the wheel command and wipes ``qacc_warmstart``, the solver's initial
+guess, both documented at ``namo_environment.cpp:936``. Two raw ``step`` calls skip that
+cleanup and land the object about 4 mm away, enough to swing ``2push/2hop/env1``
+from 22 of 100 target points to 18 across a bar of 20.
 
 Slow by test standards, about 30 s per scene, nearly all of it the search. The
 fixtures are module-scoped so each scene solves once.
