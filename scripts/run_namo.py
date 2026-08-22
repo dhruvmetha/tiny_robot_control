@@ -64,6 +64,8 @@ from robot_control.planner import (
     LOCAL_SEARCH_CHOICES,
     LocalSearchConfig,
     NAMOPlanner,
+    check_search_reaches_planner,
+    describe_effective_search,
 )
 from robot_control.planner.namo_binding_loader import (
     load_canonical_namo_rl,
@@ -2154,6 +2156,18 @@ def main():
         except Exception as exc:
             print(f"Error: {exc}")
             return 1
+
+        # Which search will actually run, printed before anything moves. The
+        # keys are forwarded as opaque algorithm_params, so a selection aimed
+        # at the wrong planner is dropped without a word; check it here rather
+        # than discover it from a slow run.
+        _search = local_search_from_args(args)
+        try:
+            check_search_reaches_planner(args.algorithm, args.strategy, _search)
+        except ValueError as exc:
+            print(f"Error: {exc}")
+            return 1
+        print(describe_effective_search(args.algorithm, args.strategy, _search), flush=True)
 
         # Interactive mode requires real robot config
         if args.interactive:

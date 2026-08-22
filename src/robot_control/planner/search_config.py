@@ -111,3 +111,66 @@ class LocalSearchConfig:
         if self.ml_device:
             parts.append(f"device={self.ml_device}")
         return "  ".join(parts)
+
+
+# ─── Which planner actually reads these keys ────────────────────────────
+
+# Only `full_namo` reads `full_namo_local_search`
+# (namo_cpp full_namo_planner.py:125). `region_opening` runs its own
+# exhaustive sweep over every edge and depth and never looks at the key, so a
+# best-first request aimed at it is dropped in silence. That cost a real
+# debugging session: 2,959 primitives and 394 s of wall clock on hardware,
+# spent believing a ranker was ordering the queue when none was loaded.
+BEST_FIRST_AWARE_ALGORITHMS = ("full_namo",)
+
+# How `region_opening` takes a learned ranker instead. It reads
+# `scorer_ckpt` only when the goal strategy is this one
+# (namo_cpp region_opening.py:670).
+SCORER_GOAL_STRATEGY = "scorer"
+
+
+def check_search_reaches_planner(
+    algorithm: str, goal_strategy: str, config: LocalSearchConfig
+) -> None:
+    """Raise if the search selection is addressed to a planner that ignores it.
+
+    Unknown keys ride into `algorithm_params` and get dropped without a word,
+    so the only symptom is a slow run that looks like a hard scene. Fail before
+    the robot moves instead.
+    """
+    if config.uses_best_first and algorithm not in BEST_FIRST_AWARE_ALGORITHMS:
+        raise ValueError(
+            f"--local-search {config.local_search} has no effect with "
+            f"--algorithm {algorithm}: only {list(BEST_FIRST_AWARE_ALGORITHMS)} "
+            f"read it, and {algorithm} runs its own exhaustive sweep. "
+            f"Use --algorithm full_namo, or stay on {algorithm} and pass "
+            f"--strategy {SCORER_GOAL_STRATEGY} to let the checkpoint in."
+        )
+    if (
+        config.scorer_ckpt
+        and algorithm not in BEST_FIRST_AWARE_ALGORITHMS
+        and goal_strategy != SCORER_GOAL_STRATEGY
+    ):
+        raise ValueError(
+            f"--scorer-ckpt is never loaded with --algorithm {algorithm} and "
+            f"--strategy {goal_strategy}. Pass --strategy "
+            f"{SCORER_GOAL_STRATEGY} to use the checkpoint, or drop the flag."
+        )
+
+
+def describe_effective_search(
+    algorithm: str, goal_strategy: str, config: LocalSearchConfig
+) -> str:
+    """One startup line naming the planner and the search it will really run.
+
+    Printed on every path, default included. A log that does not say which
+    search produced a push cannot be diagnosed afterwards.
+    """
+    if algorithm in BEST_FIRST_AWARE_ALGORITHMS:
+        return f"planner: {algorithm}  |  {config.describe()}"
+    ranked = goal_strategy == SCORER_GOAL_STRATEGY
+    ranker = f"scorer ckpt={config.scorer_ckpt}" if ranked else "no ranker"
+    return (
+        f"planner: {algorithm}  |  exhaustive sweep over all edges and depths"
+        f"  |  goal strategy: {goal_strategy} ({ranker})"
+    )
