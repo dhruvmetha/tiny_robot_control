@@ -1,0 +1,12 @@
+# Factory intrinsics read off the RealSense D415, serial 234422063981,
+# colour stream at 1280x720. Read 2026-08-21 via pyrealsense2
+# (get_stream(color).as_video_stream_profile().get_intrinsics()).
+# Distortion is zero because the D415 rectifies colour on-device.
+# Valid for THIS serial at THIS resolution only. Re-read, don't re-guess,
+# if either changes:
+#   python -c "import pyrealsense2 as rs; ...query_devices()..."
+camera_matrix:
+  - [912.33, 0.0, 661.04]
+  - [0.0, 911.67, 350.48]
+  - [0.0, 0.0, 1.0]
+distortion_coefficients: [0.0, 0.0, 0.0, 0.0, 0.0]

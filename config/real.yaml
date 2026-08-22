@@ -3,12 +3,18 @@
 
 # Camera settings
 camera:
-  device: 4      # RealSense color stream (/dev/video4, YUYV). Other RealSense devices: video0=depth(Z16), video2=IR(greyscale), video1/3/6=metadata. NOTE: index can shift across reboots/replug — verify with `v4l2-ctl --list-formats-ext -d /dev/videoN`.
+  # RealSense colour stream. Verified 2026-08-21 by capturing a frame through
+  # CameraSensorNode; video2 is the IR stream and shows the projector dot pattern.
+  # Other nodes on this camera: video0 depth (Z16), video1/3/6 metadata.
+  # The index shifts across reboots and replugs. To find it again, run
+  #   v4l2-ctl --list-formats -d /dev/videoN
+  # and take the node that offers YUYV.
+  device: 5
   resolution: "720p"
   fps: 60
   # Path to camera calibration file (camera matrix K and distortion D)
   # If empty, uses default approximation
-  calibration_file: ""
+  calibration_file: "config/camera_intrinsics_d415_234422063981_720p.yaml"
   # Camera exposure (-6 is typical for ArUco detection, null for auto)
   exposure: -6
   # Apply undistortion to frames before processing (requires calibration)
