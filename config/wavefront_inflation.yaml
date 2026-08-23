@@ -3,9 +3,14 @@
 #
 # Tier-1 rule for occupancy inflation:
 #   total_inflation = robot_radius + inflation_margin
-# We standardize the base inflation_margin to 0.002m everywhere.
+# We standardize the base inflation_margin to 0.005m everywhere, matching
+# namo_cpp/config/wavefront_inflation.yaml. Both wavefronts must inflate by
+# the same amount or they disagree about which cells are blocked, which is
+# the "goal reachable but no path" failure namo_cpp 932d04a fixed (BUG-001).
+# 5ef7943 here moved this side to 0.002 without touching namo_cpp, silently
+# reopening that gap; this restores it.
 tier1:
-  base_inflation_margin_m: 0.002
+  base_inflation_margin_m: 0.005
 
 # Per-context additive margins on top of tier1.base_inflation_margin_m.
 # These preserve current behavior knobs while making the base explicit.
