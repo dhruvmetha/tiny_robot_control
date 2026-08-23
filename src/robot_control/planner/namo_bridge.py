@@ -12,6 +12,7 @@ from __future__ import annotations
 import math
 import os
 import sys
+import shutil
 import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -33,6 +34,11 @@ from robot_control.utils.robot_geometry import (
     effective_robot_radius_cm,
     scaled_half_extents_m_from_full_extents_cm,
 )
+
+
+# Sidecar namo_cpp reads for its wavefront inflation margin. It resolves the
+# name relative to the primary config, so the two must stay in one directory.
+WAVEFRONT_INFLATION_SIDECAR = "wavefront_inflation.yaml"
 
 
 @dataclass
@@ -276,7 +282,9 @@ class NAMOPlanBridge:
         if self._generated_config_path is None:
             return
         try:
-            self._generated_config_path.unlink(missing_ok=True)
+            # The config now lives in its own directory alongside the copied
+            # wavefront sidecar, so removing just the file would leak the rest.
+            shutil.rmtree(self._generated_config_path.parent, ignore_errors=True)
         except Exception:
             pass
         self._generated_config_path = None
@@ -327,13 +335,23 @@ class NAMOPlanBridge:
             )
             planning["robot_size"] = [half_x_m, half_y_m]
 
-            fd, tmp_path = tempfile.mkstemp(
-                prefix="namo_config_runtime_",
-                suffix=".yaml",
-            )
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                yaml.safe_dump(cfg, f, sort_keys=False)
-            self._generated_config_path = Path(tmp_path)
+            # namo_cpp finds wavefront_inflation.yaml by looking beside the
+            # primary config, then in parent `config/` directories
+            # (config_manager.cpp:284). A bare mkstemp lands this file in /tmp,
+            # where neither ever matches, so every run silently fell back to a
+            # built-in inflation margin and logged
+            # "wavefront_inflation.yaml not found near /tmp". Give the runtime
+            # config its own directory and carry the sidecar in with it, so the
+            # margin comes from the same file namo_cpp would have used.
+            tmp_dir = Path(tempfile.mkdtemp(prefix="namo_config_runtime_"))
+            tmp_path = tmp_dir / "namo_config_runtime.yaml"
+            tmp_path.write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
+            sidecar = source_path.parent / WAVEFRONT_INFLATION_SIDECAR
+            if sidecar.is_file():
+                shutil.copy2(sidecar, tmp_dir / WAVEFRONT_INFLATION_SIDECAR)
+            elif self._verbose:
+                print(f"[NAMOBridge] No {WAVEFRONT_INFLATION_SIDECAR} beside {source_path}")
+            self._generated_config_path = tmp_path
 
             if self._verbose:
                 print(
