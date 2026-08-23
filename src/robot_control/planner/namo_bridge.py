@@ -178,6 +178,7 @@ class NAMOPlanBridge:
         namo_config_path: str,
         scale_factor: float = 1.0,
         primitive_data_dir: Optional[str] = None,
+        show_push_scores: bool = False,
         verbose: bool = False,
         debug_xml_path: Optional[str] = None,
         enable_viewer: bool = False,
@@ -234,6 +235,11 @@ class NAMOPlanBridge:
             self._primitive_data_dir = primitive_data_dir
 
         self._object_mapping = ObjectMapping()
+
+        # Blocking heat-map of the ranker's first-push scores before each
+        # plan. Off by default: it stops the robot until a window closes,
+        # which is the point when inspecting and unacceptable unattended.
+        self._show_push_scores = bool(show_push_scores)
 
         # Rotation-safe circular radius from full extents.
         # Robot inflation radius used when generating MuJoCo XML (sphere geom
@@ -794,6 +800,16 @@ class NAMOPlanBridge:
             # to this pose, then warms up cleanly from the right state.
             starting_robot_pose = self._starting_robot_pose_sim(observation)
 
+            # Show the ranker's view and wait, when asked. This is the last
+            # point where every input exists together: the scene XML the
+            # planner will read, the checkpoint, the goal and the start pose.
+            if self._show_push_scores:
+                self._show_push_score_plot(
+                    xml_path, goal_sim, starting_robot_pose,
+                    kwargs.get("scorer_ckpt"), max_chain_depth,
+                    kwargs.get("external_edge_blacklist") or {},
+                )
+
             # Run planning
             result = service.plan_from_xml(
                 xml_path=xml_path,
@@ -1201,6 +1217,120 @@ class NAMOPlanBridge:
             if self._verbose:
                 print(f"[NAMOBridge] XML generation failed: {e}")
             return None
+
+
+
+    def _sim_object_half_extents_cm(self, sim_name: str, half: bool = False):
+        """Object extents in cm, read from the scene XML this bridge wrote.
+
+        MuJoCo geom ``size`` is half-extents in metres. Returns full extents by
+        default, matching ObjectPose.depth/width; ``half=True`` returns halves,
+        which is what a rectangle patch wants. Falls back to a small square
+        rather than raising, since this only feeds a diagnostic plot.
+        """
+        import re
+        pattern = rf'name="{re.escape(sim_name)}"[^>]*size="([0-9.eE+-]+) ([0-9.eE+-]+)'
+        match = re.search(pattern, self.last_xml_content or "")
+        if not match:
+            return (2.5, 2.5)
+        hx, hy = float(match.group(1)) * 100.0, float(match.group(2)) * 100.0
+        return (hx, hy) if half else (2 * hx, 2 * hy)
+
+    def _show_push_score_plot(self, xml_path, goal_sim, start_pose,
+                              scorer_ckpt, max_chain_depth, blacklist) -> None:
+        """Score every first push and display it, blocking until closed.
+
+        Costs one extra scoring pass per plan, which is the price of seeing
+        what the search is about to act on. Never raises.
+        """
+        if not scorer_ckpt:
+            print("[PushScores] no scorer checkpoint, nothing to plot", flush=True)
+            return
+        try:
+            import math
+            from types import SimpleNamespace
+            import namo_rl
+            from namo.runtime_profile import CANONICAL_PRIMITIVE_PREFIX
+            from namo.planners.opening.best_first_search import rank_first_pushes_h2
+            from namo.strategies.primitive_goal_strategy import PrimitiveGoalStrategy
+            from namo.strategies.scorer_goal_strategy import _get_scorer
+            from robot_control.diagnostics.push_score_plot import show_push_scores
+
+            config = str(self._effective_namo_config_path)
+            env = namo_rl.RLEnvironment(xml_path, config, False)
+            env.reset()
+            env.set_robot_pose(*start_pose)
+            state = env.get_full_state()
+            obs = env.get_observation()
+
+            planner = SimpleNamespace(
+                prim=PrimitiveGoalStrategy(
+                    data_dir=str(self._primitive_data_dir),
+                    primitive_prefix=CANONICAL_PRIMITIVE_PREFIX),
+                scorer=_get_scorer(str(scorer_ckpt), config, "cpu"))
+            _ranked, grid = rank_first_pushes_h2(
+                planner, env, (goal_sim[0], goal_sim[1], 0.0), xml_path,
+                state, max_chain_depth, score=True, return_grid=True)
+            if not grid:
+                print("[PushScores] empty grid, nothing to plot", flush=True)
+                return
+
+            target = next(iter(blacklist), None) or next(
+                (k[:-5] for k in obs if k.endswith("_pose") and "movable" in k), None)
+            if target is None:
+                return
+            pose = obs[f"{target}_pose"]
+            size = self._sim_object_half_extents_cm(target)
+            # Everything in the scene except the object being scored, with its
+            # real rotation. The arena border walls 1-4 are the workspace edge,
+            # already drawn as the boundary, so they would only clutter it.
+            others = {}
+            for key in obs:
+                if not key.endswith("_pose") or key == "robot_pose":
+                    continue
+                name = key[:-5]
+                if name == target:
+                    continue
+                if name.startswith("wall_") and name.split("_")[-1].isdigit() \
+                        and int(name.split("_")[-1]) <= 4:
+                    continue
+                ex, ey = self._sim_object_half_extents_cm(name)
+                others[name] = (obs[key][0] * 100, obs[key][1] * 100,
+                                math.degrees(obs[key][2]), ex, ey,
+                                name.startswith("wall_"))
+            # The actual network input, rendered by the same LiveScorer the
+            # ranker uses. Everything else in the figure is a readable stand-in
+            # for these five rasters; only these are what the model saw.
+            masks, mask_names = None, None
+            try:
+                import sys as _sys
+                sandbox = str(resolve_namo_cpp_dir(Path(__file__).resolve())
+                              / "scripts" / "sandbox")
+                if sandbox not in _sys.path:
+                    _sys.path.insert(0, sandbox)
+                from live_scorer import LiveScorer, CHANS
+                renderer = LiveScorer(ckpt=str(scorer_ckpt), render_config=config,
+                                      device="cpu")
+                masks, _meta = renderer.render_ctx(
+                    env, target, (goal_sim[0], goal_sim[1], 0.0), xml_path)
+                mask_names = CHANS
+            except Exception as exc:
+                print(f"[PushScores] input masks unavailable: {exc!r}", flush=True)
+
+            show_push_scores(
+                grid,
+                (pose[0] * 100, pose[1] * 100, math.degrees(pose[2])),
+                size,
+                (obs["robot_pose"][0] * 100, obs["robot_pose"][1] * 100),
+                (goal_sim[0] * 100, goal_sim[1] * 100),
+                other_objects=others,
+                blocked_edges=set(blacklist.get(target, set())),
+                input_masks=masks,
+                mask_names=mask_names,
+                title=f"HY5U first-push score for {target}",
+            )
+        except Exception as exc:
+            print(f"[PushScores] skipped: {exc!r}", flush=True)
 
     def _write_xml(self, xml_content: str) -> Optional[str]:
         """Write XML content to file."""

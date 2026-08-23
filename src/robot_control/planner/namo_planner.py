@@ -138,6 +138,7 @@ class NAMOPlanner(Planner):
         # Workspace config for reachability checking (must match navigation planner)
         workspace_width_cm: float = 70.0,
         workspace_height_cm: float = 55.0,
+        show_push_scores: bool = False,
         robot_width_cm: float = 7.0,
         robot_height_cm: float = 7.0,
         # Robot body model for the planning simulator

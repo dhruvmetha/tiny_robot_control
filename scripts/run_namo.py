@@ -1042,6 +1042,7 @@ def run_interactive_mode(args):
         robot_height_cm=robot_height_cm,
         robot_model=args.robot_model,
         manual_primitives_file=args.manual_primitives_file,
+        show_push_scores=args.show_push_scores,
     )
 
     print("\n  NAMOPlanner will:")
@@ -1577,6 +1578,7 @@ def run_automatic_mode(args):
         robot_height_cm=robot_height_cm,
         robot_model=args.robot_model,
         manual_primitives_file=args.manual_primitives_file,
+        show_push_scores=args.show_push_scores,
     )
 
     # Create runtime config
@@ -2054,6 +2056,13 @@ def main():
         type=str,
         default=None,
         help="Save generated XML to this path for debugging",
+    )
+    parser.add_argument(
+        "--show-push-scores",
+        action="store_true",
+        help="Before each plan, display the ranker's 60x5 first-push score grid "
+             "and wait for Enter. Blocks the robot, so interactive "
+             "runs only. Writes /tmp/push_scores_latest.png each time.",
     )
     parser.add_argument(
         "--viewer",
