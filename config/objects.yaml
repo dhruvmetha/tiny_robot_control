@@ -109,6 +109,14 @@ objects:
 
   # Long wall blocks - 19cm x 5.2cm
   # Use marker_offset if marker is not centered on the object
+
+  # wall_9's width/depth look swapped next to wall_10 and wall_11, and they are.
+  # Its ArUco tag is glued on 90 degrees rotated from theirs, so the swap here
+  # cancels that out and the world-frame box comes out correct. Verified
+  # 2026-08-22 against the scene XML from a real run: wall_9 reports theta 6 and
+  # draws horizontal, wall_11 reports theta 92 and also draws horizontal. Do not
+  # "fix" this to match the other two. That was tried on 2026-08-21 and nav
+  # started drawing wall_9 vertical.
   wall_9:
     marker_id: 9
     type: static
