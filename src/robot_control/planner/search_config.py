@@ -174,3 +174,25 @@ def describe_effective_search(
         f"planner: {algorithm}  |  exhaustive sweep over all edges and depths"
         f"  |  goal strategy: {goal_strategy} ({ranker})"
     )
+
+
+def retry_can_change_an_empty_result(
+    config: LocalSearchConfig, shuffle_edges: bool
+) -> bool:
+    """Can re-running with a new shuffle seed produce a different answer?
+
+    A planning retry varies exactly one thing, `shuffle_seed`, which reorders
+    candidate enumeration. `best_first` orders its queue by the ranker's score
+    and never reads the seed, so an honest empty result is *the* answer and
+    every retry re-derives it. Measured on hardware 2026-08-22: three retries
+    on one scene took 119.8 s, 115.6 s and 115.7 s and all returned no plan.
+
+    Turning edge shuffling off fixes the enumeration order for any search, with
+    the same consequence.
+
+    This says nothing about retrying after an *exception*. A crashed attempt
+    has produced no answer at all, so trying again is still worth it.
+    """
+    if config.uses_best_first:
+        return False
+    return bool(shuffle_edges)

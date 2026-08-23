@@ -16,6 +16,7 @@ from robot_control.planner.search_config import (
     LOCAL_SEARCH_CHOICES,
     LocalSearchConfig,
     check_search_reaches_planner,
+    retry_can_change_an_empty_result,
     describe_effective_search,
 )
 from robot_control.planner.wavefront_path_planner import WavefrontPathPlanner
@@ -32,6 +33,7 @@ __all__ = [
     "target_path_for_run",
     "LocalSearchConfig",
     "check_search_reaches_planner",
+    "retry_can_change_an_empty_result",
     "describe_effective_search",
     "LOCAL_SEARCH_CHOICES",
     "BEST_FIRST_PRIOR_CHOICES",
