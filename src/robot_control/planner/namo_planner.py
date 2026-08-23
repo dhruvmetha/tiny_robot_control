@@ -39,6 +39,9 @@ from robot_control.planner.region_target import (
 )
 from robot_control.planner.search_config import LocalSearchConfig
 from robot_control.planner.namo_bridge import NAMOPlanBridge
+from robot_control.planner.reachability_filter import (
+    unreachable_contact_points,
+)
 
 
 # Keys from the planner's algorithm_stats dict that are safe to serialize to
@@ -245,11 +248,20 @@ class NAMOPlanner(Planner):
             debug_xml_path=debug_xml_path,
             enable_viewer=enable_viewer,
             pause_after_load=pause_after_load,
+            show_push_scores=show_push_scores,
             robot_width_cm=robot_width_cm,
             robot_height_cm=robot_height_cm,
             robot_model=robot_model,
             manual_primitives_file=manual_primitives_file,
         )
+
+        # Geometry the reachability filter rebuilds the navigator's grid from.
+        # Kept rather than only forwarded, so the filter and the navigator
+        # cannot drift onto different workspace or footprint numbers.
+        self._workspace_width_cm = float(workspace_width_cm)
+        self._workspace_height_cm = float(workspace_height_cm)
+        self._robot_width_cm = float(robot_width_cm)
+        self._robot_height_cm = float(robot_height_cm)
 
         # Cached summary from unified C++ reachability query
         self._last_reachability_summary: Optional[Dict[str, Any]] = None
@@ -1036,6 +1048,37 @@ class NAMOPlanner(Planner):
 
         return objects_that_moved(poses(before), poses(after))
 
+
+    def _unreachable_contact_points(self, obs) -> Set[Tuple[str, int]]:
+        """Edges whose approach pose sits in an obstacle, as (object, edge) pairs.
+
+        Collision-freedom, not reachability. See reachability_filter's module
+        docstring for why that distinction matters at chain depth.
+
+        Never raises. A filter that fails should cost nothing rather than stop
+        the robot, so any error degrades to "filter nothing" AND SAYS SO. The
+        filter itself raises rather than returning empty, so this print is the
+        only thing separating a broken filter from a clean scene.
+        """
+        try:
+            blocked = unreachable_contact_points(
+                obs,
+                workspace_width_cm=self._workspace_width_cm,
+                workspace_height_cm=self._workspace_height_cm,
+                robot_width_cm=self._robot_width_cm,
+                robot_height_cm=self._robot_height_cm,
+            )
+        except Exception as exc:
+            print(f"[NAMOPlanner] reachability filter skipped: {exc!r}")
+            return set()
+        if blocked and self._verbose:
+            per_object: Dict[str, int] = {}
+            for name, _edge in blocked:
+                per_object[name] = per_object.get(name, 0) + 1
+            print(f"[NAMOPlanner] blocked {len(blocked)} contact points "
+                  f"the navigator cannot reach: {per_object}")
+        return blocked
+
     def _search_planner_kwargs(self, shuffle_seed: Optional[int]) -> Dict[str, Any]:
         """Every planner option both the whole-problem and held paths must send.
 
@@ -1168,11 +1211,20 @@ class NAMOPlanner(Planner):
                 effective_seed = self._shuffle_seed
 
             try:
+                # Approach poses the executor's own grid says sit inside an
+                # obstacle. Collision-freedom only, NOT reachability: the two
+                # grids rasterise the same inflation rule differently near a
+                # wall, so the planner would otherwise spend simulations on
+                # poses that put a corner through it. Deliberately not a
+                # reachability test, since this ban applies at every chain
+                # depth and would delete 2-chains. See reachability_filter's
+                # module docstring. Recomputed per attempt because objects move.
+                blocked = self._unreachable_contact_points(obs)
                 subgoals = self._bridge.plan(
                     observation=obs,
                     robot_goal_cm=self._robot_goal_cm,
                     algorithm=self._algorithm,
-                    failed_pushes=self._failed_pushes,
+                    failed_pushes=self._failed_pushes | blocked,
                     **self._search_planner_kwargs(effective_seed),
                 )
 
