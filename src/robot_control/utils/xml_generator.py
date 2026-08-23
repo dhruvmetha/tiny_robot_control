@@ -87,6 +87,12 @@ class NAMOXMLGenerator:
 
     # Object parameters (real robot scale - will be multiplied by scale_factor)
     OBJECT_HEIGHT_BASE = 0.025  # 2.5cm half-height (5cm total)
+    # NOT MEASURED. No recorded origin anywhere in either repo, unlike the two
+    # friction constants below which at least say which file they were matched
+    # to. Nothing has been weighed. Combined with the unmeasured friction, this
+    # means the sim's push DISTANCE has nothing anchoring it to hardware, while
+    # push ORDERING mostly survives because it turns on geometry and contact
+    # point. Do not read a displacement out of this sim as a prediction.
     OBJECT_MASS = 0.1
     OBJECT_FRICTION = "1 0.005 0.0001"   # Exact match to movable obstacle friction in
                                           # namo_cpp/data/nominal_primitive_scene_*_1x_car.xml.
@@ -105,7 +111,14 @@ class NAMOXMLGenerator:
                                           # contact dynamics during wall-grazing differ; matching
                                           # exactly keeps planner-sim and primitive-sim in lockstep.
 
-    # Floor friction
+    # Floor friction. NOT MEASURED, and the one constant here with no recorded
+    # origin at all. It governs block-on-floor contact, which is what actually
+    # decides how far a push travels, so it is the worst one to be guessing at.
+    # MuJoCo takes the elementwise max of the two geoms' friction at equal
+    # priority (engine_collision_driver.c:1366), so block-on-floor slide is
+    # max(1.0, 0.5) = 1.0 and this 0.5 never binds for a block. It binds for
+    # the car's chassis against the floor. Measure it before anyone treats a
+    # simulated push distance as a number.
     FLOOR_FRICTION = "0.5 0.005 0.001"
 
     # Collision avoidance defaults (overridden by wavefront_inflation.yaml when present)
