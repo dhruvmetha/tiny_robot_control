@@ -71,7 +71,22 @@ class RemoteObserverNode:
             self._socket = self._ctx.socket(zmq.SUB)
             self._socket.connect(self._address)
             self._socket.setsockopt(zmq.SUBSCRIBE, b"obs")
-            # Only keep latest message to avoid lag
+            # DO NOT MOVE THIS ABOVE connect(). ZMQ only honours CONFLATE when
+            # it is set first, so setting it here makes it a no-op, and the
+            # no-op is what keeps this stream alive. CONFLATE drops all but the
+            # last message and does not work with multipart at all: the camera
+            # service sends [b"obs", payload], and a conflating subscriber
+            # receives NOTHING. Measured 2026-08-22 on pyzmq 27.1.0 / libzmq
+            # 4.3.5, same publisher both ways: set before connect delivered 0
+            # of 10 messages, set after delivered all 10.
+            #
+            # So this line reads as an optimisation and is really an accident
+            # that happens to be harmless. Tidying it into the documented order
+            # kills every observation on the real robot, silently, because the
+            # except Exception in _receive_loop swallows the starvation.
+            #
+            # The lag it was meant to fix is real. Fix it by draining to the
+            # newest message with a non-blocking poll, not with CONFLATE.
             self._socket.setsockopt(zmq.CONFLATE, 1)
         except zmq.ZMQError as e:
             print(f"[RemoteObserver] Failed to connect to {self._address}: {e}")
