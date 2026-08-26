@@ -26,3 +26,5 @@ MUJOCO_LOG.TXT
 
 # Local verification scratch space.
 /_tmp_real_test_envs_verify/
+build_cards/
+real_trials/
