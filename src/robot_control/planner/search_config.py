@@ -25,7 +25,7 @@ BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 
 # Which decision rule reads the ranked pool, forwarded verbatim as
 # `solve_boundary_from_xml(mode=...)`. `search` pops a priority queue and can
-# back up. `policy` takes the argmax at the state in front of it and cannot.
+# back up. `reactive` takes the argmax at the state in front of it and cannot.
 #
 # The second one exists because the sim-to-real gap attacks lookahead
 # specifically: a real block pushed off-centre keeps rotating, 2.13 to 2.42
@@ -39,8 +39,10 @@ BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 # without translation. test_exec_mode_routing pins that they still match: a
 # mapping table between the two repositories would be one more place to write
 # the wrong arm into a paired comparison.
-EXEC_MODE_CHOICES = ("search", "policy")
-DEFAULT_EXEC_MODE = "search"
+SEARCH_EXEC_MODE = "search"
+REACTIVE_EXEC_MODE = "reactive"
+EXEC_MODE_CHOICES = (SEARCH_EXEC_MODE, REACTIVE_EXEC_MODE)
+DEFAULT_EXEC_MODE = SEARCH_EXEC_MODE
 
 # namo_cpp owns the canonical protocol (hmax=2, 900 simulations per keyhole).
 # Leaving these unset here forwards nothing and lets that default apply, so the
@@ -72,13 +74,13 @@ class LocalSearchConfig:
                 f"Unknown exec_mode {self.exec_mode!r}. "
                 f"Valid: {list(EXEC_MODE_CHOICES)}"
             )
-        if self.uses_policy and not self.uses_best_first:
+        if self.uses_reactive and not self.uses_best_first:
             # namo_cpp refuses this too, but only once the service is called
-            # mid-run. The policy returns the argmax of a ranked pool and
+            # mid-run. Reactive returns the argmax of a ranked pool and
             # region_bfs builds none, it sweeps every edge and depth in its own
             # order.
             raise ValueError(
-                "exec_mode='policy' needs --local-search best_first: the policy "
+                "exec_mode='reactive' needs --local-search best_first: reactive "
                 f"ranks candidates and picks the top one, and {self.local_search!r} "
                 "builds no ranked pool. Pass --local-search best_first, or use "
                 "--exec-mode search."
@@ -112,8 +114,8 @@ class LocalSearchConfig:
         return self.uses_best_first and self.best_first_prior == "model"
 
     @property
-    def uses_policy(self) -> bool:
-        return self.exec_mode == "policy"
+    def uses_reactive(self) -> bool:
+        return self.exec_mode == REACTIVE_EXEC_MODE
 
     def as_boundary_kwargs(self) -> Dict[str, Any]:
         """The extra keys `solve_boundary_from_xml` names, on top of the search ones.
@@ -193,7 +195,7 @@ SCORER_GOAL_STRATEGY = "scorer"
 # misrouted search flag produces a slow run somebody eventually investigates,
 # while a misrouted exec mode produces a normal-looking trial filed under the
 # wrong cell of a paired design.
-POLICY_REQUIRES_HELD_BOUNDARY = True
+REACTIVE_REQUIRES_HELD_BOUNDARY = True
 
 
 def check_search_reaches_planner(
@@ -208,9 +210,9 @@ def check_search_reaches_planner(
     so the only symptom is a slow run that looks like a hard scene. Fail before
     the robot moves instead.
     """
-    if config.uses_policy and POLICY_REQUIRES_HELD_BOUNDARY and not held_boundary:
+    if config.uses_reactive and REACTIVE_REQUIRES_HELD_BOUNDARY and not held_boundary:
         raise ValueError(
-            "--exec-mode policy has no effect without --hold-region-target: the "
+            "--exec-mode reactive has no effect without --hold-region-target: the "
             "mode is read by solve_boundary_from_xml, and only the held-boundary "
             "loop calls it. The whole-problem path plans through plan_from_xml, "
             "which would drop the mode and search anyway. Pass "
@@ -254,7 +256,7 @@ def describe_effective_search(
         return f"planner: {algorithm}  |  {config.describe()}"
     ranked = goal_strategy == SCORER_GOAL_STRATEGY
     ranker = f"scorer ckpt={config.scorer_ckpt}" if ranked else "no ranker"
-    # The held-boundary loop reaches best_first and the policy through
+    # The held-boundary loop reaches best_first and reactive through
     # solve_boundary_from_xml's own parameters, so on that path the mode is real
     # even though the algorithm is not best-first aware. Off it, the sweep runs
     # and the mode is not consulted.

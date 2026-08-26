@@ -16,6 +16,8 @@ from robot_control.planner.search_config import (
     DEFAULT_LOCAL_SEARCH,
     EXEC_MODE_CHOICES,
     LOCAL_SEARCH_CHOICES,
+    REACTIVE_EXEC_MODE,
+    SEARCH_EXEC_MODE,
     LocalSearchConfig,
     check_search_reaches_planner,
     describe_effective_search,
@@ -41,4 +43,6 @@ __all__ = [
     "DEFAULT_BEST_FIRST_PRIOR",
     "EXEC_MODE_CHOICES",
     "DEFAULT_EXEC_MODE",
+    "SEARCH_EXEC_MODE",
+    "REACTIVE_EXEC_MODE",
 ]

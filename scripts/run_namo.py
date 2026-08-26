@@ -1920,7 +1920,7 @@ def main():
         default=DEFAULT_EXEC_MODE,
         choices=list(EXEC_MODE_CHOICES),
         help="Decision rule per replan. search = expand a priority queue and "
-             "return a chain (default); policy = score the candidates at the "
+             "return a chain (default); reactive = score the candidates at the "
              "state in front of the robot and push the top one, no lookahead. "
              "Needs --local-search best_first and --hold-region-target. Both "
              "run the same ranker over the same pool, so this is the lookahead "

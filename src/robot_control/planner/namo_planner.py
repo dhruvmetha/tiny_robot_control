@@ -53,8 +53,10 @@ _DIAG_SAFE_STAT_KEYS = frozenset({
     "total_pushes",
     "regions_opened",
     # A whitelist drops anything it does not name, so a scalar the bridge sets
-    # and nobody adds here reaches no log at all. These two are the string and
-    # int the boundary path already records.
+    # and nobody adds here reaches no log at all. Which decision rule produced
+    # the push is one of those, and for a crossed trial matrix a row without it
+    # is a row whose arm has to be recovered from a command string.
+    "exec_mode",
     "resolved_target",
     "simulations_used",
 })
