@@ -31,21 +31,32 @@ Three columns added, nothing removed, nothing renamed.
 
 Which prior ordered the candidate pool. Matches `--best-first-prior` exactly.
 
-**`exec_mode`** is `search` or `policy`.
+**`exec_mode`** is `search` or `reactive`.
 
-Which decision rule ran per replan. `search` expands a priority queue and can back up; `policy` takes the argmax at the state in front of the robot and cannot.
+Which decision rule ran per replan. `search` expands a priority queue and can back up; `reactive` takes the argmax at the state in front of the robot and cannot.
 
 These two strings are `--exec-mode` verbatim, and `--exec-mode` is namo_cpp's `BOUNDARY_MODES` verbatim. One vocabulary across the CLI, both repositories and this file, with `test_exec_mode_routing.py::test_both_repositories_spell_the_modes_the_same_way` pinning that they stay equal. A translation table anywhere along that chain would be one more place to write the wrong arm.
 
-The prose calls this mode "reactive" and the token is `policy`. Say the word, log the token. If `reactive` is the better token it is a one-line change on both sides and I would rather make it now than after 56 rows.
+The token was `policy` in the first draft of this proposal and is now `reactive`, decided by namo-a1 on the grounds that `policy` versus `search` names the wrong difference: the search runs the same ranker, ordering its queue by exactly the quantity the reactive rule takes the max of, so calling one arm "policy" implies the other has none. `reactive` versus `search` names the real difference, which is whether it looks ahead, and it matches `eval_reactive_argmax.py`. Renamed on both sides while zero matrix rows exist.
 
-**`failure_cause`** needs `real_robot` to fill in.
+**`failure_cause`** is eight values, seven from `real_robot` plus `none`.
 
-The taxonomy is theirs and it lives in prose at `docs/ICRA_REAL_ROBOT_STUDY.md:71` and `docs/REAL_ROBOT_TRIALS.md:119`, neither of which is at my base commit. I am not going to invent it from a summary.
+```
+none                 the trial succeeded
+corridor_too_tight
+marker_unreachable
+overshoot_onto_goal
+stall
+radio_dropout
+planning_failed
+other
+```
 
-Two values are already load-bearing and should be in it: `corridor_too_tight` and `marker_unreachable`. Three of the 14 matrix scenes have a worst-case route near the threshold, `easy_002` at 9.95 cm and `easy_001` and `med_077` at 11.2. If the calibration ladder lands above 9.95 and one of those fails, that column is the only thing separating the two, because at the table they look identical.
+The seven are `real_robot`'s taxonomy verbatim, from `docs/ICRA_REAL_ROBOT_STUDY.md:71` and `docs/REAL_ROBOT_TRIALS.md:119`. The human at the table assigns it at verdict time, and the verdict is ground truth over the planner's exit code.
 
-One thing that is a schema question rather than a taxonomy one: a successful trial needs an explicit value, not an empty cell. Empty reads as both "did not fail" and "nobody triaged it yet", and after a long table session those are very different. Proposed `none` for a success and `unset` for a failure not yet triaged, so a row that still needs a person is greppable.
+`none` is the piece I argued for and it was accepted. A successful trial needs an explicit value, because an empty cell reads as both "did not fail" and "nobody triaged this yet", and after a long table session those are very different. That ambiguity resolves itself wrongly at 1am.
+
+The first two are load-bearing sooner than the rest. Three of the 14 matrix scenes have a worst-case route near the threshold, `easy_002` at 9.95 cm and `easy_001` and `med_077` at 11.2. If the calibration ladder lands above 9.95 and one of those fails, this column is the only thing separating `corridor_too_tight` from `marker_unreachable`, because at the table they look identical.
 
 ## The pilot rows
 
@@ -59,10 +70,20 @@ All four are v1, pre-matrix, all successes. Backfill rather than leave blank:
 
 `command` should stay. It is the only full record of what actually ran, and the parsed columns are a summary of it.
 
-But the fix for "the arm lives in free text" is not to delete the free text, it is to stop the two from being able to disagree. A small check over the file, asserting that every row's `arm` and `exec_mode` match what its `command` string says, turns a transcription slip into a failure at the table instead of a discovered-in-analysis one. That check is cheap and I will write it if `real_robot` wants it here rather than in their own harness.
+But the fix for "the arm lives in free text" is not to delete the free text, it is to stop the two from being able to disagree. A small check over the file, asserting that every row's `arm` and `exec_mode` match what its `command` string says, turns a transcription slip into a failure at the table instead of a discovered-in-analysis one. `real_robot` asked for it here, so it is written: `scripts/check_trials_consistency.py`, with `tests/test_trials_consistency.py` covering it. It also enforces the two vocabularies and the `none`-on-success rule, and it runs against a file that does not exist yet without complaining.
 
-The console already helps: `describe_effective_search` now prints `exec mode: policy | local search: best_first/model` before anything moves, on every path including the default. A person filling a row can read both factors off one line rather than reconstructing them.
+The console already helps: `describe_effective_search` now prints `exec mode: reactive  |  local search: best_first/model` before anything moves, on every path including the default. A person filling a row can read both factors off one line rather than reconstructing them.
+
+## The open problem this proposal does not solve
+
+`real_robot` found it while reading the flag: the pre-registered matrix command passes neither `--hold-region-target` nor `--active-target`, and only the held-boundary loop reaches `solve_boundary_from_xml`, which is the only method that reads the mode.
+
+So as written the two arms would not differ by execution mode. They would differ by code path, search on the whole-problem planning path and reactive on the held-boundary loop, with different verification semantics and a different boundary-selection loop between them. The sign test would compare two pipelines and report it as a mode effect.
+
+Two ways out, both amending a pre-registered command and both Dhruv's: either both arms gain `--hold-region-target` so they share the held loop and differ only in mode, or exec mode learns to work on the non-held path. `real_robot` leans to the first and so do I, since it is one flag on both arms and keeps the refusal honest, but it does change the search arm's code path from what the pilot ran.
+
+Nothing in this file depends on which way that goes. The columns are right either way.
 
 ## What I am not proposing
 
-Nothing about the failure taxonomy's contents, the trial protocol, the randomisation, or where the file lives. Those are `real_robot`'s and Dhruv's.
+The trial protocol, the randomisation, or where the file lives. Those are `real_robot`'s and Dhruv's.
