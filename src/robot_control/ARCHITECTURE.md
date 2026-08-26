@@ -1,376 +1,227 @@
-# robot_control Architecture
+# robot_control architecture
 
-## System Overview
+## Scope and current status
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              USER / NAMO_TASK                               │
-│                                                                             │
-│  python -m namo_task.run --sim --goal 50 30 --visualize                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                 RUNTIME                                      │
-│                         (robot_control/runtime.py)                          │
-│                                                                             │
-│  Orchestrates the Sense-Plan-Act loop at fixed frequency (30 Hz)           │
-│  Manages GUI visualization (optional, uses micromvp.gui.MVPWindow)         │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         MAIN LOOP                                    │   │
-│  │                                                                      │   │
-│  │  while running:                                                      │   │
-│  │      observation = environment.observe()      # SENSE               │   │
-│  │      state = estimator.update(observation)                          │   │
-│  │                                                                      │   │
-│  │      if controller.is_done(state, subgoal):                         │   │
-│  │          subgoal = planner.plan(state)        # PLAN                │   │
-│  │                                                                      │   │
-│  │      action = controller.step(state, subgoal) # ACT                 │   │
-│  │      environment.apply_action(action)                               │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-          │              │                │                    │
-          ▼              ▼                ▼                    ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐
-│ ENVIRONMENT  │ │  ESTIMATOR   │ │   PLANNER    │ │     CONTROLLERS      │
-│   (wrapper)  │ │              │ │              │ │      (wrappers)      │
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────────────┘
-       │                                                     │
-       │                                                     │
-       ▼                                                     ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              micromvp                                        │
-│                    (Hardware Abstraction Layer)                              │
-│                                                                             │
-│   SimEnv, RealPushEnv, NavigationController, MVPWindow, RVG                │
-└─────────────────────────────────────────────────────────────────────────────┘
+`robot_control` owns the single-robot orchestration and execution layer in the
+NAMO workspace. It assembles observations, state, planners, controllers,
+simulation or hardware environments, an optional GUI, and diagnostics into one
+runtime.
+
+The NAMO boundary is partially operational. Scene conversion, object mapping,
+canonical binding loading, exact-chain simulation verification, and prior-plan
+reuse are implemented and do not use `NAMOPlanningService`. Fresh/full search
+is blocked because the sibling `namo_cpp` checkout does not provide the
+in-process Python class `namo.services.NAMOPlanningService` that the
+full-search path imports. This is an API compatibility blocker, not a remote
+service outage.
+
+## Runtime data flow
+
+[`Runtime`](runtime.py) creates the environment and observation source for the
+selected mode, a [`WorldState`](core/world_state.py), the standard controller
+set, a [`ControlCoordinator`](coordinator.py), and the optional GUI. When a
+planner is configured, it also creates a [`SubgoalExecutor`](executor.py).
+
+The autonomous sense-plan-act path is:
+
+```text
+Observation source -> WorldState -> Planner -> SubgoalExecutor -> Controller -> Action -> Environment
+                                      |              |                |
+                                      +------ Runtime + DiagnosticsRecorder ------+
 ```
 
----
+Sensors publish `Observation` values through the topics in
+[`core/topics.py`](core/topics.py). `WorldState` caches and republishes the
+latest observation. At the configured frequency, `Runtime` asks the planner for
+a subgoal when needed, lets `SubgoalExecutor` dispatch that subgoal to the
+navigation or push controller, and applies the resulting differential-drive
+`Action` to the environment. The runtime attaches
+[`DiagnosticsRecorder`](diagnostics/recorder.py) to planning and execution
+lifecycle events and can capture scene and replay artifacts.
 
-## Wrapper Pattern
+Without a planner, the interactive path replaces `Planner -> SubgoalExecutor`
+with `ControlCoordinator`, which routes GUI input to the currently selected
+controller.
 
-robot_control wraps micromvp to provide a single-robot Sense-Plan-Act interface:
+## Components
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          ADAPTER PATTERN                                     │
-│                                                                             │
-│   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │                      micromvp (Multi-Robot)                          │  │
-│   │                                                                      │  │
-│   │   observe() → Dict[int, RobotObservation]                           │  │
-│   │   apply_actions(Dict[int, Action])                                   │  │
-│   │                                                                      │  │
-│   │   Controllers manage their own state:                                │  │
-│   │     - set_path(path)                                                │  │
-│   │     - rotate_to(theta)                                              │  │
-│   │     - step(observation) → action                                    │  │
-│   └─────────────────────────────────────────────────────────────────────┘  │
-│                                    │                                        │
-│                                    │ WRAPPED BY                             │
-│                                    ▼                                        │
-│   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │                    robot_control (Single-Robot)                      │  │
-│   │                                                                      │  │
-│   │   observe() → Observation                                            │  │
-│   │   apply_action(Action)                                               │  │
-│   │                                                                      │  │
-│   │   Controllers receive Subgoals from Planner:                         │  │
-│   │     - step(state, subgoal) → action                                 │  │
-│   │     - is_done(state, subgoal) → bool                                │  │
-│   └─────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+### Core state and messages
 
----
+- [`core/types.py`](core/types.py) defines observations, object poses, wheel
+  actions, navigation and push subgoals, and workspace geometry.
+- [`core/topics.py`](core/topics.py) names the in-process PyPubSub channels.
+- [`core/world_state.py`](core/world_state.py) aggregates the latest sensor
+  observation.
+- [`core/serialization.py`](core/serialization.py) encodes observations for the
+  ZeroMQ camera boundary.
+- [`core/object_defs.py`](core/object_defs.py) loads physical object definitions
+  from YAML.
 
-## Component Details
+### Environments and hardware transport
 
-### 1. Environment (Wrapper)
+- [`environment/base.py`](environment/base.py) defines the environment
+  interface.
+- [`environment/sim.py`](environment/sim.py) provides `SimEnv`, a
+  differential-drive simulation used by the runtime.
+- [`environment/real.py`](environment/real.py) provides `RealEnv` for a single
+  physical robot.
+- [`environment/action_sender.py`](environment/action_sender.py) defines the
+  sender protocol expected by `RealEnv`.
+- [`environment/micromvp_adapter.py`](environment/micromvp_adapter.py) adapts
+  MicroMVP's serial sender to that protocol; the serial implementation remains
+  outside `robot_control`.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    robot_control/environment/                               │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                      Environment (ABC)                               │   │
-│  │                        base.py                                       │   │
-│  │                                                                      │   │
-│  │  observe() → Observation      # Single robot                        │   │
-│  │  apply_action(Action)         # Single robot                        │   │
-│  │  start() → bool                                                      │   │
-│  │  close()                                                             │   │
-│  │  workspace_config → WorkspaceConfig                                  │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                          ▲                    ▲                             │
-│                          │                    │                             │
-│         ┌────────────────┴──┐          ┌──────┴────────────────┐           │
-│         │                   │          │                       │           │
-│  ┌──────────────────┐  ┌──────────────────┐                                │
-│  │  SimEnvironment  │  │ RealEnvironment  │                                │
-│  │     sim.py       │  │     real.py      │                                │
-│  │                  │  │                  │                                │
-│  │  Wraps SimEnv    │  │ Wraps RealPushEnv│                                │
-│  └──────────────────┘  └──────────────────┘                                │
-│           │                     │                                           │
-│           └──────────┬──────────┘                                           │
-│                      ▼                                                      │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         micromvp                                     │   │
-│  │                                                                      │   │
-│  │   SimEnv (sim_env.py)          RealPushEnv (real_push_env.py)       │   │
-│  │   - Physics simulation         - ArUco marker detection             │   │
-│  │   - DDR kinematics             - UDP robot communication            │   │
-│  │   - Multi-robot Dict API       - Camera + obstacle tracking         │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+### Observation nodes
 
-### 2. Controllers
+- [`nodes/sim_sensor.py`](nodes/sim_sensor.py) polls `SimEnv` and publishes
+  simulation observations.
+- [`nodes/camera_sensor.py`](nodes/camera_sensor.py) captures local camera
+  frames; [`camera/observer.py`](camera/observer.py) turns marker detections
+  into observations.
+- [`nodes/remote_observer.py`](nodes/remote_observer.py) receives serialized
+  observations from `camera_service` over ZeroMQ.
+- [`nodes/remote_record_client.py`](nodes/remote_record_client.py) controls
+  recording on that remote camera service, while
+  [`utils/camera_recorder.py`](utils/camera_recorder.py) supports local camera
+  recording.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     robot_control/controller/                               │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                       Controller (ABC)                               │   │
-│  │                          base.py                                     │   │
-│  │                                                                      │   │
-│  │  step(state: State, subgoal: Subgoal) → Action                      │   │
-│  │  is_done(state: State, subgoal: Subgoal) → bool                     │   │
-│  │  reset()                                                             │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                          ▲                    ▲                             │
-│                          │                    │                             │
-│         ┌────────────────┴──┐          ┌──────┴────────────────┐           │
-│         │                   │          │                       │           │
-│  ┌────────────────────┐  ┌────────────────────┐                            │
-│  │NavigationController│  │  PushController    │                            │
-│  │   navigation.py    │  │     push.py        │                            │
-│  │                    │  │                    │                            │
-│  │  WRAPPER around    │  │  Approach → Align  │                            │
-│  │  micromvp's        │  │  → Push → Done     │                            │
-│  │  NavigationCtrl    │  │                    │                            │
-│  └────────────────────┘  └────────────────────┘                            │
-│           │                                                                 │
-│           │ Wraps                                                           │
-│           ▼                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │              micromvp/controller/navigation_controller/              │   │
-│  │                                                                      │   │
-│  │   NavigationController                                               │   │
-│  │   - Pure Pursuit + CTE-PD path following                            │   │
-│  │   - In-place rotation (rotate_to)                                   │   │
-│  │   - State machine (IDLE, FOLLOWING, ROTATING, FINISHED)             │   │
-│  │   - Path resampling, no-skip gating                                 │   │
-│  │   - set_path(), clear_path(), set_speed()                           │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+### Planning
 
-### 3. Planner
+- [`planner/base.py`](planner/base.py) defines the task-planner interface, and
+  [`planner/sequence_planner.py`](planner/sequence_planner.py) implements
+  predefined navigation sequences.
+- [`planner/rvg_planner.py`](planner/rvg_planner.py) and
+  [`planner/wavefront_path_planner.py`](planner/wavefront_path_planner.py)
+  provide obstacle-aware path planners used by navigation.
+- [`planner/namo_planner.py`](planner/namo_planner.py) adapts NAMO results to the
+  planner interface and maintains the push-subgoal execution state.
+- [`planner/namo_bridge.py`](planner/namo_bridge.py) owns scene conversion,
+  object-name mapping, exact-chain verification through the canonical binding,
+  full-search calls through the service API, and conversion to `PushSubgoal`
+  values.
+- [`planner/namo_binding_loader.py`](planner/namo_binding_loader.py) resolves
+  and verifies the canonical `namo_cpp/build_python` binding.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                        Planner (ABC)                                 │   │
-│  │                robot_control/planner/base.py                         │   │
-│  │                                                                      │   │
-│  │  plan(state: State) → Optional[Subgoal]                             │   │
-│  │  is_complete(state: State) → bool                                    │   │
-│  │  reset()                                                             │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                    ▲                                        │
-│                                    │                                        │
-│                     ┌──────────────┴──────────────┐                        │
-│                     │                             │                        │
-│              ┌──────────────┐             ┌──────────────┐                 │
-│              │ NAMOPlanner  │             │ (Future...)  │                 │
-│              │  (stub)      │             │ PatrolPlanner│                 │
-│              │              │             │ etc.         │                 │
-│              │ namo_task/   │             │              │                 │
-│              │ planner.py   │             │              │                 │
-│              └──────────────┘             └──────────────┘                 │
-│                     │                                                       │
-│                     │ (future integration)                                  │
-│                     ▼                                                       │
-│              ┌──────────────┐                                              │
-│              │  namo_cpp    │                                              │
-│              │              │                                              │
-│              │ - MuJoCo sim │                                              │
-│              │ - Wavefront  │                                              │
-│              │ - NAMO search│                                              │
-│              └──────────────┘                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+### Execution and controllers
 
----
+[`SubgoalExecutor`](executor.py) dispatches `NavigateSubgoal` values to
+`NavigationController` and `PushSubgoal` values to `PushController`.
+[`ControlCoordinator`](coordinator.py) performs the corresponding interactive
+controller selection and GUI event routing.
 
-## Data Flow
+The concrete controllers are:
 
-```
-                    robot_control/core/types.py
-                    ───────────────────────────
+- [`controller/keyboard.py`](controller/keyboard.py) for direct wheel control.
+- [`controller/navigation.py`](controller/navigation.py) for planned movement
+  to a target pose.
+- [`controller/follow_path.py`](controller/follow_path.py) for path tracking.
+- [`controller/push.py`](controller/push.py) for approach, alignment, and push
+  execution.
+- [`controller/edge_points.py`](controller/edge_points.py) for object-face and
+  push-contact geometry.
 
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│   Observation    │     │      State       │     │      Action      │
-│                  │     │                  │     │                  │
-│  robot_x         │     │  robot_x         │     │  left_speed      │
-│  robot_y         │ ──▶ │  robot_y         │ ──▶ │  right_speed     │
-│  robot_theta     │     │  robot_theta     │     │                  │
-│  objects: Dict   │     │  robot_vx, vy    │     │  (0.0 to 1.0)    │
-│  timestamp       │     │  robot_omega     │     │                  │
-│                  │     │  objects: Dict   │     │                  │
-│  (from env)      │     │  (+ velocities)  │     │  (to env)        │
-└──────────────────┘     └──────────────────┘     └──────────────────┘
-        │                         │                        ▲
-        │    StateEstimator       │                        │
-        └─────────────────────────┘                        │
-                                                           │
-                    robot_control/core/subgoals.py         │
-                    ──────────────────────────────         │
-                                                           │
-┌──────────────────┐     ┌──────────────────┐             │
-│  NavigateSubgoal │     │   PushSubgoal    │             │
-│                  │     │                  │             │
-│  target_x        │     │  object_id       │             │
-│  target_y        │     │  push_direction  │  Controller │
-│  path (optional) │     │  push_distance   │ ────────────┘
-│  tolerance       │     │                  │
-│                  │     │                  │
-│  (from planner)  │     │  (from planner)  │
-└──────────────────┘     └──────────────────┘
+For controller equations, units, and calibration details, use
+[Navigation and wheel commands](../../docs/NAVIGATION_AND_WHEEL_COMMANDS.md),
+[Push geometry](../../docs/PUSH_GEOMETRY.md), and
+[Push-duration calibration](../../docs/PUSH_DURATION_CALIBRATION.md).
+
+### Presentation and recording
+
+[`gui/`](gui) contains the PySide6 window, canvas, sidebar, and settings panel.
+[`diagnostics/`](diagnostics) contains structured event recording, scene
+capture, rendering, and simulation replay helpers. These helpers write runtime
+artifacts; they are not part of the control data model.
+
+## Simulation flow
+
+`RuntimeConfig(mode="sim")` selects `SimEnv` and `SimSensorNode`. `SimEnv` runs
+its differential-drive kinematics in a background thread, while
+`SimSensorNode` publishes observations to `WorldState` at the configured
+frequency.
+
+When `RuntimeConfig.planner` is set, the runtime enters autonomous mode and
+uses `SubgoalExecutor` to execute each returned navigation or push subgoal.
+Without a planner, `ControlCoordinator` lets the selected keyboard, navigation,
+or follow-path controller drive the simulation interactively.
+
+## Real-hardware flow
+
+`RuntimeConfig(mode="real")` uses [`config/real.yaml`](../../config/real.yaml)
+and [`config/objects.yaml`](../../config/objects.yaml) for camera, workspace,
+robot, serial, and object definitions. A local `CameraSensorNode` plus
+`ArucoObserver`, or a `RemoteObserverNode` connected to `camera_service`,
+provides observations to the same `WorldState` interface used in simulation.
+
+`RealEnv` sends normalized left/right wheel actions through the configured
+`ActionSender`. Its default `MicromvpAdapter` delegates to MicroMVP's serial
+sender. Dry-run mode leaves sensing and orchestration active without sending
+wheel commands.
+
+## NAMO boundary
+
+The repository contains the boundary code needed to:
+
+1. generate a MuJoCo scene XML from an observation;
+2. map real object names to simulator object names and back;
+3. locate and validate the canonical `namo_rl` binding; and
+4. simulate an exact push chain with `NAMOPlanBridge.verify_chain()` using the
+   compiled binding directly; and
+5. convert planned pushes into `PushSubgoal` values for the runtime.
+
+`verify_chain()` does not call the bridge's service loader. Consequently,
+`replan-reuse-only` and the reuse phase of `replan` can validate a prior plan
+when the current scene, prior plan, and canonical compiled binding are
+available. A successful verification produces the next simulation candidate;
+failed reuse-only reports `needs_remote_search` and stops.
+
+Fresh/full search does call the service loader, which lazily imports
+`namo.services.NAMOPlanningService`; the sibling `namo_cpp` package no longer
+exports that in-process Python class. Therefore `replan-full-search-only`,
+fresh `run_namo` search, and `replan` only when it falls back after failed
+reuse are blocked until the class is restored or the bridge is migrated to a
+supported replacement API. See the [closed-loop guide](../../closed_loop_sessions/README.md)
+for operator flow and [Current gaps](TODO.md) for the dependency work.
+
+## External dependencies
+
+- The sibling `namo_cpp` repository supplies NAMO Python code, the compiled
+  `namo_rl` binding, planner configuration/data, and MuJoCo-backed planning.
+- Local or remote camera operation depends on OpenCV, marker calibration, and
+  the repository's `camera_service` protocol; real wheel transport depends on
+  MicroMVP and the configured robot/serial service.
+- MuJoCo and its rendering/video dependencies are required by simulated push,
+  verification, and replay tools.
+- `controller/motion_planner/rvg` is a Git submodule that supplies the RVG
+  dependency used by `RVGPlanner`.
+
+## Repository structure
+
+```text
+robot_control/
+├── README.md
+├── config/                         runtime, controller, object, and calibration YAML
+├── scripts/                        operator, diagnostics, calibration, and test entrypoints
+├── src/robot_control/
+│   ├── camera/                     local camera observation and workspace geometry
+│   ├── controller/                 interactive, navigation, path, and push controllers
+│   ├── core/                       shared types, topics, state, and serialization
+│   ├── diagnostics/                event logs, scene capture, render, and replay
+│   ├── environment/                simulation, real environment, and sender adapter
+│   ├── gui/                        PySide6 presentation layer
+│   ├── nodes/                      simulation, camera, and remote observation nodes
+│   ├── planner/                    sequence, path, and NAMO planning adapters
+│   ├── utils/                      geometry, wavefront, camera, and XML helpers
+│   ├── coordinator.py              interactive controller routing
+│   ├── executor.py                 autonomous subgoal dispatch
+│   └── runtime.py                  component setup and control loop
+├── tests/                          automated package tests
+├── docs/                           focused controller and calibration notes
+├── closed_loop_sessions/           closed-loop workspace helpers
+├── real_test_envs/                 captured scene fixtures
+└── push_calibration/               recorded calibration comparisons
 ```
 
----
-
-## GUI Integration
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         VISUALIZATION (Optional)                             │
-│                                                                             │
-│   Runtime (visualize=True)                                                  │
-│       │                                                                     │
-│       ├── Creates MVPWindow (from micromvp.gui)                            │
-│       │                                                                     │
-│       ├── Control loop in background thread                                │
-│       │       └── _step() at 30 Hz                                         │
-│       │                                                                     │
-│       ├── GUI update timer on Qt main thread                               │
-│       │       └── _update_gui() at 30 FPS                                  │
-│       │             ├── Update car state                                   │
-│       │             ├── Draw goal marker                                   │
-│       │             ├── Draw path                                          │
-│       │             └── Draw target point                                  │
-│       │                                                                     │
-│       └── Callbacks                                                         │
-│             ├── on_key_press (ESC to quit)                                 │
-│             └── on_curve_drawn (user draws path → robot follows)           │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## File Structure
-
-```
-namo/
-├── robot_control/                    # GENERAL FRAMEWORK
-│   ├── __init__.py
-│   ├── ARCHITECTURE.md              # This file
-│   ├── runtime.py                   # Main Sense-Plan-Act loop
-│   ├── qt_compat.py                 # PySide6/PyQt6 compatibility
-│   │
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── types.py                 # Observation, State, Action
-│   │   └── subgoals.py              # SubgoalType, NavigateSubgoal, PushSubgoal
-│   │
-│   ├── environment/
-│   │   ├── __init__.py
-│   │   ├── base.py                  # Environment ABC
-│   │   ├── sim.py                   # SimEnvironment (wraps micromvp.SimEnv)
-│   │   └── real.py                  # RealEnvironment (wraps micromvp.RealPushEnv)
-│   │
-│   ├── estimator/
-│   │   ├── __init__.py
-│   │   ├── base.py                  # StateEstimator ABC
-│   │   └── simple.py                # SimpleStateEstimator (finite differences)
-│   │
-│   ├── controller/
-│   │   ├── __init__.py
-│   │   ├── base.py                  # Controller ABC
-│   │   ├── navigation.py            # NavigationController (WRAPS micromvp)
-│   │   └── push.py                  # PushController
-│   │
-│   └── planner/
-│       ├── __init__.py
-│       └── base.py                  # Planner ABC
-│
-├── namo_task/                        # NAMO-SPECIFIC
-│   ├── __init__.py
-│   ├── subgoals.py                  # NAMOPushSubgoal (edge_idx → direction)
-│   ├── planner.py                   # NAMOPlanner (stub for namo_cpp)
-│   └── run.py                       # Entry point
-│
-└── micromvp_push_dhruv/micromvp_v4/  # HARDWARE ABSTRACTION (external)
-    └── src/micromvp/
-        ├── core/                     # WorkspaceConfig, Action, RobotObservation
-        ├── env/                      # SimEnv, RealPushEnv
-        ├── controller/               # NavigationController (Pure Pursuit + CTE-PD)
-        ├── coordinator/              # Multi-robot orchestration (not used)
-        ├── gui/                      # MVPWindow (PyQt6/PySide6)
-        └── rvg/                      # Motion planning (Rotation-stacked Visibility Graph)
-```
-
----
-
-## What robot_control Provides vs micromvp
-
-| Component | micromvp | robot_control |
-|-----------|----------|---------------|
-| **Environments** | SimEnv, RealPushEnv (multi-robot Dict API) | Wrappers for single-robot |
-| **Controllers** | NavigationController, WASDController, etc. | Wraps NavigationController, adds PushController |
-| **Orchestration** | Coordinator (reactive, GUI-driven) | Runtime + Planner (autonomous, subgoal-based) |
-| **State Estimation** | Inside controllers | Separate StateEstimator |
-| **GUI** | MVPWindow | Reuses MVPWindow |
-| **Motion Planning** | RVG library | Uses micromvp's RVG via NavigationController |
-
----
-
-## Usage
-
-```bash
-# Simulation with visualization
-python -m namo_task.run --sim --goal 50 30 --visualize
-
-# Simulation headless
-python -m namo_task.run --sim --goal 50 30
-
-# Real robot
-python -m namo_task.run --robot-id 1 --goal 50 30 --visualize
-
-# With verbose logging
-python -m namo_task.run --sim --goal 50 30 -v
-```
-
----
-
-## Key Design Decisions
-
-1. **Wrapper Pattern**: robot_control wraps micromvp rather than modifying it
-2. **Single-Robot Focus**: Adapts multi-robot API for single-robot NAMO task
-3. **Subgoal-Based Control**: Planner decides WHAT (Navigate/Push), Controller does HOW
-4. **Optional Visualization**: Same code works headless or with GUI
-5. **No Code Duplication**: NavigationController wraps micromvp's implementation
-6. **Separation of Concerns**:
-   - micromvp: Hardware abstraction, path following, GUI
-   - robot_control: Task orchestration, state estimation, subgoal management
-   - namo_task: NAMO-specific planning logic
+The top-level [README](../../README.md) indexes the focused operator and
+calibration documentation. Wavefront-specific open questions are tracked in
+[Wavefront unification follow-ups](../../docs/WAVEFRONT_UNIFICATION_FOLLOWUPS.md)
+rather than duplicated here.
