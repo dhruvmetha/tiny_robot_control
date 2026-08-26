@@ -26,6 +26,30 @@ friction to hardware data; every tier label depends on the current physics.
 The measured divergence (rotation coupling ~0.70 deg/cm per cm of contact
 offset; sim self-squares at every offset) is a finding, not an error.
 
+## Division of labor
+
+Worked out during the pilot and it worked: the agent (Claude session)
+drives ALL software, the human drives ALL matter. The human should never
+need a terminal during a session.
+
+Agent: launches and monitors the camera service check, the build checker
+(GUI windows on the desktop display), and every run_namo trial; watches
+logs and calls out placement moves in table language ("wall_10 left 19,
+turn clockwise 83"); verifies the scene checksum before launch; kills
+wedged or zombie processes; records the trials.csv row; asks the human
+for the verdict and failure cause after every trial; streams calibration
+data to the sim side; keeps the study brief's status current.
+
+Human: places and nudges bricks until the checker windows go green; sets
+the robot on its start circle; swaps or charges the battery; rescues a
+physically stuck robot; renders the success/fail verdict and picks the
+failure cause from the fixed list (the human is the only observer who can
+tell a stall from a radio drop); decides accept-vs-nudge on MARGINAL
+checksums and rerun-vs-move-on after failures.
+
+The verdict is always the human's. The agent proposes, logs, and
+launches; it never overrides a table call.
+
 ## Preflight, every session
 
 1. Environment. Source from the namo_cpp ROOT, then export the repo
