@@ -4,7 +4,10 @@
 
 Read the repository [README](README.md) for setup, entrypoints, and the
 documentation index. Read the [architecture guide](src/robot_control/ARCHITECTURE.md)
-before changing component boundaries or runtime flow.
+before changing component boundaries or runtime flow. For any session that
+touches the physical robot, read [docs/REAL_ROBOT_TRIALS.md](docs/REAL_ROBOT_TRIALS.md)
+first; it is the table runbook and covers the environment sourcing, serial
+port, and camera facts that silently break trials when skipped.
 
 These documents describe only the current checkout. Do not infer support from
 workspace files, sibling-repository history, or generated experiment output.

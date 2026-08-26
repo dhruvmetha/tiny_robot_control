@@ -11,7 +11,7 @@ simulation/real calibration tools.
 | --- | --- |
 | Runtime, simulation, controllers, camera, diagnostics, and calibration | Implemented |
 | Captured-scene and closed-loop workspace helpers | Implemented; `replan-reuse-only` can verify a prior chain in simulation when the current scene, prior plan, and canonical compiled `namo_rl` binding are available |
-| NAMO-backed full search through `NAMOPlanBridge` | Blocked: the sibling `namo_cpp` checkout does not provide the in-process Python API `namo.services.NAMOPlanningService` |
+| NAMO-backed full search through `NAMOPlanBridge` | Working on hardware since 2026-08-23 (full_namo, best-first, model prior); requires sourcing `namo_cpp/env.<machine>.sh` first, see [Real-robot trials](docs/REAL_ROBOT_TRIALS.md) |
 
 ## Architecture at a glance
 
@@ -112,6 +112,7 @@ a complete closed-loop or hardware workflow.
 
 ### Operations and scenes
 
+- [Real-robot trials](docs/REAL_ROBOT_TRIALS.md) — the table procedure: preflight, scene build with the checksum checker, trial commands, verdict recording, calibration blocks, and known hardware failure modes. Start here for any physical session.
 - [Closed-loop sessions](closed_loop_sessions/README.md) — session workspace layout and operator workflow.
 - [Real test environments](real_test_envs/README.md) — captured-scene format and replay inputs.
 
