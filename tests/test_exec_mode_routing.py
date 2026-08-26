@@ -290,3 +290,56 @@ def test_both_repositories_spell_the_modes_the_same_way():
     assert set(EXEC_MODE_CHOICES) == set(BOUNDARY_MODES)
     assert DEFAULT_EXEC_MODE == DEFAULT_BOUNDARY_MODE
 
+
+# ─── The executor gate ──────────────────────────────────────────────────
+#
+# `success` does not mean the same thing in both modes, so it cannot gate both.
+# Under search it means the chain passed verification, and running an unverified
+# chain is not what that arm claims to do. Under reactive it means the boundary
+# opened *in simulation*, which is exactly the prediction the mode exists not to
+# trust: the rule picked that push having already seen the simulator say it does
+# not open anything, and the answer is to push and look again.
+#
+# Measured on 2push/1hop/env1: search spent all 900 simulations over 208 s and
+# returned nothing; reactive spent 2 over 5.3 s, also failed, and returned both
+# pushes it chose. Gating reactive on `success` throws those away and the robot
+# stands still, which reads in the results as "reactive is terrible" rather than
+# as a wiring bug.
+
+
+def _plan(success, subgoals=("push",)):
+    return SimpleNamespace(
+        success=success, subgoals=list(subgoals), already_open=False,
+        boundary_exhausted=False, failure_reason="", resolved_target="",
+    )
+
+
+@pytest.mark.parametrize(
+    "mode,success,expected",
+    [
+        (MODE_SEARCH, True, True),
+        (MODE_SEARCH, False, False),      # unverified chain: search does not run it
+        (MODE_REACTIVE, True, True),
+        (MODE_REACTIVE, False, True),     # the whole point of the arm
+    ],
+)
+def test_success_gates_search_but_not_reactive(mode, success, expected):
+    from robot_control.planner.region_target import _plan_is_executable
+
+    assert _plan_is_executable(_plan(success), {"mode": mode}) is expected
+
+
+@pytest.mark.parametrize("mode", [MODE_SEARCH, MODE_REACTIVE])
+def test_no_subgoals_is_never_executable(mode):
+    """Subgoals are required either way. There is nothing to send without them."""
+    from robot_control.planner.region_target import _plan_is_executable
+
+    assert _plan_is_executable(_plan(True, subgoals=()), {"mode": mode}) is False
+
+
+def test_a_caller_that_names_no_mode_gates_the_way_it_always_did():
+    """Every existing caller keeps the old behaviour without being edited."""
+    from robot_control.planner.region_target import _plan_is_executable
+
+    assert _plan_is_executable(_plan(False), None) is False
+    assert _plan_is_executable(_plan(True), {}) is True
