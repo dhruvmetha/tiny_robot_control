@@ -27,10 +27,21 @@ Four rules:
                                      reads as both "did not fail" and "nobody
                                      triaged this yet"
 
-Exit 0 clean, 1 on any violation, and 0 with a note when the file does not exist
-yet, so this can be wired into CI before the first matrix row is written.
+Exit 0 clean, 1 on any violation, and 0 with a note when a NAMED file does not
+exist yet, so this can be wired in before the first matrix row is written.
 
-  python scripts/check_trials_consistency.py [path/to/trials.csv]
+The path is required and there is deliberately no default. An earlier version
+defaulted to a guessed location, and run with no argument it printed "nothing to
+check" and exited 0 having checked nothing. A green light from a check that never
+read a file is worse than no check, and it is the same silent-drop shape this
+script exists to catch. Naming the file is the caller's job.
+
+Worth knowing before wiring this into CI: `trials.csv` lives under a gitignored
+directory in robot_control, so it is not merely absent from a fresh checkout, it
+is excluded by rule. CI cannot read it from the repo. Point this at the working
+copy on the machine that owns the file, or at an artefact.
+
+  python scripts/check_trials_consistency.py path/to/trials.csv
 """
 
 from __future__ import annotations
@@ -47,8 +58,6 @@ from robot_control.planner.search_config import (  # noqa: E402
     BEST_FIRST_PRIOR_CHOICES,
     EXEC_MODE_CHOICES,
 )
-
-DEFAULT_TRIALS_PATH = Path("closed_loop_sessions/trials.csv")
 
 # The success vocabulary for `failure_cause`. The seven failure values are
 # real_robot's taxonomy and this check does not police them beyond "not empty":
@@ -109,7 +118,14 @@ def _violations(row: Dict[str, str], line: int) -> List[str]:
 
 
 def main(argv: List[str]) -> int:
-    path = Path(argv[1]) if len(argv) > 1 else DEFAULT_TRIALS_PATH
+    if len(argv) < 2:
+        print(
+            "usage: check_trials_consistency.py path/to/trials.csv\n"
+            "  No default: a guessed path that does not exist would exit 0 having\n"
+            "  read nothing, which reads as a pass."
+        )
+        return 1
+    path = Path(argv[1])
     if not path.is_file():
         print(f"no trials file at {path}, nothing to check")
         return 0
