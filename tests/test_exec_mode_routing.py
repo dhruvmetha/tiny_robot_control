@@ -21,10 +21,10 @@ here.
 
 Six properties, each with the failure it catches:
 
-  policy outside held mode refuses    the silent drop itself: the mode reaches
+  reactive outside held mode refuses  the silent drop itself: the mode reaches
                                       plan_from_xml, which never reads it, and
-                                      the run searches while the log says policy
-  policy on region_bfs refuses        that planner sweeps every edge and depth
+                                      the run searches while the log says reactive
+  reactive on region_bfs refuses      that planner sweeps every edge and depth
                                       and builds no ranked pool, so there is no
                                       argmax to take
   working combinations still pass     parametrized, so the guard cannot be
@@ -67,7 +67,7 @@ from robot_control.planner.namo_planner import NAMOPlanner
 # ─── Named constants ────────────────────────────────────────────────────
 
 MODE_SEARCH = "search"
-MODE_POLICY = "policy"
+MODE_REACTIVE = "reactive"
 
 CKPT = "/models/HY5U_s2.ckpt"
 
@@ -92,13 +92,13 @@ BASE_SEED = 4242
 
 
 def _reactive(**overrides):
-    """A valid reactive selection: policy needs the ranked pool best_first builds."""
+    """A valid reactive selection: it needs the ranked pool best_first builds."""
     return LocalSearchConfig(
         **{
             "local_search": "best_first",
             "best_first_prior": "model",
             "scorer_ckpt": CKPT,
-            "exec_mode": MODE_POLICY,
+            "exec_mode": MODE_REACTIVE,
             **overrides,
         }
     )
@@ -174,7 +174,7 @@ def _target():
 # ─── Tests ──────────────────────────────────────────────────────────────
 
 
-def test_policy_outside_held_mode_refuses():
+def test_reactive_outside_held_mode_refuses():
     """The silent drop: plan_from_xml never reads the mode, so the run searches.
 
     The message names the way out, because a person reading only the refusal
@@ -189,15 +189,15 @@ def test_policy_outside_held_mode_refuses():
     assert "--hold-region-target" in str(excinfo.value)
 
 
-def test_policy_on_the_sweeping_search_refuses():
-    """No ranked pool means no argmax, so there is nothing for the policy to take."""
+def test_reactive_on_the_sweeping_search_refuses():
+    """No ranked pool means no argmax, so there is nothing for reactive to take."""
     with pytest.raises(ValueError) as excinfo:
         _reactive(local_search="region_bfs", best_first_prior="uniform", scorer_ckpt=None)
 
     assert "best_first" in str(excinfo.value)
 
 
-@pytest.mark.parametrize("mode", ["reactive", "argmax", "polciy", "", "Policy"])
+@pytest.mark.parametrize("mode", ["policy", "argmax", "reactve", "", "Reactive"])
 def test_an_unknown_mode_refuses(mode):
     """Anything outside the vocabulary is a mistake, not a synonym for the default."""
     with pytest.raises(ValueError, match="exec_mode"):
@@ -247,7 +247,7 @@ def test_the_mode_goes_down_the_held_path_and_not_the_other():
     held = planner._held_mode_planner_kwargs()
     whole = planner._search_planner_kwargs(BASE_SEED)
 
-    assert held["mode"] == MODE_POLICY
+    assert held["mode"] == MODE_REACTIVE
     assert "mode" not in whole, (
         "plan_from_xml does not name mode; sending it there drops it in silence"
     )
@@ -256,18 +256,18 @@ def test_the_mode_goes_down_the_held_path_and_not_the_other():
 def test_the_bridge_forwards_the_mode_to_the_service(bridge_and_service):
     bridge, service = bridge_and_service
 
-    bridge.solve_boundary(_obs(), (40.0, 40.0), _target(), mode=MODE_POLICY)
+    bridge.solve_boundary(_obs(), (40.0, 40.0), _target(), mode=MODE_REACTIVE)
 
-    assert service.solve_kwargs["mode"] == MODE_POLICY
+    assert service.solve_kwargs["mode"] == MODE_REACTIVE
 
 
 def test_the_bridge_records_which_mode_ran(bridge_and_service):
     """Read back from the call that was made, so a run log needs no command parsing."""
     bridge, service = bridge_and_service
 
-    bridge.solve_boundary(_obs(), (40.0, 40.0), _target(), mode=MODE_POLICY)
+    bridge.solve_boundary(_obs(), (40.0, 40.0), _target(), mode=MODE_REACTIVE)
 
-    assert bridge.last_algorithm_stats["exec_mode"] == MODE_POLICY
+    assert bridge.last_algorithm_stats["exec_mode"] == MODE_REACTIVE
 
 
 def test_a_run_that_never_names_a_mode_records_the_default(bridge_and_service):
@@ -289,3 +289,4 @@ def test_both_repositories_spell_the_modes_the_same_way():
 
     assert set(EXEC_MODE_CHOICES) == set(BOUNDARY_MODES)
     assert DEFAULT_EXEC_MODE == DEFAULT_BOUNDARY_MODE
+
