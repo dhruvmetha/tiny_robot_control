@@ -103,30 +103,35 @@ a complete closed-loop or hardware workflow.
 
 ## Documentation index
 
+Status tags, borrowed from namo_cpp's convention: `[ROUTER]` entry/schema ·
+`[HUB]` links many others · `[LIVE]` actively updated · `[REF]` stable
+reference · `[SNAPSHOT]` dated results, not maintained.
+
 ### Architecture and maintenance
 
-- [Architecture](src/robot_control/ARCHITECTURE.md) — detailed runtime and component design.
-- [Known issues and status](src/robot_control/KNOWN_ISSUES.md) — current issue status, repair history, and revalidation evidence.
-- [Current gaps](src/robot_control/TODO.md) — outstanding capability gaps and follow-up work.
-- [Contributor guidance](CLAUDE.md) — repository conventions and development context.
+- [Architecture](src/robot_control/ARCHITECTURE.md) — detailed runtime and component design. `[REF]`
+- [Known issues and status](src/robot_control/KNOWN_ISSUES.md) — current issue status, repair history, and revalidation evidence. `[LIVE]`
+- [Current gaps](src/robot_control/TODO.md) — outstanding capability gaps and follow-up work. `[LIVE]`
+- [Contributor guidance](CLAUDE.md) — repository conventions and development context. `[ROUTER]`
 
 ### Operations and scenes
 
-- [Real-robot trials](docs/REAL_ROBOT_TRIALS.md) — the table procedure: preflight, scene build with the checksum checker, trial commands, verdict recording, calibration blocks, and known hardware failure modes. Start here for any physical session.
-- [Closed-loop sessions](closed_loop_sessions/README.md) — session workspace layout and operator workflow.
-- [Real test environments](real_test_envs/README.md) — captured-scene format and replay inputs.
+- [ICRA real-robot study](docs/ICRA_REAL_ROBOT_STUDY.md) — the study brief: claims, pre-registered success semantics and analysis, the 14-scene matrix, the physics freeze, and current status. What counts and why. `[HUB]` `[LIVE]`
+- [Real-robot trials](docs/REAL_ROBOT_TRIALS.md) — the table procedure: preflight, scene build with the checksum checker, trial commands, verdict recording, calibration blocks, and known hardware failure modes. Start here for any physical session. `[LIVE]`
+- [Closed-loop sessions](closed_loop_sessions/README.md) — session workspace layout and operator workflow. `[REF]`
+- [Real test environments](real_test_envs/README.md) — captured-scene format and replay inputs. `[REF]`
 
 ### Controllers, planning, and geometry
 
-- [Navigation and wheel commands](docs/NAVIGATION_AND_WHEEL_COMMANDS.md) — navigation controller and wheel-command behavior.
-- [Push geometry](docs/PUSH_GEOMETRY.md) — geometric conventions for push execution.
-- [Wavefront follow-ups](docs/WAVEFRONT_UNIFICATION_FOLLOWUPS.md) — remaining wavefront-planning integration work.
+- [Navigation and wheel commands](docs/NAVIGATION_AND_WHEEL_COMMANDS.md) — navigation controller and wheel-command behavior. `[REF]`
+- [Push geometry](docs/PUSH_GEOMETRY.md) — geometric conventions for push execution. `[REF]`
+- [Wavefront follow-ups](docs/WAVEFRONT_UNIFICATION_FOLLOWUPS.md) — remaining wavefront-planning integration work. `[REF]`
 
 ### Calibration
 
-- [Push-duration calibration](docs/PUSH_DURATION_CALIBRATION.md) — calibration procedure and interpretation.
-- [Simulation calibration plan](docs/SIM_CALIBRATION_PLAN.md) — simulation calibration scope and method.
-- [Object 1 comparison](push_calibration/obj_1/diff/comparison.md) — recorded comparison for object 1.
+- [Push-duration calibration](docs/PUSH_DURATION_CALIBRATION.md) — operator guide for tuning push-primitive duration. `[REF]`
+- [Simulation calibration guide](docs/SIM_CALIBRATION_PLAN.md) — the implemented real-to-MuJoCo calibration workflow (filename kept for links; it is a guide, not a plan). `[REF]`
+- [Object 1 comparison](push_calibration/obj_1/diff/comparison.md) — recorded comparison for object 1. `[SNAPSHOT]`
 
 ## Current limitations
 
