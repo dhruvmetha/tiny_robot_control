@@ -28,6 +28,7 @@ from robot_control.planner.namo_binding_loader import (
     load_canonical_namo_rl,
     resolve_namo_cpp_dir,
 )
+from robot_control.planner.search_config import DEFAULT_EXEC_MODE
 from robot_control.utils import NAMOXMLGenerator
 from robot_control.utils.robot_geometry import (
     effective_robot_radius_cm,
@@ -1102,6 +1103,12 @@ class NAMOPlanBridge:
                 "resolved_target": result.resolved_target,
                 "simulations_used": result.simulations_used,
                 "target_summary": result.target_summary,
+                # Read back from the call that was actually made, not from
+                # config. With execution mode crossed against the ranker arm,
+                # this is a grouping key for a paired analysis, and a row whose
+                # arm has to be recovered by parsing a command string is a row
+                # that can be recovered wrong.
+                "exec_mode": str(kwargs.get("mode", DEFAULT_EXEC_MODE)),
             }
 
             return BoundaryPlan(

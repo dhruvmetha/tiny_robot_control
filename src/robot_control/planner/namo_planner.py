@@ -1072,12 +1072,21 @@ class NAMOPlanner(Planner):
         return kwargs
 
     def _held_mode_planner_kwargs(self) -> Dict[str, Any]:
-        """The same options the whole-problem path sends, at the base seed.
+        """The same options the whole-problem path sends, at the base seed, plus the mode.
 
         Held mode does not retry with a bumped seed the way the whole-problem
         path does; a held boundary is re-solved on the next replan instead.
+
+        The execution mode is added HERE and not in _search_planner_kwargs,
+        which both paths share. `mode` is a named parameter of
+        `solve_boundary_from_xml`, and only this path calls it. On the
+        whole-problem path it would ride into `plan_from_xml`'s
+        `algorithm_params` and be dropped without a word, which is how a run
+        ends up filed under an arm it never ran.
         """
-        return self._search_planner_kwargs(self._shuffle_seed)
+        kwargs = self._search_planner_kwargs(self._shuffle_seed)
+        kwargs.update(self._local_search.as_boundary_kwargs())
+        return kwargs
 
     def _generate_plan_holding_target(self, obs: Observation) -> None:
         """Plan against one held boundary, advancing only when it opens.
