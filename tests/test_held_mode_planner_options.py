@@ -16,13 +16,19 @@ These tests compare the two option sets rather than pinning a list, so an option
 added to one path and forgotten on the other fails here.
 """
 
-from types import SimpleNamespace
-
 import pytest
 
 from robot_control.planner.namo_planner import NAMOPlanner
+from robot_control.planner.search_config import LocalSearchConfig
 
 BASE_SEED = 4242
+
+# Options the held path sends and the whole-problem path must not. `mode` is a
+# named parameter of solve_boundary_from_xml and means nothing to plan_from_xml,
+# where it would ride into algorithm_params and be dropped without a word. Pinned
+# as a set so the exception stays deliberate: anything else appearing on one path
+# and not the other still fails below.
+HELD_ONLY_KEYS = {"mode"}
 
 
 def _planner(**overrides):
@@ -43,7 +49,7 @@ def _planner(**overrides):
         _ml_samples=None,
         _ml_num_steps=None,
         _ml_sampler_method=None,
-        _local_search=SimpleNamespace(as_planner_kwargs=lambda: {}),
+        _local_search=LocalSearchConfig(),
     )
     attrs.update(overrides)
     for name, value in attrs.items():
@@ -52,14 +58,20 @@ def _planner(**overrides):
 
 
 def test_held_mode_sends_the_same_options_as_the_whole_problem_path():
-    """The regression, stated as the property rather than a list of keys."""
+    """The regression, stated as the property rather than a list of keys.
+
+    Held mode may add options the other path cannot receive, and must never
+    drop or change one it can. Stated that way round so the original regression
+    is still caught while the deliberate extras stay visible.
+    """
     planner = _planner()
 
     whole = planner._search_planner_kwargs(BASE_SEED)
     held = planner._held_mode_planner_kwargs()
 
-    assert set(held) == set(whole)
-    assert held == whole
+    assert set(whole) <= set(held)
+    assert {key: held[key] for key in whole} == whole
+    assert set(held) - set(whole) == HELD_ONLY_KEYS
 
 
 def test_the_chain_depth_reaches_the_held_path():
@@ -87,9 +99,7 @@ def test_every_search_option_reaches_the_held_path(key, value):
 
 def test_the_opener_choice_reaches_the_held_path():
     """local_search decides which search runs; dropping it changes everything."""
-    local = SimpleNamespace(
-        as_planner_kwargs=lambda: {"full_namo_local_search": "best_first"}
-    )
+    local = LocalSearchConfig(local_search="best_first", best_first_prior="uniform")
 
     held = _planner(_local_search=local)._held_mode_planner_kwargs()
 

@@ -15,6 +15,7 @@ import pytest
 
 from robot_control.planner import (
     DEFAULT_BEST_FIRST_PRIOR,
+    DEFAULT_EXEC_MODE,
     DEFAULT_LOCAL_SEARCH,
     LocalSearchConfig,
 )
@@ -30,6 +31,7 @@ def _args(**overrides):
         best_first_hmax=None,
         keyhole_simulation_budget=None,
         ml_device="cpu",
+        exec_mode=DEFAULT_EXEC_MODE,
     )
     base.update(overrides)
     return SimpleNamespace(**base)
