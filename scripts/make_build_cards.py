@@ -19,6 +19,7 @@ deliberately absent, because shipping both invites placing by the wrong one.
 Usage:
     python scripts/make_build_cards.py sheet.csv --out-dir cards/
     python scripts/make_build_cards.py sheet.csv --check-only
+    python scripts/make_build_cards.py sheet.csv --check-only --slack --build-id easy_000
 """
 from __future__ import annotations
 
@@ -100,6 +101,33 @@ GOAL_MARKER_RADIUS_CM = 2.0
 # one can: rotating one bar in easy_000 moved the counts from 18/15/27 to
 # 48/0/12. Measured 2026-08-22.
 CHECKSUM_COLUMNS = ("n_contacts_reachable", "n_contacts_cutoff", "n_contacts_collision")
+
+# Displacement rings tested when computing an item's placement slack, in cm.
+# Brackets the tie tolerance itself: 0.5 is a nudge a careful hand would still
+# make by accident, 3.0 is roughly the scale of a real placement error (a
+# bearing 90 degrees out moved 30 of easy_000's 60 contacts, see
+# CHECKSUM_TIE_TOLERANCE_CONTACTS above). Four rings, not a finer sweep,
+# because each ring costs 8 wavefront rebuilds and this already runs per item
+# per scene.
+TRANSLATION_TEST_RADII_CM = (0.5, 1.0, 2.0, 3.0)
+
+# Compass directions each translation ring is tested along. Eight catches a
+# corridor that only tightens along one diagonal, which the four axis-aligned
+# directions alone would miss.
+TRANSLATION_TEST_DIRECTIONS_DEG = tuple(range(0, 360, 45))
+
+# Rotation offsets tested when computing an item's placement slack, in
+# degrees, tested both +/-. Same spirit as TRANSLATION_TEST_RADII_CM: one
+# nudge, one that a hand is more likely to actually make.
+ROTATION_TEST_DEG = (5.0, 10.0)
+
+# Below this xy slack, or below CAREFUL_THETA_SLACK_DEG of rotation slack, an
+# item gets a "place carefully" marking on the card. Set to the smallest ring
+# tested in each dimension, so the marking flags exactly the items that
+# failed even the gentlest nudge or twist, not a graded scale this script has
+# not actually measured.
+CAREFUL_XY_SLACK_CM = 0.5
+CAREFUL_THETA_SLACK_DEG = 5.0
 
 # Columns this script reads by name. Checked once at load so a rename or a
 # dropped column fails with the missing name rather than a KeyError forty
@@ -275,6 +303,88 @@ def scene_contact_counts(rows):
     return counts["reachable"], counts["cutoff"], counts["collision"]
 
 
+def _has_checksum(head):
+    """True if this scene's header row carries all three checksum columns."""
+    return all(c in head and head[c] != "" for c in CHECKSUM_COLUMNS)
+
+
+def _perturbed_rows(rows, item_name, dx=0.0, dy=0.0, dtheta=0.0):
+    """Copy of ``rows`` with one item's row nudged in place, others untouched."""
+    trial = []
+    for r in rows:
+        if r["marker_hint"] != item_name:
+            trial.append(r)
+            continue
+        r2 = dict(r)
+        r2["centre_x_cm"] = str(float(r["centre_x_cm"]) + dx)
+        r2["centre_y_cm"] = str(float(r["centre_y_cm"]) + dy)
+        r2["long_axis_bearing_deg"] = str(float(r["long_axis_bearing_deg"]) + dtheta)
+        trial.append(r2)
+    return trial
+
+
+def compute_item_slack(rows, item_name):
+    """How far one item can be displaced before the checksum moves.
+
+    Nudges the row named ``item_name`` (matched on marker_hint) away from its
+    sheet position and recomputes scene_contact_counts(rows) each time,
+    including static rows: a wall does not contribute edge points of its own
+    but still shapes the wavefront grid the blocker's points are read from,
+    so moving one can move the blocker's counts.
+
+    Translation is tested on rings at TRANSLATION_TEST_RADII_CM, each ring
+    sampled at the eight TRANSLATION_TEST_DIRECTIONS_DEG. xy slack is the
+    largest ring where every direction keeps contacts moved (same L1/2 measure
+    as check_scene) within CHECKSUM_TIE_TOLERANCE_CONTACTS of this scene's own
+    baseline, 0.0 if even the smallest ring fails in some direction. Rotation
+    is tested at +/- each of ROTATION_TEST_DEG; theta slack is the largest
+    angle where both signs hold, 0.0 if even the smallest angle fails on
+    either side.
+
+    A slack equal to the largest ring or angle tested means slack is at least
+    that big, not that it is exactly that big; this script never claims a
+    number it did not test.
+
+    Returns {"xy_cm": float, "theta_deg": float}.
+    """
+    baseline = scene_contact_counts(rows)
+
+    def moved(trial_rows):
+        actual = scene_contact_counts(trial_rows)
+        return sum(abs(a - b) for a, b in zip(actual, baseline)) // 2
+
+    xy_slack = 0.0
+    for radius in TRANSLATION_TEST_RADII_CM:
+        holds = True
+        for direction_deg in TRANSLATION_TEST_DIRECTIONS_DEG:
+            a = math.radians(direction_deg)
+            trial = _perturbed_rows(rows, item_name,
+                                    dx=radius * math.cos(a), dy=radius * math.sin(a))
+            if moved(trial) > CHECKSUM_TIE_TOLERANCE_CONTACTS:
+                holds = False
+                break
+        if not holds:
+            break
+        xy_slack = radius
+
+    theta_slack = 0.0
+    for angle in ROTATION_TEST_DEG:
+        trial_pos = _perturbed_rows(rows, item_name, dtheta=angle)
+        trial_neg = _perturbed_rows(rows, item_name, dtheta=-angle)
+        if (moved(trial_pos) > CHECKSUM_TIE_TOLERANCE_CONTACTS
+                or moved(trial_neg) > CHECKSUM_TIE_TOLERANCE_CONTACTS):
+            break
+        theta_slack = angle
+
+    return {"xy_cm": xy_slack, "theta_deg": theta_slack}
+
+
+def _format_slack(value, tested_values):
+    """Render a slack value, naming the largest tested ring as a floor."""
+    ceiling = max(tested_values)
+    return f">={ceiling:.1f}" if value >= ceiling else f"{value:.1f}"
+
+
 def _point_to_polygon_distance(px, py, poly):
     """Shortest distance from a point to a convex polygon. 0 if inside."""
     inside = True
@@ -344,7 +454,7 @@ def check_scene(build_id, rows):
         if _overlap_depth(_corners(goal[0], goal[1], 0.2, 0.2, 0.0), poly) > 0:
             problems.append(f"goal {goal} sits inside {name}")
 
-    if all(c in head and head[c] != "" for c in CHECKSUM_COLUMNS):
+    if _has_checksum(head):
         claimed = tuple(int(head[c]) for c in CHECKSUM_COLUMNS)
         if sum(claimed) != CONTACTS_PER_OBJECT:
             problems.append(
@@ -379,8 +489,15 @@ def check_scene(build_id, rows):
     return problems, warnings
 
 
-def draw_scene(build_id, rows, out_path, warnings=()):
+def draw_scene(build_id, rows, out_path, warnings=(), item_slacks=None):
     head = rows[0]
+    # Items whose slack failed even the gentlest nudge or twist tested. Read
+    # off item_slacks rather than recomputed here, since computing it is the
+    # expensive part (one wavefront rebuild per direction per ring) and the
+    # caller already paid that cost once for the printed report.
+    careful_items = [name for name, s in (item_slacks or {}).items()
+                     if s["xy_cm"] <= CAREFUL_XY_SLACK_CM
+                     or s["theta_deg"] < CAREFUL_THETA_SLACK_DEG]
     fig, ax = plt.subplots(figsize=(7.5, 10.5))
     ax.add_patch(Rectangle((0, 0), WORKSPACE_W_CM, WORKSPACE_H_CM,
                            fill=False, ec="k", lw=2.5))
@@ -389,9 +506,12 @@ def draw_scene(build_id, rows, out_path, warnings=()):
         L, S = float(r["long_cm"]), float(r["short_cm"])
         bearing = float(r["long_axis_bearing_deg"])
         is_brick = r["item"] == "brick"
+        careful = r["marker_hint"] in careful_items
         patch = Rectangle((-L / 2, -S / 2), L, S, angle=bearing,
                           rotation_point="center",
-                          fc="0.55" if is_brick else "gold", ec="k", lw=1.5)
+                          fc="0.55" if is_brick else "gold",
+                          ec="red" if careful else "k", lw=2.5 if careful else 1.5,
+                          hatch="///" if careful else None)
         patch.set_transform(mtransforms.Affine2D().translate(cx, cy) + ax.transData)
         ax.add_patch(patch)
         ax.annotate(f"{r['marker_hint']}\n({cx:.1f}, {cy:.1f})\n{bearing:.1f}°  "
@@ -444,6 +564,12 @@ def draw_scene(build_id, rows, out_path, warnings=()):
         fig.text(0.5, 0.012, "UNVERIFIED: " + "; ".join(warnings), ha="center",
                  va="center", fontsize=8, color="darkred", weight="bold",
                  bbox=dict(fc="mistyrose", ec="darkred", pad=3))
+    if careful_items:
+        # The hatched edge marks WHICH item on the drawing; this corner note
+        # is what still reads after a black-and-white photocopy of the card.
+        fig.text(0.02, 0.02, "PLACE CAREFULLY:\n" + "\n".join(careful_items),
+                 ha="left", va="bottom", fontsize=8, color="red", weight="bold",
+                 bbox=dict(fc="mistyrose", ec="red", pad=3))
     fig.savefig(out_path, dpi=110); plt.close(fig)
 
 
@@ -454,6 +580,12 @@ def main():
     ap.add_argument("--out-dir", type=Path, default=Path("build_cards"))
     ap.add_argument("--check-only", action="store_true",
                     help="validate the rows and print the report, draw nothing")
+    ap.add_argument("--build-id", default=None,
+                    help="process only this one scene, for fast iteration")
+    ap.add_argument("--slack", action="store_true",
+                    help="also report each item's placement slack (needs the "
+                         "checksum columns; expensive, one wavefront rebuild "
+                         "per direction per ring per item)")
     args = ap.parse_args()
 
     scenes = defaultdict(list)
@@ -467,10 +599,18 @@ def main():
         for row in reader:
             scenes[row["build_id"]].append(row)
 
+    if args.build_id is not None:
+        if args.build_id not in scenes:
+            print(f"{args.build_id} not found in {args.csv_path}", file=sys.stderr)
+            return 2
+        scenes = {args.build_id: scenes[args.build_id]}
+
     failed = warned = 0
     verdicts = {}
+    slacks = {}
     for build_id in sorted(scenes):
-        problems, warnings = check_scene(build_id, scenes[build_id])
+        rows = scenes[build_id]
+        problems, warnings = check_scene(build_id, rows)
         verdicts[build_id] = (problems, warnings)
         if problems:
             failed += 1
@@ -485,13 +625,31 @@ def main():
         else:
             print(f"  ok      {build_id}")
 
+        if args.slack:
+            # Scoped to the scenes actually being processed, not every scene
+            # in the file: each item costs a wavefront rebuild per direction
+            # per ring, fine for one scene via --build-id, too slow for 600.
+            head = rows[0]
+            if not _has_checksum(head):
+                print(f"      slack cannot be computed, no checksum columns on this sheet")
+                continue
+            item_slack = {r["marker_hint"]: compute_item_slack(rows, r["marker_hint"])
+                          for r in rows}
+            slacks[build_id] = item_slack
+            for r in rows:
+                s = item_slack[r["marker_hint"]]
+                print(f"      {r['marker_hint']}: "
+                      f"xy slack {_format_slack(s['xy_cm'], TRANSLATION_TEST_RADII_CM)} cm, "
+                      f"theta slack {_format_slack(s['theta_deg'], ROTATION_TEST_DEG)} deg")
+
     if not args.check_only:
         args.out_dir.mkdir(parents=True, exist_ok=True)
         for build_id in sorted(scenes):
             problems, warnings = verdicts[build_id]
             if not problems:
                 draw_scene(build_id, scenes[build_id],
-                           args.out_dir / f"{build_id}.png", warnings)
+                           args.out_dir / f"{build_id}.png", warnings,
+                           item_slacks=slacks.get(build_id))
         print(f"\ncards written to {args.out_dir}")
 
     print(f"\n{len(scenes) - failed} of {len(scenes)} scenes buildable"
