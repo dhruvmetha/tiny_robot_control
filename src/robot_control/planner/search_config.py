@@ -218,16 +218,30 @@ def check_search_reaches_planner(
             "which would drop the mode and search anyway. Pass "
             "--hold-region-target, or use --exec-mode search."
         )
-    if config.uses_best_first and algorithm not in BEST_FIRST_AWARE_ALGORITHMS:
+    # Held mode is the exception, and it is not a loosening. On that path
+    # `--algorithm` is never consulted at all: the loop goes bridge.solve_boundary
+    # to solve_boundary_from_xml, which names `local_search` as its own parameter,
+    # and namo_bridge renames the key into it for exactly that reason. So the key
+    # IS read there whatever --algorithm says, and refusing the combination
+    # rejected a command that works. A guard that refuses a working run is the
+    # same class of bug as one that permits a broken run, only cheaper. The unheld
+    # refusal below is untouched, because there the original reasoning still holds.
+    if (
+        config.uses_best_first
+        and not held_boundary
+        and algorithm not in BEST_FIRST_AWARE_ALGORITHMS
+    ):
         raise ValueError(
             f"--local-search {config.local_search} has no effect with "
             f"--algorithm {algorithm}: only {list(BEST_FIRST_AWARE_ALGORITHMS)} "
             f"read it, and {algorithm} runs its own exhaustive sweep. "
-            f"Use --algorithm full_namo, or stay on {algorithm} and pass "
+            f"Use --algorithm full_namo, add --hold-region-target so the choice "
+            f"reaches solve_boundary_from_xml, or stay on {algorithm} and pass "
             f"--strategy {SCORER_GOAL_STRATEGY} to let the checkpoint in."
         )
     if (
         config.scorer_ckpt
+        and not held_boundary
         and algorithm not in BEST_FIRST_AWARE_ALGORITHMS
         and goal_strategy != SCORER_GOAL_STRATEGY
     ):
