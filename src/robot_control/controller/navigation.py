@@ -105,7 +105,14 @@ class NavigationState(Enum):
     PRE_ROTATING = "PRE_ROTATING"  # Rotate toward first waypoint
     FOLLOWING = "FOLLOWING"  # Following path (delegated)
     POST_ROTATING = "POST_ROTATING"  # Rotate to goal theta
-    FINISHED = "FINISHED"
+    FINISHED = "FINISHED"  # Reached the target
+    FAILED = "FAILED"  # navigate_to could not plan a path; terminal, and
+    # distinct from FINISHED so is_done()/did_fail() can tell the runtime
+    # this subgoal is over and that it failed. navigate_to used to fall
+    # back to IDLE on a planning failure, but is_done() only ever checked
+    # FINISHED, so the runtime's autonomous loop never saw the subgoal
+    # finish and never replanned -- it just sat idle forever. Real logs:
+    # real_trials/easy_002/trial2/run.log, real_trials/hard_004/trial1/run.log.
 
 
 class NavigationController(Controller):
@@ -284,13 +291,16 @@ class NavigationController(Controller):
         path = _filter_duplicate_points(raw_path, min_dist=0.1 * car_size)
 
         if not path or len(path) < 2:
-            # Planning failed or trivial path
+            # Planning failed or trivial path. FAILED, not IDLE: IDLE isn't
+            # a terminal state for is_done(), so a bare IDLE fallback here
+            # left the runtime's autonomous loop with no way to see this
+            # subgoal end and replan (see NavigationState.FAILED docstring).
             print(
                 f"[NAV] !! navigate_to FAILED: planner returned {len(raw_path) if raw_path else 0} "
-                f"raw points, {len(path)} after dedup. Treating as IDLE."
+                f"raw points, {len(path)} after dedup. Treating as FAILED."
             )
-            self._state = NavigationState.IDLE
-            self._logged_state = NavigationState.IDLE
+            self._state = NavigationState.FAILED
+            self._logged_state = NavigationState.FAILED
             return False
 
         self._planned_path = path
@@ -394,6 +404,9 @@ class NavigationController(Controller):
             return Action.stop()
 
         if self._state == NavigationState.FINISHED:
+            return Action.stop()
+
+        if self._state == NavigationState.FAILED:
             return Action.stop()
 
         robot_theta = obs.robot_theta
@@ -544,8 +557,16 @@ class NavigationController(Controller):
         )
 
     def is_done(self, obs: Observation, subgoal: Subgoal) -> bool:
-        """Check if navigation is complete."""
-        return self._state == NavigationState.FINISHED
+        """Check if navigation is complete (reached the target, or failed)."""
+        return self._state in (NavigationState.FINISHED, NavigationState.FAILED)
+
+    def did_fail(self) -> bool:
+        """Check if the navigation failed (vs reached the target).
+
+        Only meaningful when is_done() is True, matching the Controller
+        base class contract.
+        """
+        return self._state == NavigationState.FAILED
 
     def reset(self) -> None:
         """Reset controller state."""

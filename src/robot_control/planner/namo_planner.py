@@ -42,6 +42,16 @@ from robot_control.planner.namo_bridge import NAMOPlanBridge
 from robot_control.planner.reachability_filter import (
     unreachable_contact_points,
 )
+from robot_control.planner.goal_retarget import find_goal_retarget
+
+# Farthest a nearest-free-cell retarget may sit from the goal point before
+# the planner gives up on retargeting and runs a NAMO push instead. Half the
+# largest movable object's long side (15/2 = 7.5) + robot inflation radius
+# (3.5) + wavefront tier1 margin (0.5) = 11.5, rounded up. That sum is the
+# maximum distance the pushed object itself can put between the goal point
+# and free space -- beyond it, something other than the pushed object is
+# blocking the goal, so retargeting would only paper over that.
+GOAL_RETARGET_CAP_CM = 12.0
 
 
 # Keys from the planner's algorithm_stats dict that are safe to serialize to
@@ -280,6 +290,10 @@ class NAMOPlanner(Planner):
         # Reachability check state
         self._navigating_to_goal: bool = False
         self._goal_tolerance: float = 5.0  # cm - close enough to goal
+        # Set when plan() retargets navigation to a free cell near the goal
+        # point instead of the goal point itself (see _select_goal_retarget).
+        # None means "navigating straight at self._robot_goal_cm".
+        self._retarget_point_cm: Optional[Tuple[float, float]] = None
 
         # Cumulative planning time
         self._total_planning_ms: float = 0.0
@@ -640,9 +654,12 @@ class NAMOPlanner(Planner):
         """Generate next subgoal from current observation.
 
         Now includes reachability checking:
-        1. If goal is already reachable, returns NavigateSubgoal to goal
-        2. If goal is blocked, runs NAMO planning and returns PushSubgoals
-        3. After pushes complete, re-checks reachability and loops
+        1. If the goal point itself is covered but a nearby cell is free and
+           robot-reachable within GOAL_RETARGET_CAP_CM, returns a
+           NavigateSubgoal to that cell instead (see _select_goal_retarget).
+        2. Else if goal is already reachable, returns NavigateSubgoal to goal
+        3. Else goal is blocked, runs NAMO planning and returns PushSubgoals
+        4. After pushes complete, re-checks reachability and loops
 
         Args:
             obs: Current observation
@@ -655,9 +672,29 @@ class NAMOPlanner(Planner):
         if self._current_idx < len(self._subgoals):
             return self._subgoals[self._current_idx]
 
+        # A covered goal point with an open region around it is handled
+        # before the coarser region-reachability check below: that check can
+        # say REACHABLE while the exact point is still un-drivable (the
+        # navigator then fails to path to it), or BLOCKED when a short
+        # retarget would avoid a NAMO push entirely. Executor-level only —
+        # does not touch _is_goal_reachable or any search-side behavior.
+        retarget = self._select_goal_retarget(obs)
+        if retarget is not None:
+            rx, ry, dist_cm = retarget
+            self._navigating_to_goal = True
+            self._retarget_point_cm = (rx, ry)
+            print(
+                f"[NAMOPlanner] Goal point BLOCKED but region is open - "
+                f"retargeting to ({rx:.1f}, {ry:.1f}) "
+                f"[{dist_cm:.1f}cm from goal, cap={GOAL_RETARGET_CAP_CM:.1f}cm]"
+            )
+            self._record_goal_retarget_diagnostics(obs, rx, ry, dist_cm)
+            return NavigateSubgoal(x=rx, y=ry, theta=None)
+
         # Check if goal is reachable (either initially or after pushes)
         if self._is_goal_reachable(obs):
             self._navigating_to_goal = True
+            self._retarget_point_cm = None
             dist = math.hypot(
                 obs.robot_x - self._robot_goal_cm[0],
                 obs.robot_y - self._robot_goal_cm[1],
@@ -675,6 +712,7 @@ class NAMOPlanner(Planner):
 
         # Goal is blocked - run NAMO planning
         self._navigating_to_goal = False  # Reset in case we were navigating
+        self._retarget_point_cm = None
         if self._try_pending_chain_reuse(obs):
             if self._current_idx < len(self._subgoals):
                 return self._subgoals[self._current_idx]
@@ -702,8 +740,35 @@ class NAMOPlanner(Planner):
             obs: Current observation after subgoal completion
             failed: True if the subgoal failed (vs succeeded)
         """
-        # If we just finished navigating to goal, nothing to do
         if self._navigating_to_goal:
+            # Success is picked up by is_complete()'s distance check on the
+            # next call; nothing to do here.
+            if not failed:
+                return
+            # The navigate-to-goal (or navigate-to-retarget) subgoal failed
+            # at the executor level -- e.g. the navigator's own wavefront
+            # couldn't path to the target after all. Bounded retry via the
+            # same replan-attempt budget push failures use: reset so the
+            # next plan() call re-runs the full retarget-or-reachable-or-push
+            # decision from scratch, instead of silently repeating a
+            # navigate that just failed. Never freeze.
+            self._navigating_to_goal = False
+            self._retarget_point_cm = None
+            self._replan_attempt += 1
+            if self._replan_attempt >= self._max_replan_attempts:
+                print(
+                    f"[NAMOPlanner] Max replan attempts ({self._max_replan_attempts}) "
+                    f"exceeded after navigate-to-goal failure - stopping execution"
+                )
+                self._planning_failed = True
+                self._subgoals = []
+                self._current_idx = 0
+                return
+            print(
+                f"[NAMOPlanner] Navigate-to-goal FAILED - re-evaluating goal "
+                f"reachability (attempt {self._replan_attempt}/{self._max_replan_attempts})"
+            )
+            self._plan_generated = False
             return
 
         if failed:
@@ -898,17 +963,28 @@ class NAMOPlanner(Planner):
         if not self._navigating_to_goal:
             return False
 
-        # Check if robot reached goal
+        # A retarget (see _select_goal_retarget) sends the robot to a free
+        # cell near the goal point rather than the point itself -- arrival
+        # there, within the same tolerance, is success too.
+        target = self._retarget_point_cm or self._robot_goal_cm
         dist = math.hypot(
-            obs.robot_x - self._robot_goal_cm[0],
-            obs.robot_y - self._robot_goal_cm[1],
+            obs.robot_x - target[0],
+            obs.robot_y - target[1],
         )
         if dist < self._goal_tolerance:
-            print(
-                f"[NAMOPlanner] GOAL REACHED! Distance: {dist:.1f}cm | "
-                f"Total planning: {self._plan_count} calls, "
-                f"{self._total_planning_ms:.0f}ms cumulative"
-            )
+            if self._retarget_point_cm is not None:
+                print(
+                    f"[NAMOPlanner] GOAL REACHED (success-with-retarget)! "
+                    f"Distance to retarget point: {dist:.1f}cm | "
+                    f"Total planning: {self._plan_count} calls, "
+                    f"{self._total_planning_ms:.0f}ms cumulative"
+                )
+            else:
+                print(
+                    f"[NAMOPlanner] GOAL REACHED! Distance: {dist:.1f}cm | "
+                    f"Total planning: {self._plan_count} calls, "
+                    f"{self._total_planning_ms:.0f}ms cumulative"
+                )
             return True
 
         return False
@@ -956,6 +1032,7 @@ class NAMOPlanner(Planner):
         self._plan_generated = False
         self._planning_failed = False
         self._navigating_to_goal = False
+        self._retarget_point_cm = None
         self._replan_attempt = 0
         self._failed_subgoal = None
         self._failed_pushes = set()
@@ -963,6 +1040,63 @@ class NAMOPlanner(Planner):
         self._committed_chain_origin = None
         self._pending_reuse_chain = None
         self._pending_reuse_origin = None
+
+    def _select_goal_retarget(self, obs: Observation) -> Optional[Tuple[float, float, float]]:
+        """Nearest free, robot-reachable cell to the goal point.
+
+        Returns None when the goal cell itself is free (nothing to
+        retarget) or when the nearest reachable free cell is farther than
+        GOAL_RETARGET_CAP_CM (something other than the pushed object is
+        blocking the goal; keep planning pushes instead of retargeting).
+        Otherwise returns (x_cm, y_cm, distance_cm).
+
+        Uses the navigator's own wavefront grid (WavefrontPlanner at
+        reachability_filter's 5mm resolution / tier1 margin), not the C++
+        region-reachability check _is_goal_reachable uses -- the two
+        disagree exactly on this "point covered, region open" case, and
+        this decision has to agree with what the navigator can actually
+        drive to.
+        """
+        return find_goal_retarget(
+            observation=obs,
+            robot_goal_cm=self._robot_goal_cm,
+            cap_cm=GOAL_RETARGET_CAP_CM,
+            workspace_width_cm=self._workspace_width_cm,
+            workspace_height_cm=self._workspace_height_cm,
+            robot_width_cm=self._robot_width_cm,
+            robot_height_cm=self._robot_height_cm,
+        )
+
+    def _record_goal_retarget_diagnostics(
+        self, obs: Observation, x_cm: float, y_cm: float, distance_cm: float
+    ) -> None:
+        """Best-effort diagnostics record for a goal-retarget decision."""
+        if self._diag is None:
+            return
+        try:
+            self._diag.record_plan({
+                "attempt_index": 0,
+                "attempt_seed": None,
+                "search_time_ms": 0.0,
+                "cumulative_ms": self._total_planning_ms,
+                "success": True,
+                "subgoals_returned": 0,
+                "first_subgoal": None,
+                "blacklist_size_before": len(self._failed_pushes),
+                "plan_source": "goal_retarget",
+                "retarget_point_cm": [x_cm, y_cm],
+                "retarget_distance_cm": distance_cm,
+                "goal_point_cm": list(self._robot_goal_cm),
+                "failed_step_index": None,
+                "failure_reason": None,
+                "robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                "object_poses_cm": {
+                    name: [o.x, o.y, o.theta]
+                    for name, o in obs.objects.items()
+                },
+            })
+        except Exception as exc:
+            print(f"[DIAG] record_plan (goal_retarget) failed: {exc!r}", flush=True)
 
     def _is_goal_reachable(self, obs: Observation) -> bool:
         """Check if robot can reach goal without pushing any objects.
