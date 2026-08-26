@@ -160,3 +160,13 @@ def test_the_old_header_is_reported_rather_than_silently_passing(tmp_path):
         writer.writerow(["t1", BASE_COMMAND, "success"])
 
     assert _check(path) == VIOLATION
+
+
+def test_running_with_no_path_refuses_rather_than_passing():
+    """A guessed default that does not exist would exit 0 having read nothing.
+
+    That is a green light from a check that never opened a file, which is the
+    same silent-drop shape the script exists to catch. The earlier version of
+    this script did exactly that against an invented path.
+    """
+    assert main(["check_trials_consistency.py"]) == VIOLATION

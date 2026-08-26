@@ -70,7 +70,11 @@ All four are v1, pre-matrix, all successes. Backfill rather than leave blank:
 
 `command` should stay. It is the only full record of what actually ran, and the parsed columns are a summary of it.
 
-But the fix for "the arm lives in free text" is not to delete the free text, it is to stop the two from being able to disagree. A small check over the file, asserting that every row's `arm` and `exec_mode` match what its `command` string says, turns a transcription slip into a failure at the table instead of a discovered-in-analysis one. `real_robot` asked for it here, so it is written: `scripts/check_trials_consistency.py`, with `tests/test_trials_consistency.py` covering it. It also enforces the two vocabularies and the `none`-on-success rule, and it runs against a file that does not exist yet without complaining.
+But the fix for "the arm lives in free text" is not to delete the free text, it is to stop the two from being able to disagree. A small check over the file, asserting that every row's `arm` and `exec_mode` match what its `command` string says, turns a transcription slip into a failure at the table instead of a discovered-in-analysis one. `real_robot` asked for it here, so it is written: `scripts/check_trials_consistency.py`, with `tests/test_trials_consistency.py` covering it. It also enforces the two vocabularies and the `none`-on-success rule, and a named file that does not exist yet passes without complaint.
+
+Two corrections to how I first pitched it. The path is required and there is no default, because the version I first described defaulted to a location I had guessed and, run with no argument, printed "nothing to check" and exited 0 having read nothing. A green light from a check that never opened a file is worse than no check at all.
+
+And "wire it into CI" was wrong. `real_trials/` is gitignored in robot_control, so `trials.csv` is not merely absent from a fresh checkout, it is excluded by rule, along with `sheets_v2_a82a66a/` and every analysis input the pre-registration names by path. CI cannot read any of it from the repo. The check has to run against the working copy on the machine that owns the file, or against an artefact. That is a smaller claim than the one I made and it is the true one.
 
 The console already helps: `describe_effective_search` now prints `exec mode: reactive  |  local search: best_first/model` before anything moves, on every path including the default. A person filling a row can read both factors off one line rather than reconstructing them.
 
