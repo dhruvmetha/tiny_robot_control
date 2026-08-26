@@ -343,3 +343,35 @@ def test_a_caller_that_names_no_mode_gates_the_way_it_always_did():
 
     assert _plan_is_executable(_plan(False), None) is False
     assert _plan_is_executable(_plan(True), {}) is True
+
+
+# ─── The held-path exception to the best-first guard ────────────────────
+
+
+def test_best_first_is_allowed_on_the_held_path_whatever_the_algorithm():
+    """--algorithm is never consulted there, so refusing it rejected a working run.
+
+    The held loop goes bridge.solve_boundary to solve_boundary_from_xml, which
+    names local_search as its own parameter, and namo_bridge renames the key into
+    it. test_search_flag_routing's own docstring records that this path "does
+    honour best-first, solved in 0.6 s".
+    """
+    check_search_reaches_planner(
+        SWEEP_ALGORITHM,
+        PRIMITIVE_STRATEGY,
+        LocalSearchConfig(local_search="best_first", best_first_prior="uniform"),
+        held_boundary=HELD,
+    )
+
+
+def test_the_unheld_refusal_is_untouched():
+    """The 2026-08-21 combination still refuses, which is the case that cost a day."""
+    with pytest.raises(ValueError, match="has no effect"):
+        check_search_reaches_planner(
+            SWEEP_ALGORITHM,
+            PRIMITIVE_STRATEGY,
+            LocalSearchConfig(
+                local_search="best_first", best_first_prior="model", scorer_ckpt=CKPT
+            ),
+            held_boundary=WHOLE_PROBLEM,
+        )
