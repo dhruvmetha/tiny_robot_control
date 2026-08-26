@@ -12,7 +12,9 @@ from robot_control.planner.region_target import (
 from robot_control.planner.search_config import (
     BEST_FIRST_PRIOR_CHOICES,
     DEFAULT_BEST_FIRST_PRIOR,
+    DEFAULT_EXEC_MODE,
     DEFAULT_LOCAL_SEARCH,
+    EXEC_MODE_CHOICES,
     LOCAL_SEARCH_CHOICES,
     LocalSearchConfig,
     check_search_reaches_planner,
@@ -39,4 +41,6 @@ __all__ = [
     "BEST_FIRST_PRIOR_CHOICES",
     "DEFAULT_LOCAL_SEARCH",
     "DEFAULT_BEST_FIRST_PRIOR",
+    "EXEC_MODE_CHOICES",
+    "DEFAULT_EXEC_MODE",
 ]
