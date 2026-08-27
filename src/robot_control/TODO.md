@@ -28,8 +28,8 @@ The ordered work list for the study. Software is done and pushed through
 4. [ ] (no table) Fix the two-hop test checkpoint path
    (KNOWN_ISSUES.md#two-hop-tests-collect-on-one-machine-only). Before the
    ladder if convenient, else first thing after the matrix.
-5. [ ] (no table) Push namo_cpp `edab269` (sim experiment pipeline); it is
-   local-only again.
+5. [x] (no table) namo_cpp sim experiment pipeline pushed 2026-08-27 as
+   `630a3f4` (edab269 rebased over seven sim-side commits, no overlap).
 6. [ ] (after matrix) Recorder dedup in namo_planner.py (ten keys built three
    times) with the drift note, and move `_require_paired_namo_cpp` into
    tests/conftest.py. Both deferred deliberately: they change the instrument.
