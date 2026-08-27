@@ -6,9 +6,9 @@ or close it.
 
 ## Ignore rules miss a symlink of the same name
 
-**Status:** Open; found 2026-08-26 after the same bug surfaced in the sibling
-namo_cpp repository. Reproduced here, not yet fixed, bundled with the pending
-decision about tracking `real_trials/`.
+**Status:** Fixed 2026-08-27. Kept as a record because the rule still reads as
+though the slash were harmless, and because verifying it needs a specific
+command.
 
 A `.gitignore` rule ending in `/` matches a directory and not a symlink of the
 same name. Reproduced in this checkout: a rule `foo/` ignores a real `foo`
@@ -27,11 +27,21 @@ There is also no rule of any kind for `build_python/`, which the trial command
 references as `$NAMO_REPO/build_python`. A symlink or directory by that name in
 this repository would be untracked and stageable today.
 
-Intended fix, not yet applied: for each rule that names a directory a person
-might relocate, add the slashless form alongside it, so both the directory and
-a symlink match. Verify with `git check-ignore -v` against a real symlink
-rather than by reading the file, since the rule reads as though it already
-covers the case.
+The fix: every rule naming a relocatable directory now appears twice, with and
+without the trailing slash, and `build_python` gained a rule of both kinds.
+Confirmed by creating a symlink named `build_python` pointing at the sibling
+repository's build and watching `git status` stay silent about it.
+
+`real_trials` is deliberately excluded from that treatment. A bare rule would
+match the directory, and git cannot re-include a path underneath an excluded
+directory, which would kill the negations that track `trials.csv` and the
+sheets. A symlink named `real_trials` would still be visible. That is a real
+residual and the tracking matters more.
+
+Verify a change here with `git status --porcelain --untracked-files=all`, never
+by reading the rule and never with `git check-ignore -q`, which exits 0 on a
+negation match as well as on an ignore and will tell you a tracked file is
+ignored.
 
 ## Two-hop tests collect on one machine only
 

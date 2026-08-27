@@ -1,15 +1,31 @@
+# A rule ending in `/` matches a directory and NOT a symlink of the same name,
+# so each relocatable directory below is listed twice, with and without the
+# slash. Without the slashless form, moving a full directory to another disk and
+# symlinking it back leaves every byte of it committable with no warning. That
+# is not hypothetical: it put an absolute machine path into a commit in the
+# sibling repository. Verify a change here with `git status --porcelain
+# --untracked-files=all`, not by reading the rule, and not with `git
+# check-ignore -q`, which exits 0 on a negation match too.
+#
+# `real_trials` is deliberately NOT listed slashless. A bare rule would match
+# the directory and git cannot re-include anything under an excluded directory,
+# which would kill the negations that track trials.csv and the sheets.
 *.pyc
 *.txt
 *.egg-info/
 *.egg-info/*
 output_dump/
+output_dump
 *.mp4
 *.pdf
 .claude/
 /.worktrees/
 recordings/
+recordings
 /calibration/
+/calibration
 /chassis_calibration/
+/chassis_calibration
 MUJOCO_LOG.TXT
 
 # Planner output artifacts under real_test_envs/<env>/solution/.
@@ -27,6 +43,7 @@ MUJOCO_LOG.TXT
 # Local verification scratch space.
 /_tmp_real_test_envs_verify/
 build_cards/
+build_cards
 
 # real_trials/ holds two different kinds of thing and they need opposite
 # treatment. trials.csv is the study's record of record and sheets_v2_*/ are
@@ -40,3 +57,9 @@ build_cards/
 real_trials/*
 !real_trials/trials.csv
 !real_trials/sheets_v2_*/
+
+# The compiled binding lives in namo_cpp, but a worktree here has none of its
+# own and symlinking the main tree's build in is the obvious move. No rule
+# existed at all, so that symlink was untracked and stageable.
+build_python/
+build_python
