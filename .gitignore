@@ -56,6 +56,13 @@ build_cards
 # directory, so the negations below would never fire.
 real_trials/*
 !real_trials/trials.csv
+# matrix_v2 needs three rules: make the directory traversable, re-ignore its
+# contents (trial output: videos, jsonl, run logs), then un-ignore the one
+# pre-registration artifact. Without the middle rule every future trial file
+# under it would be stageable.
+!real_trials/matrix_v2/
+real_trials/matrix_v2/*
+!real_trials/matrix_v2/execution_ledger.csv
 !real_trials/sheets_v2_*/
 
 # The compiled binding lives in namo_cpp, but a worktree here has none of its
