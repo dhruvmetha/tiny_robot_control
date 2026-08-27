@@ -59,11 +59,25 @@ from robot_control.planner.search_config import (  # noqa: E402
     EXEC_MODE_CHOICES,
 )
 
-# The success vocabulary for `failure_cause`. The seven failure values are
-# real_robot's taxonomy and this check does not police them beyond "not empty":
-# a person assigns the cause at verdict time and inventing a stricter rule here
-# would reject their judgement.
+# `failure_cause` in full, from docs/ICRA_REAL_ROBOT_STUDY.md and
+# docs/REAL_ROBOT_TRIALS.md. The value IS policed, and an earlier version of
+# this check deliberately did not police it, on the reasoning that a stricter rule
+# would reject the human's judgement at the table. That has it backwards. The
+# vocabulary is fixed because the analysis groups on it, so a typo like `stal`
+# or an invented value like `battery` does not read as judgement, it reads as a
+# category of one that nobody notices until the table is drawn. `other` is in
+# the list precisely so a cause that does not fit still has somewhere to go.
 NO_FAILURE = "none"
+FAILURE_CAUSES = (
+    "corridor_too_tight",
+    "marker_unreachable",
+    "overshoot_onto_goal",
+    "stall",
+    "radio_dropout",
+    "planning_failed",
+    "other",
+)
+CAUSE_CHOICES = (NO_FAILURE,) + FAILURE_CAUSES
 
 # Only these two flags are cross-checked. Both name a factor of the design, and
 # both have a column. Everything else in `command` is provenance, not a grouping
@@ -71,10 +85,17 @@ NO_FAILURE = "none"
 _ARM_IN_COMMAND = re.compile(r"--best-first-prior[= ]+(\S+)")
 _MODE_IN_COMMAND = re.compile(r"--exec-mode[= ]+(\S+)")
 
-# What `planner_outcome` says when the trial worked. Kept as a set rather than
-# one string because the column predates this check and may already carry more
-# than one spelling.
-_SUCCESS_OUTCOMES = {"success", "solved", "opened", "true"}
+# Success is read off `user_verdict`, not `planner_outcome`. The runbook is
+# explicit that the human's verdict is ground truth and the planner's exit code
+# is not, and the outcome column is free prose: the pilot rows carry "push ok +
+# region goal reached" and "goal reached 0.9cm 1 push", which no fixed set of
+# words matches. An earlier version keyed off `planner_outcome` against
+# {"success","solved","opened","true"} and so never fired on a real row.
+# Verdicts are prose too, but they start with the word: "success" and "success
+# (region semantics)" both count, "n/a" is neither success nor failure and
+# constrains nothing beyond the vocabulary.
+_SUCCESS_VERDICT_PREFIX = "success"
+_NOT_A_TRIAL_VERDICT = "n/a"
 
 
 def _violations(row: Dict[str, str], line: int) -> List[str]:
@@ -83,12 +104,14 @@ def _violations(row: Dict[str, str], line: int) -> List[str]:
     mode = (row.get("exec_mode") or "").strip()
     cause = (row.get("failure_cause") or "").strip()
     command = row.get("command") or ""
-    outcome = (row.get("planner_outcome") or "").strip().lower()
+    verdict = (row.get("user_verdict") or "").strip().lower()
 
     if arm not in BEST_FIRST_PRIOR_CHOICES:
         out.append(f"arm={arm!r} is not one of {list(BEST_FIRST_PRIOR_CHOICES)}")
     if mode not in EXEC_MODE_CHOICES:
         out.append(f"exec_mode={mode!r} is not one of {list(EXEC_MODE_CHOICES)}")
+    if cause not in CAUSE_CHOICES:
+        out.append(f"failure_cause={cause!r} is not one of {list(CAUSE_CHOICES)}")
 
     said_arm = _ARM_IN_COMMAND.search(command)
     if said_arm and said_arm.group(1) != arm:
@@ -102,16 +125,31 @@ def _violations(row: Dict[str, str], line: int) -> List[str]:
             f"exec_mode column says {mode!r} but the command ran "
             f"--exec-mode {said_mode.group(1)!r}"
         )
-
-    if not cause:
+    if not said_arm and not said_mode:
+        # Neither flag appears, so the cross-check compared nothing. The matrix
+        # command names both, so this means the column holds a prose summary
+        # instead of what ran. Saying "consistent" there claims a comparison
+        # that did not happen.
         out.append(
-            "failure_cause is empty, which reads as both 'did not fail' and "
-            f"'not triaged yet'; use {NO_FAILURE!r} for a success"
+            "command names neither --best-first-prior nor --exec-mode, so the "
+            "columns were not checked against anything; record the command that "
+            "actually ran"
         )
-    elif outcome in _SUCCESS_OUTCOMES and cause != NO_FAILURE:
+
+    if verdict.startswith(_SUCCESS_VERDICT_PREFIX) and cause != NO_FAILURE:
         out.append(
-            f"planner_outcome={outcome!r} but failure_cause={cause!r}; "
+            f"user_verdict={verdict!r} but failure_cause={cause!r}; "
             "one of the two is wrong"
+        )
+    if (
+        verdict
+        and not verdict.startswith(_SUCCESS_VERDICT_PREFIX)
+        and verdict != _NOT_A_TRIAL_VERDICT
+        and cause == NO_FAILURE
+    ):
+        out.append(
+            f"user_verdict={verdict!r} is not a success but failure_cause is "
+            f"{NO_FAILURE!r}; a failed trial names its cause"
         )
 
     return [f"row {line}: {v}" for v in out]
@@ -129,6 +167,28 @@ def main(argv: List[str]) -> int:
     if not path.is_file():
         print(f"no trials file at {path}, nothing to check")
         return 0
+
+    # Width first, because DictReader hides the failure this catches. An
+    # unquoted comma in `notes` splits one field into two, every column after it
+    # shifts left by one, and DictReader silently files the overflow under the
+    # key None. Two of the four pilot rows were in exactly that state, with the
+    # scene checksum sitting in `log_path`. Nothing read the file loudly enough
+    # to notice for three days.
+    with path.open(newline="") as fh:
+        raw = list(csv.reader(fh))
+    if raw:
+        width = len(raw[0])
+        bad_width = [
+            f"row {i}: {len(r)} fields, header has {width}"
+            + (" (an unquoted comma in a free-text column splits it)" if len(r) > width else "")
+            for i, r in enumerate(raw[1:], start=2)
+            if len(r) != width
+        ]
+        if bad_width:
+            print(f"{path}: {len(bad_width)} row(s) are the wrong width")
+            for b in bad_width:
+                print(f"  {b}")
+            return 1
 
     with path.open(newline="") as fh:
         rows = list(csv.DictReader(fh))
