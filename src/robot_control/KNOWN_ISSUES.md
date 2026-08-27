@@ -32,11 +32,18 @@ without the trailing slash, and `build_python` gained a rule of both kinds.
 Confirmed by creating a symlink named `build_python` pointing at the sibling
 repository's build and watching `git status` stay silent about it.
 
-`real_trials` is deliberately excluded from that treatment. A bare rule would
-match the directory, and git cannot re-include a path underneath an excluded
-directory, which would kill the negations that track `trials.csv` and the
-sheets. A symlink named `real_trials` would still be visible. That is a real
-residual and the tracking matters more.
+`real_trials` is deliberately excluded from that treatment, and the exclusion
+costs nothing. A bare rule would match the directory, and git cannot re-include
+a path underneath an excluded directory, so it would kill the negations that
+track `trials.csv` and the sheets.
+
+The reason that is safe is the same tracking. Measured on 2026-08-27 by
+replacing the directory with a symlink: git reports the 12 tracked files as
+deleted and the symlink as untracked, and `git add -A` stages twelve removals.
+That is a dozen deletions in the diff, not a quiet extra file. The symlink bug
+this section is about is dangerous precisely where nothing is tracked, because
+then the symlink's contents arrive as new material nobody looks at. Here the
+failure runs the other way and announces itself.
 
 Verify a change here with `git status --porcelain --untracked-files=all`, never
 by reading the rule and never with `git check-ignore -q`, which exits 0 on a
