@@ -174,6 +174,68 @@ def _target():
 # ─── Tests ──────────────────────────────────────────────────────────────
 
 
+# ─── Naming a mode declares a mode-arm run ──────────────────────────────
+#
+# The full truth table for the held-boundary requirement. Amendment 2 puts both
+# arms of the matrix on the held loop; the guard enforces it for anyone naming
+# a mode, while an omitted mode keeps the unheld default every existing caller
+# relies on. `named search, unheld` is the row that used to pass silently: it
+# runs, and runs a pipeline the reactive arm never touches, so the sign test
+# would compare code paths and file the result under a mode.
+
+SEARCH_CONFIG = LocalSearchConfig()  # exec_mode defaults to search
+
+
+@pytest.mark.parametrize(
+    ("config", "held", "named", "allowed"),
+    [
+        pytest.param(SEARCH_CONFIG, WHOLE_PROBLEM, False, True, id="omitted-unheld"),
+        pytest.param(SEARCH_CONFIG, HELD, False, True, id="omitted-held"),
+        pytest.param(SEARCH_CONFIG, WHOLE_PROBLEM, True, False, id="named-search-unheld"),
+        pytest.param(SEARCH_CONFIG, HELD, True, True, id="named-search-held"),
+        pytest.param(_reactive(), WHOLE_PROBLEM, True, False, id="named-reactive-unheld"),
+        pytest.param(_reactive(), HELD, True, True, id="named-reactive-held"),
+        # A programmatic caller that builds a reactive config without going
+        # through the CLI cannot claim it was "not named": reactive is never
+        # the default, so the config itself is the choice.
+        pytest.param(_reactive(), WHOLE_PROBLEM, False, False, id="programmatic-reactive-unheld"),
+    ],
+)
+def test_a_named_mode_requires_the_held_boundary(config, held, named, allowed):
+    call = lambda: check_search_reaches_planner(
+        BEST_FIRST_ALGORITHM, PRIMITIVE_STRATEGY, config,
+        held_boundary=held, exec_mode_named=named,
+    )
+    if allowed:
+        call()
+    else:
+        with pytest.raises(ValueError) as excinfo:
+            call()
+        assert "--hold-region-target" in str(excinfo.value)
+
+
+def test_the_two_refusals_explain_different_failures():
+    """Search would run the wrong pipeline; reactive would not run at all.
+
+    The remediation differs too: search names "omit --exec-mode" as a way out,
+    reactive must not, since omitting it just searches.
+    """
+    with pytest.raises(ValueError) as search_exc:
+        check_search_reaches_planner(
+            BEST_FIRST_ALGORITHM, PRIMITIVE_STRATEGY, SEARCH_CONFIG,
+            held_boundary=WHOLE_PROBLEM, exec_mode_named=True,
+        )
+    with pytest.raises(ValueError) as reactive_exc:
+        check_search_reaches_planner(
+            BEST_FIRST_ALGORITHM, PRIMITIVE_STRATEGY, _reactive(),
+            held_boundary=WHOLE_PROBLEM, exec_mode_named=True,
+        )
+    assert "wrong pipeline" in str(search_exc.value)
+    assert "omit --exec-mode" in str(search_exc.value)
+    assert "has no effect" in str(reactive_exc.value)
+    assert "omit --exec-mode" not in str(reactive_exc.value)
+
+
 def test_reactive_outside_held_mode_refuses():
     """The silent drop: plan_from_xml never reads the mode, so the run searches.
 

@@ -195,7 +195,19 @@ SCORER_GOAL_STRATEGY = "scorer"
 # misrouted search flag produces a slow run somebody eventually investigates,
 # while a misrouted exec mode produces a normal-looking trial filed under the
 # wrong cell of a paired design.
-REACTIVE_REQUIRES_HELD_BOUNDARY = True
+#
+# The rule covers BOTH mode values, not only reactive. The two arms of the
+# study differ by execution mode alone; the paths differ by far more than that
+# (the unheld planner re-derives the boundary every replan and retries with
+# reshuffled seeds, the held one persists one target and never retries). So an
+# explicit `--exec-mode search` on the unheld path runs, and runs a different
+# pipeline from the search arm the matrix defines, which corrupts the paired
+# comparison while producing a normal-looking trial. Naming the mode is what
+# declares the run a mode-arm run; an omitted mode keeps the unheld default
+# every existing caller relies on. Reactive needs no naming to be refused,
+# since it can only be reached by naming it, but the check reads the config
+# too so a programmatic caller cannot slip a reactive config past it.
+EXEC_MODE_REQUIRES_HELD_BOUNDARY = True
 
 
 def check_search_reaches_planner(
@@ -203,20 +215,38 @@ def check_search_reaches_planner(
     goal_strategy: str,
     config: LocalSearchConfig,
     held_boundary: bool = False,
+    exec_mode_named: bool = False,
 ) -> None:
     """Raise if a selection is addressed to a planner or path that ignores it.
 
     Unknown keys ride into `algorithm_params` and get dropped without a word,
     so the only symptom is a slow run that looks like a hard scene. Fail before
     the robot moves instead.
+
+    `exec_mode_named` is whether the caller chose the mode explicitly rather
+    than inheriting the default. The CLI computes it from the raw argument
+    before resolving the default; a caller that cannot know leaves it False and
+    gets the pre-existing behaviour.
     """
-    if config.uses_reactive and REACTIVE_REQUIRES_HELD_BOUNDARY and not held_boundary:
+    mode_chosen = exec_mode_named or config.uses_reactive
+    if mode_chosen and EXEC_MODE_REQUIRES_HELD_BOUNDARY and not held_boundary:
+        if config.uses_reactive:
+            raise ValueError(
+                "--exec-mode reactive has no effect without --hold-region-target: "
+                "the mode is read by solve_boundary_from_xml, and only the "
+                "held-boundary loop calls it. The whole-problem path plans "
+                "through plan_from_xml, which would drop the mode and search "
+                "anyway. Pass --hold-region-target (or --active-target), or use "
+                "--exec-mode search."
+            )
         raise ValueError(
-            "--exec-mode reactive has no effect without --hold-region-target: the "
-            "mode is read by solve_boundary_from_xml, and only the held-boundary "
-            "loop calls it. The whole-problem path plans through plan_from_xml, "
-            "which would drop the mode and search anyway. Pass "
-            "--hold-region-target, or use --exec-mode search."
+            "--exec-mode search without --hold-region-target would run, and run "
+            "the wrong pipeline: the unheld planner re-derives the boundary on "
+            "every replan and retries with reshuffled seeds, while the mode "
+            "comparison is defined on the held loop, so the trial would be "
+            "filed under the search arm while running code the reactive arm "
+            "never touches. Pass --hold-region-target (or --active-target) for "
+            "a mode-arm run, or omit --exec-mode for an ordinary unheld run."
         )
     # Held mode is the exception, and it is not a loosening. On that path
     # `--algorithm` is never consulted at all: the loop goes bridge.solve_boundary

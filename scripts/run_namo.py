@@ -94,7 +94,7 @@ def local_search_from_args(args) -> LocalSearchConfig:
         best_first_hmax=args.best_first_hmax,
         keyhole_simulation_budget=args.keyhole_simulation_budget,
         ml_device=args.ml_device,
-        exec_mode=args.exec_mode,
+        exec_mode=args.exec_mode or DEFAULT_EXEC_MODE,
     )
 
 
@@ -1919,14 +1919,21 @@ def main():
     parser.add_argument(
         "--exec-mode",
         type=str,
-        default=DEFAULT_EXEC_MODE,
+        # None, not DEFAULT_EXEC_MODE: naming the mode is what declares a
+        # mode-arm run and requires --hold-region-target, so the guard has to
+        # see whether the operator chose it or inherited it. The default is
+        # resolved to `search` in local_search_from_args.
+        default=None,
         choices=list(EXEC_MODE_CHOICES),
         help="Decision rule per replan. search = expand a priority queue and "
-             "return a chain (default); reactive = score the candidates at the "
-             "state in front of the robot and push the top one, no lookahead. "
-             "Needs --local-search best_first and --hold-region-target. Both "
-             "run the same ranker over the same pool, so this is the lookahead "
-             "arm of the trial matrix and every run records which one ran.",
+             "return a chain (the default when omitted); reactive = score the "
+             "candidates at the state in front of the robot and push the top "
+             "one, no lookahead. Naming EITHER value declares a mode-arm run "
+             "and requires --hold-region-target, since the mode comparison is "
+             "defined on the held-boundary loop only; omit the flag entirely "
+             "for an ordinary unheld run. reactive also needs --local-search "
+             "best_first. Both modes run the same ranker over the same pool, "
+             "so this is the lookahead arm of the trial matrix.",
     )
     parser.add_argument(
         "--best-first-prior",
@@ -2193,7 +2200,11 @@ def main():
         try:
             _search = local_search_from_args(args)
             check_search_reaches_planner(
-                args.algorithm, args.strategy, _search, held_boundary=_held
+                args.algorithm,
+                args.strategy,
+                _search,
+                held_boundary=_held,
+                exec_mode_named=args.exec_mode is not None,
             )
         except ValueError as exc:
             print(f"Error: {exc}")
