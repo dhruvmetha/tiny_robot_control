@@ -84,6 +84,13 @@ except ImportError:
     Window = None
 
 
+PLAN_COMPLETE_STATUS = "Plan Complete"
+PLANNING_FAILED_STATUS = "Planning Failed"
+AUTONOMOUS_TERMINAL_STATUSES = frozenset(
+    {PLAN_COMPLETE_STATUS, PLANNING_FAILED_STATUS}
+)
+
+
 def _load_objects_yaml(objects_path: str) -> Dict[str, "ObjectDefinition"]:
     """Load object definitions from objects.yaml."""
     with open(objects_path, "r") as f:
@@ -221,7 +228,8 @@ class Runtime:
         # Autonomous mode components
         self._planner: Optional[Planner] = None
         self._executor: Optional[SubgoalExecutor] = None
-        self._plan_completed = False  # Track if plan has completed (for stop command)
+        self._terminal_announced = False
+        self._terminal_outcome: Optional[Tuple[str, str]] = None
         self._subgoal_start_time: Optional[float] = None  # Wall-clock timer for subgoal duration logging
 
         # Connectivity warning debounce. Without this the 30Hz loop would spam
@@ -960,6 +968,43 @@ class Runtime:
 
     # --- Control loop ---
 
+    def _record_terminal_outcome(self, outcome: str, reason: str) -> None:
+        """Retain the first autonomous terminal decision for summary writing."""
+        if self._terminal_outcome is None:
+            self._terminal_outcome = (outcome, reason)
+
+    def _handle_autonomous_terminal_status(
+        self,
+        status: str,
+        *,
+        is_real: bool,
+    ) -> bool:
+        """Stop a terminal autonomous run and return whether the loop should exit."""
+        if status not in AUTONOMOUS_TERMINAL_STATUSES:
+            return False
+
+        if not self._terminal_announced:
+            self._terminal_announced = True
+            if status == PLAN_COMPLETE_STATUS:
+                print("[Runtime] Plan complete - stopping robot")
+            else:
+                print("[Runtime] Planning failed - stopping robot")
+            if is_real and not self._config.dry_run:
+                if hasattr(self._env, "stop_robot"):
+                    self._env.stop_robot()
+
+        if not self._config.quit_on_complete:
+            return False
+
+        print("[Runtime] Shutting down")
+        self._running = False
+        if self._window is not None:
+            try:
+                self._window.close_window()
+            except Exception as exc:
+                print(f"[Runtime] window close failed: {exc!r}", flush=True)
+        return True
+
     def _control_loop(self) -> None:
         """Main control loop at configured frequency."""
         dt = 1.0 / self._config.frequency
@@ -974,33 +1019,13 @@ class Runtime:
                     # === AUTONOMOUS MODE ===
                     action, drawings, status = self._autonomous_step(obs)
 
-                    # Handle plan completion
-                    if status == "Plan Complete":
-                        # Send immediate stop when plan first completes
-                        if not self._plan_completed:
-                            self._plan_completed = True
-                            print("[Runtime] Plan complete - stopping robot")
-                            if is_real and not self._config.dry_run:
-                                if hasattr(self._env, "stop_robot"):
-                                    self._env.stop_robot()
-
-                        # Quit if configured to do so. The display updates
-                        # above on the per-tick path keep the canvas live;
-                        # we deliberately do NOT post another batch of them
-                        # here. Those extra queued events used to crowd out
-                        # the quit signal on long runs, leaving _window.run()
-                        # blocked in app.exec() and run()'s finally unrun
-                        # — meaning summary.json, success_chain.json, and
-                        # success_sim_replay.mp4 silently never landed.
-                        if self._config.quit_on_complete:
-                            print("[Runtime] Shutting down")
-                            self._running = False
-                            if self._window is not None:
-                                try:
-                                    self._window.close_window()
-                                except Exception as _exc:
-                                    print(f"[Runtime] window close failed: {_exc!r}", flush=True)
-                            break
+                    # Both autonomous terminal states use the same stop/close
+                    # path. The GUI-thread-safe close call is load-bearing:
+                    # without it run() cannot reach summary writing.
+                    if self._handle_autonomous_terminal_status(
+                        status, is_real=is_real
+                    ):
+                        break
                 else:
                     # === INTERACTIVE MODE ===
                     action = self._coordinator.step(obs)
@@ -1055,7 +1080,14 @@ class Runtime:
 
             # Check if plan is complete
             if self._planner.is_complete(obs):
-                return Action.stop(), self._planner.get_drawings(), "Plan Complete"
+                self._record_terminal_outcome(
+                    "success", "goal reachable in simulation"
+                )
+                return (
+                    Action.stop(),
+                    self._planner.get_drawings(),
+                    PLAN_COMPLETE_STATUS,
+                )
 
             # Get next subgoal — log robot connectivity around the planning call
             # so the user can correlate "no plan found" diagnostics with whether
@@ -1077,8 +1109,21 @@ class Runtime:
                 self._subgoal_start_time = time.time()
                 self._executor.set_subgoal(subgoal, obs)
             else:
-                # No more subgoals
-                return Action.stop(), self._planner.get_drawings(), "Plan Complete"
+                # Some generic planners transition to complete inside plan(),
+                # so check once more. An empty plan by itself is never proof
+                # of success.
+                if self._planner.is_complete(obs):
+                    self._record_terminal_outcome(
+                        "success", "goal reachable in simulation"
+                    )
+                    status = PLAN_COMPLETE_STATUS
+                else:
+                    self._record_terminal_outcome(
+                        "failure",
+                        "planner returned no subgoal while goal was unreachable",
+                    )
+                    status = PLANNING_FAILED_STATUS
+                return Action.stop(), self._planner.get_drawings(), status
 
         # Execute
         action = self._executor.step(obs)
@@ -1445,10 +1490,17 @@ class Runtime:
         )
 
     def _determine_outcome(self) -> Tuple[str, str]:
-        # Best-effort: read terminal state from the planner. Three signals:
+        # The control loop's retained decision is authoritative. Re-evaluating
+        # here previously let console status and summary.json disagree.
+        terminal_outcome = getattr(self, "_terminal_outcome", None)
+        if terminal_outcome is not None:
+            return terminal_outcome
+
+        # Best-effort fallback for aborts or legacy callers that stopped before
+        # _autonomous_step recorded a terminal state. Three signals:
         #   1. Planner reported "planning failed" (no plan possible) → failure
         #   2. Latest obs satisfies planner.is_complete() → success
-        #   3. Otherwise → aborted (e.g. user closed window before goal reached)
+        #   3. Otherwise → aborted (e.g. user closed the window)
         if self._planner is None:
             return "unknown", "no planner attached"
 
@@ -1461,12 +1513,12 @@ class Runtime:
             if self._world is not None:
                 obs = self._world.get()
                 if obs is not None and self._planner.is_complete(obs):
-                    return "success", "goal reached"
+                    return "success", "goal reachable in simulation"
         except Exception as exc:
             return "unknown", f"is_complete check failed: {exc!r}"
 
         # Normal exit without success → aborted.
-        return "aborted", "runtime stopped before goal reached"
+        return "aborted", "runtime stopped without a terminal planner result"
 
     def _write_summary(
         self,
