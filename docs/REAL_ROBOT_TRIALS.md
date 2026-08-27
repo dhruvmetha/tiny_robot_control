@@ -102,8 +102,9 @@ those last and carefully.
     NAMO_PUSH_WHEEL_LOG=real_trials/<scene>/trialN/push_phases.jsonl \
     PYTHONPATH=$NAMO_REPO/build_python:src python -u scripts/run_namo.py \
         --config config/real.yaml --camera-service tcp://localhost:5556 \
-        --robot-model car --algorithm full_namo \
+        --robot-model car --algorithm full_namo --hold-region-target \
         --local-search best_first --best-first-prior model \
+        --exec-mode <search|reactive> \
         --scorer-ckpt ~/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt \
         --goal <goal_x goal_y from the sheet row> \
         --no-shuffle-edges --max-chain-depth 2 --record-video \
@@ -112,6 +113,22 @@ those last and carefully.
 HY5U_s2 is the single fixed seed for every real trial; the uniform arm
 replaces `--best-first-prior model` with `uniform` and drops the ckpt.
 Goals are per-scene from the sheet, not a constant.
+
+`--hold-region-target` is mandatory on BOTH arms and is not the pilot's
+command. `--exec-mode` only reaches the held-boundary loop, so without the
+flag the two execution modes would run different code paths and the
+comparison would measure the pipeline rather than the mode. It also stops a
+setup push stranding itself against a boundary the next replan no longer
+targets. See Amendment 2 in
+[ICRA_REAL_ROBOT_STUDY.md](ICRA_REAL_ROBOT_STUDY.md) before changing either
+flag.
+
+NOT RUNNABLE YET. `--exec-mode` does not exist in this checkout. It lives on
+the `policy/reactive-deploy` proposal branch along with the executor gate fix
+that lets a reactive push execute at all. Until that lands here, drop
+`--exec-mode` and the command runs the search arm on the held loop. Do not
+run the reactive arm before it lands, because today's executor discards a
+reactive push and the robot stands still.
 
 ## Record the verdict
 
