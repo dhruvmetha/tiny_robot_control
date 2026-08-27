@@ -12,21 +12,28 @@ port, and camera facts that silently break trials when skipped.
 These documents describe only the current checkout. Do not infer support from
 workspace files, sibling-repository history, or generated experiment output.
 
-## Current full-search blocker
+## Current NAMO compatibility
 
 `NAMOPlanBridge` provides scene/object/subgoal conversion and can verify an
 exact prior chain directly with the canonical compiled `namo_rl` binding. The
 closed-loop `replan-reuse-only` command and reuse phase of `replan` use that
 path without `NAMOPlanningService` when a prior plan is available.
 
-Fresh/full search is blocked because the current sibling `namo_cpp` checkout
-does not provide the in-process Python class
-`namo.services.NAMOPlanningService` that the full-search path imports lazily.
-This is a missing Python API, not an external or network service outage. Treat
-`scripts/run_namo.py` fresh/full search, `replan-full-search-only`, and
-`replan`'s fallback after failed reuse as unavailable until that API is
-restored or migrated. See the [closed-loop guide](closed_loop_sessions/README.md)
-for the command-level distinction.
+Fresh/full search uses the in-process Python class
+`namo.services.NAMOPlanningService` that the bridge imports lazily. The current
+sibling `../namo_cpp` checkout provides it, but only use this as a
+checkout-specific compatibility statement: source
+`../namo_cpp/env.robotlearning.sh` before planning or testing and run the pinned
+`/home/dhruv/miniconda3/envs/namo312/bin/python`. Verified on 2026-08-27 at
+`robot_control` commit `74dcf01` paired with sibling `namo_cpp` commit
+`edab269`, that environment imports the service from
+`../namo_cpp/python/namo/services/planning_service.py`, imports compiled
+`namo_rl` from `../namo_cpp/build_python`, passes all 383 repository tests, and
+returns successful plans for simulation-only model/uniform prior x
+search/reactive execution probes. This does not establish compatibility with
+other sibling revisions or validate real hardware end to end. See the
+[closed-loop guide](closed_loop_sessions/README.md) for the command-level
+distinction between reuse and full search.
 
 ## Repository commands
 

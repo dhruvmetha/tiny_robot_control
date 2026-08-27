@@ -14,8 +14,14 @@ build ids do NOT refer to the same scenes, join on the `xml` column across
 versions. A local verified copy plus the offset baselines lives in
 `real_trials/sheets_v2_a82a66a/`.
 
-Success semantics: the runtime succeeds at the goal marker within 5.0 cm,
-or, when the marker's cell is wavefront-blocked but a free reachable cell
+For every matrix run, the goal is the selected sheet row's `goal_x_cm` and
+`goal_y_cm`, in centimeters, passed explicitly as `--goal X Y`. The physical
+goal marker is optional when that flag is supplied. In automatic real mode,
+`--goal` has strict precedence and skips goal-marker detection; only omitting
+the flag makes `run_namo.py` look for ArUco 6x6 ID 0.
+
+Success semantics: the runtime succeeds at that configured goal location
+within 5.0 cm, or, when its cell is wavefront-blocked but a free reachable cell
 exists within 12.0 cm (GOAL_RETARGET_CAP_CM in
 `src/robot_control/planner/namo_planner.py`, derivation in the constant's
 comment), at that cell, logged as success-with-retarget. Report strict and
@@ -99,20 +105,36 @@ those last and carefully.
 
 ## Run the trial
 
-    NAMO_PUSH_WHEEL_LOG=real_trials/<scene>/trialN/push_phases.jsonl \
+Set these placeholders from the selected v2 sheet row and the frozen matrix
+ledger. `trialN` is the trial directory name within one matrix cell.
+
+    axis="<axis>"                    # 1push or hmax2
+    build_id="<build_id>"
+    arm="model"
+    exec_mode="<search-or-reactive>"
+    trial="trialN"
+    goal_x_cm="<goal_x_cm>"
+    goal_y_cm="<goal_y_cm>"
+    diag_path="real_trials/matrix_v2/${axis}/${build_id}/${arm}_${exec_mode}"
+
+    NAMO_PUSH_WHEEL_LOG="${diag_path}/${trial}/push_phases.jsonl" \
     PYTHONPATH=$NAMO_REPO/build_python:src python -u scripts/run_namo.py \
         --config config/real.yaml --camera-service tcp://localhost:5556 \
         --robot-model car --algorithm full_namo --hold-region-target \
         --local-search best_first --best-first-prior model \
-        --exec-mode <search|reactive> \
+        --exec-mode "$exec_mode" \
         --scorer-ckpt ~/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt \
-        --goal <goal_x goal_y from the sheet row> \
+        --goal "$goal_x_cm" "$goal_y_cm" \
         --no-shuffle-edges --max-chain-depth 2 --record-video \
-        --diag-path real_trials/<scene>/trialN --run-name "{time}_bestfirst_car"
+        --diag-path "$diag_path" --run-name "$trial"
 
 HY5U_s2 is the single fixed seed for every real trial; the uniform arm
-replaces `--best-first-prior model` with `uniform` and drops the ckpt.
-Goals are per-scene from the sheet, not a constant.
+sets `arm="uniform"`, rebuilds `diag_path`, replaces
+`--best-first-prior model` with `uniform`, and drops the ckpt. Goals are
+per-scene from the sheet, not a constant. Supplying the two sheet values to
+`--goal` defines the run's goal and means no goal marker is required on the
+table; omitting `--goal` changes the input path by invoking ID 0 detection and
+is not the matrix command.
 
 `--hold-region-target` is mandatory on BOTH arms and is not the pilot's
 command. `--exec-mode` only reaches the held-boundary loop, so without the
@@ -142,15 +164,32 @@ Interventions are tiered: clean / recovered (task unchanged, e.g. battery
 swap) / invalid (task changed). Recovered trials count in statistics and
 are excluded from the video reel.
 
-Videos, per-subgoal meta, plans/pushes/subgoals jsonl land under
-`real_trials/<scene>/trialN/` automatically.
+Videos, per-subgoal meta, plans/pushes/subgoals JSONL, and `run.log` land under
+`real_trials/matrix_v2/<axis>/<build_id>/<arm>_<exec_mode>/trialN/`
+automatically. Record that exact versioned `run.log` path in the CSV
+`log_path`, and include `sheet_version=v2` in `notes`; the existing CSV schema
+does not need a new column.
+
+This version and axis qualification is mandatory provenance, not cosmetic.
+The existing v1 pilot `real_trials/easy_002` used goal `(18.5, 68.7)` cm,
+whereas matrix v2 `1push/easy_002` uses `(7.9, 70.5)` cm. Matrix artifacts and
+ledger rows for the latter must identify
+`real_trials/matrix_v2/1push/easy_002/...`, so the pilot cannot be mistaken for
+matrix data. Do not move the existing pilot data.
 
 ## Matrix protocol (ICRA, due 2026-09-15)
 
-14 scenes, both arms per scene, rebuild between arms, checksum-verify both
-builds, randomize which arm runs first. Scene list, cut order, and the
-locked analysis design (paired within scene, percentile statistic, no
-pooled means) live in the session memory and in
+14 scenes x 2 priors x 2 execution modes, rebuild between all four cells and
+checksum-verify every build. Before row 1, freeze the randomized four-cell
+execution order for every scene and preserve it as the execution ledger. No
+existing script or manifest currently generates or supplies that order, so it
+must be created and recorded before data collection; do not choose or
+re-randomize cells as results arrive. After every trial, append its CSV row,
+record any deviation from the frozen order in `notes`, and run the consistency
+checker before continuing.
+
+Scene list, cut order, and the locked analysis design (paired within scene,
+percentile statistic, no pooled means) live in the session memory and in
 `real_trials/sheets_v2_a82a66a/uniform_offset_baseline.csv`. Hard pairs
 outrank everything; never drop below 8.
 

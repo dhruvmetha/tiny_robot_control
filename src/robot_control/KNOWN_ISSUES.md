@@ -118,10 +118,28 @@ of closure; the recurrence remains open.
 - If the viewer remains parked after completion, preserve the diagnostics and
   console output before manually closing or interrupting the process.
 
-This documentation work could not perform fresh full-search or real-hardware
-end-to-end revalidation because those paths require the unavailable
-full-search Python API or configured hardware. A new post-`570407b`
-reproduction should record the current commit, exact command and run mode,
-viewer and capture flags, plan/push count, console log and diagnostics path,
-which per-plan and cumulative artifacts landed, and whether the GUI event loop
-returned and the runtime `finally` block completed.
+The 2026-08-27 current-environment verification exercised fresh full search in
+simulation-only probes, not the real-hardware or GUI event-loop path. A new
+post-`570407b` reproduction should record the current commit, exact command and
+run mode, viewer and capture flags, plan/push count, console log and diagnostics
+path, which per-plan and cumulative artifacts landed, and whether the GUI event
+loop returned and the runtime `finally` block completed.
+
+## Plan-only fallback summary can misreport a successful plan
+
+**Status:** Open diagnostics limitation; observed 2026-08-27 in simulation-only
+`--sim-xml` plan-only runs.
+
+A successful `scripts/run_namo.py --sim --sim-xml ...` plan-only invocation can
+write `solution.yaml` with `success: true` and then write `summary.json` with
+`outcome: crashed`. Plan-only returns after writing its solution and bypasses
+`Runtime`, whose `finally` path normally writes the authoritative runtime
+summary. The top-level fallback summary writer sees no Runtime-written summary
+and emits its generic crash record.
+
+For this plan-only case, the fallback `summary.json` does not mean planning
+crashed. Read `solution.yaml` and the plan-only log lines for the planning
+result, and treat the contradictory fallback summary as a diagnostics defect.
+This deterministic explanation is scoped to the observed simulation-only
+plan-only path; it does not establish that the real-hardware Runtime path has
+the same behavior.

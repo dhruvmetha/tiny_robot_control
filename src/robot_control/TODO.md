@@ -21,10 +21,12 @@ The ordered work list for the study. Software is done and pushed through
    8.0. No matrix scene is at risk anywhere in that range (best corridor
    >= 13.74), so this reads results, it does not gate them.
 3. [ ] The matrix, 56 runs. 14 scenes x {model,uniform} x {search,reactive},
-   rebuild + checksum between cells, randomize order within a scene, both
-   flags per the runbook command. Cut whole scenes only, easy then medium;
-   floor is 8 hard scenes fully crossed (32 runs). Row into trials.csv after
-   every trial, then `check_trials_consistency.py` on the spot.
+   rebuild + checksum between cells. Before row 1, freeze a randomized order
+   for all four cells of every scene; no existing script or manifest supplies
+   that order, so create and preserve the execution ledger first. Run both
+   flags per the runbook command, row into trials.csv after every trial, and
+   run `check_trials_consistency.py` on the spot. Cut whole scenes only, easy
+   then medium; floor is 8 hard scenes fully crossed (32 runs).
 4. [ ] (no table) Fix the two-hop test checkpoint path
    (KNOWN_ISSUES.md#two-hop-tests-collect-on-one-machine-only). Before the
    ladder if convenient, else first thing after the matrix.
@@ -36,12 +38,6 @@ The ordered work list for the study. Software is done and pushed through
 
 ## Dependency and integration blockers
 
-- Restore `namo.services.NAMOPlanningService` in the sibling `namo_cpp`
-  package, or migrate `NAMOPlanBridge` to a supported replacement API, before
-  fresh/full-search entrypoints and fallbacks can run. Prior-chain verification
-  and reuse use the canonical compiled binding directly and do not require this
-  class. The current failure is a missing in-process Python API, not an
-  unavailable network service.
 - Publish the existing two-line RVG C++17 compatibility change
   (`[[nodiscard("...")]]` to `[[nodiscard]]` in `VisibilityGraph/Edge.h` and
   `VisibilityGraph/Vertex.h`) from an owned fork or an accepted upstream
@@ -59,8 +55,10 @@ The ordered work list for the study. Software is done and pushed through
 ## Test coverage gaps
 
 - Automated coverage is limited to the current [`tests/`](../../tests) suite.
-  It does not exercise the unavailable full-search service boundary or a
-  real-hardware workflow end to end.
+  The sourced current sibling environment passed all 383 tests and separate
+  simulation-only probes exercised all four model/uniform prior x
+  search/reactive execution factor combinations on one captured scene on
+  2026-08-27; this still does not exercise a real-hardware workflow end to end.
 - Bare `pytest` also collects vendored RVG tests and fails when their Python
   bindings are unavailable. Use `python -m pytest tests` until pytest discovery
   is scoped to the repository's own test directory.

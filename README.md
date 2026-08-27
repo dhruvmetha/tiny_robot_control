@@ -11,7 +11,7 @@ simulation/real calibration tools.
 | --- | --- |
 | Runtime, simulation, controllers, camera, diagnostics, and calibration | Implemented |
 | Captured-scene and closed-loop workspace helpers | Implemented; `replan-reuse-only` can verify a prior chain in simulation when the current scene, prior plan, and canonical compiled `namo_rl` binding are available |
-| NAMO-backed full search through `NAMOPlanBridge` | Working on hardware since 2026-08-23 (full_namo, best-first, model prior); requires sourcing `namo_cpp/env.<machine>.sh` first, see [Real-robot trials](docs/REAL_ROBOT_TRIALS.md) |
+| NAMO-backed full search through `NAMOPlanBridge` | Compatible with the current sibling `../namo_cpp` checkout after sourcing its environment; verified in simulation on 2026-08-27 across model/uniform prior x search/reactive execution, see [Current NAMO compatibility](#current-namo-compatibility) |
 
 ## Architecture at a glance
 
@@ -21,8 +21,8 @@ Observation source -> WorldState -> Planner -> SubgoalExecutor -> Controller -> 
 
 Simulation nodes or camera/real nodes supply observations, and diagnostics
 records the lifecycle. `NAMOPlanBridge` can verify an existing chain through
-the canonical `namo_rl` binding, but full search requires the unavailable
-in-process `NAMOPlanningService` API.
+the canonical `namo_rl` binding and perform full search through the sibling
+checkout's in-process `NAMOPlanningService` API.
 
 ## Setup
 
@@ -63,28 +63,41 @@ The `--help` commands check CLI and import availability; they do not validate
 camera, hardware, or MuJoCo operation end to end. Use the repository test
 command shown above for the package test suite.
 
-### Currently blocked
+### Current NAMO compatibility
 
-As summarized in [Current status](#current-status), `NAMOPlanBridge`'s
-NAMO-backed full-search path requires the in-process Python class
-`namo.services.NAMOPlanningService`, which is missing from the sibling
-`namo_cpp` checkout. This non-success probe currently raises `ImportError`:
+NAMO planning is checkout- and environment-coupled. With the current sibling
+`../namo_cpp` checkout, source its environment before imports, tests, or
+planning:
 
 ```bash
-python -c "from namo.services import NAMOPlanningService"
+cd ../namo_cpp
+set -a
+. env.robotlearning.sh
+set +a
+cd ../robot_control
+/home/dhruv/miniconda3/envs/namo312/bin/python -c \
+  "from namo.services import NAMOPlanningService; import namo_rl; print(NAMOPlanningService, namo_rl.__file__)"
 ```
 
-No compatible `namo_cpp` revision is selected or supported by this checkout;
-recovery requires restoring or replacing that API. Consequently, `run_namo`
-full search and `replan-full-search-only` are blocked. The `replan` command
-tries prior-chain reuse first, but reaches the same blocker if reuse fails and
-it falls back to full search.
+On `dhruv-linux` on 2026-08-27, at `robot_control` commit `74dcf01` paired
+with sibling `namo_cpp` commit `edab269`, that pinned Python resolved
+`NAMOPlanningService` from
+`../namo_cpp/python/namo/services/planning_service.py` and the compiled
+`namo_rl` module from `../namo_cpp/build_python`. In that sourced environment,
+all 383 repository tests passed, and simulation-only probes for every
+model/uniform prior x search/reactive execution cell returned a successful
+plan. This verifies compatibility with those current sibling sources and
+environment; it is not a promise about arbitrary `namo_cpp` revisions or an
+end-to-end real-hardware check.
+
+Fresh `run_namo` search, `replan-full-search-only`, and `replan`'s fallback
+after failed reuse use `NAMOPlanningService` and are available under that
+compatibility condition.
 
 `replan-reuse-only` does not use `NAMOPlanningService`: it verifies the prior
 iteration's plan against the current scene through `NAMOPlanBridge.verify_chain()`.
 It requires an existing scene and prior selected plan/chain plus the canonical
-compiled `namo_rl` binding. This path is source-verified here, not validated as
-a complete closed-loop or hardware workflow.
+compiled `namo_rl` binding.
 
 ## Repository map
 
@@ -135,8 +148,8 @@ reference · `[SNAPSHOT]` dated results, not maintained.
 
 ## Current limitations
 
-- NAMO-backed fresh/full search is unavailable; prior-chain verification and
-  reuse remain available under the conditions in [Current status](#current-status).
+- NAMO-backed planning depends on the compatible sibling checkout and sourced
+  environment described in [Current NAMO compatibility](#current-namo-compatibility).
 - Ownership and durability of the two-line RVG C++17/GCC9 compatibility patch remain unresolved.
 - GUI auto-quit and run-end finalization remain intermittently unreliable after
   autonomous completion; see the [current issue status](src/robot_control/KNOWN_ISSUES.md#runtime-auto-quit-revalidation).

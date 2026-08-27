@@ -44,12 +44,16 @@ and not the 28 written below:
 - hmax2 med: med_069
 - 1push easy: easy_002, easy_001
 
-Pairing: rebuild the scene between arms, checksum-verify both builds with
-`check_build.py`, randomize which arm runs first per scene. Cut order if
-time slips: easy, then medium, never below 8 hard pairs (the sign test
-rests on them). Amendment 1 restates that floor as 8 hard scenes fully
-crossed, and forbids cutting single cells. Interventions are tiered clean / recovered / invalid;
-recovered counts in statistics and is excluded from the video reel.
+Pairing: rebuild the scene between every cell and checksum-verify every build
+with `check_build.py`. Crossing creates four cells per scene, so freeze a
+randomized four-cell execution order for all 14 scenes before row 1. No
+existing script or manifest currently generates or supplies that order; the
+operator must preserve it as the execution ledger and must not select or
+re-randomize cells after seeing results. Cut order if time slips: easy, then
+medium, never below 8 hard pairs (the sign test rests on them). Amendment 1
+restates that floor as 8 hard scenes fully crossed, and forbids cutting single
+cells. Interventions are tiered clean / recovered / invalid; recovered counts
+in statistics and is excluded from the video reel.
 
 v2 sheets and all analysis inputs live in
 `real_trials/sheets_v2_a82a66a/` (from namo_cpp 96667f6, all 593 scenes
@@ -189,7 +193,11 @@ Recording requirement. `real_trials/trials.csv` must carry `arm`,
 `exec_mode`, and `failure_cause` as parsed columns with fixed vocabularies
 before the first matrix run. Today the arm survives only as free text
 inside the `command` string. Crossing turns two ways to mislabel a row
-into four.
+into four. The frozen randomized order of all four cells for each scene must
+also exist before row 1 and be preserved as the execution ledger. No current
+script or manifest supplies it. Each completed row is appended immediately;
+deviations are recorded rather than silently re-randomizing the remaining
+cells.
 
 ### Amendment 2: both arms hold the region target
 

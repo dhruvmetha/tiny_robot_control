@@ -7,8 +7,10 @@ Session workspace for closed-loop real/sim evaluation runs.
 > reuse phase of `replan` verify a prior chain directly with the canonical
 > compiled `namo_rl` binding; they do not require
 > `namo.services.NAMOPlanningService`. If reuse fails, `replan` falls back to
-> service-dependent full search, while `replan-full-search-only` starts there;
-> those full-search paths are blocked by the missing in-process Python class.
+> service-backed full search, while `replan-full-search-only` starts there.
+> Those full-search paths work with the current sibling `../namo_cpp` checkout
+> after sourcing its `env.robotlearning.sh`; this is current-environment
+> compatibility, not a guarantee for arbitrary sibling revisions.
 > Real push execution additionally requires configured camera and robot
 > hardware services. Generated session contents are ignored experiment output;
 > this README documents their workspace layout and is tracked as source.
@@ -395,9 +397,12 @@ The strategy comes from the run name:
 - `random_rollout_run*` -> `--strategy random_rollout` and
   `--rollout-samples-per-state 36000`
 
-Full search retries up to `MAX_REPLAN_ATTEMPTS = 8`. It is currently blocked
-because `run_namo.py`'s full planner path imports the absent in-process Python
-class `namo.services.NAMOPlanningService`.
+Full search retries up to `MAX_REPLAN_ATTEMPTS = 8` and imports the in-process
+Python class `namo.services.NAMOPlanningService`. With the current sibling
+checkout and `env.robotlearning.sh` sourced, that class and the compiled
+`namo_rl` binding resolve and the full-search path is available. The
+2026-08-27 verification was simulation-only; real closed-loop execution still
+requires its camera and robot services.
 
 Closed-loop replans keep the sim candidate as-is, but if the first push has
 `push_steps == 1`, `prepare-real-push` floors only the real execution spec to

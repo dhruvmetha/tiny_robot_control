@@ -6,14 +6,16 @@ scene with the four common files.
 
 > **Current checkout status:** Scene inspection and recapture instructions
 > below describe available tooling. The documented `scripts/run_namo.py`
-> command enters fresh/full search, which currently stops when it imports the
-> absent in-process Python class
-> `namo.services.NAMOPlanningService` from the sibling `namo_cpp` checkout.
-> This is a missing API, not a camera or network service outage; the planning
-> command below is not operational until that dependency is restored or
-> replaced. Prior-chain verification and reuse are separate closed-loop paths
-> described in the [closed-loop guide](../closed_loop_sessions/README.md).
-> Recapture separately requires the configured camera service.
+> command enters fresh/full search through the in-process Python class
+> `namo.services.NAMOPlanningService`. It is operational with the current
+> sibling `../namo_cpp` checkout after sourcing that checkout's
+> `env.robotlearning.sh`; on 2026-08-27 the pinned environment imported both
+> the service and compiled `namo_rl`, and simulation-only full-search probes
+> returned successful plans. Treat that as current checkout/environment
+> compatibility, not a guarantee for other sibling revisions. Prior-chain
+> verification and reuse are separate closed-loop paths described in the
+> [closed-loop guide](../closed_loop_sessions/README.md). Recapture separately
+> requires the configured camera service.
 
 ## Common scene layout
 

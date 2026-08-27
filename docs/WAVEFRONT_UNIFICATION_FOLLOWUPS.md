@@ -8,7 +8,7 @@ their configuration are not a single ground truth.
 
 | Engine | Source | Current caller boundary |
 |---|---|---|
-| C++ `WavefrontPlanner` | `namo_cpp/src/wavefront/wavefront_planner.cpp` | The sibling `namo_rl` binding exposes reachability summaries. `NAMOPlanner._is_goal_reachable` is wired through `NAMOPlanBridge.analyze_reachability`, but that adapter currently stops at the missing in-process `namo.services.NAMOPlanningService` class. |
+| C++ `WavefrontPlanner` | `namo_cpp/src/wavefront/wavefront_planner.cpp` | The sibling `namo_rl` binding exposes reachability summaries. `NAMOPlanner._is_goal_reachable` is wired through `NAMOPlanBridge.analyze_reachability`; with the current sibling checkout and its environment sourced, the adapter resolves the in-process `namo.services.NAMOPlanningService` class. |
 | Python `WavefrontPlanner` | [`utils/wavefront.py`](../src/robot_control/utils/wavefront.py) | [`WavefrontPathPlanner.plan`](../src/robot_control/planner/wavefront_path_planner.py) produces paths consumed by `NavigationController`. |
 
 The implementations use separate grids and search code. Python uses Dijkstra
@@ -123,8 +123,8 @@ A reviewable sequence is:
 2. Expose a binding that recomputes one C++ snapshot and returns both the
    reachability result and `WavefrontPlanner::extract_path` output.
 3. Add a bridge method and cut both NAMO reachability and navigation over to
-   that result. Restoring or replacing the missing planning-service boundary
-   is a prerequisite for the current adapter path.
+   that result. Preserve or deliberately migrate the current
+   `NAMOPlanningService` boundary while changing the adapter path.
 4. Decide whether C++ must reproduce Python's obstacle-proximity cost shaping;
    without it, valid paths may hug inflation boundaries more closely.
 5. Remove the duplicate Python runtime search only after checking every caller

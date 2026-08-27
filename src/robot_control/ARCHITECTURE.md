@@ -7,13 +7,14 @@ NAMO workspace. It assembles observations, state, planners, controllers,
 simulation or hardware environments, an optional GUI, and diagnostics into one
 runtime.
 
-The NAMO boundary is partially operational. Scene conversion, object mapping,
-canonical binding loading, exact-chain simulation verification, and prior-plan
-reuse are implemented and do not use `NAMOPlanningService`. Fresh/full search
-is blocked because the sibling `namo_cpp` checkout does not provide the
-in-process Python class `namo.services.NAMOPlanningService` that the
-full-search path imports. This is an API compatibility blocker, not a remote
-service outage.
+The NAMO boundary supports scene conversion, object mapping, canonical binding
+loading, exact-chain simulation verification, prior-plan reuse, and
+service-backed fresh/full search. Verification and reuse do not use
+`NAMOPlanningService`; full search lazily imports the in-process class from the
+sibling `namo_cpp` checkout. With the current sibling checkout and its
+`env.robotlearning.sh` sourced, the service and compiled binding import and the
+full-search path is operational. That is a compatibility result for this
+checkout/environment, not a version-independent API guarantee.
 
 ## Runtime data flow
 
@@ -165,7 +166,7 @@ The repository contains the boundary code needed to:
 2. map real object names to simulator object names and back;
 3. locate and validate the canonical `namo_rl` binding; and
 4. simulate an exact push chain with `NAMOPlanBridge.verify_chain()` using the
-   compiled binding directly; and
+   compiled binding directly;
 5. convert planned pushes into `PushSubgoal` values for the runtime.
 
 `verify_chain()` does not call the bridge's service loader. Consequently,
@@ -174,13 +175,18 @@ when the current scene, prior plan, and canonical compiled binding are
 available. A successful verification produces the next simulation candidate;
 failed reuse-only reports `needs_remote_search` and stops.
 
-Fresh/full search does call the service loader, which lazily imports
-`namo.services.NAMOPlanningService`; the sibling `namo_cpp` package no longer
-exports that in-process Python class. Therefore `replan-full-search-only`,
-fresh `run_namo` search, and `replan` only when it falls back after failed
-reuse are blocked until the class is restored or the bridge is migrated to a
-supported replacement API. See the [closed-loop guide](../../closed_loop_sessions/README.md)
-for operator flow and [Current gaps](TODO.md) for the dependency work.
+Fresh/full search calls the service loader, which lazily imports
+`namo.services.NAMOPlanningService`. The current sibling checkout exports that
+class from `python/namo/services/planning_service.py`, while its compiled
+`namo_rl` is loaded from `build_python`, after `env.robotlearning.sh` is
+sourced. On 2026-08-27 the pinned environment passed all 383 repository tests
+and simulation-only model/uniform prior x search/reactive execution probes all
+returned successful plans. Therefore `replan-full-search-only`, fresh
+`run_namo` search, and `replan`'s fallback after failed reuse are available in
+that current paired environment. Re-check both imports when either checkout or
+environment changes; the result does not validate real hardware end to end.
+See the [closed-loop guide](../../closed_loop_sessions/README.md) for operator
+flow.
 
 ## External dependencies
 
