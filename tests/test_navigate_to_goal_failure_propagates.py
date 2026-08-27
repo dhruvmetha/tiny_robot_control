@@ -22,8 +22,8 @@ the same _replan_attempt budget push failures already use, and clears
 _plan_generated so the next plan() call re-runs reachability (and the
 goal-retarget check bug 2 adds) from scratch. Bounded by
 _max_replan_attempts, same as every other failure path in this planner --
-so a navigate that keeps failing eventually gives up (is_complete() ->
-True) instead of looping forever.
+so a navigate that keeps failing eventually gives up instead of looping
+forever. Planning exhaustion is a failure state, not task completion.
 
 No binding, no checkpoint, no hardware -- NAMOPlanBridge is faked out, the
 same pattern test_namo_planner_chain_reuse.py uses.
@@ -137,6 +137,7 @@ def test_a_failed_navigate_to_goal_is_not_silently_swallowed(monkeypatch):
     assert planner._navigating_to_goal is False
     assert planner._replan_attempt == 1
     assert planner._plan_generated is False
+    planner._is_goal_reachable = lambda _obs: False
     assert planner.is_complete(obs) is False, "one failure must not give up early"
 
 
@@ -158,19 +159,37 @@ def test_repeated_navigate_failures_give_up_instead_of_freezing(monkeypatch):
     A navigate that keeps failing for reasons this planner can't fix (e.g.
     a persistently wrong wavefront disagreement) must not spin forever --
     it has to exhaust the same replan budget every other failure path uses
-    and report the run complete (failed), so the runtime loop actually
-    exits instead of dispatching subgoal #21.
+    and report planning failure, so the runtime loop actually exits instead
+    of dispatching subgoal #21.
     """
     planner = _make_planner(monkeypatch)
     obs = _obs()
 
     for _ in range(planner._max_replan_attempts):
         subgoal = planner.plan(obs)
-        assert not planner.is_complete(obs), "gave up before exhausting the budget"
         assert isinstance(subgoal, NavigateSubgoal)
         planner.notify_subgoal_done(obs, failed=True)
 
     assert planner._planning_failed is True
+    planner._is_goal_reachable = lambda _obs: False
+    assert planner.is_complete(obs) is False
+
+
+def test_planning_failure_alone_is_not_completion(monkeypatch):
+    planner = _make_planner(monkeypatch)
+    obs = _obs()
+    planner._planning_failed = True
+    planner._is_goal_reachable = lambda _obs: False
+
+    assert planner.is_complete(obs) is False
+
+
+def test_simulated_reachability_is_completion_before_physical_arrival(monkeypatch):
+    planner = _make_planner(monkeypatch)
+    obs = _obs()
+    planner._planning_failed = False
+    planner._is_goal_reachable = lambda _obs: True
+
     assert planner.is_complete(obs) is True
 
 
@@ -184,8 +203,8 @@ def test_a_successful_navigate_to_goal_is_unaffected(monkeypatch):
 
     planner.notify_subgoal_done(obs, failed=False)
 
-    # Success is picked up by is_complete()'s distance check, not by this
-    # call resetting anything -- _navigating_to_goal must stay True so the
-    # next is_complete(obs) at the goal position reports done.
+    # This callback still must not turn a successful navigation into a
+    # failure. Completion itself is queried independently via simulated
+    # reachability.
     assert planner._navigating_to_goal is True
     assert planner._replan_attempt == 0

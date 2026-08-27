@@ -955,54 +955,20 @@ class NAMOPlanner(Planner):
             )
 
     def is_complete(self, obs: Observation) -> bool:
-        """Check if overall task is complete.
+        """Return whether the latest planning scene has a path to the goal.
 
-        Returns True if:
-        - Planning failed (no actions generated)
-        - Robot has reached the goal position
-
-        Args:
-            obs: Current observation
-
-        Returns:
-            True if task is complete or failed
+        Planning exhaustion is a failure state, not completion. Physical
+        arrival is not required by the real-exp manipulation-success
+        criterion.
         """
-        if self._planning_failed:
+        reachable = self._is_goal_reachable(obs)
+        if reachable:
             print(
-                f"[NAMOPlanner] Total planning: {self._plan_count} calls, "
+                f"[NAMOPlanner] GOAL REACHABLE in simulation | "
+                f"Total planning: {self._plan_count} calls, "
                 f"{self._total_planning_ms:.0f}ms cumulative"
             )
-            return True
-
-        # Only complete when navigating to goal AND close enough
-        if not self._navigating_to_goal:
-            return False
-
-        # A retarget (see _select_goal_retarget) sends the robot to a free
-        # cell near the goal point rather than the point itself -- arrival
-        # there, within the same tolerance, is success too.
-        target = self._retarget_point_cm or self._robot_goal_cm
-        dist = math.hypot(
-            obs.robot_x - target[0],
-            obs.robot_y - target[1],
-        )
-        if dist < self._goal_tolerance:
-            if self._retarget_point_cm is not None:
-                print(
-                    f"[NAMOPlanner] GOAL REACHED (success-with-retarget)! "
-                    f"Distance to retarget point: {dist:.1f}cm | "
-                    f"Total planning: {self._plan_count} calls, "
-                    f"{self._total_planning_ms:.0f}ms cumulative"
-                )
-            else:
-                print(
-                    f"[NAMOPlanner] GOAL REACHED! Distance: {dist:.1f}cm | "
-                    f"Total planning: {self._plan_count} calls, "
-                    f"{self._total_planning_ms:.0f}ms cumulative"
-                )
-            return True
-
-        return False
+        return reachable
 
     def get_drawings(self) -> List[Dict[str, Any]]:
         """Return drawings for visualization.
