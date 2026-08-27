@@ -107,6 +107,29 @@ sides use came from the current physics. The divergence is a result:
 
 ## Status
 
+  How to read the result against the matrix (measured from
+  `post_push_clearance.csv`, 2026-08-26): every matrix scene has a best
+  corridor of 13.74 cm or better and thirteen of the fourteen sit at the
+  30.0 cm ceiling, so no matrix scene becomes an expected failure anywhere
+  in that range. Best corridor is the best route, not the only one. Three
+  scenes have a worst route near the floor, easy_002 at 9.95 cm and both
+  easy_001 and med_077 at 11.2 cm. If the ladder lands above 9.95 and a run
+  on one of those three fails, `failure_cause` has to separate
+  corridor_too_tight from marker_unreachable, because the two look alike at
+  the table. Separately, 51 of the 593 shipped scenes have a best corridor
+  under 9.9 cm; none of them are in the matrix.
+  Where the pool is thin, if a scene ever needs replacing: the damage is
+  not spread evenly across the hard tier. At a 9.9 cm threshold 1push/hard
+  loses 31 of 100 scenes and hmax2/hard loses 12 of 93, so the 1push/hard
+  pool is the fragile one and the matrix draws 5 of its 8 hard scenes from
+  it. The sim side's `corridor_risk.csv` (namo_cpp handoff, d4675f7) bands
+  every scene by the threshold that kills it. A replacement does not have
+  to inherit that exposure, because the corridor is known per scene before
+  building: 40 of the 100 1push/hard scenes sit at the 30 cm measurement
+  ceiling and 30 of those are also marker-strict, so a conditioned draw has
+  no corridor exposure at all. Replacing a matrix scene mid-study is still
+  a design change and needs its own amendment, so this note records where
+  to look rather than granting permission to swap.
 - 2026-08-23: pilot session, 3 scenes (v1), 3 successes, runtime bugs
   found.
 - 2026-08-25: runtime fixes landed (nav-failure replan, bounded retarget),
