@@ -40,6 +40,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from robot_control.planner.search_config import DEFAULT_EXEC_MODE, REACTIVE_EXEC_MODE
+
 # v2 adds last_settled_dispatch_epoch. A v1 record loads with it unset, which
 # reads as "never settled", so the first settlement after an upgrade counts
 # normally. Reading old records matters: a schema bump that refused them would
@@ -452,6 +454,36 @@ def _boundary_label_pair(plan: Any) -> Optional[Tuple[str, str]]:
     return (source, target) if source and target else None
 
 
+def _plan_is_executable(plan: Any, planner_kwargs: Optional[Dict[str, Any]]) -> bool:
+    """Is there something here worth sending to the robot?
+
+    Subgoals are required either way. What `success` means is not the same in
+    both modes, so it gates only one of them.
+
+    Under search, `success=False` with subgoals means a chain that failed
+    verification. Running it anyway is not what the search arm claims to do, so
+    the check stays exactly as it was.
+
+    Under reactive there is nothing to verify. The rule returns the argmax at the
+    state in front of the robot, having already seen the simulator say that push
+    does not open the boundary, and the answer to that is to push and look again
+    rather than to stand still. `success` there reports whether the boundary
+    opened *in simulation*, which is precisely the prediction this mode exists
+    not to trust. Gating on it would make reactive refuse to move on every scene
+    it cannot open in one push, and that reads in the results as "reactive is
+    terrible" rather than as a wiring bug.
+
+    Read from `planner_kwargs` rather than from config, so it reflects the call
+    that was actually made.
+    """
+    if not plan.subgoals:
+        return False
+    mode = str((planner_kwargs or {}).get("mode", DEFAULT_EXEC_MODE))
+    if mode == REACTIVE_EXEC_MODE:
+        return True
+    return bool(plan.success)
+
+
 def advance_boundary(
     bridge: Any,
     observation: Any,
@@ -535,7 +567,7 @@ def advance_boundary(
             target = None
             continue
 
-        if plan.success and plan.subgoals:
+        if _plan_is_executable(plan, planner_kwargs):
             return plan, target, ADVANCE_PLANNED, released
         return plan, target, ADVANCE_NO_PLAN, released
 

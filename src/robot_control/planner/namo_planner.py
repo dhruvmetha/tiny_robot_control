@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
 
 from robot_control.core.types import NavigateSubgoal, Observation, PushSubgoal, Subgoal
 from robot_control.planner.base import Planner
@@ -73,6 +73,13 @@ _DIAG_SAFE_STAT_KEYS = frozenset({
     "iterations",
     "total_pushes",
     "regions_opened",
+    # A whitelist drops anything it does not name, so a scalar the bridge sets
+    # and nobody adds here reaches no log at all. Which decision rule produced
+    # the push is one of those, and for a crossed trial matrix a row without it
+    # is a row whose arm has to be recovered from a command string.
+    "exec_mode",
+    "resolved_target",
+    "simulations_used",
 })
 
 
@@ -1258,12 +1265,74 @@ class NAMOPlanner(Planner):
         return kwargs
 
     def _held_mode_planner_kwargs(self) -> Dict[str, Any]:
-        """The same options the whole-problem path sends, at the base seed.
+        """The same options the whole-problem path sends, at the base seed, plus the mode.
 
         Held mode does not retry with a bumped seed the way the whole-problem
         path does; a held boundary is re-solved on the next replan instead.
+
+        The execution mode is added HERE and not in _search_planner_kwargs,
+        which both paths share. `mode` is a named parameter of
+        `solve_boundary_from_xml`, and only this path calls it. On the
+        whole-problem path it would ride into `plan_from_xml`'s
+        `algorithm_params` and be dropped without a word, which is how a run
+        ends up filed under an arm it never ran.
         """
-        return self._search_planner_kwargs(self._shuffle_seed)
+        kwargs = self._search_planner_kwargs(self._shuffle_seed)
+        kwargs.update(self._local_search.as_boundary_kwargs())
+        return kwargs
+
+    def _record_plan_diagnostics(
+        self,
+        obs: Observation,
+        *,
+        attempt_index: int,
+        attempt_seed: Optional[int],
+        subgoals: Sequence[Any],
+        success: bool,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """One JSONL line per planning attempt, from either planning path.
+
+        Shared so the two paths cannot drift into two schemas. The held path had
+        no diagnostics at all, which was survivable while it was a variant of
+        the same search and is not now that it carries a factor of the trial
+        matrix.
+
+        Diagnostics must never break the planner, so this swallows its own
+        failures the way the caller it was extracted from did.
+        """
+        if self._diag is None:
+            return
+        try:
+            first_subgoal = None
+            if subgoals:
+                sg0 = subgoals[0]
+                first_subgoal = {
+                    "object_id": getattr(sg0, "object_id", None),
+                    "edge_idx": getattr(sg0, "edge_idx", None),
+                    "push_steps": getattr(sg0, "push_steps", None),
+                }
+            record: Dict[str, Any] = {
+                "attempt_index": attempt_index,
+                "attempt_seed": attempt_seed,
+                "search_time_ms": self._bridge.last_search_time_ms,
+                "cumulative_ms": self._total_planning_ms,
+                "success": bool(success),
+                "subgoals_returned": len(subgoals),
+                "first_subgoal": first_subgoal,
+                "blacklist_size_before": len(self._failed_pushes),
+                "algorithm_stats": _filter_algorithm_stats_for_diagnostics(
+                    self._bridge.last_algorithm_stats or {}
+                ),
+                "robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
+                "object_poses_cm": {
+                    name: [o.x, o.y, o.theta] for name, o in obs.objects.items()
+                },
+            }
+            record.update(extra or {})
+            self._diag.record_plan(record)
+        except Exception as _e:
+            print(f"[DIAG] record_plan failed: {_e!r}", flush=True)
 
     def _generate_plan_holding_target(self, obs: Observation) -> None:
         """Plan against one held boundary, advancing only when it opens.
@@ -1285,6 +1354,25 @@ class NAMOPlanner(Planner):
         )
         self._plan_count += 1
         self._total_planning_ms += self._bridge.last_search_time_ms
+
+        # Recorded here and not only on the whole-problem path. Reactive runs
+        # exclusively through this loop -- it is the only path that reaches
+        # solve_boundary_from_xml, which is the only method that reads the mode
+        # -- so without this line the arm that motivates the whole comparison
+        # writes to no log but the console banner.
+        self._record_plan_diagnostics(
+            obs,
+            attempt_index=1,   # held mode re-solves on the next replan, never retries here
+            attempt_seed=self._shuffle_seed,
+            subgoals=list(getattr(plan, "subgoals", []) or []),
+            success=(status == ADVANCE_PLANNED),
+            extra={
+                "origin": "region_target",
+                "boundary_status": str(status),
+                "target_id": str(getattr(target, "target_id", "") or ""),
+                "failure_reason": str(getattr(plan, "failure_reason", "") or ""),
+            },
+        )
 
         # advance_boundary reports what became of the target it was handed, so
         # a transient failure no longer looks like the boundary opened.
@@ -1394,36 +1482,14 @@ class NAMOPlanner(Planner):
                 # algorithm_stats is filtered to JSON-safe summary fields only;
                 # raw fields like `attempt_results` carry C++ Action objects that
                 # can't be pickled or JSON-serialized.
-                if self._diag is not None:
-                    try:
-                        first_subgoal = None
-                        if subgoals:
-                            sg0 = subgoals[0]
-                            first_subgoal = {
-                                "object_id": getattr(sg0, "object_id", None),
-                                "edge_idx": getattr(sg0, "edge_idx", None),
-                                "push_steps": getattr(sg0, "push_steps", None),
-                            }
-                        safe_stats = _filter_algorithm_stats_for_diagnostics(_stats)
-                        self._diag.record_plan({
-                            "attempt_index": attempt + 1,
-                            "attempt_seed": effective_seed,
-                            "search_time_ms": self._bridge.last_search_time_ms,
-                            "cumulative_ms": self._total_planning_ms,
-                            "success": bool(subgoals),
-                            "subgoals_returned": len(subgoals) if subgoals else 0,
-                            "first_subgoal": first_subgoal,
-                            "blacklist_size_before": len(self._failed_pushes),
-                            "algorithm_stats": safe_stats,
-                            "robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
-                            "object_poses_cm": {
-                                name: [o.x, o.y, o.theta]
-                                for name, o in obs.objects.items()
-                            },
-                        })
-                    except Exception as _e:
-                        # Diagnostics must never break the planner.
-                        print(f"[DIAG] record_plan failed: {_e!r}", flush=True)
+                self._record_plan_diagnostics(
+                    obs,
+                    attempt_index=attempt + 1,
+                    attempt_seed=effective_seed,
+                    subgoals=list(subgoals or []),
+                    success=bool(subgoals),
+                    extra={"origin": "fresh_plan"},
+                )
 
                 if subgoals:
                     if self._execution_mode == "mpc":

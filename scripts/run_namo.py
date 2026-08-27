@@ -60,7 +60,9 @@ from robot_control.planner.region_target import (
 from robot_control.planner import (
     BEST_FIRST_PRIOR_CHOICES,
     DEFAULT_BEST_FIRST_PRIOR,
+    DEFAULT_EXEC_MODE,
     DEFAULT_LOCAL_SEARCH,
+    EXEC_MODE_CHOICES,
     LOCAL_SEARCH_CHOICES,
     LocalSearchConfig,
     NAMOPlanner,
@@ -92,6 +94,7 @@ def local_search_from_args(args) -> LocalSearchConfig:
         best_first_hmax=args.best_first_hmax,
         keyhole_simulation_budget=args.keyhole_simulation_budget,
         ml_device=args.ml_device,
+        exec_mode=args.exec_mode,
     )
 
 
@@ -1914,6 +1917,18 @@ def main():
              "(default); best_first = single global priority queue over pushes.",
     )
     parser.add_argument(
+        "--exec-mode",
+        type=str,
+        default=DEFAULT_EXEC_MODE,
+        choices=list(EXEC_MODE_CHOICES),
+        help="Decision rule per replan. search = expand a priority queue and "
+             "return a chain (default); reactive = score the candidates at the "
+             "state in front of the robot and push the top one, no lookahead. "
+             "Needs --local-search best_first and --hold-region-target. Both "
+             "run the same ranker over the same pool, so this is the lookahead "
+             "arm of the trial matrix and every run records which one ran.",
+    )
+    parser.add_argument(
         "--best-first-prior",
         type=str,
         default=DEFAULT_BEST_FIRST_PRIOR,
@@ -2166,17 +2181,29 @@ def main():
             print(f"Error: {exc}")
             return 1
 
-        # Which search will actually run, printed before anything moves. The
-        # keys are forwarded as opaque algorithm_params, so a selection aimed
-        # at the wrong planner is dropped without a word; check it here rather
-        # than discover it from a slow run.
-        _search = local_search_from_args(args)
+        # Which search and which decision rule will actually run, printed before
+        # anything moves. The keys are forwarded as opaque algorithm_params, so a
+        # selection aimed at the wrong planner or the wrong path is dropped
+        # without a word; check it here rather than discover it from a slow run,
+        # or worse, from a trial filed under the wrong arm.
+        # Building the config validates it too, so it belongs inside the same
+        # try: a person at the table reading a traceback learns less than one
+        # reading the sentence that names the way out.
+        _held = bool(args.hold_region_target or args.active_target)
         try:
-            check_search_reaches_planner(args.algorithm, args.strategy, _search)
+            _search = local_search_from_args(args)
+            check_search_reaches_planner(
+                args.algorithm, args.strategy, _search, held_boundary=_held
+            )
         except ValueError as exc:
             print(f"Error: {exc}")
             return 1
-        print(describe_effective_search(args.algorithm, args.strategy, _search), flush=True)
+        print(
+            describe_effective_search(
+                args.algorithm, args.strategy, _search, held_boundary=_held
+            ),
+            flush=True,
+        )
 
         # Interactive mode requires real robot config
         if args.interactive:
