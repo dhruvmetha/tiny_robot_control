@@ -1,6 +1,6 @@
 # Real Experiment Terminal Semantics — Design
 
-Status: revised after review; awaiting implementation approval.
+Status: implemented and verified 2026-08-27.
 
 ## Objective
 
@@ -10,13 +10,16 @@ trials without cross-snapshot held-region targeting.
 
 ## Scope
 
-This change has two parts:
+This change has three parts:
 
-1. Remove `--hold-region-target` from the command documented in
-   `real_exp/README.md`. The held-target implementation remains available for
-   other workflows and is not redesigned here.
+1. Remove `--hold-region-target` and the held-loop-only explicit
+   `--exec-mode search` from the command documented in `real_exp/README.md`.
+   The held-target implementation remains available for other workflows and
+   is not redesigned here.
 2. Correct autonomous terminal-state handling so that simulated goal
    reachability is success and planning exhaustion is failure.
+3. Normalize the whole-problem planner's simulation budget count to the same
+   `simulations_used` diagnostics field emitted by held-boundary planning.
 
 Suffix/full-chain verification and reuse remain unchanged.
 
@@ -107,9 +110,33 @@ Regression coverage must demonstrate:
 - the terminal failure is written as a failure outcome;
 - existing chain/suffix reuse tests remain green;
 - `real_exp/README.md` no longer enables held-region targeting.
+- whole-problem and held-boundary plans both record `simulations_used`.
 
 A replay of the captured post-push `easy_020` XML must be run without hardware
 motion to confirm that fresh boundary selection reaches the full-search path.
 The replay must also confirm that an unreachable no-plan result is terminal
 failure and cannot emit `Plan Complete`, even if the planner's internal
 `_planning_failed` flag was not set.
+
+## Implementation verification
+
+Implemented on `fix/real-exp-terminal-semantics` in these scoped commits:
+
+- `b4acc7f` — reachability-only NAMO completion;
+- `0c9349e` — explicit runtime success/failure terminals;
+- `06873e6` — unheld `real_exp` command;
+- `3f4a282` — stable simulation-count diagnostics.
+
+Fresh verification in the pinned `namo312` environment:
+
+- focused terminal, routing, and suffix-reuse suite: 56 passed;
+- planner diagnostics plus held/reuse suites: 27 passed;
+- full repository suite after all changes: 426 passed in 36.37 s;
+- hardware-free replay of
+  `real_exp/results/hmax2/easy_020/model_search/trial1/scene_after.json`:
+  goal initially unreachable, unheld model-prior `full_namo` returned two
+  `obj_1` pushes after 6 simulations in 5400.225 ms.
+
+The replay constructed an `Observation` from the saved JSON and called
+`NAMOPlanBridge` directly. It did not open the camera service, serial port,
+`RealEnv`, or any wheel-command path.
