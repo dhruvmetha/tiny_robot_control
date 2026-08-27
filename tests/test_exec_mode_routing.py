@@ -278,13 +278,39 @@ def test_a_run_that_never_names_a_mode_records_the_default(bridge_and_service):
     assert bridge.last_algorithm_stats["exec_mode"] == DEFAULT_EXEC_MODE
 
 
+def _require_paired_namo_cpp():
+    """Put namo_cpp on sys.path, then skip only if the binding is genuinely absent.
+
+    `importorskip("namo_rl")` alone is not enough. Four other test modules call
+    `ensure_namo_cpp_paths` when they are imported, so a full-suite run has
+    sys.path fixed by collection before this test ever executes, and the import
+    succeeds. Run this test on its own and nothing has set the path, the import
+    fails, and it skips.
+
+    The command somebody types to check the cross-repo pairing by hand is exactly
+    the narrow one. It reported "skipped", which reads as fine and proves nothing:
+    a guard that goes quiet under the one invocation aimed at it. Setting the path
+    here makes the skip mean "no binding on this machine" rather than "nobody else
+    ran first".
+    """
+    from pathlib import Path
+
+    from robot_control.planner.namo_binding_loader import ensure_namo_cpp_paths
+
+    try:
+        ensure_namo_cpp_paths(Path(__file__))
+    except RuntimeError as exc:
+        pytest.skip(f"needs the canonical namo_cpp build: {exc}")
+    pytest.importorskip("namo_rl", reason="needs the compiled namo_cpp binding")
+
+
 def test_both_repositories_spell_the_modes_the_same_way():
     """Forwarded verbatim, so the two vocabularies have to be one vocabulary.
 
     Cross-repo, so it needs namo_cpp importable. Without the binding the rest of
     this file still runs; only this contract check sits out.
     """
-    pytest.importorskip("namo_rl", reason="needs the compiled namo_cpp binding")
+    _require_paired_namo_cpp()
     from namo.services.planning_service import BOUNDARY_MODES, DEFAULT_BOUNDARY_MODE
 
     assert set(EXEC_MODE_CHOICES) == set(BOUNDARY_MODES)

@@ -144,7 +144,17 @@ def test_the_options_are_the_ones_the_service_accepts():
     of this file still runs; only this contract check sits out.
     """
     import inspect
+    from pathlib import Path
 
+    from robot_control.planner.namo_binding_loader import ensure_namo_cpp_paths
+
+    # Not importorskip alone: other modules put namo_cpp on sys.path when they are
+    # imported, so this passes in a full run and skips when run on its own, which
+    # is the narrow command somebody checking the contract would type.
+    try:
+        ensure_namo_cpp_paths(Path(__file__))
+    except RuntimeError as exc:
+        pytest.skip(f"needs the canonical namo_cpp build: {exc}")
     pytest.importorskip("namo_rl", reason="needs the compiled namo_cpp binding")
     from namo.services import NAMOPlanningService
 
