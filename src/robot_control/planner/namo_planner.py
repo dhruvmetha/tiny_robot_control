@@ -84,7 +84,7 @@ _DIAG_SAFE_STAT_KEYS = frozenset({
 
 
 def _filter_algorithm_stats_for_diagnostics(stats: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    """Return a JSON-safe subset of the planner's algorithm_stats dict."""
+    """Return JSON-safe stats with one simulation-count field on every path."""
     if not stats:
         return {}
     out: Dict[str, Any] = {}
@@ -96,6 +96,25 @@ def _filter_algorithm_stats_for_diagnostics(stats: Optional[Dict[str, Any]]) -> 
             out[k] = [str(x) if not isinstance(x, (str, int, float, bool, type(None))) else x for x in v]
         else:
             out[k] = v
+
+    # Held-boundary planning already exports ``simulations_used``. Whole-
+    # problem full_namo reports the same env.step count under its budget-scope
+    # keys instead. Normalize those spellings so changing planner paths does
+    # not silently change the paper metric's schema.
+    if "simulations_used" not in out:
+        for key in (
+            "simulation_budget_used_total",
+            "simulation_budget_used",
+            "total_primitives_attempted",
+        ):
+            raw_count = stats.get(key)
+            if raw_count is None:
+                continue
+            try:
+                out["simulations_used"] = int(raw_count)
+            except (TypeError, ValueError):
+                continue
+            break
     return out
 
 
