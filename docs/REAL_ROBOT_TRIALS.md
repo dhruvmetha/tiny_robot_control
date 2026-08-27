@@ -123,12 +123,14 @@ targets. See Amendment 2 in
 [ICRA_REAL_ROBOT_STUDY.md](ICRA_REAL_ROBOT_STUDY.md) before changing either
 flag.
 
-NOT RUNNABLE YET. `--exec-mode` does not exist in this checkout. It lives on
-the `policy/reactive-deploy` proposal branch along with the executor gate fix
-that lets a reactive push execute at all. Until that lands here, drop
-`--exec-mode` and the command runs the search arm on the held loop. Do not
-run the reactive arm before it lands, because today's executor discards a
-reactive push and the robot stands still.
+Both arms run. `--exec-mode` landed on 2026-08-26 with the executor gate that
+lets a reactive push execute, so the command above is complete. Reactive
+returns the push it chose even when simulation says that push does not open
+the boundary, and the executor runs it and re-observes, which is the whole
+point of that arm. A reactive run that reports an empty plan is a wiring
+fault, not a hard scene; three separate causes of exactly that symptom were
+found and fixed before the matrix, so treat a stationary robot as a bug to
+chase rather than a result to record.
 
 ## Record the verdict
 
