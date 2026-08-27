@@ -51,6 +51,14 @@ from robot_control.planner.goal_retarget import find_goal_retarget
 # maximum distance the pushed object itself can put between the goal point
 # and free space -- beyond it, something other than the pushed object is
 # blocking the goal, so retargeting would only paper over that.
+#
+# This value and the conditions under which a retarget fires are a MEASURED
+# QUANTITY, not only an implementation choice. The ICRA real-robot study
+# reports strict-marker and with-retarget success side by side, and the gap
+# between those two columns is exactly the behaviour below. Changing the cap,
+# or changing when a retarget is attempted, changes what the study reports
+# rather than only what the robot does. Treat an edit here as a change to the
+# pre-registration and see docs/ICRA_REAL_ROBOT_STUDY.md before making one.
 GOAL_RETARGET_CAP_CM = 12.0
 
 
