@@ -27,4 +27,16 @@ MUJOCO_LOG.TXT
 # Local verification scratch space.
 /_tmp_real_test_envs_verify/
 build_cards/
-real_trials/
+
+# real_trials/ holds two different kinds of thing and they need opposite
+# treatment. trials.csv is the study's record of record and sheets_v2_*/ are
+# the analysis inputs the pre-registration names by path; a result nobody else
+# can read is not reproducible, so both belong in git. Everything else under it
+# is generated bulk: videos, the raw push archive, per-subgoal jsonl, run logs.
+#
+# Exclude the CONTENTS rather than the directory. `real_trials/` excludes the
+# directory itself and git will not re-include a path under an excluded
+# directory, so the negations below would never fire.
+real_trials/*
+!real_trials/trials.csv
+!real_trials/sheets_v2_*/

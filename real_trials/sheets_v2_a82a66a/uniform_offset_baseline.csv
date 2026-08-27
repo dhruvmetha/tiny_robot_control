@@ -1,0 +1,15 @@
+axis,build_id,n_cand,mean_offset_cm,median_offset_cm,sd_offset_cm,p25,p75,min,max,xml
+1push,hard_037,115,2.41,2.0,1.939,1.0,3.21,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool4/j_522/rb_00017/env.xml
+1push,hard_001,135,2.783,2.14,2.159,1.07,3.5,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool1/hard/rb_00492/env.xml
+1push,hard_012,125,2.449,2.14,1.868,1.07,3.21,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00233/env.xml
+1push,hard_005,135,3.18,3.0,2.082,1.5,4.29,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00054/env.xml
+1push,hard_009,125,2.663,2.14,2.114,1.07,3.5,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool1/hard/rb_00264/env.xml
+hmax2,hard_007,150,2.933,2.5,2.115,1.07,4.29,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool2/med_304/rb_00012/env.xml
+hmax2,hard_013,125,2.449,2.14,1.868,1.07,3.21,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool4/j_517/rb_00018/env.xml
+hmax2,hard_008,150,2.933,2.5,2.115,1.07,4.29,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool2/hard_208/rb_00056/env.xml
+1push,med_085,105,3.5,3.21,2.181,2.0,5.36,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool1/hard/rb_00288/env.xml
+1push,med_077,150,2.933,2.5,2.115,1.07,4.29,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00113/env.xml
+1push,med_093,120,3.176,2.75,2.187,1.5,5.36,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00212/env.xml
+hmax2,med_069,150,2.933,2.5,2.115,1.07,4.29,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool2/med_301/rb_00041/env.xml
+1push,easy_002,125,2.449,2.14,1.868,1.07,3.21,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool4b/j_603/rb_00012/env.xml
+1push,easy_001,130,2.962,2.32,2.261,1.07,4.29,0.0,7.5,/common/users/dm1487/scratch_namo/real_buildable/pool3/h2_404/rb_00078/env.xml
