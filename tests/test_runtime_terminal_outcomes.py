@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 from robot_control.core.types import Observation
@@ -127,3 +128,14 @@ def test_planning_failure_uses_the_normal_terminal_shutdown_path():
     assert runtime._terminal_announced is True
     assert runtime._env.stop_calls == 1
     assert runtime._window.close_calls == 1
+
+
+def test_real_exp_command_does_not_enable_held_targeting():
+    readme = (
+        Path(__file__).resolve().parents[1] / "real_exp" / "README.md"
+    ).read_text()
+    section = readme.split("## First trial command", 1)[1]
+    command = section.split("```bash", 1)[1].split("```", 1)[0]
+
+    assert "--hold-region-target" not in command
+    assert "--exec-mode" not in command
