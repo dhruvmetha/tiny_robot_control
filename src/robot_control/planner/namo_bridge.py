@@ -397,6 +397,27 @@ class NAMOPlanBridge:
             )
         return self._planning_service
 
+    def warmup_best_first_scorer(
+        self,
+        *,
+        checkpoint: str,
+        device: str,
+    ) -> float:
+        """Load and warm the learned best-first scorer, returning wall time in ms."""
+        print(
+            f"[NAMOBridge] Warming best-first scorer "
+            f"(checkpoint={checkpoint}, device={device}); "
+            "excluded from planning time",
+            flush=True,
+        )
+        start = perf_counter()
+        service = self._get_planning_service()
+        service.preload_best_first_scorer(
+            checkpoint=checkpoint,
+            device=device,
+        )
+        return (perf_counter() - start) * 1000.0
+
     def _starting_robot_pose_sim(
         self,
         observation: Observation,

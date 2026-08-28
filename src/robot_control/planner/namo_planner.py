@@ -334,6 +334,9 @@ class NAMOPlanner(Planner):
         self._total_planning_ms: float = 0.0
         self._plan_count: int = 0
 
+        # One-time model startup is measured separately from planning decisions.
+        self._model_ranker_warmed: bool = False
+
         # Retry state for unreachable approach positions
         self._max_replan_attempts: int = int(max_replan_attempts)
         self._replan_attempt: int = 0  # Current replan attempt count
@@ -575,6 +578,8 @@ class NAMOPlanner(Planner):
                 "planning_operation": "reuse_verification",
                 "planning_wall_time_ms": planning_wall_time_ms,
                 "simulations_used": int(simulations_used),
+                "model_warmup_ms": 0.0,
+                "model_warmup_excluded_from_planning_time": False,
                 "success": success,
                 "subgoals_returned": len(chain) if success else 0,
                 "first_subgoal": first_subgoal,
@@ -1107,6 +1112,8 @@ class NAMOPlanner(Planner):
                 "planning_operation": "decision_only",
                 "planning_wall_time_ms": 0.0,
                 "simulations_used": 0,
+                "model_warmup_ms": 0.0,
+                "model_warmup_excluded_from_planning_time": False,
                 "success": True,
                 "subgoals_returned": 0,
                 "first_subgoal": None,
@@ -1277,6 +1284,25 @@ class NAMOPlanner(Planner):
                 kwargs["ml_sampler_method"] = self._ml_sampler_method
         return kwargs
 
+    def _warmup_model_ranker_once(self) -> float:
+        """Warm the learned best-first ranker once outside planning wall time."""
+        if not self._local_search.uses_ranker or self._model_ranker_warmed:
+            return 0.0
+
+        checkpoint = self._local_search.scorer_ckpt
+        device = self._local_search.ml_device or "cpu"
+        warmup_ms = self._bridge.warmup_best_first_scorer(
+            checkpoint=checkpoint,
+            device=device,
+        )
+        self._model_ranker_warmed = True
+        print(
+            f"[NAMOPlanner] Best-first scorer warmup: {warmup_ms:.0f}ms "
+            "(recorded separately; excluded from planning_wall_time_ms)",
+            flush=True,
+        )
+        return warmup_ms
+
     def _held_mode_planner_kwargs(self) -> Dict[str, Any]:
         """The same options the whole-problem path sends, at the base seed, plus the mode.
 
@@ -1303,6 +1329,7 @@ class NAMOPlanner(Planner):
         subgoals: Sequence[Any],
         success: bool,
         planning_wall_time_ms: float,
+        model_warmup_ms: float = 0.0,
         extra: Optional[Dict[str, Any]] = None,
     ) -> None:
         """One JSONL line per planning attempt, from either planning path.
@@ -1337,6 +1364,8 @@ class NAMOPlanner(Planner):
                 "planning_operation": "fresh_search",
                 "planning_wall_time_ms": planning_wall_time_ms,
                 "simulations_used": int(algorithm_stats.get("simulations_used", 0)),
+                "model_warmup_ms": float(model_warmup_ms),
+                "model_warmup_excluded_from_planning_time": model_warmup_ms > 0.0,
                 "success": bool(success),
                 "subgoals_returned": len(subgoals),
                 "first_subgoal": first_subgoal,
@@ -1352,7 +1381,11 @@ class NAMOPlanner(Planner):
         except Exception as _e:
             print(f"[DIAG] record_plan failed: {_e!r}", flush=True)
 
-    def _generate_plan_holding_target(self, obs: Observation) -> None:
+    def _generate_plan_holding_target(
+        self,
+        obs: Observation,
+        model_warmup_ms: float = 0.0,
+    ) -> None:
         """Plan against one held boundary, advancing only when it opens.
 
         The advance step itself is shared with run_namo's plan-only mode, which
@@ -1389,6 +1422,7 @@ class NAMOPlanner(Planner):
             subgoals=list(getattr(plan, "subgoals", []) or []),
             success=(status == ADVANCE_PLANNED),
             planning_wall_time_ms=planning_wall_time_ms,
+            model_warmup_ms=model_warmup_ms,
             extra={
                 "origin": "region_target",
                 "boundary_status": str(status),
@@ -1431,8 +1465,9 @@ class NAMOPlanner(Planner):
         when planning returns no solution (empty subgoals or exception).
         """
         self._plan_generated = True
+        model_warmup_ms = self._warmup_model_ranker_once()
         if self._hold_region_target:
-            self._generate_plan_holding_target(obs)
+            self._generate_plan_holding_target(obs, model_warmup_ms)
             return
         max_retries = self._max_planning_retries
 
@@ -1516,6 +1551,9 @@ class NAMOPlanner(Planner):
                     subgoals=list(subgoals or []),
                     success=bool(subgoals),
                     planning_wall_time_ms=planning_wall_time_ms,
+                    model_warmup_ms=(
+                        model_warmup_ms if attempt == 0 else 0.0
+                    ),
                     extra={"origin": "fresh_plan"},
                 )
 

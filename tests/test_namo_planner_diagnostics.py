@@ -68,6 +68,8 @@ def test_fresh_plan_record_has_outer_time_and_top_level_simulation_count():
         "planning_operation": "fresh_search",
         "planning_wall_time_ms": 7.5,
         "simulations_used": 5,
+        "model_warmup_ms": 0.0,
+        "model_warmup_excluded_from_planning_time": False,
         "success": False,
         "subgoals_returned": 0,
         "first_subgoal": None,

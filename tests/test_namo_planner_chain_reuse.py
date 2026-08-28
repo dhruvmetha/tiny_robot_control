@@ -57,6 +57,7 @@ class _FakeBridge:
         self.verify_results = []
         self.plan_calls = []
         self.verify_calls = []
+        self.warmup_calls = []
         self.last_search_time_ms = 0.0
         self.last_algorithm_stats = {}
         self.last_xml_content = "<mujoco/>"
@@ -65,6 +66,10 @@ class _FakeBridge:
         self.plan_calls.append(kwargs)
         self.last_search_time_ms = 10.0
         return self.plan_results.pop(0)
+
+    def warmup_best_first_scorer(self, *, checkpoint, device):
+        self.warmup_calls.append((checkpoint, device))
+        return 125.0
 
     def verify_chain(self, **kwargs):
         self.verify_calls.append(list(kwargs["chain"]))
@@ -234,6 +239,84 @@ def test_fresh_search_measures_outer_wall_time(monkeypatch):
     assert recorder.records[0]["planning_operation"] == "fresh_search"
     assert recorder.records[0]["planning_wall_time_ms"] == pytest.approx(12.5)
     assert recorder.records[0]["simulations_used"] == 5
+
+
+def test_model_ranker_warmup_runs_once_before_fresh_search_timing(monkeypatch):
+    monkeypatch.setattr(planner_mod, "NAMOPlanBridge", _FakeBridge)
+    planner = planner_mod.NAMOPlanner(
+        robot_goal_cm=(40.0, 40.0),
+        namo_config_path="unused.yaml",
+        execution_mode="mpc",
+        verbose=False,
+        local_search=planner_mod.LocalSearchConfig(
+            local_search="best_first",
+            best_first_prior="model",
+            scorer_ckpt="model.ckpt",
+            ml_device="cuda",
+        ),
+    )
+    planner._is_goal_reachable = lambda obs: False
+    planner._unreachable_contact_points = lambda _obs: set()
+    bridge = planner._bridge
+    recorder = _Recorder()
+    planner.set_diagnostics_recorder(recorder)
+    bridge.plan_results = [
+        [PushSubgoal("obj_1", 4, 3)],
+        [PushSubgoal("obj_1", 8, 2)],
+    ]
+    clock = iter([10.0, 10.0125, 20.0, 20.004])
+    monkeypatch.setattr(
+        planner_mod,
+        "time",
+        SimpleNamespace(perf_counter=lambda: next(clock)),
+        raising=False,
+    )
+
+    planner._generate_plan(_obs())
+    planner._generate_plan(_obs())
+
+    assert bridge.warmup_calls == [("model.ckpt", "cuda")]
+    assert recorder.records[0]["planning_wall_time_ms"] == pytest.approx(12.5)
+    assert recorder.records[0]["model_warmup_ms"] == pytest.approx(125.0)
+    assert recorder.records[0]["model_warmup_excluded_from_planning_time"] is True
+    assert recorder.records[1]["planning_wall_time_ms"] == pytest.approx(4.0)
+    assert recorder.records[1]["model_warmup_ms"] == pytest.approx(0.0)
+    assert recorder.records[1]["model_warmup_excluded_from_planning_time"] is False
+
+
+def test_uniform_best_first_does_not_warm_model_ranker(monkeypatch):
+    monkeypatch.setattr(planner_mod, "NAMOPlanBridge", _FakeBridge)
+    planner = planner_mod.NAMOPlanner(
+        robot_goal_cm=(40.0, 40.0),
+        namo_config_path="unused.yaml",
+        execution_mode="mpc",
+        verbose=False,
+        local_search=planner_mod.LocalSearchConfig(
+            local_search="best_first",
+            best_first_prior="uniform",
+            ml_device="cuda",
+        ),
+    )
+    planner._is_goal_reachable = lambda obs: False
+    planner._unreachable_contact_points = lambda _obs: set()
+    bridge = planner._bridge
+    recorder = _Recorder()
+    planner.set_diagnostics_recorder(recorder)
+    bridge.plan_results = [[PushSubgoal("obj_1", 4, 3)]]
+    clock = iter([30.0, 30.005])
+    monkeypatch.setattr(
+        planner_mod,
+        "time",
+        SimpleNamespace(perf_counter=lambda: next(clock)),
+        raising=False,
+    )
+
+    planner._generate_plan(_obs())
+
+    assert bridge.warmup_calls == []
+    assert recorder.records[0]["planning_wall_time_ms"] == pytest.approx(5.0)
+    assert recorder.records[0]["model_warmup_ms"] == pytest.approx(0.0)
+    assert recorder.records[0]["model_warmup_excluded_from_planning_time"] is False
 
 
 def test_failed_suffix_records_its_simulation_and_outer_time(monkeypatch):
