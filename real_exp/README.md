@@ -100,11 +100,66 @@ PYTHONPATH="$NAMO_REPO/build_python:src" \
 ```
 
 This is still model-prior best-first search: unheld `full_namo` performs the
-whole-problem search directly. Do not add an explicit `--exec-mode` here;
-that option addresses the held-boundary loop and the CLI rejects it on this
-unheld path. Plan execution remains MPC by default, so after each physical
+whole-problem search directly. Do not add an explicit `--exec-mode search`
+here: explicitly named `search` and `reactive` modes address the held-boundary
+loop, and the CLI rejects them on this unheld path. Plan execution remains MPC
+by default, so after each physical
 push the runtime verifies the remaining suffix before falling back to a fresh
 graph, boundary selection, and full replan.
+
+## Greedy DFS model command
+
+`greedy_dfs` is a separate unheld Full NAMO planning mode. It operates entirely
+inside MuJoCo while constructing the plan: at the current simulator state it
+rebuilds the full region graph, selects a boundary, scores that boundary's
+candidate pushes with the same horizon-independent model ranker, and commits
+the first highest-ranked candidate that actually moves the object. It then
+rebuilds the graph from that committed child. It does not search sibling
+children or backtrack to an earlier committed simulator state.
+
+A no-op or jammed candidate is blacklisted at the unchanged state and still
+counts as a simulation. A candidate that moves and then reports a jam is a real
+child state, so it is committed. The default best-first horizon caps the plan at
+two committed pushes; the command makes that cap explicit. This is not the
+camera-reactive held-target mode, so do not pass `--hold-region-target` or
+`--active-target`.
+
+For a formal model-prior greedy-DFS trial, use a distinct result arm:
+
+```bash
+axis=hmax2
+build_id=hard_004
+trial_index=1
+trial="trial${trial_index}"
+seed=$((trial_index - 1))
+diag_path="real_exp/results/formal_v1/${axis}/${build_id}/model_greedy_dfs"
+
+cd ../namo_cpp
+set -a
+. env.robotlearning.sh
+set +a
+cd ../robot_control
+export NAMO_REPO=/home/dhruv/projects_dhruv/namo/namo_cpp
+
+NAMO_PUSH_WHEEL_LOG="${diag_path}/${trial}/push_phases.jsonl" \
+PYTHONPATH="$NAMO_REPO/build_python:src" \
+/home/dhruv/miniconda3/envs/namo312/bin/python -u scripts/run_namo.py \
+  --config config/real.yaml --camera-service tcp://localhost:5556 \
+  --robot-model car --algorithm full_namo \
+  --local-search best_first --best-first-prior model \
+  --scorer-ckpt /home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt \
+  --exec-mode greedy_dfs --best-first-hmax 2 \
+  --goal 11.0 67.6 --no-shuffle-edges --max-chain-depth 2 \
+  --shuffle-seed "$seed" --record-video --capture-scene \
+  --diag-path "$diag_path" --run-name "$trial"
+```
+
+Model warmup still happens before measured planning. `sim_pushes_tried` and the
+planning wall-time fields include every greedy-DFS simulation after warmup,
+including same-state candidates rejected as no-ops or jams.
+After planning, physical execution uses the existing MPC suffix verification;
+this mode changes how the simulator constructs the initial plan, not how a
+returned push is executed or checked against the next camera observation.
 
 Simulation reachability is a transition to the final physical navigation, not
 a real-trial success condition. Once the live scene has an open path, the
