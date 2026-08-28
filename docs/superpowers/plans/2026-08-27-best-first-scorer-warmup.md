@@ -129,4 +129,3 @@ Run the complete backend and robot-control commands from Tasks 1 and 2 immediate
 - [ ] **Step 4: Push coherent commits**
 
 Push the current `namo_cpp` branch and then the current `robot_control` branch only after all checks pass. Do not stage, modify, or commit the pre-existing RVG submodule change, GUI shutdown work, generated environments, or recorded trial artifacts.
-
