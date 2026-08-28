@@ -184,13 +184,34 @@ def test_planning_failure_alone_is_not_completion(monkeypatch):
     assert planner.is_complete(obs) is False
 
 
-def test_simulated_reachability_is_completion_before_physical_arrival(monkeypatch):
+def test_reachable_goal_is_not_complete_before_physical_arrival(monkeypatch):
     planner = _make_planner(monkeypatch)
     obs = _obs()
     planner._planning_failed = False
     planner._is_goal_reachable = lambda _obs: True
 
-    assert planner.is_complete(obs) is True
+    assert planner.is_complete(obs) is False
+    subgoal = planner.plan(obs)
+    assert isinstance(subgoal, NavigateSubgoal)
+    assert (subgoal.x, subgoal.y) == planner._robot_goal_cm
+
+
+def test_successful_navigation_completes_only_inside_goal_tolerance(monkeypatch):
+    planner = _make_planner(monkeypatch)
+    planner.plan(_obs())
+    planner.notify_subgoal_done(_obs(), failed=False)
+
+    far = Observation(
+        robot_x=34.0, robot_y=40.0, robot_theta=90.0,
+        objects={}, timestamp=1.0,
+    )
+    arrived = Observation(
+        robot_x=36.0, robot_y=40.0, robot_theta=90.0,
+        objects={}, timestamp=2.0,
+    )
+
+    assert planner.is_complete(far) is False
+    assert planner.is_complete(arrived) is True
 
 
 def test_a_successful_navigate_to_goal_is_unaffected(monkeypatch):
@@ -204,7 +225,6 @@ def test_a_successful_navigate_to_goal_is_unaffected(monkeypatch):
     planner.notify_subgoal_done(obs, failed=False)
 
     # This callback still must not turn a successful navigation into a
-    # failure. Completion itself is queried independently via simulated
-    # reachability.
+    # failure. Completion is picked up by is_complete() from physical arrival.
     assert planner._navigating_to_goal is True
     assert planner._replan_attempt == 0

@@ -974,20 +974,33 @@ class NAMOPlanner(Planner):
             )
 
     def is_complete(self, obs: Observation) -> bool:
-        """Return whether the latest planning scene has a path to the goal.
+        """Return whether goal navigation has physically reached its target.
 
-        Planning exhaustion is a failure state, not completion. Physical
-        arrival is not required by the real-exp manipulation-success
-        criterion.
+        Reachability causes :meth:`plan` to dispatch a ``NavigateSubgoal``.
+        Planning exhaustion is a failure state, not completion.
         """
-        reachable = self._is_goal_reachable(obs)
-        if reachable:
+        if self._planning_failed or not self._navigating_to_goal:
+            return False
+
+        target = self._retarget_point_cm or self._robot_goal_cm
+        dist = math.hypot(obs.robot_x - target[0], obs.robot_y - target[1])
+        if dist >= self._goal_tolerance:
+            return False
+
+        if self._retarget_point_cm is not None:
             print(
-                f"[NAMOPlanner] GOAL REACHABLE in simulation | "
+                f"[NAMOPlanner] GOAL REACHED (success-with-retarget)! "
+                f"Distance to retarget point: {dist:.1f}cm | "
                 f"Total planning: {self._plan_count} calls, "
                 f"{self._total_planning_ms:.0f}ms cumulative"
             )
-        return reachable
+        else:
+            print(
+                f"[NAMOPlanner] GOAL REACHED! Distance: {dist:.1f}cm | "
+                f"Total planning: {self._plan_count} calls, "
+                f"{self._total_planning_ms:.0f}ms cumulative"
+            )
+        return True
 
     def get_drawings(self) -> List[Dict[str, Any]]:
         """Return drawings for visualization.
