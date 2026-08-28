@@ -176,3 +176,4 @@ def test_real_exp_command_does_not_enable_held_targeting():
 
     assert "--hold-region-target" not in command
     assert "--exec-mode" not in command
+    assert "--capture-scene" in command

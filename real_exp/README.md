@@ -66,7 +66,8 @@ PYTHONPATH="$NAMO_REPO/build_python:src" \
   --local-search best_first --best-first-prior model \
   --scorer-ckpt /home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt \
   --goal 29.7 71.0 --no-shuffle-edges --max-chain-depth 2 \
-  --record-video --diag-path "$diag_path" --run-name "$trial"
+  --record-video --capture-scene \
+  --diag-path "$diag_path" --run-name "$trial"
 ```
 
 This is still model-prior best-first search: unheld `full_namo` performs the
@@ -75,6 +76,18 @@ that option addresses the held-boundary loop and the CLI rejects it on this
 unheld path. Plan execution remains MPC by default, so after each physical
 push the runtime verifies the remaining suffix before falling back to a fresh
 graph, boundary selection, and full replan.
+
+Simulation reachability is a transition to the final physical navigation, not
+a real-trial success condition. Once the live scene has an open path, the
+runtime dispatches a `NavigateSubgoal`. A real trial succeeds only after the
+camera observation places the robot within 5 cm of the goal (or of an explicit
+nearby retarget when the exact goal point is geometrically covered).
+
+`hmax2/easy_020/model_search/trial2` is an incomplete opening-success attempt:
+its two pushes opened a simulated path, but the runtime stopped with the robot
+32.8 cm from the goal. Preserve it for provenance and do not use it as a
+completed end-to-end paper trial. Reset the scene and use a fresh trial
+directory for the replacement.
 
 Before launch, confirm the camera service is healthy, `fuser /dev/ttyACM0`
 shows no stale owner, the scene checksum is accepted, and the robot is on the

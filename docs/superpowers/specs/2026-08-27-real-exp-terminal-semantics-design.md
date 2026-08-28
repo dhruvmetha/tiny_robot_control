@@ -2,6 +2,11 @@
 
 Status: implemented and verified 2026-08-27.
 
+> **Superseded terminal criterion:** This document's reachability-as-runtime-
+> success decision was superseded by
+> `2026-08-27-real-runtime-completion-design.md`. Planning failure remains a
+> failure, but runtime success now requires goal navigation and arrival.
+
 ## Objective
 
 Make the `real_exp` trials terminate according to NAMO reachability rather
