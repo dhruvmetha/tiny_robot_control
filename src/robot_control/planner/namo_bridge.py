@@ -270,6 +270,12 @@ class NAMOPlanBridge:
         # Timing from last plan_from_xml() call
         self.last_search_time_ms: float = 0.0
         self.last_sim_pushes_tried: Optional[int] = None
+        # Explicit service outcome from the most recent whole-problem plan.
+        # Callers such as --sim-xml must not infer success from action count:
+        # failed planners may carry partial diagnostic actions, while a valid
+        # terminal result may require no push actions.
+        self.last_plan_success: Optional[bool] = None
+        self.last_plan_failure_reason: Optional[str] = None
 
         # Algorithm-specific diagnostics from the last plan() call. Populated
         # whenever the planner attaches stats to its PlannerResult. Consumed
@@ -745,6 +751,8 @@ class NAMOPlanBridge:
         self.last_search_time_ms = 0.0
         self.last_sim_pushes_tried = None
         self.last_algorithm_stats = None
+        self.last_plan_success = None
+        self.last_plan_failure_reason = None
 
         # Manual-primitives strategy: bypass the C++ planner entirely.
         # Load a YAML file of (object_id, edge_idx, push_steps) entries,
@@ -761,6 +769,8 @@ class NAMOPlanBridge:
         # Generate XML and object mapping
         xml_content = self._generate_xml(observation, robot_goal_cm)
         if xml_content is None:
+            self.last_plan_success = False
+            self.last_plan_failure_reason = "failed_to_generate_xml"
             if self._verbose:
                 print("[NAMOBridge] Failed to generate XML")
             return []
@@ -773,6 +783,8 @@ class NAMOPlanBridge:
         # Write XML to temp file
         xml_path = self._write_xml(xml_content)
         if xml_path is None:
+            self.last_plan_success = False
+            self.last_plan_failure_reason = "failed_to_write_xml"
             return []
 
         # Change to namo_cpp directory so relative paths in config work
@@ -849,6 +861,17 @@ class NAMOPlanBridge:
 
             self.last_search_time_ms = result.search_time_ms
             self.last_algorithm_stats = getattr(result, "algorithm_stats", None)
+            self.last_plan_success = bool(result.success)
+            failure_reason = str(getattr(result, "error_message", "") or "")
+            if not failure_reason and isinstance(self.last_algorithm_stats, dict):
+                failure_reason = str(
+                    self.last_algorithm_stats.get("failure_kind") or ""
+                )
+            self.last_plan_failure_reason = None
+            if not self.last_plan_success:
+                self.last_plan_failure_reason = (
+                    failure_reason or "planner returned no plan"
+                )
             total_primitives_attempted = None
             if isinstance(self.last_algorithm_stats, dict):
                 raw_total = self.last_algorithm_stats.get("total_primitives_attempted")
@@ -895,6 +918,10 @@ class NAMOPlanBridge:
                     if (real_id, action.edge_idx) in failed_pushes:
                         blacklisted_in_plan.append((real_id, action.edge_idx))
                 if blacklisted_in_plan:
+                    self.last_plan_success = False
+                    self.last_plan_failure_reason = (
+                        f"plan contains blacklisted pushes: {blacklisted_in_plan}"
+                    )
                     if self._verbose:
                         print(
                             f"[NAMOBridge] Plan contains {len(blacklisted_in_plan)} "
