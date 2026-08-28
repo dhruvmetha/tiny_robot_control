@@ -19,6 +19,16 @@ def test_real_experiment_readme_links_metric_definitions():
     assert "valid pilot" in readme
 
 
+def test_formal_runs_use_a_subtree_distinct_from_the_legacy_pilot():
+    readme = (REAL_EXP / "README.md").read_text()
+
+    assert "`results/formal_v1/<axis>/<build_id>/`" in readme
+    assert (
+        'diag_path="real_exp/results/formal_v1/${axis}/${build_id}/model_search"'
+        in readme
+    )
+
+
 def test_real_experiment_docs_exclude_recorded_warmup_from_planning_time():
     metrics = (REAL_EXP / "METRICS.md").read_text()
     assert "`model_warmup_ms`" in metrics

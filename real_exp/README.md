@@ -16,7 +16,8 @@ the legacy interpretation of the first completed easy trial.
 - `environments/<axis>/<build_id>/build_sheet.csv` is a local copy of the v2
   real-table sheet containing that build. Use the `build_id` in
   `resolved_scenes.csv` to select the three rows for the scene.
-- `results/<axis>/<build_id>/` is the root for recorded trial output.
+- `results/formal_v1/<axis>/<build_id>/` is the root for formal trial output.
+- `results/<axis>/<build_id>/` contains legacy pilots and must not receive formal runs.
 
 The gallery's source XML paths live on `/common/users/dm1487/...` and are not
 mounted on `dhruv-linux`. Real trials do not consume those files directly:
@@ -48,6 +49,8 @@ Uniform best-first consumes the seed when assigning random priorities to candida
 
 Existing runs that omitted `--shuffle-seed` resolved inside best-first to seed 42. They remain valid pilot evidence, but they are outside the formal five-seed timing set and must not be substituted for trials 1–5.
 
+Every formal run belongs under `results/formal_v1`; this versioned subtree prevents a formal trial label from colliding with an unversioned pilot that already uses the same axis, build, method, and trial name.
+
 For model-prior best-first, the process loads the checkpoint, constructs the renderer, initializes the configured device, and performs synthetic ranker forward passes once before measured planning. This one-time duration is recorded separately as `model_warmup_ms` and is excluded from the planning wall-time fields defined in [Planning metrics](METRICS.md).
 
 ## Setup command
@@ -75,7 +78,7 @@ build_id=easy_020
 trial_index=1
 trial="trial${trial_index}"
 seed=$((trial_index - 1))
-diag_path="real_exp/results/${axis}/${build_id}/model_search"
+diag_path="real_exp/results/formal_v1/${axis}/${build_id}/model_search"
 
 cd ../namo_cpp
 set -a
@@ -109,7 +112,7 @@ runtime dispatches a `NavigateSubgoal`. A real trial succeeds only after the
 camera observation places the robot within 5 cm of the goal (or of an explicit
 nearby retarget when the exact goal point is geometrically covered).
 
-`hmax2/easy_020/model_search/trial1` remains a valid pilot: it completed the easy scene with two successful physical pushes and final real navigation to within 1.108 cm of the requested goal. It predates the uniform telemetry schema, so use the explicit legacy accounting in [Planning metrics](METRICS.md) rather than interpreting its old `search_time_ms` fields as comparable wall time.
+`results/hmax2/easy_020/model_search/trial1` remains a valid pilot: it completed the easy scene with two successful physical pushes and final real navigation to within 1.108 cm of the requested goal. It predates the uniform telemetry schema, so use the explicit legacy accounting in [Planning metrics](METRICS.md) rather than interpreting its old `search_time_ms` fields as comparable wall time.
 
 Before launch, confirm the camera service is healthy, `fuser /dev/ttyACM0`
 shows no stale owner, the scene checksum is accepted, and the robot is on the
