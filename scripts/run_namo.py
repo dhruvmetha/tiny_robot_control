@@ -1920,20 +1920,19 @@ def main():
         "--exec-mode",
         type=str,
         # None, not DEFAULT_EXEC_MODE: naming the mode is what declares a
-        # mode-arm run and requires --hold-region-target, so the guard has to
-        # see whether the operator chose it or inherited it. The default is
-        # resolved to `search` in local_search_from_args.
+        # mode-arm run, so the guard has to see whether the operator chose it
+        # or inherited it. The default is resolved to `search` in
+        # local_search_from_args.
         default=None,
         choices=list(EXEC_MODE_CHOICES),
         help="Decision rule per replan. search = expand a priority queue and "
              "return a chain (the default when omitted); reactive = score the "
-             "candidates at the state in front of the robot and push the top "
-             "one, no lookahead. Naming EITHER value declares a mode-arm run "
-             "and requires --hold-region-target, since the mode comparison is "
-             "defined on the held-boundary loop only; omit the flag entirely "
-             "for an ordinary unheld run. reactive also needs --local-search "
-             "best_first. Both modes run the same ranker over the same pool, "
-             "so this is the lookahead arm of the trial matrix.",
+             "candidates at the live robot state and push the top one; "
+             "greedy_dfs = in simulation, commit one moving argmax child, "
+             "rebuild Full NAMO's region graph, and repeat without sibling "
+             "backtracking. Explicit search/reactive mode-arm runs require "
+             "--hold-region-target. greedy_dfs requires --algorithm full_namo, "
+             "--local-search best_first, and no held-target flag.",
     )
     parser.add_argument(
         "--best-first-prior",

@@ -74,6 +74,20 @@ def test_ranker_forwards_its_checkpoint():
     assert cfg.uses_ranker
 
 
+def test_greedy_dfs_forwards_whole_problem_mode():
+    cfg = LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="uniform",
+        exec_mode="greedy_dfs",
+    )
+
+    assert cfg.as_planner_kwargs() == {
+        "full_namo_local_search": "best_first",
+        "best_first_prior": "uniform",
+        "full_namo_exec_mode": "greedy_dfs",
+    }
+
+
 def test_optional_protocol_keys_are_omitted_unless_set():
     """Omitted means 'use namo_cpp's canonical value', not 'use ours'."""
     kwargs = LocalSearchConfig(
@@ -142,6 +156,25 @@ def test_args_mapping_round_trips():
         "best_first_hmax": 2,
         "ml_device": "cpu",
     }
+
+
+def test_greedy_dfs_args_mapping_round_trips():
+    from importlib import import_module
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    run_namo = import_module("run_namo")
+
+    cfg = run_namo.local_search_from_args(
+        _args(
+            local_search="best_first",
+            best_first_prior="uniform",
+            exec_mode="greedy_dfs",
+        )
+    )
+
+    assert cfg.as_planner_kwargs()["full_namo_exec_mode"] == "greedy_dfs"
 
 
 @pytest.mark.parametrize(

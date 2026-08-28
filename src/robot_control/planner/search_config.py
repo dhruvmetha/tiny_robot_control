@@ -23,9 +23,11 @@ from typing import Any, Dict, Optional
 LOCAL_SEARCH_CHOICES = ("region_bfs", "best_first")
 BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 
-# Which decision rule reads the ranked pool, forwarded verbatim as
-# `solve_boundary_from_xml(mode=...)`. `search` pops a priority queue and can
-# back up. `reactive` takes the argmax at the state in front of it and cannot.
+# Which decision rule reads the ranked pool. `search` pops a priority queue and
+# can back up. `reactive` takes the argmax at the live state in front of the
+# robot. `greedy_dfs` belongs to the whole-problem Full NAMO planner: it commits
+# one moving argmax simulation, rebuilds the region graph from that simulated
+# state, and never returns to sibling children of an earlier state.
 #
 # The second one exists because the sim-to-real gap attacks lookahead
 # specifically: a real block pushed off-centre keeps rotating, 2.13 to 2.42
@@ -35,13 +37,16 @@ BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 # re-decides from what the camera sees and never rests on a prediction. Which one
 # survives hardware is unmeasured, so both run and every trial records which.
 #
-# These strings are namo_cpp's `BOUNDARY_MODES` verbatim, and are forwarded
-# without translation. test_exec_mode_routing pins that they still match: a
-# mapping table between the two repositories would be one more place to write
-# the wrong arm into a paired comparison.
+# These strings are the union of namo_cpp's `BOUNDARY_MODES` and
+# `FULL_NAMO_EXEC_MODES`, forwarded without translation.
 SEARCH_EXEC_MODE = "search"
 REACTIVE_EXEC_MODE = "reactive"
-EXEC_MODE_CHOICES = (SEARCH_EXEC_MODE, REACTIVE_EXEC_MODE)
+GREEDY_DFS_EXEC_MODE = "greedy_dfs"
+EXEC_MODE_CHOICES = (
+    SEARCH_EXEC_MODE,
+    REACTIVE_EXEC_MODE,
+    GREEDY_DFS_EXEC_MODE,
+)
 DEFAULT_EXEC_MODE = SEARCH_EXEC_MODE
 
 # namo_cpp owns the canonical protocol (hmax=2, 900 simulations per keyhole).
@@ -74,14 +79,14 @@ class LocalSearchConfig:
                 f"Unknown exec_mode {self.exec_mode!r}. "
                 f"Valid: {list(EXEC_MODE_CHOICES)}"
             )
-        if self.uses_reactive and not self.uses_best_first:
+        if (self.uses_reactive or self.uses_greedy_dfs) and not self.uses_best_first:
             # namo_cpp refuses this too, but only once the service is called
             # mid-run. Reactive returns the argmax of a ranked pool and
             # region_bfs builds none, it sweeps every edge and depth in its own
             # order.
             raise ValueError(
-                "exec_mode='reactive' needs --local-search best_first: reactive "
-                f"ranks candidates and picks the top one, and {self.local_search!r} "
+                f"exec_mode={self.exec_mode!r} needs --local-search best_first: "
+                f"it ranks candidates and picks the top one, and {self.local_search!r} "
                 "builds no ranked pool. Pass --local-search best_first, or use "
                 "--exec-mode search."
             )
@@ -117,6 +122,10 @@ class LocalSearchConfig:
     def uses_reactive(self) -> bool:
         return self.exec_mode == REACTIVE_EXEC_MODE
 
+    @property
+    def uses_greedy_dfs(self) -> bool:
+        return self.exec_mode == GREEDY_DFS_EXEC_MODE
+
     def as_boundary_kwargs(self) -> Dict[str, Any]:
         """The extra keys `solve_boundary_from_xml` names, on top of the search ones.
 
@@ -136,6 +145,8 @@ class LocalSearchConfig:
             "full_namo_local_search": self.local_search,
             "best_first_prior": self.best_first_prior,
         }
+        if self.uses_greedy_dfs:
+            kwargs["full_namo_exec_mode"] = self.exec_mode
         if self.scorer_ckpt:
             kwargs["scorer_ckpt"] = self.scorer_ckpt
         if self.best_first_hmax is not None:
@@ -187,7 +198,8 @@ BEST_FIRST_AWARE_ALGORITHMS = ("full_namo",)
 SCORER_GOAL_STRATEGY = "scorer"
 
 
-# `mode` is a named parameter of `solve_boundary_from_xml`, and that method is
+# `reactive` and an explicitly named boundary `search` mode are parameters of
+# `solve_boundary_from_xml`, and that method is
 # reached only by the held-boundary loop (--hold-region-target / --active-target).
 # The whole-problem path calls `plan_from_xml`, which does not name it, so an
 # exec mode aimed there rides into `algorithm_params` and is dropped in silence.
@@ -207,6 +219,10 @@ SCORER_GOAL_STRATEGY = "scorer"
 # every existing caller relies on. Reactive needs no naming to be refused,
 # since it can only be reached by naming it, but the check reads the config
 # too so a programmatic caller cannot slip a reactive config past it.
+#
+# `greedy_dfs` is deliberately the opposite route: FullNAMOPlanner owns it and
+# reads `full_namo_exec_mode` from plan_from_xml. It must not enter held mode,
+# where solve_boundary_from_xml would reject it as an unknown boundary mode.
 EXEC_MODE_REQUIRES_HELD_BOUNDARY = True
 
 
@@ -228,7 +244,21 @@ def check_search_reaches_planner(
     before resolving the default; a caller that cannot know leaves it False and
     gets the pre-existing behaviour.
     """
-    mode_chosen = exec_mode_named or config.uses_reactive
+    if config.uses_greedy_dfs:
+        if held_boundary:
+            raise ValueError(
+                "--exec-mode greedy_dfs runs inside the whole-problem Full NAMO "
+                "planner, without --hold-region-target. Remove "
+                "--hold-region-target/--active-target so every committed "
+                "simulated push is followed by a fresh region-graph rebuild."
+            )
+        if algorithm not in BEST_FIRST_AWARE_ALGORITHMS:
+            raise ValueError(
+                "--exec-mode greedy_dfs requires --algorithm full_namo: only "
+                "FullNAMOPlanner owns the commit-and-rebuild loop."
+            )
+
+    mode_chosen = (exec_mode_named or config.uses_reactive) and not config.uses_greedy_dfs
     if mode_chosen and EXEC_MODE_REQUIRES_HELD_BOUNDARY and not held_boundary:
         if config.uses_reactive:
             raise ValueError(
