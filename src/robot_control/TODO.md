@@ -35,6 +35,14 @@ The ordered work list for the study. Software is done and pushed through
 6. [ ] (after matrix) Recorder dedup in namo_planner.py (ten keys built three
    times) with the drift note, and move `_require_paired_namo_cpp` into
    tests/conftest.py. Both deferred deliberately: they change the instrument.
+7. [ ] Simulator-free policy stack, commissioned to the `policy` session
+   2026-08-28. The ranker's input was never MuJoCo (OpenCV rasterization),
+   so the policy loop's only real dependencies are the namo_rl scene
+   container and the C++ wavefront; both replaceable by an occupancy grid
+   plus flood fill. Phase 0 (offline shadow harness comparing both stacks
+   stage-by-stage over every recorded scene, exact matches, sabotage-proven)
+   may overlap the campaign; the live flip waits until after the matrix.
+   Deliverables arrive as proposal branches, reviewed and landed here.
 
 ## Dependency and integration blockers
 
