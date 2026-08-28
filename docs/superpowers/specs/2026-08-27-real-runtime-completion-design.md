@@ -88,3 +88,26 @@ navigation dispatch without opening the serial port.
 - Reclassifying planning-only bridge results as physical trials.
 - Appending a separate navigation process to `trial2`.
 - Moving the robot during implementation or automated verification.
+
+## Implementation Status
+
+Implemented and verified on 2026-08-27.
+
+TDD evidence:
+
+- Planner RED: 2 failed, 5 passed. Both a reachable robot far from the goal
+  and a navigated robot still 6 cm away were incorrectly complete.
+- Planner GREEN: 12 passed across navigation-failure and goal-retarget tests.
+- Runtime RED: 2 failed, 5 passed after pinning both the retained terminal
+  outcome and legacy summary fallback to `goal reached`.
+- Documentation RED: the real-exp command test failed because
+  `--capture-scene` was absent.
+- Focused GREEN: 29 passed across terminal outcomes, arrival/failure,
+  retargeting, navigation failure, MPC suffix reuse, and simulation telemetry.
+- Complete worktree suite: 429 passed in 51.22 seconds with the worktree
+  source explicitly first on `PYTHONPATH`.
+
+Hardware-free verification dispatched a fake `NavigateSubgoal` from a
+reachable-but-distant observation and confirmed that no terminal outcome was
+recorded before arrival. No `run_namo.py` or `check_build.py` process was
+started, and `/dev/ttyACM0` had no owner after verification.

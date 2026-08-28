@@ -306,4 +306,3 @@ Append an Implementation Status section containing focused and complete-suite pa
     git diff --stat real-robot...HEAD
 
 Expected: only planned source, test, runbook, spec, and plan changes appear. After verification, fast-forward real-robot, rerun the complete suite in the primary checkout so the preserved GUI shutdown test is included, and push origin/real-robot. Never overwrite or include the dirty RVG submodule, GUI file, untracked GUI test, or experiment data.
-
