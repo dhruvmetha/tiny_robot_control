@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-from robot_control.core.types import Observation
+from robot_control.core.types import Action, NavigateSubgoal, Observation
 from robot_control.runtime import Runtime
 
 
@@ -27,11 +27,26 @@ class _Planner:
 
 
 class _Executor:
+    def __init__(self):
+        self.subgoal = None
+
     def is_done(self, _obs):
         return True
 
     def has_active_subgoal(self):
         return False
+
+    def set_subgoal(self, subgoal, _obs):
+        self.subgoal = subgoal
+
+    def step(self, _obs):
+        return Action.stop()
+
+    def get_drawings(self):
+        return []
+
+    def get_status(self):
+        return "navigating"
 
 
 class _Window:
@@ -71,7 +86,11 @@ def _runtime(planner: _Planner) -> Runtime:
     )
     runtime._terminal_outcome = None
     runtime._terminal_announced = False
+    runtime._subgoal_start_time = None
     runtime._check_robot_connectivity = lambda **_kwargs: None
+    runtime._log_subgoal_dispatch = lambda *_args, **_kwargs: None
+    runtime._record_subgoal_start = lambda *_args, **_kwargs: None
+    runtime._video_subgoal_start = lambda *_args, **_kwargs: None
     return runtime
 
 
@@ -87,7 +106,19 @@ def test_no_subgoal_while_unreachable_is_planning_failure():
     )
 
 
-def test_reachability_is_complete_without_requesting_a_subgoal():
+def test_reachable_but_not_arrived_dispatches_navigation():
+    navigate = NavigateSubgoal(x=29.7, y=71.0, theta=None)
+    planner = _Planner(complete=False, subgoal=navigate)
+    runtime = _runtime(planner)
+
+    _action, _drawings, status = runtime._autonomous_step(_obs())
+
+    assert status == "Autonomous: navigating"
+    assert runtime._executor.subgoal == navigate
+    assert runtime._terminal_outcome is None
+
+
+def test_arrival_records_goal_reached_success_without_planning_again():
     planner = _Planner(complete=True, subgoal=None)
     runtime = _runtime(planner)
 
@@ -95,10 +126,7 @@ def test_reachability_is_complete_without_requesting_a_subgoal():
 
     assert status == "Plan Complete"
     assert planner.plan_calls == 0
-    assert runtime._terminal_outcome == (
-        "success",
-        "goal reachable in simulation",
-    )
+    assert runtime._terminal_outcome == ("success", "goal reached")
 
 
 def test_retained_terminal_outcome_drives_summary_classification():
@@ -109,6 +137,15 @@ def test_retained_terminal_outcome_drives_summary_classification():
     )
 
     assert runtime._determine_outcome() == runtime._terminal_outcome
+
+
+def test_fallback_arrival_summary_reports_goal_reached():
+    runtime = Runtime.__new__(Runtime)
+    runtime._terminal_outcome = None
+    runtime._planner = _Planner(complete=True, subgoal=None)
+    runtime._world = SimpleNamespace(get=_obs)
+
+    assert runtime._determine_outcome() == ("success", "goal reached")
 
 
 def test_planning_failure_uses_the_normal_terminal_shutdown_path():

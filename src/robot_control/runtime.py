@@ -1080,9 +1080,7 @@ class Runtime:
 
             # Check if plan is complete
             if self._planner.is_complete(obs):
-                self._record_terminal_outcome(
-                    "success", "goal reachable in simulation"
-                )
+                self._record_terminal_outcome("success", "goal reached")
                 return (
                     Action.stop(),
                     self._planner.get_drawings(),
@@ -1113,9 +1111,7 @@ class Runtime:
                 # so check once more. An empty plan by itself is never proof
                 # of success.
                 if self._planner.is_complete(obs):
-                    self._record_terminal_outcome(
-                        "success", "goal reachable in simulation"
-                    )
+                    self._record_terminal_outcome("success", "goal reached")
                     status = PLAN_COMPLETE_STATUS
                 else:
                     self._record_terminal_outcome(
@@ -1513,7 +1509,7 @@ class Runtime:
             if self._world is not None:
                 obs = self._world.get()
                 if obs is not None and self._planner.is_complete(obs):
-                    return "success", "goal reachable in simulation"
+                    return "success", "goal reached"
         except Exception as exc:
             return "unknown", f"is_complete check failed: {exc!r}"
 
