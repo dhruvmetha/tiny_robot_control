@@ -90,6 +90,7 @@ class DiagnosticsRecorder:
             "simulations_used_total": 0,
             "simulations_used_fresh_search": 0,
             "simulations_used_reuse_verification": 0,
+            "model_warmup_ms": 0.0,
         }
 
         # Sequential IDs assigned as events come in.
@@ -263,6 +264,10 @@ class DiagnosticsRecorder:
         operation = payload.get("planning_operation")
         with self._lock:
             self.totals["plan_calls"] += 1
+            warmup_ms = max(
+                0.0, float(payload.get("model_warmup_ms", 0.0) or 0.0)
+            )
+            self.planning["model_warmup_ms"] += warmup_ms
             if operation in {"fresh_search", "reuse_verification"}:
                 wall_time_ms = max(
                     0.0, float(payload.get("planning_wall_time_ms", 0.0) or 0.0)

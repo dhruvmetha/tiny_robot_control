@@ -11,6 +11,19 @@ def test_real_experiment_readme_links_metric_definitions():
 
     assert "[Planning metrics](METRICS.md)" in readme
     assert "incomplete opening-success attempt" not in readme
+    assert "`0`, `1`, `2`, `3`, and `4`" in readme
+    assert '`--shuffle-seed "$seed"`' in readme
+    assert "Uniform best-first consumes the seed" in readme
+    assert "model-prior best-first is deterministic" in readme
+    assert "seed 42" in readme
+    assert "valid pilot" in readme
+
+
+def test_real_experiment_docs_exclude_recorded_warmup_from_planning_time():
+    metrics = (REAL_EXP / "METRICS.md").read_text()
+    assert "`model_warmup_ms`" in metrics
+    assert "excluded from `planning_wall_time_ms`" in metrics
+    assert "not included in `wall_time_ms_total`" in metrics
 
 
 def test_metric_reference_defines_fields_and_completed_easy_trial():

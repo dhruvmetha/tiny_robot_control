@@ -30,6 +30,26 @@ Start with `hmax2/easy_020`, then build the two hard scenes. A scene is not
 ready for motion until `check_build.py` returns PASS or the human explicitly
 accepts a MARGINAL checksum.
 
+## Formal five-trial protocol
+
+Each experiment cell uses exactly five physical replicates. The trial-to-seed mapping is frozen:
+
+| Trial | Explicit seed |
+| --- | ---: |
+| `trial1` | `0` |
+| `trial2` | `1` |
+| `trial3` | `2` |
+| `trial4` | `3` |
+| `trial5` | `4` |
+
+In short, the formal seeds are `0`, `1`, `2`, `3`, and `4`. Every formal command must pass `--shuffle-seed "$seed"`; do not rely on the planner fallback.
+
+Uniform best-first consumes the seed when assigning random priorities to candidate pushes. For an identical observed scene, model-prior best-first is deterministic and does not consume the random generator in candidate ranking. The model arm still records the same five seeds because each physical setup and camera observation is a new scene state, and matching trial labels keeps the experiment balanced.
+
+Existing runs that omitted `--shuffle-seed` resolved inside best-first to seed 42. They remain valid pilot evidence, but they are outside the formal five-seed timing set and must not be substituted for trials 1–5.
+
+For model-prior best-first, the process loads the checkpoint, constructs the renderer, initializes the configured device, and performs synthetic ranker forward passes once before measured planning. This one-time duration is recorded separately as `model_warmup_ms` and is excluded from the planning wall-time fields defined in [Planning metrics](METRICS.md).
+
 ## Setup command
 
 From the `robot_control` repository root, substitute the row's axis and build
@@ -52,7 +72,9 @@ from `resolved_scenes.csv`; the example below is `hmax2/easy_020`.
 ```bash
 axis=hmax2
 build_id=easy_020
-trial=trial1
+trial_index=1
+trial="trial${trial_index}"
+seed=$((trial_index - 1))
 diag_path="real_exp/results/${axis}/${build_id}/model_search"
 
 cd ../namo_cpp
@@ -70,7 +92,7 @@ PYTHONPATH="$NAMO_REPO/build_python:src" \
   --local-search best_first --best-first-prior model \
   --scorer-ckpt /home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt \
   --goal 29.7 71.0 --no-shuffle-edges --max-chain-depth 2 \
-  --record-video --capture-scene \
+  --shuffle-seed "$seed" --record-video --capture-scene \
   --diag-path "$diag_path" --run-name "$trial"
 ```
 
@@ -87,11 +109,7 @@ runtime dispatches a `NavigateSubgoal`. A real trial succeeds only after the
 camera observation places the robot within 5 cm of the goal (or of an explicit
 nearby retarget when the exact goal point is geometrically covered).
 
-`hmax2/easy_020/model_search/trial1` is the accepted completed easy trial. It
-includes two successful physical pushes and final real navigation to within
-1.108 cm of the requested goal. It predates the uniform telemetry schema, so
-use the explicit legacy accounting in [Planning metrics](METRICS.md) rather
-than interpreting its old `search_time_ms` fields as comparable wall time.
+`hmax2/easy_020/model_search/trial1` remains a valid pilot: it completed the easy scene with two successful physical pushes and final real navigation to within 1.108 cm of the requested goal. It predates the uniform telemetry schema, so use the explicit legacy accounting in [Planning metrics](METRICS.md) rather than interpreting its old `search_time_ms` fields as comparable wall time.
 
 Before launch, confirm the camera service is healthy, `fuser /dev/ttyACM0`
 shows no stale owner, the scene checksum is accepted, and the robot is on the

@@ -147,6 +147,7 @@ def test_summary_includes_accumulated_planning_metrics(tmp_path):
         "planning_operation": "fresh_search",
         "planning_wall_time_ms": 12.5,
         "simulations_used": 5,
+        "model_warmup_ms": 125.0,
         "success": True,
     })
     recorder.record_plan({
@@ -186,6 +187,7 @@ def test_summary_includes_accumulated_planning_metrics(tmp_path):
         "simulations_used_total": 6,
         "simulations_used_fresh_search": 5,
         "simulations_used_reuse_verification": 1,
+        "model_warmup_ms": 125.0,
     }
     recorder.close()
 

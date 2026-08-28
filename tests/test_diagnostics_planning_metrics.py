@@ -10,6 +10,7 @@ def test_planning_metrics_split_fresh_search_from_reuse(tmp_path):
         "planning_operation": "fresh_search",
         "planning_wall_time_ms": 11.5,
         "simulations_used": 5,
+        "model_warmup_ms": 125.0,
         "success": True,
     })
     recorder.record_plan({
@@ -32,6 +33,7 @@ def test_planning_metrics_split_fresh_search_from_reuse(tmp_path):
         "simulations_used_total": 6,
         "simulations_used_fresh_search": 5,
         "simulations_used_reuse_verification": 1,
+        "model_warmup_ms": 125.0,
     }
     assert recorder.totals["plan_calls"] == 3
     recorder.close()
@@ -54,4 +56,5 @@ def test_disabled_recorder_keeps_zero_planning_metrics():
         "simulations_used_total": 0,
         "simulations_used_fresh_search": 0,
         "simulations_used_reuse_verification": 0,
+        "model_warmup_ms": 0.0,
     }
