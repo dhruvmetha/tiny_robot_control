@@ -35,7 +35,12 @@ The ordered work list for the study. Software is done and pushed through
 6. [ ] (after matrix) Recorder dedup in namo_planner.py (ten keys built three
    times) with the drift note, and move `_require_paired_namo_cpp` into
    tests/conftest.py. Both deferred deliberately: they change the instrument.
-7. [ ] Simulator-free policy stack, commissioned to the `policy` session
+7. [ ] Simulator-free policy stack, commissioned to the `policy` session.
+   ACCESSOR APPROVED (Dhruv, 2026-08-29): after the matrix, the namo_rl
+   binding gains a read-only region-grid accessor (~30 lines), docstring
+   stating exactly what it returns, parity harness as first consumer. It
+   waits because adding it rebuilds the compiled binding the trials run
+   against. Commission details below.
    2026-08-28. The ranker's input was never MuJoCo (OpenCV rasterization),
    so the policy loop's only real dependencies are the namo_rl scene
    container and the C++ wavefront; both replaceable by an occupancy grid
