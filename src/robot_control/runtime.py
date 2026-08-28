@@ -1572,6 +1572,7 @@ class Runtime:
                 "final_robot_pose_cm": final_pose,
                 "final_distance_to_goal_cm": final_dist,
                 "totals": dict(self._diag.totals),
+                "planning": dict(self._diag.planning),
                 "connectivity": {
                     "online_at_start": self._online_at_start,
                     "transitions": self._diag.totals.get("connectivity_transitions", 0),

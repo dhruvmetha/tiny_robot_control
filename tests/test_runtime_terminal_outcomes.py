@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
 from robot_control.core.types import Action, NavigateSubgoal, Observation
+from robot_control.diagnostics import DiagnosticsRecorder
 from robot_control.runtime import Runtime
 
 
@@ -137,6 +139,55 @@ def test_retained_terminal_outcome_drives_summary_classification():
     )
 
     assert runtime._determine_outcome() == runtime._terminal_outcome
+
+
+def test_summary_includes_accumulated_planning_metrics(tmp_path):
+    recorder = DiagnosticsRecorder(tmp_path / "trial1", verbose=False)
+    recorder.record_plan({
+        "planning_operation": "fresh_search",
+        "planning_wall_time_ms": 12.5,
+        "simulations_used": 5,
+        "success": True,
+    })
+    recorder.record_plan({
+        "planning_operation": "reuse_verification",
+        "planning_wall_time_ms": 4.0,
+        "simulations_used": 1,
+        "success": False,
+    })
+    runtime = Runtime.__new__(Runtime)
+    runtime._diag = recorder
+    runtime._started_at_epoch = 10.0
+    runtime._ended_at_epoch = 20.0
+    runtime._planner = SimpleNamespace(
+        _robot_goal_cm=(40.0, 40.0),
+        _goal_strategy="nearest",
+        _algorithm="full_namo",
+    )
+    runtime._world = SimpleNamespace(get=lambda: _obs())
+    runtime._offline_total_sec = 0.0
+    runtime._offline_since = None
+    runtime._online_at_start = True
+    runtime._config = SimpleNamespace(mode="real")
+
+    runtime._write_summary(
+        "failure",
+        "test outcome",
+        {"jpg": None, "json": None, "xml": None},
+        {"jpg": None, "json": None, "xml": None},
+    )
+
+    summary = json.loads((tmp_path / "trial1" / "summary.json").read_text())
+    assert summary["planning"] == recorder.planning
+    assert summary["planning"] == {
+        "wall_time_ms_total": 16.5,
+        "wall_time_ms_fresh_search": 12.5,
+        "wall_time_ms_reuse_verification": 4.0,
+        "simulations_used_total": 6,
+        "simulations_used_fresh_search": 5,
+        "simulations_used_reuse_verification": 1,
+    }
+    recorder.close()
 
 
 def test_fallback_arrival_summary_reports_goal_reached():
