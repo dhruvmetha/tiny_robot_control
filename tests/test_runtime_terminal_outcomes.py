@@ -224,9 +224,10 @@ def test_real_exp_command_does_not_enable_held_targeting():
     readme = (
         Path(__file__).resolve().parents[1] / "real_exp" / "README.md"
     ).read_text()
-    section = readme.split("## First trial command", 1)[1]
+    section = readme.split("## Arm A: complete model search", 1)[1]
     command = section.split("```bash", 1)[1].split("```", 1)[0]
 
     assert "--hold-region-target" not in command
+    assert "--active-target" not in command
     assert "--exec-mode" not in command
     assert "--capture-scene" in command
