@@ -127,8 +127,7 @@ loop returned and the runtime `finally` block completed.
 
 ## Plan-only fallback summary can misreport a successful plan
 
-**Status:** Open diagnostics limitation; observed 2026-08-27 in simulation-only
-`--sim-xml` plan-only runs.
+**Status:** Resolved 2026-08-27 for simulation-only `--sim-xml` plan-only runs.
 
 A successful `scripts/run_namo.py --sim --sim-xml ...` plan-only invocation can
 write `solution.yaml` with `success: true` and then write `summary.json` with
@@ -137,9 +136,18 @@ write `solution.yaml` with `success: true` and then write `summary.json` with
 summary. The top-level fallback summary writer sees no Runtime-written summary
 and emits its generic crash record.
 
-For this plan-only case, the fallback `summary.json` does not mean planning
-crashed. Read `solution.yaml` and the plan-only log lines for the planning
-result, and treat the contradictory fallback summary as a diagnostics defect.
-This deterministic explanation is scoped to the observed simulation-only
-plan-only path; it does not establish that the real-hardware Runtime path has
-the same behavior.
+Plan-only now retains the planning service's explicit success flag and failure
+reason, records one fresh-search diagnostics row, and writes its own terminal
+`summary.json` before returning. The summary reports `success` or
+`planning_failed`, uses `mode: sim_plan_only`, and includes the planner-reported
+time, simulation count, returned-push count, and artifact paths. The generic
+crash fallback sees that authoritative file and leaves it unchanged; the real
+Runtime summary path was not modified.
+
+`tests/test_plan_only_summary.py` pins success, contextual planning failure,
+explicit zero-push success, metric aggregation, and fallback non-overwrite.
+A simulation-only model/greedy-DFS verification on
+`real_test_envs/1push/1hop/env1` wrote matching successful `solution.yaml` and
+`summary.json` records with one returned push and one simulation. This closes
+the deterministic plan-only diagnostics defect; it is not a new real-hardware
+validation.

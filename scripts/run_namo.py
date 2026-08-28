@@ -618,15 +618,17 @@ def _emit_plan_only_solution_yaml(
     object_mapping: Optional[Dict[str, Dict[str, str]]] = None,
     planner_scene_xml: Optional[str] = None,
     outcome_override: Optional[str] = None,
-) -> None:
-    """Write solution.yaml from a planner-returned chain (plan-only mode).
+    success_override: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """Write and return the plan-only ``solution.yaml`` payload.
 
     The planner's NAMOPushSkill executes every primitive through the C++
     MuJoCo controller before deeming the chain a "plan". So a non-empty
     plan is the sim-success result — we record it as-is, no separate
     runtime execution / SimEnv pass needed (and the runtime's kinematic
     SimEnv physics doesn't match MuJoCo anyway, which is what was making
-    valid plans look like execution failures).
+    valid plans look like execution failures). ``success_override`` carries the
+    planner's explicit terminal result when action count is not the outcome.
     """
     plan_list: List[Dict[str, Any]] = []
     for sg in plan_subgoals:
@@ -635,7 +637,7 @@ def _emit_plan_only_solution_yaml(
             "edge_idx": int(getattr(sg, "edge_idx")) if hasattr(sg, "edge_idx") else None,
             "push_steps": int(getattr(sg, "push_steps")) if hasattr(sg, "push_steps") else None,
         })
-    success = bool(plan_list)
+    success = bool(plan_list) if success_override is None else bool(success_override)
     payload = {
         "success": success,
         "outcome": outcome_override
@@ -666,6 +668,95 @@ def _emit_plan_only_solution_yaml(
         f"sim_pushes_tried={sim_pushes_tried})",
         flush=True,
     )
+    return payload
+
+
+def _write_plan_only_summary(
+    args: Any,
+    recorder: Any,
+    solution_payload: Dict[str, Any],
+    algorithm_stats: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Write the authoritative terminal summary for a ``--sim-xml`` run.
+
+    Plan-only bypasses ``Runtime``, so Runtime cannot write its normal summary.
+    Recording the known planner outcome here prevents the generic crash
+    fallback from misclassifying a controlled success or planning failure.
+    """
+    if recorder is None or not getattr(recorder, "enabled", False):
+        return
+
+    stats = dict(solution_payload.get("search_stats") or {})
+    search_time_ms = max(0.0, float(stats.get("search_time_ms", 0.0) or 0.0))
+    simulations_used = max(0, int(stats.get("sim_pushes_tried", 0) or 0))
+    success = bool(solution_payload.get("success", False))
+    details = dict(algorithm_stats or {})
+    exec_mode = str(
+        details.get("exec_mode")
+        or getattr(args, "exec_mode", None)
+        or DEFAULT_EXEC_MODE
+    )
+    model_warmup_ms = max(
+        0.0, float(details.get("model_warmup_ms", 0.0) or 0.0)
+    )
+
+    recorder.record_plan(
+        {
+            "attempt_index": 0,
+            "attempt_seed": getattr(args, "shuffle_seed", None),
+            "search_time_ms": search_time_ms,
+            "planning_operation": "fresh_search",
+            "planning_wall_time_ms": search_time_ms,
+            "simulations_used": simulations_used,
+            "model_warmup_ms": model_warmup_ms,
+            "model_warmup_excluded_from_planning_time": model_warmup_ms > 0.0,
+            "success": success,
+            "subgoals_returned": int(stats.get("pushes_in_plan", 0) or 0),
+            "exec_mode": exec_mode,
+            "local_search": getattr(args, "local_search", None),
+            "best_first_prior": getattr(args, "best_first_prior", None),
+            "failure_kind": details.get("failure_kind"),
+        }
+    )
+
+    import datetime as _dt
+    import time as _time
+
+    now = _time.time()
+    artifacts = {"solution_yaml": "solution.yaml"}
+    planner_scene_xml = solution_payload.get("planner_scene_xml")
+    if planner_scene_xml:
+        artifacts["planner_scene_xml"] = str(planner_scene_xml)
+    payload = {
+        "run_name": recorder.root.name,
+        "outcome": "success" if success else "planning_failed",
+        "outcome_reason": str(
+            solution_payload.get("outcome")
+            or ("success" if success else "planner returned no plan")
+        ),
+        "ended_at_epoch": now,
+        "ended_at_utc": _dt.datetime.fromtimestamp(
+            now, tz=_dt.timezone.utc
+        ).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "mode": "sim_plan_only",
+        "strategy": solution_payload.get("strategy"),
+        "algorithm": solution_payload.get("algorithm"),
+        "exec_mode": exec_mode,
+        "local_search": getattr(args, "local_search", None),
+        "best_first_prior": getattr(args, "best_first_prior", None),
+        "shuffle_seed": getattr(args, "shuffle_seed", None),
+        "goal_target_cm": list(solution_payload.get("goal_cm") or []),
+        "totals": dict(recorder.totals),
+        "planning": dict(recorder.planning),
+        "plan_only": {
+            "pushes_returned": int(stats.get("pushes_in_plan", 0) or 0),
+            "search_time_ms": search_time_ms,
+            "simulations_used": simulations_used,
+            "artifacts": artifacts,
+        },
+        "scene_capture": {},
+    }
+    recorder.write_summary(payload)
 
 
 def detect_goal_from_camera(
@@ -1332,12 +1423,13 @@ def _run_plan_only_mode(args) -> int:
             ADVANCE_EXHAUSTED: "boundary exhausted",
             ADVANCE_NO_BOUNDARY: "no boundary left to open",
         }.get(status, "boundary produced no plan")
+        plan_success = status == ADVANCE_PLANNED and bool(plan_subgoals)
+        plan_failure_reason = boundary_outcome
         print(
             f"[run_namo plan-only] held-boundary status={status} "
             f"target={getattr(target, 'target_id', None)} pushes={len(plan_subgoals)}"
         )
     else:
-        boundary_outcome = None
         plan_subgoals = bridge.plan(
             observation=obs,
             robot_goal_cm=goal_cm,
@@ -1346,6 +1438,12 @@ def _run_plan_only_mode(args) -> int:
             failed_pushes=set(),
             **extra_kwargs,
         )
+        plan_success = bool(bridge.last_plan_success)
+        plan_failure_reason = bridge.last_plan_failure_reason
+        if bridge.last_plan_success is None:
+            plan_failure_reason = "planner did not return a result"
+        elif not plan_success and not plan_failure_reason:
+            plan_failure_reason = "planner returned no plan"
 
     recorder = getattr(args, "_diagnostics_recorder", None)
     if recorder is None or not getattr(recorder, "enabled", False):
@@ -1366,7 +1464,7 @@ def _run_plan_only_mode(args) -> int:
         diag_root.mkdir(parents=True, exist_ok=True)
         planner_scene_path = diag_root / "planner_scene.xml"
         planner_scene_path.write_text(bridge.last_xml_content)
-    _emit_plan_only_solution_yaml(
+    solution_payload = _emit_plan_only_solution_yaml(
         diag_root,
         goal_cm,
         algorithm=args.algorithm,
@@ -1376,7 +1474,14 @@ def _run_plan_only_mode(args) -> int:
         sim_pushes_tried=bridge.last_sim_pushes_tried,
         object_mapping=object_mapping,
         planner_scene_xml=planner_scene_path.name if planner_scene_path is not None else None,
-        outcome_override=boundary_outcome,
+        outcome_override=(None if plan_success else plan_failure_reason),
+        success_override=plan_success,
+    )
+    _write_plan_only_summary(
+        args,
+        recorder,
+        solution_payload,
+        algorithm_stats=bridge.last_algorithm_stats,
     )
 
     # If a plan was found, render the MP4 of the chain executing in MuJoCo
@@ -1405,7 +1510,7 @@ def _run_plan_only_mode(args) -> int:
                 file=sys.stderr,
             )
 
-    return 0 if plan_subgoals else 1
+    return 0 if plan_success else 1
 
 
 def run_automatic_mode(args):
