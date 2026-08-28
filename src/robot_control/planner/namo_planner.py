@@ -12,6 +12,7 @@ Now includes reachability checking:
 from __future__ import annotations
 
 import math
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
 
@@ -547,6 +548,8 @@ class NAMOPlanner(Planner):
         obs: Observation,
         reuse_kind: str,
         verification_time_ms: float,
+        planning_wall_time_ms: float,
+        simulations_used: int,
         success: bool,
         chain: List[PushSubgoal],
         failed_step_index: Optional[int],
@@ -569,6 +572,9 @@ class NAMOPlanner(Planner):
                 "attempt_seed": None,
                 "search_time_ms": verification_time_ms,
                 "cumulative_ms": self._total_planning_ms,
+                "planning_operation": "reuse_verification",
+                "planning_wall_time_ms": planning_wall_time_ms,
+                "simulations_used": int(simulations_used),
                 "success": success,
                 "subgoals_returned": len(chain) if success else 0,
                 "first_subgoal": first_subgoal,
@@ -605,6 +611,7 @@ class NAMOPlanner(Planner):
             # could verify by making the goal reachable while abandoning the
             # boundary being opened.
             held = self._load_active_target() if self._hold_region_target else None
+            planning_wall_start = time.perf_counter()
             result = self._bridge.verify_chain(
                 observation=obs,
                 robot_goal_cm=self._robot_goal_cm,
@@ -612,12 +619,17 @@ class NAMOPlanner(Planner):
                 target_points=list(held.target_samples_m) if held else None,
                 min_reachable=held.minimum_reachable() if held else None,
             )
+            planning_wall_time_ms = (
+                time.perf_counter() - planning_wall_start
+            ) * 1000.0
             self._plan_count += 1
             self._total_planning_ms += result.verification_time_ms
             self._record_reuse_diagnostics(
                 obs=obs,
                 reuse_kind=reuse_kind,
                 verification_time_ms=result.verification_time_ms,
+                planning_wall_time_ms=planning_wall_time_ms,
+                simulations_used=result.sim_pushes_tried,
                 success=result.success,
                 chain=result.verified_subgoals if result.success else chain,
                 failed_step_index=result.failed_step_index,
@@ -1092,6 +1104,9 @@ class NAMOPlanner(Planner):
                 "attempt_seed": None,
                 "search_time_ms": 0.0,
                 "cumulative_ms": self._total_planning_ms,
+                "planning_operation": "decision_only",
+                "planning_wall_time_ms": 0.0,
+                "simulations_used": 0,
                 "success": True,
                 "subgoals_returned": 0,
                 "first_subgoal": None,
@@ -1287,6 +1302,7 @@ class NAMOPlanner(Planner):
         attempt_seed: Optional[int],
         subgoals: Sequence[Any],
         success: bool,
+        planning_wall_time_ms: float,
         extra: Optional[Dict[str, Any]] = None,
     ) -> None:
         """One JSONL line per planning attempt, from either planning path.
@@ -1310,18 +1326,22 @@ class NAMOPlanner(Planner):
                     "edge_idx": getattr(sg0, "edge_idx", None),
                     "push_steps": getattr(sg0, "push_steps", None),
                 }
+            algorithm_stats = _filter_algorithm_stats_for_diagnostics(
+                self._bridge.last_algorithm_stats or {}
+            )
             record: Dict[str, Any] = {
                 "attempt_index": attempt_index,
                 "attempt_seed": attempt_seed,
                 "search_time_ms": self._bridge.last_search_time_ms,
                 "cumulative_ms": self._total_planning_ms,
+                "planning_operation": "fresh_search",
+                "planning_wall_time_ms": planning_wall_time_ms,
+                "simulations_used": int(algorithm_stats.get("simulations_used", 0)),
                 "success": bool(success),
                 "subgoals_returned": len(subgoals),
                 "first_subgoal": first_subgoal,
                 "blacklist_size_before": len(self._failed_pushes),
-                "algorithm_stats": _filter_algorithm_stats_for_diagnostics(
-                    self._bridge.last_algorithm_stats or {}
-                ),
+                "algorithm_stats": algorithm_stats,
                 "robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
                 "object_poses_cm": {
                     name: [o.x, o.y, o.theta] for name, o in obs.objects.items()
@@ -1339,6 +1359,7 @@ class NAMOPlanner(Planner):
         drives the same loop from a separate process.
         """
         before = self._load_active_target()
+        planning_wall_start = time.perf_counter()
         plan, target, status, released = advance_boundary(
             self._bridge,
             obs,
@@ -1350,6 +1371,9 @@ class NAMOPlanner(Planner):
             max_advances=self.MAX_BOUNDARY_ADVANCES_PER_PLAN,
             planner_kwargs=self._held_mode_planner_kwargs(),
         )
+        planning_wall_time_ms = (
+            time.perf_counter() - planning_wall_start
+        ) * 1000.0
         self._plan_count += 1
         self._total_planning_ms += self._bridge.last_search_time_ms
 
@@ -1364,6 +1388,7 @@ class NAMOPlanner(Planner):
             attempt_seed=self._shuffle_seed,
             subgoals=list(getattr(plan, "subgoals", []) or []),
             success=(status == ADVANCE_PLANNED),
+            planning_wall_time_ms=planning_wall_time_ms,
             extra={
                 "origin": "region_target",
                 "boundary_status": str(status),
@@ -1449,6 +1474,7 @@ class NAMOPlanner(Planner):
                 # depth and would delete 2-chains. See reachability_filter's
                 # module docstring. Recomputed per attempt because objects move.
                 blocked = self._unreachable_contact_points(obs)
+                planning_wall_start = time.perf_counter()
                 subgoals = self._bridge.plan(
                     observation=obs,
                     robot_goal_cm=self._robot_goal_cm,
@@ -1456,6 +1482,9 @@ class NAMOPlanner(Planner):
                     failed_pushes=self._failed_pushes | blocked,
                     **self._search_planner_kwargs(effective_seed),
                 )
+                planning_wall_time_ms = (
+                    time.perf_counter() - planning_wall_start
+                ) * 1000.0
 
                 # Accumulate planning time
                 self._plan_count += 1
@@ -1486,6 +1515,7 @@ class NAMOPlanner(Planner):
                     attempt_seed=effective_seed,
                     subgoals=list(subgoals or []),
                     success=bool(subgoals),
+                    planning_wall_time_ms=planning_wall_time_ms,
                     extra={"origin": "fresh_plan"},
                 )
 

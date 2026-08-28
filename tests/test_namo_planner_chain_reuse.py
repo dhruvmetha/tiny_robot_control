@@ -6,6 +6,8 @@ import types
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 
 def _load_module(module_name: str):
     """Import a robot_control module, standing in for optional dependencies.
@@ -70,6 +72,14 @@ class _FakeBridge:
 
     def analyze_reachability(self, **kwargs):
         return {"goal_reachable": False, "objects": {}}
+
+
+class _Recorder:
+    def __init__(self):
+        self.records = []
+
+    def record_plan(self, payload):
+        self.records.append(payload)
 
 
 def _obs() -> Observation:
@@ -202,3 +212,61 @@ def test_mpc_falls_back_to_full_planning_on_later_suffix_failure(monkeypatch):
     assert replanned == b1
     assert len(bridge.plan_calls) == 2
     assert bridge.verify_calls == [[a2, a3]]
+
+
+def test_fresh_search_measures_outer_wall_time(monkeypatch):
+    planner, bridge = _make_planner(monkeypatch)
+    recorder = _Recorder()
+    planner.set_diagnostics_recorder(recorder)
+    planner._unreachable_contact_points = lambda _obs: set()
+    bridge.plan_results = [[PushSubgoal("obj_1", 4, 3)]]
+    bridge.last_algorithm_stats = {"simulation_budget_used_total": 5}
+    clock = iter([10.0, 10.0125])
+    monkeypatch.setattr(
+        planner_mod,
+        "time",
+        SimpleNamespace(perf_counter=lambda: next(clock)),
+        raising=False,
+    )
+
+    planner._generate_plan(_obs())
+
+    assert recorder.records[0]["planning_operation"] == "fresh_search"
+    assert recorder.records[0]["planning_wall_time_ms"] == pytest.approx(12.5)
+    assert recorder.records[0]["simulations_used"] == 5
+
+
+def test_failed_suffix_records_its_simulation_and_outer_time(monkeypatch):
+    planner, bridge = _make_planner(monkeypatch)
+    recorder = _Recorder()
+    planner.set_diagnostics_recorder(recorder)
+    a1 = PushSubgoal("obj_1", 4, 3)
+    a2 = PushSubgoal("obj_1", 8, 2)
+    planner._pending_reuse_chain = [a1, a2]
+    planner._pending_reuse_origin = "fresh_plan"
+    bridge.verify_results = [SimpleNamespace(
+        success=False,
+        verified_subgoals=[],
+        sim_pushes_tried=1,
+        failed_step_index=None,
+        failure_reason="goal_not_reachable_after_chain",
+        goal_reachable_after=False,
+        verification_time_ms=5.0,
+        planner_scene_xml="<mujoco/>",
+        object_mapping={"real_to_sim": {}, "sim_to_real": {}},
+    )]
+    clock = iter([20.0, 20.004])
+    monkeypatch.setattr(
+        planner_mod,
+        "time",
+        SimpleNamespace(perf_counter=lambda: next(clock)),
+        raising=False,
+    )
+
+    reused = planner._try_pending_chain_reuse(_obs())
+
+    assert reused is False
+    assert recorder.records[0]["planning_operation"] == "reuse_verification"
+    assert recorder.records[0]["planning_wall_time_ms"] == pytest.approx(4.0)
+    assert recorder.records[0]["simulations_used"] == 1
+    assert recorder.records[0]["search_time_ms"] == 5.0
