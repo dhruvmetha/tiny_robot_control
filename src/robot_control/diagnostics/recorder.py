@@ -48,9 +48,9 @@ class DiagnosticsRecorder:
       write_summary(payload)
       close()
 
-    Aggregated counters (read via .totals) accumulate during the run; the
-    Runtime is expected to fold them into the summary before calling
-    write_summary().
+    Aggregated counters (read via .totals) and planning metrics (read via
+    .planning) accumulate during the run; the Runtime is expected to fold
+    them into the summary before calling write_summary().
     """
 
     JSONL_FILES = (
@@ -82,6 +82,14 @@ class DiagnosticsRecorder:
             "pushes_stuck": 0,
             "connectivity_transitions": 0,
             "offline_during_plan_count": 0,
+        }
+        self.planning: Dict[str, Any] = {
+            "wall_time_ms_total": 0.0,
+            "wall_time_ms_fresh_search": 0.0,
+            "wall_time_ms_reuse_verification": 0.0,
+            "simulations_used_total": 0,
+            "simulations_used_fresh_search": 0,
+            "simulations_used_reuse_verification": 0,
         }
 
         # Sequential IDs assigned as events come in.
@@ -252,7 +260,20 @@ class DiagnosticsRecorder:
             plan_id = self._plan_id
         full = {"plan_id": plan_id, **_now_pair(), **payload}
         self._write_jsonl("plans.jsonl", full)
-        self.totals["plan_calls"] += 1
+        operation = payload.get("planning_operation")
+        with self._lock:
+            self.totals["plan_calls"] += 1
+            if operation in {"fresh_search", "reuse_verification"}:
+                wall_time_ms = max(
+                    0.0, float(payload.get("planning_wall_time_ms", 0.0) or 0.0)
+                )
+                simulations_used = max(
+                    0, int(payload.get("simulations_used", 0) or 0)
+                )
+                self.planning["wall_time_ms_total"] += wall_time_ms
+                self.planning["simulations_used_total"] += simulations_used
+                self.planning[f"wall_time_ms_{operation}"] += wall_time_ms
+                self.planning[f"simulations_used_{operation}"] += simulations_used
         if self._verbose:
             print(f"[DIAG] plan #{plan_id} recorded (success={payload.get('success')})", flush=True)
         return plan_id
