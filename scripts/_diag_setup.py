@@ -26,6 +26,9 @@ import yaml
 from robot_control.diagnostics import DiagnosticsRecorder, Tee
 
 
+ROBOT_CONTROL_REPO = Path(__file__).resolve().parent.parent
+
+
 # --------------------------------------------------------------------- template
 
 
@@ -63,20 +66,52 @@ def resolve_run_name(template: str, args: argparse.Namespace) -> str:
         ) from None
 
 
-def _git_status() -> Tuple[str, bool]:
-    """Return (short_commit_or_nogit, dirty_bool). Never raises."""
+def _git_snapshot(repo: Optional[Path]) -> Dict[str, Any]:
+    """Return one repository's revision state without raising."""
+    unavailable: Dict[str, Any] = {
+        "commit": "nogit",
+        "dirty": False,
+        "branch": "unknown",
+        "available": False,
+    }
+    if repo is None:
+        return unavailable
+
     try:
-        commit = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=True, timeout=2.0,
-        ).stdout.strip()
-        dirty = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True, text=True, check=True, timeout=2.0,
-        ).stdout.strip() != ""
-        return commit, dirty
-    except Exception:
-        return "nogit", False
+        def git(*args: str) -> str:
+            return subprocess.run(
+                ["git", "-C", str(repo), *args],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=2.0,
+            ).stdout.strip()
+
+        return {
+            "commit": git("rev-parse", "--short", "HEAD"),
+            "dirty": git("status", "--porcelain") != "",
+            "branch": git("rev-parse", "--abbrev-ref", "HEAD"),
+            "available": True,
+        }
+    except (OSError, subprocess.SubprocessError):
+        return unavailable
+
+
+def _repository_snapshots() -> Dict[str, Dict[str, Any]]:
+    """Snapshot the paired runtime repositories used by a real experiment."""
+    backend = os.environ.get("NAMO_REPO")
+    return {
+        "robot_control": _git_snapshot(ROBOT_CONTROL_REPO),
+        "namo_cpp": _git_snapshot(
+            Path(backend).expanduser() if backend else None
+        ),
+    }
+
+
+def _git_status() -> Tuple[str, bool]:
+    """Return the robot-control (short commit, dirty) compatibility tuple."""
+    snapshot = _git_snapshot(ROBOT_CONTROL_REPO)
+    return str(snapshot["commit"]), bool(snapshot["dirty"])
 
 
 # --------------------------------------------------------------- bootstrap entry
@@ -100,6 +135,10 @@ def bootstrap_diagnostics(
         raise SystemExit(
             "Error: --run-name is required when --diag-path is set."
         )
+
+    # Capture source state before creating output inside this repository.
+    # Otherwise the run directory itself makes a clean checkout look dirty.
+    repositories = _repository_snapshots()
 
     # Resolve template
     try:
@@ -130,7 +169,16 @@ def bootstrap_diagnostics(
 
     # Write config.json now — captures pre-run state so even an immediate
     # crash leaves a reproducible record of what was being attempted.
-    recorder.write_config(_build_config_payload(args, resolved, run_dir))
+    recorder.write_config(
+        _build_config_payload(args, resolved, run_dir, repositories)
+    )
+
+    if not repositories["namo_cpp"]["available"]:
+        print(
+            "[DIAG] WARNING: NAMO backend Git provenance unavailable; "
+            "set NAMO_REPO to the active namo_cpp checkout before a formal run.",
+            flush=True,
+        )
 
     print(f"[DIAG] Diagnostics enabled: {run_dir}", flush=True)
     return recorder, log_file
@@ -140,22 +188,20 @@ def _build_config_payload(
     args: argparse.Namespace,
     resolved_run_name: str,
     run_dir: Path,
+    repositories: Dict[str, Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """Snapshot CLI args + parsed YAMLs + git state for reproducibility."""
+    """Snapshot CLI args, parsed YAMLs, and paired source provenance."""
     now = time.time()
     iso = _dt.datetime.fromtimestamp(now, tz=_dt.timezone.utc).isoformat(
         timespec="milliseconds"
     ).replace("+00:00", "Z")
 
-    git_commit, git_dirty = _git_status()
-    branch = "unknown"
-    try:
-        branch = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True, text=True, check=True, timeout=2.0,
-        ).stdout.strip()
-    except Exception:
-        pass
+    robot_git = repositories["robot_control"]
+    compatibility_git = {
+        "commit": robot_git["commit"],
+        "dirty": robot_git["dirty"],
+        "branch": robot_git["branch"],
+    }
 
     # Snapshot YAML configs if present.
     config_yaml = None
@@ -179,7 +225,8 @@ def _build_config_payload(
         "run_name": resolved_run_name,
         "started_at_epoch": now,
         "started_at_utc": iso,
-        "git": {"commit": git_commit, "dirty": git_dirty, "branch": branch},
+        "git": compatibility_git,
+        "repositories": repositories,
         "command_line": [shlex.quote(a) for a in sys.argv],
         "args": _args_to_dict(args),
         "config_yaml_path": getattr(args, "config", None),
