@@ -119,10 +119,12 @@ children or backtrack to an earlier committed simulator state.
 
 A no-op or jammed candidate is blacklisted at the unchanged state and still
 counts as a simulation. A candidate that moves and then reports a jam is a real
-child state, so it is committed. The default best-first horizon caps the plan at
-two committed pushes; the command makes that cap explicit. This is not the
-camera-reactive held-target mode, so do not pass `--hold-region-target` or
-`--active-target`.
+child state, so it is committed. `--best-first-hmax 2` defines the candidate
+push-action horizon presented to the ranker; it does not cap the number of
+committed greedy decisions. The rollout continues until the goal becomes
+reachable or an existing semantic/simulation-budget terminal condition fires.
+This is not the camera-reactive held-target mode, so do not pass
+`--hold-region-target` or `--active-target`.
 
 For a formal model-prior greedy-DFS trial, use a distinct result arm:
 
@@ -150,7 +152,8 @@ PYTHONPATH="$NAMO_REPO/build_python:src" \
   --scorer-ckpt /home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt \
   --exec-mode greedy_dfs --best-first-hmax 2 \
   --goal 11.0 67.6 --no-shuffle-edges --max-chain-depth 2 \
-  --shuffle-seed "$seed" --record-video --capture-scene \
+  --max-planning-retries 1 --shuffle-seed "$seed" \
+  --record-video --capture-scene \
   --diag-path "$diag_path" --run-name "$trial"
 ```
 
@@ -160,6 +163,57 @@ including same-state candidates rejected as no-ops or jams.
 After planning, physical execution uses the existing MPC suffix verification;
 this mode changes how the simulator constructs the initial plan, not how a
 returned push is executed or checked against the next camera observation.
+
+## Greedy policy model command
+
+`greedy_policy` is a separate unheld Full NAMO arm. Each planning call rebuilds
+the graph from the latest camera scene, selects the current boundary, ranks its
+candidate pushes, and returns exactly one highest-ranked moving push. The robot
+executes that push once. The runtime then discards the simulated child, any
+boundary identity, and all chain-reuse state; it observes the camera and starts
+a completely fresh policy decision. This is not held-target `reactive` mode and
+does not verify or reuse a suffix.
+
+There is no two-real-push cap. The loop ends when the live goal is reachable
+and final navigation completes, no executable moving action remains, physical
+execution fails under the existing bounded failure handling, connectivity is
+lost, or the operator stops the run.
+
+Use a distinct result arm:
+
+```bash
+axis=hmax2
+build_id=hard_004
+trial_index=1
+trial="trial${trial_index}"
+seed=$((trial_index - 1))
+diag_path="real_exp/results/formal_v1/${axis}/${build_id}/model_greedy_policy"
+
+cd ../namo_cpp
+set -a
+. env.robotlearning.sh
+set +a
+cd ../robot_control
+export NAMO_REPO=/home/dhruv/projects_dhruv/namo/namo_cpp
+
+NAMO_PUSH_WHEEL_LOG="${diag_path}/${trial}/push_phases.jsonl" \
+PYTHONPATH="$NAMO_REPO/build_python:src" \
+/home/dhruv/miniconda3/envs/namo312/bin/python -u scripts/run_namo.py \
+  --config config/real.yaml --camera-service tcp://localhost:5556 \
+  --robot-model car --algorithm full_namo \
+  --local-search best_first --best-first-prior model \
+  --scorer-ckpt /home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt \
+  --exec-mode greedy_policy --best-first-hmax 2 \
+  --goal 11.0 67.6 --no-shuffle-edges --max-chain-depth 2 \
+  --max-planning-retries 1 --shuffle-seed "$seed" \
+  --record-video --capture-scene \
+  --diag-path "$diag_path" --run-name "$trial"
+```
+
+The model-prior decision is deterministic for one observed state, so a normal
+empty result is final and is not retried with other seeds inside the same
+trial. Exceptions may still retry because they did not produce a planner
+answer. Formal trial labels and seeds remain `trial1`/0 through `trial5`/4.
 
 Simulation reachability is a transition to the final physical navigation, not
 a real-trial success condition. Once the live scene has an open path, the

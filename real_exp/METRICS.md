@@ -65,6 +65,28 @@ fresh replanning with suffix reuse.
 
 Report `model_warmup_ms` separately when describing system startup overhead. Never add it to the paper planning-time metric.
 
+## Greedy mode accounting
+
+`greedy_dfs` writes one `fresh_search` record for its complete simulator
+rollout. `--best-first-hmax 2` controls candidate push-action depth, not the
+number of committed decisions in that rollout. Its `simulations_used` includes
+all moving commits plus rejected no-op/jam candidates.
+
+`greedy_policy` writes one `fresh_search` record for every camera-based policy
+decision. A successful decision has `algorithm_stats.policy_outcome` equal to
+`policy_step_ready` and returns exactly one physical push subgoal. After that
+push, the next observation creates another `fresh_search`; it does not create a
+`reuse_verification` record because the policy has no simulated suffix.
+
+For either arm, use the same summary totals defined above. In particular,
+`wall_time_ms_total` sums every measured planning decision and
+`simulations_used_total` sums every simulator transition across those
+decisions. `totals.pushes_attempted` and `totals.pushes_succeeded` are physical
+robot counts and must not be substituted for simulator counts. Model warmup is
+recorded once per process, remains separate, and is excluded from every
+planning wall-time field. Success still requires final camera-confirmed
+navigation; returning a `policy_step_ready` action is not trial success.
+
 ## Completed easy trial recorded before this schema
 
 `results/hmax2/easy_020/model_search/trial1` is the accepted completed easy
