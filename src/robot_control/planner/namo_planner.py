@@ -38,7 +38,10 @@ from robot_control.planner.region_target import (
     RegionOpeningTarget,
     advance_boundary,
 )
-from robot_control.planner.search_config import LocalSearchConfig
+from robot_control.planner.search_config import (
+    LocalSearchConfig,
+    retry_can_change_an_empty_result,
+)
 from robot_control.planner.namo_bridge import NAMOPlanBridge
 from robot_control.planner.reachability_filter import (
     unreachable_contact_points,
@@ -79,6 +82,8 @@ _DIAG_SAFE_STAT_KEYS = frozenset({
     # the push is one of those, and for a crossed trial matrix a row without it
     # is a row whose arm has to be recovered from a command string.
     "exec_mode",
+    "policy_outcome",
+    "failure_kind",
     "resolved_target",
     "simulations_used",
 })
@@ -923,6 +928,17 @@ class NAMOPlanner(Planner):
             self._current_idx = 0
             self._plan_generated = False
 
+            if self._local_search.uses_greedy_policy:
+                self._pending_reuse_chain = None
+                self._pending_reuse_origin = None
+                self._committed_chain = []
+                self._committed_chain_origin = None
+                print(
+                    "[NAMOPlanner] Greedy policy step complete; replanning from "
+                    "fresh camera observation"
+                )
+                return
+
             if self._is_goal_reachable(obs):
                 print(
                     "[NAMOPlanner] Goal is NOW REACHABLE - skipping committed-chain reuse"
@@ -1476,8 +1492,10 @@ class NAMOPlanner(Planner):
         # instead of a canned "possible causes" list.
         aggregate_rejections: Dict[str, int] = {}
         aggregate_primitives_attempted = 0
+        attempts_made = 0
 
         for attempt in range(max_retries):
+            attempts_made = attempt + 1
             # Compute shuffle seed: combine replan attempt (execution retry)
             # with planning attempt (no-solution retry) for maximum variation
             combined_attempt = self._replan_attempt * max_retries + attempt
@@ -1594,6 +1612,14 @@ class NAMOPlanner(Planner):
                     f"[NAMOPlanner] Planning returned NO SUBGOALS "
                     f"(attempt {attempt + 1}/{max_retries})"
                 )
+                if not retry_can_change_an_empty_result(
+                    self._local_search, self._shuffle_edges
+                ):
+                    print(
+                        "[NAMOPlanner] Empty result is deterministic for this "
+                        "observed state; skipping shuffle-seed retries"
+                    )
+                    break
 
             except Exception as e:
                 print(
@@ -1607,7 +1633,7 @@ class NAMOPlanner(Planner):
         # the planner rejected every push it considered. Counts are aggregated
         # across all retry attempts in this plan() call.
         print(
-            f"[NAMOPlanner] All {max_retries} planning attempts failed"
+            f"[NAMOPlanner] All {attempts_made} planning attempts failed"
         )
         # Reminder to correlate with robot connectivity state. Planning runs
         # in sim regardless of robot state, but if the robot is offline,
@@ -1623,7 +1649,7 @@ class NAMOPlanner(Planner):
         else:
             print(
                 f"[NAMOPlanner]   {aggregate_primitives_attempted} primitives enumerated "
-                f"across {max_retries} attempts; breakdown:"
+                f"across {attempts_made} attempts; breakdown:"
             )
             # Categorize the keys so the output reads top-down by severity.
             outcome_order = [

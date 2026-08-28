@@ -88,6 +88,17 @@ def test_greedy_dfs_forwards_whole_problem_mode():
     }
 
 
+def test_greedy_policy_forwards_whole_problem_mode():
+    cfg = LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="uniform",
+        exec_mode="greedy_policy",
+    )
+
+    assert cfg.as_planner_kwargs()["full_namo_exec_mode"] == "greedy_policy"
+    assert cfg.uses_greedy_policy
+
+
 def test_optional_protocol_keys_are_omitted_unless_set():
     """Omitted means 'use namo_cpp's canonical value', not 'use ours'."""
     kwargs = LocalSearchConfig(

@@ -201,6 +201,56 @@ def test_mpc_retries_single_step_chain_before_fresh_replan(monkeypatch):
     assert bridge.verify_calls == [[a1]]
 
 
+def test_greedy_policy_replans_from_next_observation_without_reuse(monkeypatch):
+    planner, bridge = _make_planner(monkeypatch)
+    planner._local_search = planner_mod.LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="uniform",
+        exec_mode="greedy_policy",
+    )
+    a1 = PushSubgoal("obj_1", 4, 3)
+    a2 = PushSubgoal("obj_1", 8, 2)
+    first_obs = _obs()
+    second_obs = _obs()
+    bridge.plan_results = [[a1], [a2]]
+    bridge.verify_results = [_success_result([a1])]
+
+    assert planner.plan(first_obs) == a1
+    planner.notify_subgoal_done(second_obs, failed=False)
+    assert planner.plan(second_obs) == a2
+
+    assert len(bridge.plan_calls) == 2
+    assert bridge.plan_calls[1]["observation"] is second_obs
+    assert bridge.verify_calls == []
+
+
+def test_best_first_empty_result_is_not_retried_with_other_seeds(monkeypatch):
+    planner, bridge = _make_planner(monkeypatch)
+    planner._local_search = planner_mod.LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="model",
+        scorer_ckpt="model.ckpt",
+        exec_mode="greedy_policy",
+    )
+    planner._max_planning_retries = 5
+    planner._unreachable_contact_points = lambda _obs: set()
+    bridge.plan_results = [[], [], [], [], []]
+
+    planner._generate_plan(_obs())
+
+    assert len(bridge.plan_calls) == 1
+
+
+def test_policy_terminal_stats_survive_diagnostic_filter():
+    stats = planner_mod._filter_algorithm_stats_for_diagnostics({
+        "policy_outcome": "policy_step_ready",
+        "failure_kind": "region_path_exhausted",
+    })
+
+    assert stats["policy_outcome"] == "policy_step_ready"
+    assert stats["failure_kind"] == "region_path_exhausted"
+
+
 def test_mpc_falls_back_to_full_planning_on_later_suffix_failure(monkeypatch):
     planner, bridge = _make_planner(monkeypatch)
     a1 = PushSubgoal("obj_1", 4, 3)

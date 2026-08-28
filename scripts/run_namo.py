@@ -2035,9 +2035,13 @@ def main():
              "candidates at the live robot state and push the top one; "
              "greedy_dfs = in simulation, commit one moving argmax child, "
              "rebuild Full NAMO's region graph, and repeat without sibling "
-             "backtracking. Explicit search/reactive mode-arm runs require "
+             "backtracking until a complete rollout is found; greedy_policy = "
+             "return one moving argmax child for real execution, then replan "
+             "from the next camera observation. "
+             "Explicit search/reactive mode-arm runs require "
              "--hold-region-target. greedy_dfs requires --algorithm full_namo, "
-             "--local-search best_first, and no held-target flag.",
+             "--local-search best_first, and no held-target flag; greedy_policy "
+             "has the same unheld requirements.",
     )
     parser.add_argument(
         "--best-first-prior",

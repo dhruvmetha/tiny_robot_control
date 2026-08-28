@@ -16,6 +16,7 @@ from robot_control.planner.search_config import (
     DEFAULT_LOCAL_SEARCH,
     EXEC_MODE_CHOICES,
     GREEDY_DFS_EXEC_MODE,
+    GREEDY_POLICY_EXEC_MODE,
     LOCAL_SEARCH_CHOICES,
     REACTIVE_EXEC_MODE,
     SEARCH_EXEC_MODE,
@@ -49,4 +50,5 @@ __all__ = [
     "SEARCH_EXEC_MODE",
     "REACTIVE_EXEC_MODE",
     "GREEDY_DFS_EXEC_MODE",
+    "GREEDY_POLICY_EXEC_MODE",
 ]

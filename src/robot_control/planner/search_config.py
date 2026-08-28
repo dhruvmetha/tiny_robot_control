@@ -26,10 +26,11 @@ BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 # Which decision rule reads the ranked pool. `search` pops a priority queue and
 # can back up. `reactive` takes the argmax at the live state in front of the
 # robot. `greedy_dfs` belongs to the whole-problem Full NAMO planner: it commits
-# one moving argmax simulation, rebuilds the region graph from that simulated
-# state, and never returns to sibling children of an earlier state.
+# moving argmax simulations until it has a complete rollout. `greedy_policy`
+# returns after one moving argmax simulation so robot_control can execute it,
+# observe the camera, and replan from the new real state.
 #
-# The second one exists because the sim-to-real gap attacks lookahead
+# Reactive execution exists because the sim-to-real gap attacks lookahead
 # specifically: a real block pushed off-centre keeps rotating, 2.13 to 2.42
 # degrees per cm of travel at corner contacts, where the simulator squares it
 # back up. After one real push a block sat 27 degrees off the predicted pose, so
@@ -42,10 +43,15 @@ BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 SEARCH_EXEC_MODE = "search"
 REACTIVE_EXEC_MODE = "reactive"
 GREEDY_DFS_EXEC_MODE = "greedy_dfs"
+GREEDY_POLICY_EXEC_MODE = "greedy_policy"
+UNHELD_GREEDY_EXEC_MODES = (
+    GREEDY_DFS_EXEC_MODE,
+    GREEDY_POLICY_EXEC_MODE,
+)
 EXEC_MODE_CHOICES = (
     SEARCH_EXEC_MODE,
     REACTIVE_EXEC_MODE,
-    GREEDY_DFS_EXEC_MODE,
+    *UNHELD_GREEDY_EXEC_MODES,
 )
 DEFAULT_EXEC_MODE = SEARCH_EXEC_MODE
 
@@ -79,7 +85,7 @@ class LocalSearchConfig:
                 f"Unknown exec_mode {self.exec_mode!r}. "
                 f"Valid: {list(EXEC_MODE_CHOICES)}"
             )
-        if (self.uses_reactive or self.uses_greedy_dfs) and not self.uses_best_first:
+        if (self.uses_reactive or self.uses_unheld_greedy) and not self.uses_best_first:
             # namo_cpp refuses this too, but only once the service is called
             # mid-run. Reactive returns the argmax of a ranked pool and
             # region_bfs builds none, it sweeps every edge and depth in its own
@@ -126,6 +132,14 @@ class LocalSearchConfig:
     def uses_greedy_dfs(self) -> bool:
         return self.exec_mode == GREEDY_DFS_EXEC_MODE
 
+    @property
+    def uses_greedy_policy(self) -> bool:
+        return self.exec_mode == GREEDY_POLICY_EXEC_MODE
+
+    @property
+    def uses_unheld_greedy(self) -> bool:
+        return self.exec_mode in UNHELD_GREEDY_EXEC_MODES
+
     def as_boundary_kwargs(self) -> Dict[str, Any]:
         """The extra keys `solve_boundary_from_xml` names, on top of the search ones.
 
@@ -145,7 +159,7 @@ class LocalSearchConfig:
             "full_namo_local_search": self.local_search,
             "best_first_prior": self.best_first_prior,
         }
-        if self.uses_greedy_dfs:
+        if self.uses_unheld_greedy:
             kwargs["full_namo_exec_mode"] = self.exec_mode
         if self.scorer_ckpt:
             kwargs["scorer_ckpt"] = self.scorer_ckpt
@@ -220,9 +234,10 @@ SCORER_GOAL_STRATEGY = "scorer"
 # since it can only be reached by naming it, but the check reads the config
 # too so a programmatic caller cannot slip a reactive config past it.
 #
-# `greedy_dfs` is deliberately the opposite route: FullNAMOPlanner owns it and
-# reads `full_namo_exec_mode` from plan_from_xml. It must not enter held mode,
-# where solve_boundary_from_xml would reject it as an unknown boundary mode.
+# The unheld greedy modes are deliberately the opposite route: FullNAMOPlanner
+# owns them and reads `full_namo_exec_mode` from plan_from_xml. They must not
+# enter held mode, where solve_boundary_from_xml would reject them as unknown
+# boundary modes.
 EXEC_MODE_REQUIRES_HELD_BOUNDARY = True
 
 
@@ -244,21 +259,23 @@ def check_search_reaches_planner(
     before resolving the default; a caller that cannot know leaves it False and
     gets the pre-existing behaviour.
     """
-    if config.uses_greedy_dfs:
+    if config.uses_unheld_greedy:
         if held_boundary:
             raise ValueError(
-                "--exec-mode greedy_dfs runs inside the whole-problem Full NAMO "
+                f"--exec-mode {config.exec_mode} runs inside the whole-problem Full NAMO "
                 "planner, without --hold-region-target. Remove "
                 "--hold-region-target/--active-target so every committed "
-                "simulated push is followed by a fresh region-graph rebuild."
+                "policy step uses an unheld region-graph selection."
             )
         if algorithm not in BEST_FIRST_AWARE_ALGORITHMS:
             raise ValueError(
-                "--exec-mode greedy_dfs requires --algorithm full_namo: only "
-                "FullNAMOPlanner owns the commit-and-rebuild loop."
+                f"--exec-mode {config.exec_mode} requires --algorithm full_namo: "
+                "only FullNAMOPlanner owns the commit-and-rebuild loop."
             )
 
-    mode_chosen = (exec_mode_named or config.uses_reactive) and not config.uses_greedy_dfs
+    mode_chosen = (
+        exec_mode_named or config.uses_reactive
+    ) and not config.uses_unheld_greedy
     if mode_chosen and EXEC_MODE_REQUIRES_HELD_BOUNDARY and not held_boundary:
         if config.uses_reactive:
             raise ValueError(
@@ -348,18 +365,19 @@ def retry_can_change_an_empty_result(
 ) -> bool:
     """Can re-running with a new shuffle seed produce a different answer?
 
-    A planning retry varies exactly one thing, `shuffle_seed`, which reorders
-    candidate enumeration. `best_first` orders its queue by the ranker's score
-    and never reads the seed, so an honest empty result is *the* answer and
-    every retry re-derives it. Measured on hardware 2026-08-22: three retries
-    on one scene took 119.8 s, 115.6 s and 115.7 s and all returned no plan.
+    A planning retry varies exactly one thing, `shuffle_seed`. Model-prior
+    best-first orders its queue by deterministic ranker scores, so an honest
+    empty result is *the* answer and every retry re-derives it. Measured on
+    hardware 2026-08-22: three retries on one scene took 119.8 s, 115.6 s and
+    115.7 s and all returned no plan. Uniform best-first does consume the seed
+    when assigning priorities, so a retry can change that arm's result.
 
-    Turning edge shuffling off fixes the enumeration order for any search, with
-    the same consequence.
+    For non-best-first search, turning edge shuffling off fixes candidate
+    enumeration and has the same deterministic consequence.
 
     This says nothing about retrying after an *exception*. A crashed attempt
     has produced no answer at all, so trying again is still worth it.
     """
     if config.uses_best_first:
-        return False
+        return config.best_first_prior == "uniform"
     return bool(shuffle_edges)
