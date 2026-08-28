@@ -68,6 +68,7 @@ from robot_control.planner.namo_planner import NAMOPlanner
 
 MODE_SEARCH = "search"
 MODE_REACTIVE = "reactive"
+MODE_GREEDY_DFS = "greedy_dfs"
 
 CKPT = "/models/HY5U_s2.ckpt"
 
@@ -99,6 +100,19 @@ def _reactive(**overrides):
             "best_first_prior": "model",
             "scorer_ckpt": CKPT,
             "exec_mode": MODE_REACTIVE,
+            **overrides,
+        }
+    )
+
+
+def _greedy_dfs(**overrides):
+    """A valid whole-problem greedy DFS selection."""
+    return LocalSearchConfig(
+        **{
+            "local_search": "best_first",
+            "best_first_prior": "model",
+            "scorer_ckpt": CKPT,
+            "exec_mode": MODE_GREEDY_DFS,
             **overrides,
         }
     )
@@ -259,6 +273,53 @@ def test_reactive_on_the_sweeping_search_refuses():
     assert "best_first" in str(excinfo.value)
 
 
+def test_greedy_dfs_is_an_unheld_full_namo_mode():
+    config = _greedy_dfs()
+
+    check_search_reaches_planner(
+        BEST_FIRST_ALGORITHM,
+        PRIMITIVE_STRATEGY,
+        config,
+        held_boundary=WHOLE_PROBLEM,
+        exec_mode_named=True,
+    )
+
+    assert config.as_planner_kwargs()["full_namo_exec_mode"] == MODE_GREEDY_DFS
+
+
+def test_greedy_dfs_refuses_held_target_state():
+    with pytest.raises(ValueError) as excinfo:
+        check_search_reaches_planner(
+            BEST_FIRST_ALGORITHM,
+            PRIMITIVE_STRATEGY,
+            _greedy_dfs(),
+            held_boundary=HELD,
+            exec_mode_named=True,
+        )
+
+    assert "without --hold-region-target" in str(excinfo.value)
+
+
+def test_greedy_dfs_refuses_non_full_namo():
+    with pytest.raises(ValueError, match="full_namo"):
+        check_search_reaches_planner(
+            SWEEP_ALGORITHM,
+            PRIMITIVE_STRATEGY,
+            _greedy_dfs(),
+            held_boundary=WHOLE_PROBLEM,
+            exec_mode_named=True,
+        )
+
+
+def test_greedy_dfs_requires_best_first():
+    with pytest.raises(ValueError, match="best_first"):
+        LocalSearchConfig(
+            local_search="region_bfs",
+            best_first_prior="uniform",
+            exec_mode=MODE_GREEDY_DFS,
+        )
+
+
 @pytest.mark.parametrize("mode", ["policy", "argmax", "reactve", "", "Reactive"])
 def test_an_unknown_mode_refuses(mode):
     """Anything outside the vocabulary is a mistake, not a synonym for the default."""
@@ -300,6 +361,17 @@ def test_the_banner_always_names_the_mode(algorithm, config, held):
     assert "exec mode:" in line
     expected = config.exec_mode if held else MODE_SEARCH
     assert f"exec mode: {expected}" in line
+
+
+def test_greedy_dfs_banner_names_the_effective_mode():
+    line = describe_effective_search(
+        BEST_FIRST_ALGORITHM,
+        PRIMITIVE_STRATEGY,
+        _greedy_dfs(),
+        held_boundary=WHOLE_PROBLEM,
+    )
+
+    assert "exec mode: greedy_dfs" in line
 
 
 def test_the_mode_goes_down_the_held_path_and_not_the_other():
@@ -373,9 +445,10 @@ def test_both_repositories_spell_the_modes_the_same_way():
     this file still runs; only this contract check sits out.
     """
     _require_paired_namo_cpp()
+    from namo.planners.full_namo.full_namo_planner import FULL_NAMO_EXEC_MODES
     from namo.services.planning_service import BOUNDARY_MODES, DEFAULT_BOUNDARY_MODE
 
-    assert set(EXEC_MODE_CHOICES) == set(BOUNDARY_MODES)
+    assert set(EXEC_MODE_CHOICES) == set(BOUNDARY_MODES) | set(FULL_NAMO_EXEC_MODES)
     assert DEFAULT_EXEC_MODE == DEFAULT_BOUNDARY_MODE
 
 
