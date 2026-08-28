@@ -1,0 +1,47 @@
+[
+  {
+    "file": "1push__hard_021__bf3e3cdf.json",
+    "scene": "hard_021",
+    "family": "real_table",
+    "horizon": "1push",
+    "object_id": "obstacle_0_movable",
+    "tier": "hard",
+    "density_pct": "0.714",
+    "n_green": "1",
+    "n_tried": "140",
+    "region": "goal",
+    "xml": "/common/users/dm1487/scratch_namo/real_buildable/pool2/med_304/rb_00042/env.xml",
+    "gallery_id": "hard_021",
+    "dataset": "full-exhaustive-pool"
+  },
+  {
+    "file": "hmax2__hard_004__79d270f9.json",
+    "scene": "hard_004",
+    "family": "real_table",
+    "horizon": "2push",
+    "object_id": "obstacle_0_movable",
+    "tier": "hard",
+    "density_pct": "0.667",
+    "n_green": "1",
+    "n_tried": "150",
+    "region": "goal",
+    "xml": "/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00228/env.xml",
+    "gallery_id": "hard_004",
+    "dataset": "full-exhaustive-pool"
+  },
+  {
+    "file": "hmax2__easy_020__5f0639e3.json",
+    "scene": "easy_020",
+    "family": "real_table",
+    "horizon": "2push",
+    "object_id": "obstacle_0_movable",
+    "tier": "easy",
+    "density_pct": "31.200",
+    "n_green": "39",
+    "n_tried": "125",
+    "region": "goal",
+    "xml": "/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00217/env.xml",
+    "gallery_id": "easy_020",
+    "dataset": "full-exhaustive-pool"
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "file": "hmax2__hard_004__79d270f9.json",
+  "scene": "hard_004",
+  "family": "real_table",
+  "horizon": "2push",
+  "object_id": "obstacle_0_movable",
+  "tier": "hard",
+  "density_pct": "0.667",
+  "n_green": "1",
+  "n_tried": "150",
+  "region": "goal",
+  "xml": "/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00228/env.xml",
+  "gallery_id": "hard_004",
+  "dataset": "full-exhaustive-pool"
+}

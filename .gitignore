@@ -70,3 +70,7 @@ real_trials/matrix_v2/*
 # existed at all, so that symlink was untracked and stageable.
 build_python/
 build_python
+
+# real_exp/ follows the real_trials policy: records in git, camera bulk out.
+# Scene jpgs are end-state evidence (~100KB each) and stay; video does not.
+real_exp/**/recordings/

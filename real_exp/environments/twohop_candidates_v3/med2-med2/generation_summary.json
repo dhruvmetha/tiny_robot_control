@@ -1,0 +1,19 @@
+{
+  "candidate_source": "measured_v2_modules",
+  "classification_status": "needs_revalidation",
+  "donor_csv": "/home/dhruv/projects_dhruv/namo/robot_control/real_trials/sheets_v2_a82a66a/hmax2/med.csv",
+  "emitted": 12,
+  "margin_cm": 10.0,
+  "object_orders": [
+    [
+      "obj_1",
+      "obj_4"
+    ],
+    [
+      "obj_4",
+      "obj_1"
+    ]
+  ],
+  "profile": "med2-med2",
+  "seed": 4400
+}

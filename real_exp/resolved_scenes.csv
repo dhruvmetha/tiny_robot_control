@@ -1,0 +1,4 @@
+run_order,axis,build_id,tier,gallery_file,source_xml,build_sheet,robot_start_x_cm,robot_start_y_cm,robot_start_bearing_deg,goal_x_cm,goal_y_cm,result_root
+1,hmax2,easy_020,easy,hmax2__easy_020__5f0639e3.json,/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00217/env.xml,real_exp/environments/hmax2/easy_020/build_sheet.csv,26.5,20.0,0.0,29.7,71.0,real_exp/results/hmax2/easy_020
+2,1push,hard_021,hard,1push__hard_021__bf3e3cdf.json,/common/users/dm1487/scratch_namo/real_buildable/pool2/med_304/rb_00042/env.xml,real_exp/environments/1push/hard_021/build_sheet.csv,27.8,7.4,0.0,42.3,57.7,real_exp/results/1push/hard_021
+3,hmax2,hard_004,hard,hmax2__hard_004__79d270f9.json,/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00228/env.xml,real_exp/environments/hmax2/hard_004/build_sheet.csv,21.2,10.8,0.0,11.0,67.6,real_exp/results/hmax2/hard_004

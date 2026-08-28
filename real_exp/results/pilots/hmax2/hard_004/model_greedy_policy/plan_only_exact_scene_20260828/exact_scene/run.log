@@ -1,0 +1,9 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/pilots/hmax2/hard_004/model_greedy_policy/plan_only_exact_scene_20260828/exact_scene
+planner: full_namo  |  exec mode: greedy_policy  local search: best_first/model  ckpt=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt  hmax=2  budget=canonical  device=cuda
+[run_namo plan-only] solution.yaml -> /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/pilots/hmax2/hard_004/model_greedy_policy/plan_only_exact_scene_20260828/exact_scene/solution.yaml (success=True, pushes=1, search=4055ms, sim_pushes_tried=2)
+[DIAG] plan #1 recorded (success=True)
+[Diagnostics] Wrote summary.json (outcome=success)
+[sim_replay_subprocess] re-encoded sim_push.mp4 to H.264 for compatibility
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/pilots/hmax2/hard_004/model_greedy_policy/plan_only_exact_scene_20260828/exact_scene/sim_push.mp4 (2601 frames @ 30 fps, stride=17)
+[run_namo plan-only] sim_push.mp4 -> /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/pilots/hmax2/hard_004/model_greedy_policy/plan_only_exact_scene_20260828/exact_scene/sim_push.mp4

@@ -1,0 +1,17 @@
+{
+  "classification_status": "unlabelled",
+  "emitted": 4,
+  "margin_cm": 10.0,
+  "object_orders": [
+    [
+      "obj_1",
+      "obj_4"
+    ],
+    [
+      "obj_4",
+      "obj_1"
+    ]
+  ],
+  "profile": "hard1-hard1",
+  "seed": 4100
+}

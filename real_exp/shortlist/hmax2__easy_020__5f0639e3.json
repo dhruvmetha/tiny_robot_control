@@ -1,0 +1,15 @@
+{
+  "file": "hmax2__easy_020__5f0639e3.json",
+  "scene": "easy_020",
+  "family": "real_table",
+  "horizon": "2push",
+  "object_id": "obstacle_0_movable",
+  "tier": "easy",
+  "density_pct": "31.200",
+  "n_green": "39",
+  "n_tried": "125",
+  "region": "goal",
+  "xml": "/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00217/env.xml",
+  "gallery_id": "easy_020",
+  "dataset": "full-exhaustive-pool"
+}

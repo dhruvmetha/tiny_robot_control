@@ -1,0 +1,65 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v1/hmax2/hard_004/model_greedy_dfs/trial1
+planner: full_namo  |  exec mode: greedy_dfs  local search: best_first/model  ckpt=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt  hmax=2  budget=canonical  device=cuda
+
+Starting NAMO execution...
+Press ESCAPE to quit
+==================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[Runtime] Per-subgoal video + meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v1/hmax2/hard_004/model_greedy_dfs/trial1/recordings/session_2026-08-27_23-49-50
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[Runtime] 🔌 Robot 1 ONLINE at startup (alive_ids=[1], ap_connected=True)
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed (autonomous): nav=0.40, push=0.40[NAMOBridge] Warming best-first scorer (checkpoint=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt, device=cuda); excluded from planning time
+==================================================
+Running in autonomous mode
+
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[NAMOPlanner] Best-first scorer warmup: 3727ms (recorded separately; excluded from planning_wall_time_ms)
+[NAMOPlanner] Plan #1: 561ms, cumulative: 561ms
+[DIAG] plan #1 recorded (success=False)
+[NAMOPlanner] Planning returned NO SUBGOALS (attempt 1/5)
+[NAMOPlanner] Planning retry 1/4 with shuffle_seed=1
+[NAMOPlanner] Plan #2: 537ms, cumulative: 1098ms
+[DIAG] plan #2 recorded (success=False)
+[NAMOPlanner] Planning returned NO SUBGOALS (attempt 2/5)
+[NAMOPlanner] Planning retry 2/4 with shuffle_seed=2
+[NAMOPlanner] Plan #3: 539ms, cumulative: 1637ms
+[DIAG] plan #3 recorded (success=False)
+[NAMOPlanner] Planning returned NO SUBGOALS (attempt 3/5)
+[NAMOPlanner] Planning retry 3/4 with shuffle_seed=3
+[NAMOPlanner] Plan #4: 542ms, cumulative: 2179ms
+[DIAG] plan #4 recorded (success=False)
+[NAMOPlanner] Planning returned NO SUBGOALS (attempt 4/5)
+[NAMOPlanner] Planning retry 4/4 with shuffle_seed=4
+[NAMOPlanner] Plan #5: 540ms, cumulative: 2719ms
+[DIAG] plan #5 recorded (success=False)
+[NAMOPlanner] Planning returned NO SUBGOALS (attempt 5/5)
+[NAMOPlanner] All 5 planning attempts failed
+[NAMOPlanner]   (planning is sim-only; check Runtime '🔌 Robot ... OFFLINE' lines above to verify the robot was online during this attempt)
+[NAMOPlanner]   10 primitives enumerated across 5 attempts; breakdown:
+[Runtime] Planning failed - stopping robot
+[Runtime] Shutting down
+[Diagnostics] Wrote summary.json (outcome=failure)
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Callable, Dict, Optional
 
-from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -56,6 +56,8 @@ class Window(QMainWindow):
         window.run()  # Blocks
     """
 
+    close_requested = Signal()
+
     def __init__(
         self,
         config: WorkspaceConfig,
@@ -80,6 +82,7 @@ class Window(QMainWindow):
         self._target_robot_id = target_robot_id
         self._callbacks: Dict[str, Callable] = {}
 
+        self.close_requested.connect(self.close)
         # Thread-safe update mechanism
         self._update_emitter = UpdateEmitter()
         self._update_emitter.update_requested.connect(self._handle_update)
@@ -399,18 +402,11 @@ class Window(QMainWindow):
     def close_window(self) -> None:
         """Programmatically close the window from any thread.
 
-        Schedules self.close() on the GUI thread via QTimer.singleShot(0).
+        Emits a signal that Qt delivers to self.close() on the GUI thread.
         Going through the normal close path (closeEvent → window hidden →
         last-window-closed → app exit) is more robust than a raw
         QApplication.quit() — earlier code used quit() and would
         occasionally hang on long runs when other queued events crowded it
         out, leaving run()'s finally unrun.
         """
-        try:
-            QTimer.singleShot(0, self.close)
-        except Exception:
-            # Last-resort fallback: ask the app to exit directly.
-            try:
-                self._app.quit()
-            except Exception:
-                self.close()
+        self.close_requested.emit()

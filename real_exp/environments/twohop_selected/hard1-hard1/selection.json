@@ -1,0 +1,44 @@
+{
+  "eligible": 1,
+  "limit": 1,
+  "profile": "hard1-hard1",
+  "rejects": {
+    "invalid_k1_materialization": 15,
+    "invalid_k2_materialization": 8
+  },
+  "scenes": [
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 132,
+          "n_valid_1push": 3,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.022727272727272728,
+          "solve_rate_hmax2": 0.022727272727272728,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 1,
+          "n_tried_1push": 137,
+          "n_valid_1push": 1,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.0072992700729927005,
+          "solve_rate_hmax2": 0.0072992700729927005,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00013",
+      "xml": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/twohop_selected/hard1-hard1/twohop_00013/env.xml"
+    }
+  ],
+  "selected": 1
+}

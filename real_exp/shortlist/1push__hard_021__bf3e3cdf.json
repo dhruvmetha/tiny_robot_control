@@ -1,0 +1,15 @@
+{
+  "file": "1push__hard_021__bf3e3cdf.json",
+  "scene": "hard_021",
+  "family": "real_table",
+  "horizon": "1push",
+  "object_id": "obstacle_0_movable",
+  "tier": "hard",
+  "density_pct": "0.714",
+  "n_green": "1",
+  "n_tried": "140",
+  "region": "goal",
+  "xml": "/common/users/dm1487/scratch_namo/real_buildable/pool2/med_304/rb_00042/env.xml",
+  "gallery_id": "hard_021",
+  "dataset": "full-exhaustive-pool"
+}
