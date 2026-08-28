@@ -4,6 +4,10 @@ This directory freezes the three gallery environments selected for the paper
 and keeps their physical-run artifacts separate from the earlier pilot and
 matrix-v2 data.
 
+See [Planning metrics](METRICS.md) before analyzing a run. It defines the
+wall-clock and simulator-count fields, their exact measurement boundaries, and
+the legacy interpretation of the first completed easy trial.
+
 ## Layout
 
 - `shortlist.json` is the original gallery export.
@@ -83,11 +87,11 @@ runtime dispatches a `NavigateSubgoal`. A real trial succeeds only after the
 camera observation places the robot within 5 cm of the goal (or of an explicit
 nearby retarget when the exact goal point is geometrically covered).
 
-`hmax2/easy_020/model_search/trial2` is an incomplete opening-success attempt:
-its two pushes opened a simulated path, but the runtime stopped with the robot
-32.8 cm from the goal. Preserve it for provenance and do not use it as a
-completed end-to-end paper trial. Reset the scene and use a fresh trial
-directory for the replacement.
+`hmax2/easy_020/model_search/trial1` is the accepted completed easy trial. It
+includes two successful physical pushes and final real navigation to within
+1.108 cm of the requested goal. It predates the uniform telemetry schema, so
+use the explicit legacy accounting in [Planning metrics](METRICS.md) rather
+than interpreting its old `search_time_ms` fields as comparable wall time.
 
 Before launch, confirm the camera service is healthy, `fuser /dev/ttyACM0`
 shows no stale owner, the scene checksum is accepted, and the robot is on the
