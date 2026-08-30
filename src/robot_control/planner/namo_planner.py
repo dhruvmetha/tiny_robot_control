@@ -86,7 +86,31 @@ _DIAG_SAFE_STAT_KEYS = frozenset({
     "failure_kind",
     "resolved_target",
     "simulations_used",
+    # Whether full_namo gave up on a boundary and rerouted, and the per-
+    # iteration record of why. A boundary the opener exhausts is the point
+    # where a policy fallback would take over, so a trial row without these
+    # cannot say whether that fallback would ever have fired.
+    "boundary_exhaustions",
+    "iteration_trace",
 })
+
+
+def _json_safe(value: Any) -> Any:
+    """Coerce one stat value to something ``json.dump`` accepts.
+
+    Recurses through lists and dicts rather than stringifying them whole, so a
+    nested record like ``iteration_trace`` lands as real JSON a reader can
+    index instead of a list of Python reprs. Leaves scalars alone and falls
+    back to ``str`` only for values with no JSON equivalent, which is where the
+    C++ Action objects in the unfiltered stats end up.
+    """
+    if isinstance(value, (str, int, float, bool, type(None))):
+        return value
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    return str(value)
 
 
 def _filter_algorithm_stats_for_diagnostics(stats: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -97,11 +121,7 @@ def _filter_algorithm_stats_for_diagnostics(stats: Optional[Dict[str, Any]]) -> 
     for k, v in stats.items():
         if k not in _DIAG_SAFE_STAT_KEYS:
             continue
-        # Coerce common non-serializable types defensively.
-        if isinstance(v, (list, tuple)):
-            out[k] = [str(x) if not isinstance(x, (str, int, float, bool, type(None))) else x for x in v]
-        else:
-            out[k] = v
+        out[k] = _json_safe(v)
 
     # Held-boundary planning already exports ``simulations_used``. Whole-
     # problem full_namo reports the same env.step count under its budget-scope

@@ -1,5 +1,6 @@
 """Planning diagnostics keep simulation counts stable across planner paths."""
 
+import json
 from types import SimpleNamespace
 
 from robot_control.planner.namo_planner import (
@@ -79,3 +80,57 @@ def test_fresh_plan_record_has_outer_time_and_top_level_simulation_count():
         "object_poses_cm": {},
         "origin": "fresh_plan",
     }]
+
+
+def test_boundary_exhaustion_count_reaches_the_log():
+    """A boundary the opener gave up on is where a policy fallback would fire.
+
+    The allowlist drops what it does not name, so this scalar reached no trial
+    row before it was added.
+    """
+    filtered = _filter_algorithm_stats_for_diagnostics(
+        {"boundary_exhaustions": 1, "simulations_used": 132}
+    )
+
+    assert filtered["boundary_exhaustions"] == 1
+
+
+def test_iteration_trace_survives_as_indexable_json():
+    """Nested records keep their structure instead of becoming Python reprs.
+
+    The previous coercion mapped ``str`` over list elements, so a list of dicts
+    logged as a list of strings and no reader could ask which boundary was
+    exhausted without re-parsing a repr.
+    """
+    trace = [
+        {
+            "iteration": 1,
+            "chosen_target_region": "goal",
+            "target_summary": {"boundary_exhausted": True},
+            "rejection_breakdown": {"push_collided_with_wall": 100},
+        },
+        {"iteration": 2, "outcome": "opened_target"},
+    ]
+
+    filtered = _filter_algorithm_stats_for_diagnostics({"iteration_trace": trace})
+
+    assert filtered["iteration_trace"][0]["chosen_target_region"] == "goal"
+    assert filtered["iteration_trace"][0]["target_summary"]["boundary_exhausted"] is True
+    assert filtered["iteration_trace"][0]["rejection_breakdown"]["push_collided_with_wall"] == 100
+    assert filtered["iteration_trace"][1]["outcome"] == "opened_target"
+    json.dumps(filtered)
+
+
+def test_values_with_no_json_equivalent_still_degrade_to_strings():
+    """C++ Action objects are why the coercion exists; keep that behaviour."""
+
+    class _Opaque:
+        def __repr__(self):
+            return "<Action>"
+
+    filtered = _filter_algorithm_stats_for_diagnostics(
+        {"regions_opened": ["goal", _Opaque()]}
+    )
+
+    assert filtered["regions_opened"] == ["goal", "<Action>"]
+    json.dumps(filtered)
