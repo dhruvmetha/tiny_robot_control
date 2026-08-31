@@ -483,3 +483,41 @@ def test_dropping_the_boundary_still_happens_without_a_pair():
     assert released == STATUS_EXHAUSTED
     assert target is not held
     assert status == ADVANCE_PLANNED
+
+
+def test_reactive_argmax_survives_the_exhausted_stamp():
+    """The reactive solver returns its argmax push on the same plan it stamps
+    boundary_exhausted/all_pushes_failed, because in simulation that push
+    opens nothing -- the exact prediction reactive exists not to trust.
+    The old order let the stamp win: the only doorway got blacklisted and
+    every reactive run on a scene search cannot crack ended with zero
+    pushes (hard_004, 2026-08-31). The push must dispatch."""
+    from robot_control.planner.region_target import advance_boundary
+
+    bridge = _Bridge(plans=[_plan(
+        success=False, boundary_exhausted=True, failure_reason="all_pushes_failed"
+    )])
+    plan, target, status, released = advance_boundary(
+        bridge, object(), GOAL_CM, target=_target(),
+        open_fraction=FRACTION, scale_factor=1.0,
+        planner_kwargs={"mode": "reactive"},
+    )
+
+    assert status == ADVANCE_PLANNED
+    assert plan.subgoals
+    assert target is not None
+    assert released is None
+
+
+def test_search_still_blacklists_the_exhausted_boundary():
+    # Under search the same plan shape is a failed verification, not an
+    # executable push; the exhausted branch must keep winning there.
+    bridge = _Bridge(
+        choices=[_choice(found=False)],
+        plans=[_plan(success=False, boundary_exhausted=True,
+                     failure_reason="all_pushes_failed")],
+    )
+    _plan_, target, status, released = _advance(bridge, target=_target())
+
+    assert status != ADVANCE_PLANNED
+    assert released == STATUS_EXHAUSTED

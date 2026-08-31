@@ -557,6 +557,20 @@ def advance_boundary(
             target = None
             continue
 
+        if _plan_is_executable(plan, planner_kwargs):
+            # Checked BEFORE the exhausted branch. The reactive solver stamps
+            # boundary_exhausted/all_pushes_failed on the same plan whose
+            # argmax push it returns, because in simulation that push opens
+            # nothing -- which is the exact prediction reactive exists not to
+            # trust. With the old order the stamp won, the only doorway got
+            # blacklisted, and every reactive run on a scene search cannot
+            # crack ended in 5 seconds with zero pushes (hard_004, 2026-08-31;
+            # the earlier "reactive zero-push row" was this same bug). Under
+            # search, executable requires success=True and a successful plan
+            # never carries the exhausted stamp, so this order changes nothing
+            # for the search arms.
+            return plan, target, ADVANCE_PLANNED, released
+
         if plan.boundary_exhausted or plan.failure_reason in UNUSABLE_BOUNDARY_REASONS:
             # Selection is deterministic, so simply dropping this boundary would
             # pick the same one straight back. Exclude it, then look again.
@@ -567,8 +581,6 @@ def advance_boundary(
             target = None
             continue
 
-        if _plan_is_executable(plan, planner_kwargs):
-            return plan, target, ADVANCE_PLANNED, released
         return plan, target, ADVANCE_NO_PLAN, released
 
     status = ADVANCE_EXHAUSTED if blocked else ADVANCE_NO_BOUNDARY
