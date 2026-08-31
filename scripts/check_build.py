@@ -173,6 +173,113 @@ def load_sheet_rows(sheet_path: Path, build_id: str) -> List[Dict[str, str]]:
     return rows
 
 
+# Physical inventory for derived sheets, footprint (short_cm, long_cm) -> the
+# object or bar that gets placed. Derived sheets name simulator bodies
+# (obstacle_N_movable, wall_inner_N), not physical markers, so the mapping
+# runs on dimensions. Values from config/objects.yaml and the bar stock; a
+# footprint not listed here fails loudly rather than guessing.
+DERIVED_BLOCK_BY_FOOTPRINT = {
+    (7.0, 15.0): "obj_1",
+    (7.5, 12.0): "obj_4",
+    (5.0, 12.5): "obj_2",
+    (4.0, 16.5): "obj_3",
+}
+DERIVED_BAR_HINTS = ("wall_10", "wall_11", "wall_12")  # 19.5 x 5.5 standard-tag bars
+DERIVED_BAR_FOOTPRINT = (5.5, 19.5)
+DERIVED_FOOTPRINT_TOL_CM = 0.3
+DERIVED_BOUNDARY_PREFIX = "wall_boundary"  # the table's own edges; never built
+
+
+def rows_from_derived_sheet(sheet_path: Path, build_id: str) -> List[Dict[str, str]]:
+    """Rows from a build_sheet_derived.json (schema derived_from_env_xml).
+
+    Written by the sim side for pools that ship env.xml only. Units are
+    metres and half-extents; rows convert to the cm/full-extent convention
+    every other sheet uses. Simulator body names are mapped to physical
+    markers by footprint, and the long-axis bearing comes from which
+    half-extent is longer, so a body whose long side runs along local y
+    gets yaw+90, matching the place-by-long-side rule on the cards.
+    """
+    import json
+
+    with sheet_path.open() as fh:
+        sheet = json.load(fh)
+    scene = str(sheet.get("scene", ""))
+    if not scene.endswith(build_id):
+        sys.exit(f"build_id {build_id!r} does not match {sheet_path} "
+                 f"(scene {scene!r}).")
+
+    def _bearing(yaw_deg, hx, hy):
+        long_along_x = hx >= hy
+        return (yaw_deg if long_along_x else yaw_deg + 90.0) % 180.0
+
+    def _footprint(hx_m, hy_m):
+        a, b = sorted((round(hx_m * 200, 1), round(hy_m * 200, 1)))
+        return a, b
+
+    shared = {
+        "build_id": build_id,
+        "robot_start_x_cm": str(sheet["robot_start_m"][0] * 100),
+        "robot_start_y_cm": str(sheet["robot_start_m"][1] * 100),
+        "robot_start_bearing_deg": "0.0",
+        "goal_x_cm": str(sheet["goal_marker_m"][0] * 100),
+        "goal_y_cm": str(sheet["goal_marker_m"][1] * 100),
+        "push_kind": "needs_2_chain",
+    }
+    rows: List[Dict[str, str]] = []
+    bars_used = 0
+    for st in sheet.get("statics", []):
+        if str(st["name"]).startswith(DERIVED_BOUNDARY_PREFIX):
+            continue
+        hx, hy = st["half_extent_m"]
+        short, long_ = _footprint(hx, hy)
+        if (abs(short - DERIVED_BAR_FOOTPRINT[0]) > DERIVED_FOOTPRINT_TOL_CM
+                or abs(long_ - DERIVED_BAR_FOOTPRINT[1]) > DERIVED_FOOTPRINT_TOL_CM):
+            sys.exit(f"{sheet_path}: static {st['name']} is {short}x{long_} cm; "
+                     f"no physical bar matches.")
+        if bars_used >= len(DERIVED_BAR_HINTS):
+            sys.exit(f"{sheet_path}: more interior bars than physical stock "
+                     f"({len(DERIVED_BAR_HINTS)}).")
+        rows.append({
+            **shared,
+            "item": "brick",
+            "marker_hint": DERIVED_BAR_HINTS[bars_used],
+            "centre_x_cm": str(st["x_m"] * 100),
+            "centre_y_cm": str(st["y_m"] * 100),
+            "long_axis_bearing_deg": str(_bearing(st["yaw_deg"], hx, hy)),
+            "long_cm": str(long_),
+            "short_cm": str(short),
+        })
+        bars_used += 1
+    for m in sheet.get("movables", []):
+        hx, hy = m["half_extent_m"]
+        short, long_ = _footprint(hx, hy)
+        hint = None
+        for (s_, l_), name in DERIVED_BLOCK_BY_FOOTPRINT.items():
+            if abs(short - s_) <= DERIVED_FOOTPRINT_TOL_CM and abs(long_ - l_) <= DERIVED_FOOTPRINT_TOL_CM:
+                hint = name
+                break
+        if hint is None:
+            sys.exit(f"{sheet_path}: movable {m['name']} is {short}x{long_} cm; "
+                     f"no physical block matches {sorted(DERIVED_BLOCK_BY_FOOTPRINT)}.")
+        rows.append({
+            **shared,
+            "item": "block",
+            "marker_hint": hint,
+            "centre_x_cm": str(m["x_m"] * 100),
+            "centre_y_cm": str(m["y_m"] * 100),
+            "long_axis_bearing_deg": str(_bearing(m["yaw_deg"], hx, hy)),
+            "long_cm": str(long_),
+            "short_cm": str(short),
+        })
+    shared["n_bricks"] = str(bars_used)
+    for r in rows:
+        r["n_bricks"] = str(bars_used)
+    if not rows:
+        sys.exit(f"{sheet_path} has nothing to place.")
+    return rows
+
+
 def rows_from_twohop_sheet(sheet_path: Path, build_id: str) -> List[Dict[str, str]]:
     """Rows from a twohop scene's per-scene build_sheet.json.
 

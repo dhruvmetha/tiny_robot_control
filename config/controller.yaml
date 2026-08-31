@@ -65,7 +65,11 @@ push:
   # Note: AND-logic — a push that translates well OR rotates substantially is
   # considered useful. Only when both are tiny is the push declared stuck.
   min_push_displacement_cm: 2.0  # cm - below this counts as "didn't translate"
-  min_push_rotation_deg: 15.0    # deg - below this counts as "didn't rotate enough"
+  min_push_rotation_deg: 5.0     # deg - below this counts as "didn't rotate enough".
+                                 # Was 15.0 until 2026-08-31 (Dhruv): marker yaw noise
+                                 # is 1-2 deg, and rotation is real progress on this
+                                 # hardware (policy2_r1 opened hard_004 with a 71.6 deg
+                                 # swing), so a 10 deg rotation must not ban its edge.
 
   # Debug visualization
   show_wavefront: false          # cv2.imshow conflicts with PyQt6 event loop; image still saved to /tmp/wavefront
