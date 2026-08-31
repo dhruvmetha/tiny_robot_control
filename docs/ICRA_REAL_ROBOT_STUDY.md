@@ -59,7 +59,7 @@ external `timeout`.
      --config config/real.yaml --mode penalise \
      --camera-service tcp://localhost:5556 \
      --diag-path real_exp/results/formal_v2/<scene> \
-     --run-name nav_penalise --capture-scene
+     --run-name nav_penalise --capture-scene --record-video
    ```
 
    Whether the scene qualifies for NAMO is Dhruv's judgment call at the
@@ -97,7 +97,7 @@ external `timeout`.
      --scorer-ckpt <HY5U_s2 path> --shuffle-seed <k> \
      --hold-region-target --goal <X> <Y> \
      --diag-path real_exp/results/formal_v2/<scene> \
-     --run-name model_r<i> --capture-scene
+     --run-name model_r<i> --capture-scene --record-video
    ```
 
    No goal marker is used; `--goal` comes from the scene's build sheet on
