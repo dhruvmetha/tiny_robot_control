@@ -14,6 +14,11 @@ from typing import Any, Dict, List, Optional, Tuple
 from robot_control.controller.base import Controller
 from robot_control.controller.config import NavigationConfig
 from robot_control.controller.follow_path import FollowPathController
+from robot_control.controller.retreat import (
+    blind_reverse,
+    find_retreat_target,
+    reverse_toward,
+)
 from robot_control.core.types import Action, Observation, Subgoal, WorkspaceConfig
 from robot_control.utils.robot_geometry import effective_robot_size_cm
 
@@ -97,6 +102,93 @@ def _filter_duplicate_points(path: List[Point], min_dist: float = 1.0) -> List[P
     return filtered
 
 
+# How far the robot must move to count as making progress. ArUco position
+# noise on a stationary robot measured about 0.1 cm peak to peak from
+# camera_service on 2026-08-31, so this is roughly 5x the noise floor. A robot
+# creeping at even 1 cm/s clears it six times over inside the window below.
+NO_PROGRESS_POSITION_CM = 0.5
+
+# Heading counts too. Pure pursuit turns the robot in place around a tight
+# corner, where position barely changes and the robot is working fine.
+NO_PROGRESS_HEADING_DEG = 3.0
+
+# How long to see nothing before giving up. PushController's approach watchdog
+# (BUG-025) allows 180 ticks, about 6 s; navigation has less excuse to sit
+# still, so half that.
+NO_PROGRESS_WINDOW_S = 3.0
+
+# The smallest wheel command that actually turns this car's motors. NOT
+# `wheel_deadband` from config/controller.yaml, which is 0.05: that number is
+# what the deadband-scaling maths uses, while the measured physical threshold
+# on this chassis is 0.3. Nothing moves below it. Trusting the config value
+# here would report an under-commanded robot as blocked.
+PHYSICAL_MOVE_COMMAND = 0.3
+
+
+# Retreat is finished once the robot is this close to the free cell it picked.
+# One robot radius, so "close enough to be out of the wedge" rather than a
+# precise park.
+RETREAT_ARRIVE_TOLERANCE_CM = 3.5
+
+# Ticks to allow for backing out before giving up on the retreat itself. 90 at
+# 30 Hz is 3 s, which covers 15 cm of reverse at the shipped retreat speed with
+# room to spare.
+RETREAT_MAX_TICKS = 90
+
+
+class _NoProgressWatchdog:
+    """Ends a drive when the robot stops getting anywhere.
+
+    Nothing else does. `FollowPathController.is_done` is true only once the
+    path is consumed, and a robot wedged against an obstacle never advances
+    its path index, so the runtime waits on a subgoal that can never end. It
+    polls `planner.is_complete` only between subgoals, so a planner-side
+    timeout cannot save it either. Real case: the pure-navigation baseline
+    drove into a block on 2026-08-31 and hung until a wall-clock kill.
+
+    Reports WHY as well as when. A robot commanded hard enough to move that
+    does not move is blocked. One commanded below the physical threshold is
+    not blocked, it is being asked too gently, which is a tuning bug wearing
+    the same costume.
+    """
+
+    BLOCKED = "blocked"
+    UNDER_COMMANDED = "under_commanded"
+
+    def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        self._anchor: Optional[Tuple[float, float, float]] = None
+        self._anchor_time = 0.0
+        self._commanded_to_move = False
+
+    def update(
+        self, obs: Observation, action: Action, now: float
+    ) -> Optional[str]:
+        """Returns a cause once the robot has been stuck for the window."""
+        pose = (obs.robot_x, obs.robot_y, obs.robot_theta)
+        if self._anchor is None:
+            self._anchor, self._anchor_time = pose, now
+            self._commanded_to_move = False
+            return None
+
+        if max(abs(action.left_speed), abs(action.right_speed)) >= PHYSICAL_MOVE_COMMAND:
+            self._commanded_to_move = True
+
+        moved = math.hypot(pose[0] - self._anchor[0], pose[1] - self._anchor[1])
+        turned = abs(_wrap_to_180(pose[2] - self._anchor[2]))
+        if moved >= NO_PROGRESS_POSITION_CM or turned >= NO_PROGRESS_HEADING_DEG:
+            # Progress. Start the window again from here.
+            self._anchor, self._anchor_time = pose, now
+            self._commanded_to_move = False
+            return None
+
+        if now - self._anchor_time < NO_PROGRESS_WINDOW_S:
+            return None
+        return self.BLOCKED if self._commanded_to_move else self.UNDER_COMMANDED
+
+
 class NavigationState(Enum):
     """Navigation state machine states."""
 
@@ -104,9 +196,11 @@ class NavigationState(Enum):
     ROTATING = "ROTATING"  # Standalone rotation (no navigation)
     PRE_ROTATING = "PRE_ROTATING"  # Rotate toward first waypoint
     FOLLOWING = "FOLLOWING"  # Following path (delegated)
+    RETREATING = "RETREATING"  # Backing out of a spot the robot got wedged in
     POST_ROTATING = "POST_ROTATING"  # Rotate to goal theta
     FINISHED = "FINISHED"  # Reached the target
-    FAILED = "FAILED"  # navigate_to could not plan a path; terminal, and
+    FAILED = "FAILED"  # navigate_to could not plan a path, or the robot
+    # stopped making progress while following one; terminal, and
     # distinct from FINISHED so is_done()/did_fail() can tell the runtime
     # this subgoal is over and that it failed. navigate_to used to fall
     # back to IDLE on a planning failure, but is_done() only ever checked
@@ -151,6 +245,8 @@ class NavigationController(Controller):
         planner: PathPlanner,
         nav_config: Optional[NavigationConfig] = None,
         max_speed: Optional[float] = None,
+        retreat_config: Optional[Any] = None,
+        now_fn: Optional[Any] = None,
     ) -> None:
         """
         Initialize navigation controller.
@@ -165,6 +261,23 @@ class NavigationController(Controller):
         self._planner = planner
         self._nav_config = nav_config or NavigationConfig()
         self._max_speed = max_speed if max_speed is not None else self._nav_config.max_speed
+
+        self._watchdog = _NoProgressWatchdog()
+        # Set when the watchdog ends a drive, so callers can tell a blocked
+        # robot from one that was never commanded hard enough to move.
+        self._failure_cause: Optional[str] = None
+        self._retreat_target: Optional[Point] = None
+        self._retreat_ticks = 0
+        # Retreat geometry and speed are properties of the car and the move,
+        # not of pushing, so both controllers read the one config block rather
+        # than keeping a second copy that can drift.
+        if retreat_config is None:
+            from robot_control.controller.config import load_controller_configs
+            retreat_config = load_controller_configs().push
+        self._retreat_cfg = retreat_config
+        # Injected so a test can cross the watchdog's 3 s window without
+        # spending 3 s. Production passes nothing and gets the wall clock.
+        self._now = now_fn or time.time
 
         # Path follower (delegated)
         car_size = effective_robot_size_cm(config.car_width, config.car_height)
@@ -352,12 +465,97 @@ class NavigationController(Controller):
 
         # Store path in follower
         self._path_follower.set_path(path)
+        self._watchdog.reset()
+        self._failure_cause = None
 
         # Set state (pre-rotation will be checked in step())
         self._pre_rotation_target = target_angle
         self._state = NavigationState.PRE_ROTATING
 
         return True
+
+    def _begin_retreat(self, obs: Observation) -> None:
+        """Pick a free cell behind the robot and start backing toward it.
+
+        Backward cone only. The forward cone would have to be reached by
+        navigating there, and navigating out of a failed navigation is how you
+        get a retreat inside a retreat.
+        """
+        self._retreat_ticks = 0
+        self._retreat_target, _ = find_retreat_target(
+            wavefront=self._build_retreat_wavefront(obs),
+            robot_xy=(obs.robot_x, obs.robot_y),
+            heading_deg=obs.robot_theta,
+            cone_half_angle_deg=self._retreat_cfg.retreat_cone_angle,
+            min_dist_cm=self._retreat_cfg.retreat_min_dist,
+            max_dist_cm=self._retreat_cfg.retreat_max_dist,
+            allow_forward=False,
+        )
+        if self._retreat_target is None:
+            print("[NAV] No free cell behind the robot; backing out blind.")
+        else:
+            print(
+                f"[NAV] Retreating to ({self._retreat_target[0]:.1f}, "
+                f"{self._retreat_target[1]:.1f})"
+            )
+        self._state = NavigationState.RETREATING
+
+    def _handle_retreating(self, obs: Observation) -> Action:
+        """Back out, then report the drive as failed.
+
+        The retreat always ends in FAILED, whether or not it reached its cell.
+        Getting out of the wedge is a courtesy to whatever replans next; it was
+        never going to rescue this drive.
+        """
+        self._retreat_ticks += 1
+        arrived = (
+            self._retreat_target is not None
+            and math.hypot(
+                obs.robot_x - self._retreat_target[0],
+                obs.robot_y - self._retreat_target[1],
+            ) <= RETREAT_ARRIVE_TOLERANCE_CM
+        )
+        if arrived or self._retreat_ticks >= RETREAT_MAX_TICKS:
+            print(
+                f"[NAV] Retreat done after {self._retreat_ticks} ticks "
+                f"({'reached the cell' if arrived else 'ran out of ticks'}); "
+                f"drive FAILED ({self._failure_cause})."
+            )
+            self._state = NavigationState.FAILED
+            return Action.stop()
+
+        if self._retreat_target is None:
+            return blind_reverse(self._retreat_cfg.retreat_speed)
+        return reverse_toward(
+            obs, self._retreat_target,
+            speed=self._retreat_cfg.retreat_speed,
+            steer_gain=self._retreat_cfg.retreat_steer_gain,
+        )
+
+    def _build_retreat_wavefront(self, obs: Observation):
+        """Occupancy of the live scene, for picking a cell that is actually free."""
+        from robot_control.utils.robot_geometry import effective_robot_radius_m_from_cm
+        from robot_control.utils.wavefront import WavefrontConfig, WavefrontPlanner
+        from robot_control.utils.wavefront_inflation_config import (
+            get_wavefront_inflation_config,
+        )
+
+        planner = WavefrontPlanner(WavefrontConfig(
+            resolution=0.005,
+            robot_radius=effective_robot_radius_m_from_cm(
+                self._config.car_width, self._config.car_height
+            ),
+            inflation_margin=get_wavefront_inflation_config().tier1_base_inflation_margin_m,
+        ))
+        planner.build_grid(
+            (0.0, self._config.width / 100.0, 0.0, self._config.height / 100.0),
+            {
+                name: (o.x / 100.0, o.y / 100.0, o.depth / 200.0, o.width / 200.0, o.theta)
+                for name, o in (obs.objects or {}).items()
+                if o.width > 0 and o.depth > 0
+            },
+        )
+        return planner
 
     def rotate_to(self, target_theta: float) -> bool:
         """
@@ -376,6 +574,7 @@ class NavigationController(Controller):
 
     def cancel(self) -> None:
         """Cancel navigation and stop."""
+        self._watchdog.reset()
         self._state = NavigationState.IDLE
         self._path_follower.clear_path()
         self._target_theta = None
@@ -467,7 +666,24 @@ class NavigationController(Controller):
                 else:
                     self._state = NavigationState.FINISHED
                     return Action.stop()
-            return self._path_follower.step(obs, subgoal)
+
+            action = self._path_follower.step(obs, subgoal)
+            cause = self._watchdog.update(obs, action, self._now())
+            if cause is not None:
+                print(
+                    f"[NAV] !! NO PROGRESS ({cause}): robot at "
+                    f"({obs.robot_x:.1f},{obs.robot_y:.1f},θ={obs.robot_theta:.1f}°) "
+                    f"has not moved {NO_PROGRESS_POSITION_CM} cm or turned "
+                    f"{NO_PROGRESS_HEADING_DEG}° in {NO_PROGRESS_WINDOW_S}s. "
+                    f"Treating as FAILED so the subgoal can end."
+                )
+                self._failure_cause = cause
+                self._begin_retreat(obs)
+                return Action.stop()
+            return action
+
+        if self._state == NavigationState.RETREATING:
+            return self._handle_retreating(obs)
 
         # POST_ROTATING: Rotate to goal orientation
         if self._state == NavigationState.POST_ROTATING:
@@ -582,6 +798,10 @@ class NavigationController(Controller):
         """Reset controller state."""
         self._state = NavigationState.IDLE
         self._path_follower.reset()
+        self._watchdog.reset()
+        self._failure_cause = None
+        self._retreat_target = None
+        self._retreat_ticks = 0
         self._target_theta = None
         self._pre_rotation_target = None
         self._rotation_stable_start = None
