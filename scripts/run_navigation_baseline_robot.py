@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import signal
 import sys
 import time
 from pathlib import Path
@@ -54,6 +55,7 @@ from robot_control.planner.navigation_baseline_planner import (
 # run_namo's own goal-marker detection, reused rather than reimplemented so
 # both arms read the same marker the same way.
 sys.path.insert(0, str(Path(__file__).parent))
+from _diag_setup import bootstrap_diagnostics  # noqa: E402
 from run_namo import detect_goal_from_camera  # noqa: E402
 
 GOAL_DETECT_TIMEOUT_S = 5.0
@@ -140,7 +142,31 @@ def main() -> int:
                         help="Pause for confirmation before the drive starts.")
     parser.add_argument("--out", default=None,
                         help="Directory to write the result row into.")
+
+    # Same flag names run_namo declares, so a baseline run and a NAMO run land
+    # in the same directory layout and an operator types the same thing twice.
+    parser.add_argument("--diag-path", type=str, default=None,
+                        help="Root directory for diagnostics output. Enables diagnostics when set.")
+    parser.add_argument("--run-name", type=str, default=None,
+                        help="Subdir under --diag-path. Supports {timestamp} {date} {epoch}.")
+    parser.add_argument("--capture-scene", action="store_true",
+                        help="Save scene snapshots (jpg + json + xml) at run start and end. "
+                             "This is what proves the baseline and the NAMO trial faced the "
+                             "same layout.")
+    parser.add_argument("--allow-overwrite", action="store_true",
+                        help="Allow --diag-path/--run-name to overwrite an existing directory.")
     args = parser.parse_args()
+
+    # run_name templates may carry {algorithm} and {strategy}. This arm runs no
+    # search, so name it after the variant rather than leaving the field unset.
+    args.algorithm = f"nav_baseline_{args.mode}"
+    args.strategy = "none"
+
+    # Installs the Tee so run.log captures everything printed below, writes
+    # config.json with a git snapshot of both repositories, and returns the
+    # recorder Runtime fills with plans, subgoals and scene captures. Returns
+    # (None, None) unless --diag-path is set, so a plain run costs nothing.
+    recorder, log_handle = bootstrap_diagnostics(args)
 
     width_cm, height_cm, robot_w, robot_h = read_workspace(args.config)
 
@@ -174,12 +200,37 @@ def main() -> int:
         show_gui=not args.headless,
         show_camera=not args.headless,
     )
+    # Runtime writes summary.json from these, and attaches the recorder to the
+    # planner behind a try/except AttributeError, so the baseline planner needs
+    # no diagnostics method of its own.
+    runtime_config.diagnostics_recorder = recorder
+    runtime_config.capture_scene = bool(args.capture_scene)
 
     print(f"\nPure navigation baseline, mode '{args.mode}'. No pushes will be planned.")
     print("Press ESCAPE to quit")
     print("=" * 60)
 
-    Runtime(runtime_config).run()
+    runtime = Runtime(runtime_config)
+
+    # Nothing in the stack terminates a robot wedged against a block, which is
+    # this baseline's expected outcome: FollowPathController finishes only when
+    # it consumes its path, a stuck robot never advances the path index, and
+    # Runtime polls is_complete only between subgoals. So the run is meant to
+    # be capped from outside, with `timeout 120 python scripts/...`.
+    #
+    # `timeout` sends SIGTERM. Taking it here turns the kill into an ordinary
+    # shutdown, so Runtime writes summary.json on its normal path and the
+    # result below still gets printed and saved. Without this the row is lost
+    # exactly on the runs that matter most.
+    def stop_on_signal(signum, _frame):
+        print(f"\n[baseline] signal {signum}, stopping and recording where we got to")
+        planner.outcome.failure = planner.outcome.failure or "wall_clock_timeout"
+        runtime.stop()
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, stop_on_signal)
+
+    runtime.run()
 
     report(planner.outcome, args.mode)
 
@@ -189,6 +240,10 @@ def main() -> int:
         path = out_dir / f"nav_baseline_{args.mode}_{int(time.time())}.json"
         path.write_text(json.dumps(planner.outcome.as_row(), indent=2))
         print(f"\nwrote {path}")
+
+    if log_handle is not None:
+        # Held open until here so the Tee captures the result block above.
+        log_handle.close()
 
     return 0 if planner.outcome.reached else 2
 
