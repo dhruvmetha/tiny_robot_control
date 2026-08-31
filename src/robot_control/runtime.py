@@ -336,6 +336,18 @@ class Runtime:
             self._window.close_window()
         self._shutdown()
 
+    def abort(self, reason: str) -> None:
+        """Stop the runtime and pin `reason` as the terminal outcome.
+
+        For external supervisors, e.g. `timeout` sending SIGTERM: a plain
+        stop() ends the run but leaves _determine_outcome guessing, while
+        abort() records ("aborted", reason) first so summary.json says why
+        the run ended. A terminal outcome already recorded (goal reached,
+        planning failed) wins over the abort reason.
+        """
+        self._record_terminal_outcome("aborted", reason)
+        self.stop()
+
     @property
     def coordinator(self) -> Optional[ControlCoordinator]:
         """Access the control coordinator."""

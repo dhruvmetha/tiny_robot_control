@@ -36,6 +36,7 @@ import argparse
 import json
 import math
 import os
+import signal
 import sys
 import tempfile
 import time
@@ -79,6 +80,29 @@ from robot_control.planner.namo_binding_loader import (
 # Sentinel for --record-video when passed with no value. Resolved to
 # <diag-root>/recordings/ after diagnostics bootstrap.
 _RECORD_VIDEO_DEFAULT_SENTINEL = "__USE_DIAG_PATH__"
+
+# outcome_reason written when an outside supervisor kills the run, the same
+# string run_navigation_baseline_robot.py records so both arms' timed-out
+# trials grep alike. Formal trials are capped with `timeout N python
+# scripts/run_namo.py ...` because a wedged robot never finishes on its own.
+WALL_CLOCK_TIMEOUT_REASON = "wall_clock_timeout"
+
+
+def _sigterm_handler_for(runtime):
+    """Build the SIGTERM handler that turns an external kill into a shutdown.
+
+    `timeout` sends SIGTERM, and Python's default disposition kills the
+    interpreter without running finally blocks, so Runtime never writes
+    summary.json. Exactly the runs that need a record most, the wedged ones,
+    would leave none. Routing the signal through Runtime.abort() records
+    the reason and lets run() finish its normal summary + scene-after path.
+    Kept separate from the install so tests can call it directly.
+    """
+    def handler(signum, _frame):
+        print(f"\n[run_namo] signal {signum}, stopping and writing the summary",
+              flush=True)
+        runtime.abort(WALL_CLOCK_TIMEOUT_REASON)
+    return handler
 
 
 def local_search_from_args(args) -> LocalSearchConfig:
@@ -1776,6 +1800,9 @@ def run_automatic_mode(args):
     print("=" * 50)
 
     runtime = Runtime(runtime_config)
+    # SIGINT stays on its default path: KeyboardInterrupt already reaches
+    # run()'s finally block and writes the summary as aborted.
+    signal.signal(signal.SIGTERM, _sigterm_handler_for(runtime))
     runtime.run()
 
     # Note: the --sim-xml case is intercepted at main() dispatch and routed
