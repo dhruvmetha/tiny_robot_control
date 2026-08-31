@@ -6,6 +6,7 @@ right answer is obvious: drive through it, go round it, or find no way at all.
 
 import pytest
 
+from robot_control.controller.config import load_controller_configs
 from robot_control.planner.navigation_baseline import PROXIMITY_WEIGHT_OFF
 from robot_control.utils.wavefront import WavefrontPlanner
 
@@ -186,19 +187,102 @@ def test_the_baseline_plans_on_the_planner_the_trials_navigate_with():
 
     assert isinstance(room.planner, WavefrontPlanner)
     assert room.planner.get_grid() is not None
-    # Proximity weighting is off, or a block would cost extra simply for
-    # sitting near itself and the sweep threshold would mix two effects.
-    assert room._config.obstacle_proximity_weight == PROXIMITY_WEIGHT_OFF
 
 
-# A block far from the buried start, so the only thing that can change its
-# price is the cost grid getting rebuilt underneath it.
-DISTANT_BLOCK = (0.5, 0.60, 0.10, 0.02, 0.0)
+# ─── Wall margin, and why it does not touch the movables ────────────────
+
+# A wall and a block of identical size, far enough apart that neither one's
+# margin can reach the other. Everything below probes the same two.
+BAR_HALF_X = 0.10
+BAR_HALF_Y = 0.02
+WALL_BAR = (0.5, 0.15, BAR_HALF_X, BAR_HALF_Y, 0.0)
+BLOCK_BAR = (0.5, 0.60, BAR_HALF_X, BAR_HALF_Y, 0.0)
+
+# Measured off the grid above: at 5 mm cells with a 2 cm falloff, the free
+# cell one out from the wall costs 5.0, the next 3.0, and by the third the
+# margin is spent.
+WALL_EDGE_Y = 0.21
+WALL_NEAR_Y = 0.22
+WALL_CLEAR_Y = 0.24
+BLOCK_EDGE_Y = 0.66
+COST_AT_WALL_EDGE = 5.0
+COST_ONE_CELL_FURTHER = 3.0
 
 
 def _cost_at(baseline, x, y):
     gi, gj = baseline.planner._world_to_grid(x, y)
     return float(baseline.planner._cost_grid[gj, gi])
+
+
+def _bars(movable_cost=MOVABLE_COST_IGNORED):
+    baseline = _grid(statics={"wall": WALL_BAR}, movables={"box": BLOCK_BAR})
+    baseline.plan_for_image(movable_cost)
+    return baseline
+
+
+def test_the_margin_matches_what_the_navigation_controller_uses():
+    """Copying the numbers is how the baseline and the navigator drift into
+    driving differently, so both read the same file."""
+    nav = load_controller_configs().navigation
+    room = _grid()
+
+    assert room._config.obstacle_proximity_weight == nav.obstacle_proximity_weight
+    assert room._config.obstacle_proximity_distance == pytest.approx(
+        nav.obstacle_proximity_distance_cm / 100.0
+    )
+
+
+def test_floor_beside_a_wall_costs_more_than_open_floor():
+    """Without this the route scrapes the wall and the robot clips it, which
+    fails the run for a driving reason rather than a reachability one."""
+    bars = _bars()
+
+    assert _cost_at(bars, 0.5, WALL_EDGE_Y) == pytest.approx(COST_AT_WALL_EDGE)
+    assert _cost_at(bars, 0.5, WALL_NEAR_Y) == pytest.approx(COST_ONE_CELL_FURTHER)
+    assert _cost_at(bars, 0.5, WALL_CLEAR_Y) == pytest.approx(COST_FREE)
+
+
+def test_floor_beside_a_movable_costs_exactly_open_floor():
+    """The margin is wall-only, and it comes out that way for free: only
+    statics reach the occupancy grid, and `_build_cost_grid` floods from
+    OBSTACLE cells. A block never seeds one.
+
+    This is what keeps the wall margin and the price of a movable separable.
+    A block that cost extra merely for sitting near itself would make the
+    sweep threshold report two effects mixed together.
+    """
+    bars = _bars()
+
+    assert _cost_at(bars, 0.5, BLOCK_EDGE_Y) == pytest.approx(COST_FREE)
+
+
+def test_a_wall_and_a_movable_of_the_same_size_are_priced_differently():
+    """The single claim, read straight off the grid."""
+    bars = _bars()
+
+    assert _cost_at(bars, 0.5, WALL_EDGE_Y) > _cost_at(bars, 0.5, BLOCK_EDGE_Y)
+
+
+def test_the_margin_can_be_turned_off():
+    """The sweep wants it off so its threshold isolates one effect."""
+    room = _grid(statics={"wall": WALL_BAR},
+                 wall_proximity_weight=PROXIMITY_WEIGHT_OFF)
+    room.plan_for_image(MOVABLE_COST_IGNORED)
+
+    assert _cost_at(room, 0.5, WALL_EDGE_Y) == pytest.approx(COST_FREE)
+
+
+def test_a_penalised_block_costs_more_than_the_wall_margin_beside_it():
+    """The price multiplies the margin rather than replacing it.
+
+    Assigning a flat 5 would put a block cell hard against a wall BELOW the
+    bare floor next to it, which costs up to 1 + weight, and the route would
+    then prefer to clip the block.
+    """
+    bars = _bars(movable_cost=MOVABLE_COST_PENALISED)
+
+    assert _cost_at(bars, 0.5, 0.60) == pytest.approx(MOVABLE_COST_PENALISED)
+    assert _cost_at(bars, 0.5, 0.60) > _cost_at(bars, 0.5, WALL_NEAR_Y)
 
 
 def test_a_trapped_start_does_not_wipe_the_price_of_the_movables():
@@ -208,7 +292,7 @@ def test_a_trapped_start_does_not_wipe_the_price_of_the_movables():
     of floor, so `penalise` ran as `ignore` and nothing said so.
     """
     buried = _grid(statics={"wall": (0.15, 0.5, 0.05, 0.05, 0.0)},
-                   movables={"box": DISTANT_BLOCK})
+                   movables={"box": BLOCK_BAR})
 
     result = buried.plan(START, GOAL, MOVABLE_COST_PENALISED)
 

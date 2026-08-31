@@ -39,6 +39,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from robot_control.controller.config import load_controller_configs
 from robot_control.planner.reachability_filter import (
     GRID_RESOLUTION_M,
     robot_inflation_radius_cm,
@@ -57,10 +58,18 @@ MOVABLE_COST_IGNORED = 1.0
 # going round, not this default.
 MOVABLE_COST_PENALISED = 5.0
 
-# Proximity weighting nudges routes away from obstacle edges, which is right
-# for driving a real robot and wrong for a baseline. It would add cost near a
-# block on top of the cost of the block itself, so a scene's threshold would
-# mix two effects and report neither cleanly. Off here; trials keep their own.
+# Proximity weighting adds cost to free cells near an obstacle so routes stop
+# hugging edges. The real navigator runs it at controller.yaml's numbers, and a
+# baseline route that scrapes a wall would fail for a driving reason rather
+# than a reachability one, so it runs here too.
+#
+# It costs nothing to reason about because only statics reach the occupancy
+# grid. `_build_cost_grid` seeds its flood from OBSTACLE cells, so the penalty
+# forms around walls and never around a block. That is what makes the wall
+# margin and the movable price separable rather than one contaminating number.
+#
+# Pass this to turn it off, which is what the sweep wants when the point is to
+# isolate the price of a movable.
 PROXIMITY_WEIGHT_OFF = 0.0
 
 # A body whose name ends this way is pushable; everything else is wall. Same
@@ -111,8 +120,26 @@ class NavigationBaseline:
         robot_width_cm: float,
         robot_height_cm: float,
         resolution_m: float = GRID_RESOLUTION_M,
+        wall_proximity_weight: Optional[float] = None,
+        wall_proximity_distance_cm: Optional[float] = None,
     ) -> None:
+        """Build the grid once. `plan` then prices movables into it per call.
+
+        `wall_proximity_weight` and `wall_proximity_distance_cm` default to
+        whatever `config/controller.yaml` gives the navigation controller, so
+        a baseline route keeps the same distance from walls the robot keeps on
+        a NAMO run. Pass PROXIMITY_WEIGHT_OFF to drop the margin.
+        """
         self.bounds = bounds
+
+        # One source for the margin numbers, which is the file the navigation
+        # controller reads. Copying them here is how the baseline and the
+        # navigator would drift into driving differently.
+        nav = load_controller_configs().navigation
+        if wall_proximity_weight is None:
+            wall_proximity_weight = nav.obstacle_proximity_weight
+        if wall_proximity_distance_cm is None:
+            wall_proximity_distance_cm = nav.obstacle_proximity_distance_cm
 
         # Both numbers delegate. `robot_inflation_radius_cm` carries this
         # repository's history of disagreeing with namo_cpp about the radius,
@@ -124,7 +151,8 @@ class NavigationBaseline:
             resolution=resolution_m,
             robot_radius=radius_m,
             inflation_margin=margin_m,
-            obstacle_proximity_weight=PROXIMITY_WEIGHT_OFF,
+            obstacle_proximity_distance=wall_proximity_distance_cm / 100.0,
+            obstacle_proximity_weight=wall_proximity_weight,
         )
 
         self.planner = WavefrontPlanner(self._config)
@@ -192,10 +220,13 @@ class NavigationBaseline:
         self.planner._cost_grid = self._priced_cost_grid(movable_cost)
 
     def _priced_cost_grid(self, movable_cost: float) -> np.ndarray:
-        """The base cost grid, with the movable price multiplied on top.
+        """The wall margin, with the movable price multiplied on top.
 
-        Multiplied rather than assigned, so that a base grid which is not
-        uniformly 1.0 keeps both effects pointing the same way.
+        Multiplied rather than assigned. A cell hard against a wall already
+        costs up to 1 + weight, so assigning a flat 5 there would make a cell
+        covered by a block cheaper than the bare floor beside it, and the
+        route would prefer to clip the block. Multiplying keeps both effects
+        pointing the same way.
         """
         cost_grid = self.planner._cost_grid.copy()
         for covered in self._owner_cells.values():
