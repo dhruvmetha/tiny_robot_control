@@ -71,6 +71,21 @@ REFRESH_PERIOD_S = 1.0 / REFRESH_HZ
 DISPLAY_TOL_CM = 2.0
 DISPLAY_TOL_DEG = 10.0
 
+# The robot's start line uses the same position band as the items but a
+# looser heading band. The car pivots in place, so a heading error costs one
+# turn at run start; a position error changes which contacts the wavefront
+# reaches from the start, and the sheet's reachable/cutoff counts were
+# measured from the sheet's start pose.
+ROBOT_HEADING_TOL_DEG = 15.0
+
+# The robot heading is a true 360-degree bearing, unlike the items' 180-degree
+# long-axis bearings (or 90 for squares).
+ROBOT_HEADING_PERIOD_DEG = 360.0
+
+# Key for the robot pose in the observed dict. Cannot collide with a
+# marker_hint: objects.yaml names items wall_* and obj_*.
+ROBOT_KEY = "robot"
+
 # Sheet centres/sizes are rounded to 0.1 cm, so long_cm == short_cm within
 # this tolerance is "square", not exact float equality.
 SQUARE_TOL_CM = 0.1
@@ -279,6 +294,13 @@ def simulated_observation(
         y += rng.uniform(-noise_cm, noise_cm)
         theta += rng.uniform(-noise_deg, noise_deg)
         observed[r["marker_hint"]] = (x, y, theta)
+    head = rows[0]
+    if head.get("robot_start_x_cm"):
+        observed[ROBOT_KEY] = (
+            float(head["robot_start_x_cm"]) + rng.uniform(-noise_cm, noise_cm),
+            float(head["robot_start_y_cm"]) + rng.uniform(-noise_cm, noise_cm),
+            float(head["robot_start_bearing_deg"]) + rng.uniform(-noise_deg, noise_deg),
+        )
     return observed
 
 
@@ -310,7 +332,9 @@ class ServiceCameraSource:
         obs = self._node.get()
         if obs is None:
             return {}
-        return {name: (p.x, p.y, p.theta) for name, p in obs.objects.items()}
+        out = {name: (p.x, p.y, p.theta) for name, p in obs.objects.items()}
+        out[ROBOT_KEY] = (obs.robot_x, obs.robot_y, obs.robot_theta)
+        return out
 
     def close(self) -> None:
         self._node.stop()
@@ -339,7 +363,9 @@ class DirectCameraSource:
         obs = self._observer.get()
         if obs is None:
             return {}
-        return {name: (p.x, p.y, p.theta) for name, p in obs.objects.items()}
+        out = {name: (p.x, p.y, p.theta) for name, p in obs.objects.items()}
+        out[ROBOT_KEY] = (obs.robot_x, obs.robot_y, obs.robot_theta)
+        return out
 
     def close(self) -> None:
         self._observer.stop()
@@ -429,6 +455,22 @@ class LiveWindow:
         rx, ry = float(head["robot_start_x_cm"]), float(head["robot_start_y_cm"])
         cv2.circle(canvas, self._px(rx, ry), int(GUI_ROBOT_START_RADIUS_CM * GUI_SCALE_PX_PER_CM),
                    (180, 0, 180), 2)
+        robot = observed.get(ROBOT_KEY)
+        if robot is not None:
+            ox, oy, otheta = robot
+            db = wrapped_delta_deg(otheta, float(head["robot_start_bearing_deg"]),
+                                   ROBOT_HEADING_PERIOD_DEG)
+            ok = (abs(ox - rx) <= DISPLAY_TOL_CM and abs(oy - ry) <= DISPLAY_TOL_CM
+                  and abs(db) <= ROBOT_HEADING_TOL_DEG)
+            color = (0, 180, 0) if ok else (0, 0, 230)
+            cv2.circle(canvas, self._px(ox, oy),
+                       int(GUI_ROBOT_START_RADIUS_CM * GUI_SCALE_PX_PER_CM), color, -1)
+            hx = ox + GUI_ROBOT_START_RADIUS_CM * float(np.cos(np.deg2rad(otheta)))
+            hy = oy + GUI_ROBOT_START_RADIUS_CM * float(np.sin(np.deg2rad(otheta)))
+            cv2.arrowedLine(canvas, self._px(ox, oy), self._px(hx, hy),
+                            (255, 255, 255), 2, tipLength=0.4)
+            cv2.arrowedLine(canvas, self._px(ox, oy), self._px(rx, ry),
+                            (200, 100, 0), 2, tipLength=0.15)
         gx, gy = float(head["goal_x_cm"]), float(head["goal_y_cm"])
         cv2.drawMarker(canvas, self._px(gx, gy), (0, 165, 255), cv2.MARKER_STAR, 24, 3)
         cv2.imshow(self._title, canvas)
@@ -476,6 +518,29 @@ def line_for_row(row: Dict[str, str], observed: Optional[Tuple[float, float, flo
             f"dtheta={dtheta:+6.1f}deg  {tag}{flip_note}")
 
 
+def line_for_robot(head: Dict[str, str],
+                   observed: Optional[Tuple[float, float, float]]) -> str:
+    """The robot's own placement line, same shape as the item lines.
+
+    Compared against the sheet's start pose with the full 360 heading period,
+    since a car has a front and a long bar does not.
+    """
+    prefix = f"  {'robot':<{HINT_COL_WIDTH}} {'start':<{ITEM_COL_WIDTH}}"
+    if observed is None:
+        return f"{prefix} MISSING (camera does not see it)"
+
+    ox, oy, otheta = observed
+    dx = ox - float(head["robot_start_x_cm"])
+    dy = oy - float(head["robot_start_y_cm"])
+    dtheta = wrapped_delta_deg(otheta, float(head["robot_start_bearing_deg"]),
+                               ROBOT_HEADING_PERIOD_DEG)
+    ok = (abs(dx) <= DISPLAY_TOL_CM and abs(dy) <= DISPLAY_TOL_CM
+          and abs(dtheta) <= ROBOT_HEADING_TOL_DEG)
+    tag = "OK" if ok else ".."
+    return (f"{prefix} dx={dx:+6.2f}cm dy={dy:+6.2f}cm "
+            f"dtheta={dtheta:+6.1f}deg  {tag}")
+
+
 def print_block(build_id: str, rows: List[Dict[str, str]],
                  observed: Dict[str, Tuple[float, float, float]], live: bool) -> None:
     if live:
@@ -484,6 +549,9 @@ def print_block(build_id: str, rows: List[Dict[str, str]],
     print("-" * 64)
     for r in rows:
         print(line_for_row(r, observed.get(r["marker_hint"])))
+    head = rows[0]
+    if head.get("robot_start_x_cm"):
+        print(line_for_robot(head, observed.get(ROBOT_KEY)))
     print("-" * 64)
     if live:
         print(f"OK band: +/-{DISPLAY_TOL_CM:.1f}cm, +/-{DISPLAY_TOL_DEG:.0f}deg (display "
