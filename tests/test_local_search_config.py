@@ -30,6 +30,7 @@ def _args(**overrides):
         scorer_ckpt=None,
         best_first_hmax=None,
         keyhole_simulation_budget=None,
+        budget_scope=None,
         ml_device="cpu",
         exec_mode=DEFAULT_EXEC_MODE,
     )
@@ -214,3 +215,64 @@ def test_primitive_data_dir_uses_the_resolved_checkout(monkeypatch, tmp_path):
     monkeypatch.setattr(run_namo, "resolve_namo_cpp_dir", lambda _anchor: checkout)
 
     assert run_namo.find_primitive_data_dir() == str(checkout / "data")
+
+
+def test_budget_scope_is_not_forwarded_unless_asked():
+    """Silence inherits namo_cpp's default, so no existing run moves.
+
+    Every recorded trial to date ran without this key. Forwarding a value here
+    by default would change what those runs mean.
+    """
+    cfg = LocalSearchConfig(local_search="best_first", best_first_prior="uniform")
+
+    assert "full_namo_budget_scope" not in cfg.as_planner_kwargs()
+
+
+def test_budget_scope_reaches_the_planner_when_asked():
+    cfg = LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="uniform",
+        budget_scope="keyhole",
+        keyhole_simulation_budget=900,
+    )
+
+    kwargs = cfg.as_planner_kwargs()
+    assert kwargs["full_namo_budget_scope"] == "keyhole"
+    assert kwargs["full_namo_keyhole_simulation_budget"] == 900
+
+
+def test_keyhole_scope_without_a_per_keyhole_budget_fails_before_the_robot_moves():
+    """namo_cpp raises this once the planner is built, which is mid-trial."""
+    with pytest.raises(ValueError, match="requires an explicit per-keyhole budget"):
+        LocalSearchConfig(
+            local_search="best_first",
+            best_first_prior="uniform",
+            budget_scope="keyhole",
+        )
+
+
+def test_unknown_budget_scope_is_rejected():
+    with pytest.raises(ValueError, match="Unknown budget_scope"):
+        LocalSearchConfig(
+            local_search="best_first",
+            best_first_prior="uniform",
+            budget_scope="per_door",
+        )
+
+
+def test_the_banner_always_states_which_budget_rule_ran():
+    """`canonical` reads as per-keyhole; namo_cpp's default is not.
+
+    A banner that named the budget but not its scope would let a reader assume
+    the wrong rule, which is the confusion this key exists to end.
+    """
+    inherited = LocalSearchConfig(local_search="best_first", best_first_prior="uniform")
+    chosen = LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="uniform",
+        budget_scope="keyhole",
+        keyhole_simulation_budget=900,
+    )
+
+    assert "scope=inherited" in inherited.describe()
+    assert "scope=keyhole" in chosen.describe()

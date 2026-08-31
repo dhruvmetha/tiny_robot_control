@@ -23,6 +23,19 @@ from typing import Any, Dict, Optional
 LOCAL_SEARCH_CHOICES = ("region_bfs", "best_first")
 BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 
+# How the simulation budget is handed out across the boundaries one problem
+# opens. `keyhole` rebuilds the opener with a fresh allowance per boundary;
+# `full_problem` shares one allowance across all of them, so a boundary that
+# spends it leaves nothing for the next.
+#
+# namo_cpp names its constant CANONICAL_KEYHOLE_SIMULATION_BUDGET and its
+# protocol comment reads "900 simulations per keyhole", but the scope it
+# defaults to is `full_problem`, which is not per keyhole. Nothing here could
+# say otherwise before this key existed, so a trial could not choose and could
+# not record which rule it ran under. Leaving it None still forwards nothing
+# and inherits namo_cpp's default, so no existing run changes.
+BUDGET_SCOPE_CHOICES = ("full_problem", "keyhole")
+
 # Which decision rule reads the ranked pool. `search` pops a priority queue and
 # can back up. `reactive` takes the argmax at the live state in front of the
 # robot. `greedy_dfs` belongs to the whole-problem Full NAMO planner: it commits
@@ -71,6 +84,7 @@ class LocalSearchConfig:
     scorer_ckpt: Optional[str] = None
     best_first_hmax: Optional[int] = None
     keyhole_simulation_budget: Optional[int] = None
+    budget_scope: Optional[str] = None
     ml_device: Optional[str] = None
     exec_mode: str = DEFAULT_EXEC_MODE
 
@@ -114,6 +128,18 @@ class LocalSearchConfig:
             raise ValueError(
                 f"keyhole_simulation_budget must be >= 1, "
                 f"got {self.keyhole_simulation_budget}"
+            )
+        if self.budget_scope is not None and self.budget_scope not in BUDGET_SCOPE_CHOICES:
+            raise ValueError(
+                f"Unknown budget_scope {self.budget_scope!r}. "
+                f"Valid: {list(BUDGET_SCOPE_CHOICES)}"
+            )
+        if self.budget_scope == "keyhole" and self.keyhole_simulation_budget is None:
+            # namo_cpp raises this once the planner is constructed mid-run.
+            # Catching it here fails before the robot has moved.
+            raise ValueError(
+                "budget_scope='keyhole' requires an explicit per-keyhole budget; "
+                "pass --keyhole-simulation-budget"
             )
 
     @property
@@ -167,6 +193,8 @@ class LocalSearchConfig:
             kwargs["best_first_hmax"] = self.best_first_hmax
         if self.keyhole_simulation_budget is not None:
             kwargs["full_namo_keyhole_simulation_budget"] = self.keyhole_simulation_budget
+        if self.budget_scope is not None:
+            kwargs["full_namo_budget_scope"] = self.budget_scope
         if self.ml_device:
             kwargs["ml_device"] = self.ml_device
         return kwargs
@@ -190,6 +218,13 @@ class LocalSearchConfig:
         parts.append(f"hmax={self.best_first_hmax if self.best_first_hmax is not None else 'canonical'}")
         parts.append(
             f"budget={self.keyhole_simulation_budget if self.keyhole_simulation_budget is not None else 'canonical'}"
+        )
+        # Printed even when inherited. "canonical" reads as per-keyhole because
+        # of what namo_cpp calls its constant, and namo_cpp's default is not
+        # per-keyhole, so a banner that omitted the scope would let a reader
+        # assume the wrong rule.
+        parts.append(
+            f"scope={self.budget_scope if self.budget_scope is not None else 'inherited'}"
         )
         if self.ml_device:
             parts.append(f"device={self.ml_device}")

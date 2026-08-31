@@ -59,6 +59,7 @@ from robot_control.planner.region_target import (
 )
 from robot_control.planner import (
     BEST_FIRST_PRIOR_CHOICES,
+    BUDGET_SCOPE_CHOICES,
     DEFAULT_BEST_FIRST_PRIOR,
     DEFAULT_EXEC_MODE,
     DEFAULT_LOCAL_SEARCH,
@@ -93,6 +94,7 @@ def local_search_from_args(args) -> LocalSearchConfig:
         scorer_ckpt=args.scorer_ckpt,
         best_first_hmax=args.best_first_hmax,
         keyhole_simulation_budget=args.keyhole_simulation_budget,
+        budget_scope=args.budget_scope,
         ml_device=args.ml_device,
         exec_mode=args.exec_mode or DEFAULT_EXEC_MODE,
     )
@@ -2071,6 +2073,19 @@ def main():
         default=None,
         help="Simulator calls allowed per region boundary. Omit to use "
              "namo_cpp's canonical value (900).",
+    )
+    parser.add_argument(
+        "--budget-scope",
+        type=str,
+        default=None,
+        choices=list(BUDGET_SCOPE_CHOICES),
+        help="Who the simulation budget belongs to. 'keyhole' gives every "
+             "region boundary its own allowance; 'full_problem' shares one "
+             "allowance across all of them, so a boundary that spends it "
+             "leaves nothing for the next. Omit to inherit namo_cpp's "
+             "default, which is full_problem despite its constant being "
+             "named CANONICAL_KEYHOLE_SIMULATION_BUDGET. 'keyhole' requires "
+             "--keyhole-simulation-budget.",
     )
     parser.add_argument(
         "--max-chain-depth",
