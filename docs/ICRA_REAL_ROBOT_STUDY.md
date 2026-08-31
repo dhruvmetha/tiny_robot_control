@@ -47,8 +47,18 @@ external `timeout`.
      --run-name nav_penalise --capture-scene
    ```
 
-   Exit 0 means driving alone reached the goal; the scene leaves the NAMO
-   comparison but its record stays in results. Exit 2 means it needs NAMO.
+   Read the outcome row, `nav_baseline_penalise_<epoch>.json`, not the
+   exit code. A scene leaves the NAMO comparison only when `reached` is
+   true AND `objects_moved` is empty, which is the case where driving
+   alone genuinely sufficed. Its record stays in results either way.
+
+   The exit code cannot carry that decision. It is 0 whenever the robot
+   arrived, and since 2026-08-31 the baseline retreats and replans up to
+   five times when it wedges, shoving the block a few centimetres each
+   attempt. So a scene the robot bulldozed through also exits 0, and
+   dropping it would discard a scene that demonstrably needed the block
+   moved. `stuck_retries` above zero is the tell; it counts the cycles
+   and `stuck_causes` names each one.
 3. Ten NAMO trials, alternating arms M-R-M-R-M-R-M-R-M-R. Never 5+5
    blocks, so battery sag and session drift spread across both arms:
 
