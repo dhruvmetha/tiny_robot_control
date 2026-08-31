@@ -60,6 +60,17 @@ MOVED_THRESHOLD_CM = 1.0
 # waiting.
 DEFAULT_TIMEOUT_S = 90.0
 
+# How many times the drive may get stuck, back out, and try again before the
+# run ends. The navigation controller retreats to free space on each one, so
+# every retry starts from a clean pose and a re-observed scene.
+#
+# Capped because retrying is not consequence-free here. Each attempt shoves the
+# block a little further, so an uncapped loop would slowly bulldoze a path open
+# and then report navigation solving a scene it actually cleared by pushing.
+# The outcome row counts the cycles for that reason: a goal reached after five
+# shoves is a different result from one reached by driving.
+MAX_STUCK_RETRIES = 5
+
 
 @dataclass
 class BaselineOutcome:
@@ -71,6 +82,12 @@ class BaselineOutcome:
     distance_to_goal_cm: Optional[float] = None
     elapsed_s: float = 0.0
     route_waypoints: int = 0
+    # Times the drive wedged, retreated and replanned. Above zero means the
+    # robot shoved its way forward rather than driving round it.
+    stuck_retries: int = 0
+    # What the controller called each one. "blocked" means it was commanded
+    # hard enough to move and did not; "under_commanded" means it never was.
+    stuck_causes: List[str] = field(default_factory=list)
     # Cells of each movable the planned route crosses. On the ignore variant
     # this is what the robot is about to drive into.
     route_crosses: Dict[str, int] = field(default_factory=dict)
@@ -91,6 +108,8 @@ class BaselineOutcome:
             ),
             "elapsed_s": round(self.elapsed_s, 1),
             "route_waypoints": self.route_waypoints,
+            "stuck_retries": self.stuck_retries,
+            "stuck_causes": ",".join(self.stuck_causes),
             "route_crosses": ",".join(sorted(self.route_crosses)),
             "objects_moved": ",".join(sorted(self.objects_moved_cm)),
             "objects_moved_cm": {k: round(v, 2) for k, v in self.objects_moved_cm.items()},
@@ -199,16 +218,40 @@ class NavigationBaselinePlanner(Planner):
         self._planning_failed = True
 
     def notify_subgoal_done(self, obs: Observation, failed: bool = False) -> None:
-        """The drive ended, so the run ends. Whether it arrived is decided by
-        distance, not by this verdict: a controller reports done when it runs
-        out of path, and a robot stalled against a block is exactly the case
-        worth recording rather than retrying.
+        """The drive ended. Replan from where the robot actually is, or stop.
+
+        Arrival is decided by distance, never by this verdict: a controller
+        reports done when it runs out of path, and a robot stalled against a
+        block does that too.
+
+        A failed drive means the controller's watchdog fired and it has already
+        backed the robot into free space, so a retry starts from a clean pose
+        and a re-observed scene. The block has usually shifted by then, which
+        is why the route is planned again rather than resumed.
         """
-        self._drive_over = True
         self._dispatched = False
         self._record(obs)
-        if failed and self.outcome.distance_to_goal_cm > GOAL_TOLERANCE_CM:
-            self.outcome.failure = "navigation_controller_gave_up"
+
+        if not failed or self.outcome.distance_to_goal_cm <= GOAL_TOLERANCE_CM:
+            self._drive_over = True
+            return
+
+        if self.outcome.stuck_retries >= MAX_STUCK_RETRIES:
+            self._drive_over = True
+            self.outcome.failure = "stuck_retry_limit_reached"
+            return
+
+        self.outcome.stuck_retries += 1
+        self.outcome.stuck_causes.append(self._cause_from())
+        # Plan again from here. The scene moved, so the old route is stale.
+        self._route_cm = self._plan_route(obs)
+        if not self._route_cm:
+            self._drive_over = True
+
+    def _cause_from(self) -> str:
+        """What the controller called it, when the controller is reachable."""
+        controller = getattr(self, "navigation_controller", None)
+        return getattr(controller, "_failure_cause", None) or "stuck"
 
     def _plan_route(self, obs: Observation) -> List[Tuple[float, float]]:
         statics, movables = self._split_objects(obs)
