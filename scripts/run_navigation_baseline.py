@@ -33,6 +33,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+sys.path.insert(0, str(Path(__file__).parent))
+from run_namo import _robot_pose_from_real_run  # noqa: E402
+
 from robot_control.planner.navigation_baseline import (
     MOVABLE_COST_IGNORED,
     MOVABLE_COST_PENALISED,
@@ -56,6 +59,10 @@ SWEEP_PENALTIES = (1.0, 1.25, 1.5, 2.0, 3.0, 5.0, 10.0, 25.0, 100.0)
 # A body whose name ends this way is pushable. Same rule the rest of the
 # pipeline uses.
 MOVABLE_SUFFIX = "_movable"
+
+# A robot within this distance of (0, 0) was never placed. The origin is the
+# bottom-left table corner, inside the boundary wall, so no scene starts there.
+ORIGIN_EPS_M = 0.01
 
 # `get_object_info` reports statics with a pose and movables with size only,
 # because a movable's pose is live state and belongs in the observation. The
@@ -118,11 +125,36 @@ def read_scene_via_mujoco(
             movables[name] = (float(pose[0]), float(pose[1]),
                               half_x, half_y, math.degrees(float(pose[2])))
 
-    robot_pose = obs.get("robot_pose")
-    if robot_pose is None:
-        raise ValueError(f"{xml_path}: the observation carries no robot_pose")
-    start = (float(robot_pose[0]), float(robot_pose[1]))
-    return statics, movables, start, read_goal_xy(xml_path)
+    return statics, movables, read_robot_start(xml_path, obs), read_goal_xy(xml_path)
+
+
+def read_robot_start(xml_path: Path, obs: Dict) -> Tuple[float, float]:
+    """Where the robot actually starts, in metres.
+
+    A scene that places its robot body carries the pose in the observation and
+    that is the answer. The real_test_envs captures do not: they `<include>`
+    the car model instead of positioning it, so MuJoCo puts the body at the
+    origin. The origin is the bottom-left corner of the table, buried inside
+    the boundary wall, and a baseline scored from there reports no route and
+    means nothing by it.
+
+    Those captures keep the true pose in `mid_obs.jsonl`, the same sidecar
+    run_namo reads, so read it from there. A scene with neither is refused
+    rather than scored from a placeholder, because a wrong start produces a
+    confident answer to a question nobody asked.
+    """
+    pose = obs.get("robot_pose")
+    if pose is not None and math.hypot(float(pose[0]), float(pose[1])) > ORIGIN_EPS_M:
+        return (float(pose[0]), float(pose[1]))
+
+    sidecar = _robot_pose_from_real_run(xml_path.parent)
+    if sidecar is not None:
+        return (sidecar[0] / 100.0, sidecar[1] / 100.0)
+
+    raise ValueError(
+        f"{xml_path}: the robot sits at the origin and {xml_path.parent}/"
+        f"mid_obs.jsonl carries no pose, so the start is unknown"
+    )
 
 
 def save_route_image(
