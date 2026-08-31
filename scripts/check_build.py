@@ -458,11 +458,7 @@ class LiveWindow:
         robot = observed.get(ROBOT_KEY)
         if robot is not None:
             ox, oy, otheta = robot
-            db = wrapped_delta_deg(otheta, float(head["robot_start_bearing_deg"]),
-                                   ROBOT_HEADING_PERIOD_DEG)
-            ok = (abs(ox - rx) <= DISPLAY_TOL_CM and abs(oy - ry) <= DISPLAY_TOL_CM
-                  and abs(db) <= ROBOT_HEADING_TOL_DEG)
-            color = (0, 180, 0) if ok else (0, 0, 230)
+            color = (0, 180, 0) if robot_placed(head, observed) else (0, 0, 230)
             cv2.circle(canvas, self._px(ox, oy),
                        int(GUI_ROBOT_START_RADIUS_CM * GUI_SCALE_PX_PER_CM), color, -1)
             hx = ox + GUI_ROBOT_START_RADIUS_CM * float(np.cos(np.deg2rad(otheta)))
@@ -534,11 +530,29 @@ def line_for_robot(head: Dict[str, str],
     dy = oy - float(head["robot_start_y_cm"])
     dtheta = wrapped_delta_deg(otheta, float(head["robot_start_bearing_deg"]),
                                ROBOT_HEADING_PERIOD_DEG)
-    ok = (abs(dx) <= DISPLAY_TOL_CM and abs(dy) <= DISPLAY_TOL_CM
-          and abs(dtheta) <= ROBOT_HEADING_TOL_DEG)
-    tag = "OK" if ok else ".."
+    tag = "OK" if robot_placed(head, {ROBOT_KEY: observed}) else ".."
     return (f"{prefix} dx={dx:+6.2f}cm dy={dy:+6.2f}cm "
             f"dtheta={dtheta:+6.1f}deg  {tag}")
+
+
+def robot_placed(head: Dict[str, str],
+                 observed: Dict[str, Tuple[float, float, float]]) -> bool:
+    """True when the robot start line would read OK, or the sheet has no
+    start pose to check. Gates the --gui auto-close: the checksum grades
+    only the objects, so without this the window closes on PASS while the
+    robot is still parked anywhere.
+    """
+    if not head.get("robot_start_x_cm"):
+        return True
+    pose = observed.get(ROBOT_KEY)
+    if pose is None:
+        return False
+    ox, oy, otheta = pose
+    dtheta = wrapped_delta_deg(otheta, float(head["robot_start_bearing_deg"]),
+                               ROBOT_HEADING_PERIOD_DEG)
+    return (abs(ox - float(head["robot_start_x_cm"])) <= DISPLAY_TOL_CM
+            and abs(oy - float(head["robot_start_y_cm"])) <= DISPLAY_TOL_CM
+            and abs(dtheta) <= ROBOT_HEADING_TOL_DEG)
 
 
 def print_block(build_id: str, rows: List[Dict[str, str]],
@@ -709,7 +723,7 @@ def main() -> None:
                 if window.wait_key(int(REFRESH_PERIOD_S * 1000)):
                     print("closed by user")
                     break
-                if verdict == "PASS":
+                if verdict == "PASS" and robot_placed(rows[0], observed):
                     break
             elif select.select([sys.stdin], [], [], REFRESH_PERIOD_S)[0]:
                 sys.stdin.readline()

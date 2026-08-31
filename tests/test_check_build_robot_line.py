@@ -49,6 +49,18 @@ def test_unseen_robot_reads_missing():
     assert "MISSING" in line
 
 
+def test_gui_close_gate_requires_robot_in_place():
+    # Objects can PASS their checksum while the robot is parked anywhere;
+    # the auto-close gate must hold the window open until the robot is OK.
+    assert not check_build.robot_placed(HEAD, {})
+    assert not check_build.robot_placed(
+        HEAD, {check_build.ROBOT_KEY: (27.3, 18.4, 101.0)})
+    assert check_build.robot_placed(
+        HEAD, {check_build.ROBOT_KEY: (27.9, 7.5, 350.0)})
+    # A sheet with no start pose never blocks the close.
+    assert check_build.robot_placed({}, {})
+
+
 def test_simulated_observation_includes_robot():
     rows = [{
         "marker_hint": "wall_10", "item": "brick",
