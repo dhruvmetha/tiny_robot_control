@@ -33,6 +33,7 @@ from robot_control.planner.navigation_baseline import (
 )
 from robot_control.planner.navigation_baseline_planner import (
     GOAL_TOLERANCE_CM,
+    MAX_STUCK_RETRIES,
     MODE_COSTS,
     NavigationBaselinePlanner,
 )
@@ -180,19 +181,75 @@ def test_it_does_not_re_emit_the_drive_every_tick():
     assert second is None
 
 
-def test_it_does_not_replan_after_the_drive_ends():
-    """One drive, one verdict. Replanning would turn a stall into a retry
-    loop and the run would never produce the result it exists to produce."""
+def test_a_stuck_drive_is_replanned_from_where_the_robot_ended_up():
+    """The controller retreats to free space before reporting failure, so a
+    retry starts from a clean pose and a scene that has usually shifted."""
     planner = _planner()
-    obs = _obs()
+    obs = _obs(objects={"box": _block(24.0, 40.0)})
     planner.plan(obs)
 
     planner.notify_subgoal_done(obs, failed=True)
 
+    assert planner.outcome.stuck_retries == 1
+    assert isinstance(planner.plan(obs), NavigateSubgoal)
+
+
+def test_retries_stop_at_the_cap():
+    """Each attempt shoves the block further, so an uncapped loop would
+    bulldoze a path open and call it navigation."""
+    planner = _planner()
+    obs = _obs(objects={"box": _block(24.0, 40.0)})
+    planner.plan(obs)
+
+    for _ in range(MAX_STUCK_RETRIES + 2):
+        planner.notify_subgoal_done(obs, failed=True)
+        planner.plan(obs)
+
+    assert planner.outcome.stuck_retries == MAX_STUCK_RETRIES
+    assert planner.outcome.failure == "stuck_retry_limit_reached"
     assert planner.plan(obs) is None
-    # False, because the robot did not arrive. Runtime reads True as success.
     assert planner.is_complete(obs) is False
     assert planner._planning_failed is True
+
+
+def test_the_row_reports_how_many_times_it_got_stuck():
+    """A goal reached after five shoves is not the same result as one
+    reached by driving, and the row has to be able to say so."""
+    planner = _planner()
+    obs = _obs(objects={"box": _block(24.0, 40.0)})
+    planner.plan(obs)
+
+    planner.notify_subgoal_done(obs, failed=True)
+    planner.notify_subgoal_done(obs, failed=True)
+
+    row = planner.outcome.as_row()
+    assert row["stuck_retries"] == 2
+    assert row["stuck_causes"]
+
+
+def test_a_drive_that_ends_cleanly_is_not_retried():
+    """Only a watchdog failure means the robot is wedged. Running out of path
+    short of the goal is the route being wrong, and retrying the same route
+    would just repeat it."""
+    planner = _planner()
+    obs = _obs()
+    planner.plan(obs)
+
+    planner.notify_subgoal_done(obs, failed=False)
+
+    assert planner.outcome.stuck_retries == 0
+    assert planner.plan(obs) is None
+
+
+def test_arriving_is_never_retried_even_if_the_controller_says_it_failed():
+    planner = _planner()
+    planner.plan(_obs())
+    arrived = _obs(x=GOAL[0], y=GOAL[1] - GOAL_TOLERANCE_CM / 2.0)
+
+    planner.notify_subgoal_done(arrived, failed=True)
+
+    assert planner.outcome.stuck_retries == 0
+    assert planner.is_complete(arrived) is True
 
 
 # ─── The two variants differ, and differ the right way ──────────────────
