@@ -1884,8 +1884,9 @@ def main():
              "this run_namo session. Pass with no value to default to "
              "<diag-path>/<run-name>/recordings/ (requires --diag-path); "
              "pass with an explicit DIR to override. Requires --camera-service; "
-             "the service writes the MP4 itself. Also writes per-subgoal "
-             "meta JSON + XML snapshots for sim replay.",
+             "the service writes one continuous full_run.mp4 per session with "
+             "a burned-in elapsed timer, plus per-subgoal meta JSON + XML "
+             "snapshots whose epochs index into the film.",
     )
     # Goal specification
     parser.add_argument(

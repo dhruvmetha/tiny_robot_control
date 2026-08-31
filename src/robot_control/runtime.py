@@ -31,6 +31,11 @@ from robot_control.executor import SubgoalExecutor
 from robot_control.planner import RVGPlanner, WavefrontPathPlanner
 from robot_control.planner.base import Planner
 
+# Stem of the one continuous video recorded per run. The per-subgoal meta
+# JSONs carry wall-clock epochs that index into this single file, which is
+# why the name never varies within a session directory.
+FULL_RUN_VIDEO_STEM = "full_run"
+
 # Conditional imports for simulation
 try:
     from robot_control.environment.sim import SimEnv, SimConfig
@@ -787,10 +792,11 @@ class Runtime:
             self._start_real()
 
         # If a remote camera_service is available and recording is requested,
-        # initialize the RemoteRecordClient. Actual start/stop is bracketed
-        # around each subgoal dispatch in _video_subgoal_start/_done so that
-        # each push produces its own MP4 inside a per-session subdirectory.
-        # Also writes a session.json + per-subgoal JSON/XML for replay.
+        # initialize the RemoteRecordClient. Recording runs continuously for
+        # the whole session as one full_run.mp4, started here and stopped in
+        # _shutdown_real. _video_subgoal_start/_done no longer start or stop
+        # video; they write the per-subgoal meta JSON + XML with wall-clock
+        # epochs that index into the single film.
         if (
             self._config.record_video_dir
             and self._config.camera_service_address
@@ -812,6 +818,16 @@ class Runtime:
                 _Path(self._record_session_dir).mkdir(parents=True, exist_ok=True)
                 self._record_subgoal_index = 0
 
+                # Start the whole-run film now; _shutdown_real stops it.
+                full_run_path = None
+                try:
+                    full_run_path = self._remote_recorder.start(
+                        self._record_session_dir, filename=FULL_RUN_VIDEO_STEM
+                    )
+                except Exception as exc:
+                    print(f"[Runtime] full-run video start failed: {exc!r}", flush=True)
+                self._record_active = full_run_path is not None
+
                 robot_goal = None
                 if self._planner is not None and hasattr(self._planner, "_robot_goal_cm"):
                     rg = getattr(self._planner, "_robot_goal_cm", None)
@@ -824,6 +840,12 @@ class Runtime:
                     "robot_goal_cm": robot_goal,
                     "mode": self._config.mode,
                     "config_path": self._config.config_path,
+                    "video_path": (
+                        f"{FULL_RUN_VIDEO_STEM}.mp4" if self._record_active else None
+                    ),
+                    "video_started_epoch": (
+                        time.time() if self._record_active else None
+                    ),
                 }
                 try:
                     (_Path(self._record_session_dir) / "session.json").write_text(
@@ -833,7 +855,7 @@ class Runtime:
                     print(f"[Runtime] Could not write session.json: {exc!r}")
 
                 print(
-                    f"[Runtime] Per-subgoal video + meta will write to "
+                    f"[Runtime] Full-run video + per-subgoal meta will write to "
                     f"{self._record_session_dir}"
                 )
             except Exception as exc:
@@ -1914,22 +1936,16 @@ class Runtime:
         return type(subgoal).__name__.lower()
 
     def _video_subgoal_start(self, subgoal, obs: Observation = None) -> None:
-        """Start a new MP4 clip for this subgoal + write meta JSON + XML snapshot."""
+        """Write this subgoal's meta JSON + XML snapshot.
+
+        The film itself records continuously as full_run.mp4 for the whole
+        session; the epoch written here is the index into it.
+        """
         if self._record_session_dir is None:
             return
         self._record_subgoal_index += 1
         tag = self._subgoal_tag(subgoal)
         base = f"subgoal_{self._record_subgoal_index:03d}_{tag}"
-
-        if self._remote_recorder is not None:
-            try:
-                path = self._remote_recorder.start(self._record_session_dir, filename=base)
-                self._record_active = path is not None
-            except Exception as exc:
-                print(f"[Runtime] _video_subgoal_start (video) failed: {exc!r}", flush=True)
-                self._record_active = False
-        else:
-            self._record_active = False
 
         if obs is None:
             return
@@ -1951,7 +1967,10 @@ class Runtime:
                 "subgoal_index": self._record_subgoal_index,
                 "tag": tag,
                 "timestamp": _dt.now().isoformat(),
-                "video_path": f"{base}.mp4" if self._record_active else None,
+                "video_path": (
+                    f"{FULL_RUN_VIDEO_STEM}.mp4" if self._record_active else None
+                ),
+                "video_epoch_at_dispatch": time.time(),
                 "xml_path": f"{base}.xml" if written_xml else None,
                 "dispatched_robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
                 "dispatched_object_poses_cm": {
@@ -1980,15 +1999,11 @@ class Runtime:
             print(f"[Runtime] _video_subgoal_start (meta) failed: {exc!r}", flush=True)
 
     def _video_subgoal_done(self, obs: Observation = None, failed: bool = False) -> None:
-        """Stop the current MP4 clip + append outcome to per-subgoal meta JSON."""
-        if self._remote_recorder is not None and self._record_active:
-            try:
-                self._remote_recorder.stop()
-            except Exception as exc:
-                print(f"[Runtime] _video_subgoal_done (video) failed: {exc!r}", flush=True)
-            finally:
-                self._record_active = False
+        """Append the outcome to the per-subgoal meta JSON.
 
+        Leaves the recording running; full_run.mp4 spans the whole session
+        and _shutdown_real is the only stop.
+        """
         if obs is None or self._record_session_dir is None or self._record_subgoal_index == 0:
             return
         try:
@@ -2003,6 +2018,7 @@ class Runtime:
             meta_path = matches[-1]
             meta = _json.loads(meta_path.read_text())
             meta["outcome"] = "failed" if failed else "success"
+            meta["video_epoch_at_done"] = time.time()
             meta["completed_robot_pose_cm"] = [obs.robot_x, obs.robot_y, obs.robot_theta]
             meta["completed_object_poses_cm"] = {
                 name: [o.x, o.y, o.theta] for name, o in obs.objects.items()

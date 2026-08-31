@@ -13,6 +13,19 @@ from pubsub import pub
 
 from robot_control.core.topics import Topics
 
+# Elapsed-time stamp burned into RECORDED frames only; the live GUI feed is
+# untouched because the stamp goes on a copy. Top-left corner, white text
+# over a black outline so it reads against any table surface.
+TIMER_ORG_PX = (12, 28)
+TIMER_FONT_SCALE = 0.7
+TIMER_OUTLINE_THICKNESS_PX = 4
+TIMER_TEXT_THICKNESS_PX = 2
+
+
+def format_elapsed(seconds: float) -> str:
+    """MM:SS.d for the burned-in timer, e.g. 75.34 -> '01:15.3'."""
+    return f"{int(seconds // 60):02d}:{seconds % 60:04.1f}"
+
 
 class CameraRecorder:
     """
@@ -145,9 +158,21 @@ class CameraRecorder:
             if self._start_timestamp is None:
                 self._start_timestamp = timestamp
             slot = int((timestamp - self._start_timestamp) * self._fps)
-            while self._frame_count <= slot:
-                self._writer.write(frame)
-                self._frame_count += 1
+            if self._frame_count <= slot:
+                # Stamp a copy: the publisher's frame is shared with the GUI
+                # and other subscribers, and duplicates written to fill slots
+                # all show this frame's instant, so one stamp serves them all.
+                stamped = frame.copy()
+                label = format_elapsed(timestamp - self._start_timestamp)
+                cv2.putText(stamped, label, TIMER_ORG_PX, cv2.FONT_HERSHEY_SIMPLEX,
+                            TIMER_FONT_SCALE, (0, 0, 0),
+                            TIMER_OUTLINE_THICKNESS_PX, cv2.LINE_AA)
+                cv2.putText(stamped, label, TIMER_ORG_PX, cv2.FONT_HERSHEY_SIMPLEX,
+                            TIMER_FONT_SCALE, (255, 255, 255),
+                            TIMER_TEXT_THICKNESS_PX, cv2.LINE_AA)
+                while self._frame_count <= slot:
+                    self._writer.write(stamped)
+                    self._frame_count += 1
 
     def start(self, filename: Optional[str] = None) -> str:
         """
