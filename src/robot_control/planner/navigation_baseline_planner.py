@@ -123,6 +123,10 @@ class NavigationBaselinePlanner(Planner):
         self._started: Optional[float] = None
         self._first_poses: Dict[str, Tuple[float, float]] = {}
         self._route_cm: List[Tuple[float, float]] = []
+        # Separates "no route exists" from "nobody has planned yet". Runtime
+        # asks is_complete before it asks plan, so an empty route means
+        # nothing until this flips.
+        self._planned = False
         self._dispatched = False
         self._drive_over = False
 
@@ -131,6 +135,7 @@ class NavigationBaselinePlanner(Planner):
             self._started = time.time()
             self._first_poses = self._object_poses(obs)
             self._route_cm = self._plan_route(obs)
+            self._planned = True
 
         # One drive is the whole plan. Re-emitting would restart it every tick,
         # and replanning after it ends would turn a stall into a retry loop,
@@ -152,8 +157,14 @@ class NavigationBaselinePlanner(Planner):
             self.outcome.reached = True
             self.outcome.failure = None
             return True
-        if not self._route_cm:
+        if self._planned and not self._route_cm:
             return True
+        if not self._planned:
+            # Nothing has been planned, so nothing can be finished. Returning
+            # True here ends the run before it starts AND makes Runtime record
+            # the outcome as success, which would file a baseline that never
+            # moved as a scene the robot solved.
+            return False
         if self._drive_over:
             self.outcome.failure = self.outcome.failure or "stopped_short_of_goal"
             return True
@@ -243,13 +254,32 @@ class NavigationBaselinePlanner(Planner):
         ) ** 0.5
 
     def get_drawings(self) -> List[Dict[str, Any]]:
-        """Goal ring, and the route the baseline chose."""
+        """Goal ring, and the route the baseline chose.
+
+        Every entry needs a `uuid`; QtCanvas.update_drawings skips any drawing
+        without one, so a missing key means nothing renders and nothing says
+        why. Circles take a `center` pair rather than separate x and y.
+        """
         drawings: List[Dict[str, Any]] = [
-            {"type": "circle", "x": self.goal_cm[0], "y": self.goal_cm[1],
-             "radius": GOAL_TOLERANCE_CM, "color": "green"}
+            {
+                "uuid": "nav_baseline_goal",
+                "type": "point",
+                "position": self.goal_cm,
+                "radius": 10,
+                "color": "#00FF00",
+                "fill": "#00FF0044",
+            }
         ]
         if self._route_cm:
-            drawings.append({"type": "path", "points": self._route_cm, "color": "blue"})
+            drawings.append({
+                "uuid": "nav_baseline_route",
+                "type": "path",
+                "points": self._route_cm,
+                # Blue against the follower's green, so the route the baseline
+                # chose stays distinguishable from the one being driven.
+                "color": "#3399FF",
+                "width": 2,
+            })
         return drawings
 
     def reset(self) -> None:
@@ -257,5 +287,6 @@ class NavigationBaselinePlanner(Planner):
         self._started = None
         self._first_poses = {}
         self._route_cm = []
+        self._planned = False
         self._dispatched = False
         self._drive_over = False
