@@ -60,6 +60,10 @@ from run_namo import detect_goal_from_camera  # noqa: E402
 
 GOAL_DETECT_TIMEOUT_S = 5.0
 
+# Same sentinel run_namo uses, so `--record-video` with no directory means
+# "under this run's diagnostics folder" for both arms.
+RECORD_VIDEO_DEFAULT_SENTINEL = "__USE_DIAG_PATH__"
+
 
 def read_workspace(config_path: str) -> Tuple[float, float, float, float]:
     """Table size and robot footprint, in cm, from the real config."""
@@ -126,8 +130,10 @@ def main() -> int:
     )
     parser.add_argument("--camera-service", default=None,
                         help="ZMQ address of a running camera_service, e.g. tcp://localhost:5556")
-    parser.add_argument("--record-video", default=None,
-                        help="Ask the camera service to record video into this directory.")
+    parser.add_argument("--record-video", nargs="?", default=None,
+                        const=RECORD_VIDEO_DEFAULT_SENTINEL, metavar="DIR",
+                        help="Record video to DIR. Bare, it records under the "
+                             "run's --diag-path folder, same as run_namo.")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_S,
                         help=f"Give up after this long (default: {DEFAULT_TIMEOUT_S:g} s)")
     parser.add_argument("--speed", type=float, default=0.3)
@@ -167,6 +173,14 @@ def main() -> int:
     # recorder Runtime fills with plans, subgoals and scene captures. Returns
     # (None, None) unless --diag-path is set, so a plain run costs nothing.
     recorder, log_handle = bootstrap_diagnostics(args)
+
+    # Resolve a bare --record-video against the diagnostics root, which only
+    # exists once bootstrap has made the run directory.
+    if args.record_video == RECORD_VIDEO_DEFAULT_SENTINEL:
+        if recorder is None or not recorder.enabled:
+            print("Error: --record-video with no DIR requires --diag-path.")
+            return 1
+        args.record_video = str(Path(recorder.root) / "recordings")
 
     width_cm, height_cm, robot_w, robot_h = read_workspace(args.config)
 

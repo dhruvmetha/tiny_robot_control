@@ -129,6 +129,8 @@ class NavigationBaselinePlanner(Planner):
         self._planned = False
         self._dispatched = False
         self._drive_over = False
+        # Read by Runtime._determine_outcome to grade the run. See _give_up.
+        self._planning_failed = False
 
     def plan(self, obs: Observation) -> Optional[Subgoal]:
         if self._started is None:
@@ -152,26 +154,49 @@ class NavigationBaselinePlanner(Planner):
         )
 
     def is_complete(self, obs: Observation) -> bool:
+        """True only when the robot actually arrived.
+
+        Runtime reads a True here as "success, goal reached" and writes that
+        straight into summary.json (runtime.py:1084, 1114, 1511). It is not a
+        "the run is over" flag. Returning True for a timeout or a stall filed
+        a baseline that stopped 34 cm short as a scene the robot solved.
+
+        Giving up goes out the other door. `plan` returns None, this stays
+        False, and Runtime records "planner returned no subgoal while goal was
+        unreachable" as a failure, which is what actually happened.
+        """
         self._record(obs)
         if self.outcome.distance_to_goal_cm <= GOAL_TOLERANCE_CM:
             self.outcome.reached = True
             self.outcome.failure = None
             return True
-        if self._planned and not self._route_cm:
-            return True
+
+        # Not arrived. Work out whether the run is over, and why, without
+        # claiming success for it.
         if not self._planned:
-            # Nothing has been planned, so nothing can be finished. Returning
-            # True here ends the run before it starts AND makes Runtime record
-            # the outcome as success, which would file a baseline that never
-            # moved as a scene the robot solved.
+            # Runtime asks before it ever calls plan. An empty route here
+            # means nobody has planned yet, not that no route exists.
             return False
-        if self._drive_over:
-            self.outcome.failure = self.outcome.failure or "stopped_short_of_goal"
-            return True
-        if self._started is not None and time.time() - self._started > self.timeout_s:
-            self.outcome.failure = "timed_out_short_of_goal"
-            return True
+        if not self._route_cm:
+            self._give_up(self.outcome.failure or "no_route_to_goal")
+        elif self._drive_over:
+            self._give_up("stopped_short_of_goal")
+        elif self._started is not None and time.time() - self._started > self.timeout_s:
+            self._give_up("timed_out_short_of_goal")
         return False
+
+    def _give_up(self, cause: str) -> None:
+        """Record why the drive ended without arriving.
+
+        `_planning_failed` is the duck-typed hook Runtime checks first when it
+        decides an outcome (runtime.py:1504), so setting it makes summary.json
+        say "failure" rather than "aborted". Only set once the run is genuinely
+        over; a wall-clock kill mid-drive leaves it False, and "aborted" is the
+        honest word for that.
+        """
+        self.outcome.reached = False
+        self.outcome.failure = self.outcome.failure or cause
+        self._planning_failed = True
 
     def notify_subgoal_done(self, obs: Observation, failed: bool = False) -> None:
         """The drive ended, so the run ends. Whether it arrived is decided by
@@ -290,3 +315,4 @@ class NavigationBaselinePlanner(Planner):
         self._planned = False
         self._dispatched = False
         self._drive_over = False
+        self._planning_failed = False
