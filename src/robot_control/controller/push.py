@@ -38,6 +38,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from robot_control.controller.base import Controller
+from robot_control.controller.retreat import find_retreat_target, reverse_toward
 from robot_control.controller.config import PushConfig
 from robot_control.controller.edge_points import (
     EdgePoint,
@@ -595,107 +596,28 @@ class PushController(Controller):
         return action
 
     def _find_retreat_target(self, obs: Observation) -> Tuple[Optional[Point], bool]:
-        """Find nearest free cell in forward or backward cone.
+        """Nearest free cell to back into, backward cone preferred.
 
-        Uses dual-cone search:
-        1. Build wavefront from current observation
-        2. Search backward cone first (heading+180° ±cone_angle) - preferred, no rotation
-        3. Search forward cone (heading ±cone_angle) - fallback, requires rotation
-        4. Sample rays at 5° increments, points at 1cm increments
-
-        Returns:
-            (target_position, is_backward) - position in cm and whether it's behind robot
+        The search itself lives in controller/retreat.py, shared with
+        NavigationController so the two cannot drift into backing off
+        differently. This supplies the wavefront and the push block's numbers.
         """
-        import numpy as np
-
-        wavefront = self._build_wavefront(obs)
-        robot_pos = (obs.robot_x, obs.robot_y)
-        heading_rad = math.radians(obs.robot_theta)
-
-        # Search parameters from config
-        cone_half_angle = math.radians(self._push_config.retreat_cone_angle)
-        angle_step = math.radians(5)  # 5° increments
-        min_dist_cm = self._push_config.retreat_min_dist  # Always retreat at least this far
-        max_dist_cm = self._push_config.retreat_max_dist
-        dist_step_cm = 1.0
-
-        def search_cone(base_angle: float) -> Optional[Tuple[Point, float]]:
-            """Search cone around base_angle, return nearest free point at least min_dist away."""
-            best_point: Optional[Point] = None
-            best_dist = float('inf')
-
-            # Sample angles within cone
-            angles = np.arange(-cone_half_angle, cone_half_angle + 0.001, angle_step)
-            for angle_offset in angles:
-                ray_angle = base_angle + angle_offset
-
-                # Sample distances along ray, starting from min_dist to ensure minimum retreat
-                dists = np.arange(min_dist_cm, max_dist_cm + 0.001, dist_step_cm)
-                for dist in dists:
-                    x = robot_pos[0] + dist * math.cos(ray_angle)
-                    y = robot_pos[1] + dist * math.sin(ray_angle)
-
-                    # Check if free in wavefront (convert cm to meters)
-                    if wavefront.is_free(x / 100.0, y / 100.0):
-                        if dist < best_dist:
-                            best_dist = dist
-                            best_point = (x, y)
-                        break  # Found free point on this ray, move to next
-
-            return (best_point, best_dist) if best_point else None
-
-        # Search backward cone first (preferred - no rotation)
-        backward_angle = heading_rad + math.pi
-        backward_result = search_cone(backward_angle)
-
-        # Search forward cone
-        forward_result = search_cone(heading_rad)
-
-        # Prefer backward (no rotation needed)
-        if backward_result:
-            return (backward_result[0], True)  # is_backward=True
-        if forward_result:
-            return (forward_result[0], False)  # is_backward=False
-
-        return (None, False)
+        return find_retreat_target(
+            wavefront=self._build_wavefront(obs),
+            robot_xy=(obs.robot_x, obs.robot_y),
+            heading_deg=obs.robot_theta,
+            cone_half_angle_deg=self._push_config.retreat_cone_angle,
+            min_dist_cm=self._push_config.retreat_min_dist,
+            max_dist_cm=self._push_config.retreat_max_dist,
+        )
 
     def _reverse_toward(self, obs: Observation, target: Point) -> Action:
-        """Reverse toward target with steering correction.
-
-        Uses differential wheel speeds while backing up to steer toward target.
-        When reversing, steering is inverted: to go right, left wheel goes faster (more negative).
-        """
-        robot_x, robot_y = obs.robot_x, obs.robot_y
-        heading_rad = math.radians(obs.robot_theta)
-
-        # Angle to target
-        dx = target[0] - robot_x
-        dy = target[1] - robot_y
-        angle_to_target = math.atan2(dy, dx)
-
-        # We're reversing, so "forward" for the robot is opposite of heading
-        reverse_heading = heading_rad + math.pi
-
-        # Error: how much we need to steer while reversing
-        angle_error = _wrap_to_pi(angle_to_target - reverse_heading)
-
-        # Base reverse speed
-        base_speed = -self._push_config.retreat_speed
-
-        # Steering correction (inverted because we're reversing)
-        # Positive error = target is to the right of reverse direction
-        # When reversing, to go right, left wheel should be faster (more negative)
-        steer_gain = self._push_config.retreat_steer_gain
-        steer = angle_error * steer_gain
-
-        left_speed = base_speed - steer
-        right_speed = base_speed + steer
-
-        # Clamp
-        left_speed = max(-1.0, min(1.0, left_speed))
-        right_speed = max(-1.0, min(1.0, right_speed))
-
-        return Action(left_speed=left_speed, right_speed=right_speed)
+        """Reverse toward target with steering correction. See retreat.py."""
+        return reverse_toward(
+            obs, target,
+            speed=self._push_config.retreat_speed,
+            steer_gain=self._push_config.retreat_steer_gain,
+        )
 
     def _blind_retreat(self, obs: Observation) -> Action:
         """Fallback: blind reverse for fixed number of steps."""
