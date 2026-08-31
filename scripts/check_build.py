@@ -146,6 +146,8 @@ def is_square(row: Dict[str, str]) -> bool:
 
 
 def load_sheet_rows(sheet_path: Path, build_id: str) -> List[Dict[str, str]]:
+    if sheet_path.suffix == ".json":
+        return rows_from_twohop_sheet(sheet_path, build_id)
     with sheet_path.open() as fh:
         all_rows = list(csv.DictReader(fh))
     rows = [r for r in all_rows if r["build_id"] == build_id]
@@ -153,6 +155,65 @@ def load_sheet_rows(sheet_path: Path, build_id: str) -> List[Dict[str, str]]:
         available = sorted({r["build_id"] for r in all_rows})
         sys.exit(f"build_id {build_id!r} not in {sheet_path}. "
                   f"Available: {', '.join(available)}")
+    return rows
+
+
+def rows_from_twohop_sheet(sheet_path: Path, build_id: str) -> List[Dict[str, str]]:
+    """Rows from a twohop scene's per-scene build_sheet.json.
+
+    The twohop generator writes one build_sheet.json per scene directory
+    instead of a row in a campaign CSV, with the same placement convention
+    (place by long_axis_bearing_deg). Only the placement fields are
+    synthesized here; the twohop sheets carry no contact-count triple, so
+    run_checksum reports that it cannot verify and the live offsets are the
+    guidance. build_id must match the sheet's scene_id, so a copied command
+    aimed at the wrong scene directory fails loudly instead of guiding the
+    operator through building the wrong scene.
+    """
+    import json
+
+    with sheet_path.open() as fh:
+        sheet = json.load(fh)
+    scene_id = sheet.get("scene_id", "")
+    if build_id != scene_id:
+        sys.exit(f"build_id {build_id!r} does not match {sheet_path} "
+                 f"(scene_id {scene_id!r}).")
+    shared = {
+        "build_id": scene_id,
+        "n_bricks": str(sheet.get("n_bricks", "")),
+        "robot_start_x_cm": str(sheet["robot_start_cm"][0]),
+        "robot_start_y_cm": str(sheet["robot_start_cm"][1]),
+        "robot_start_bearing_deg": str(sheet.get("robot_start_bearing_deg", 0.0)),
+        "goal_x_cm": str(sheet["goal_cm"][0]),
+        "goal_y_cm": str(sheet["goal_cm"][1]),
+        "push_kind": (sheet.get("gates") or [{}])[0].get("target", {})
+                     .get("push_kind", ""),
+    }
+    rows: List[Dict[str, str]] = []
+    for brick in sheet.get("bricks", []):
+        rows.append({
+            **shared,
+            "item": "brick",
+            "marker_hint": brick["marker_hint"],
+            "centre_x_cm": str(brick["center_cm"][0]),
+            "centre_y_cm": str(brick["center_cm"][1]),
+            "long_axis_bearing_deg": str(brick["long_axis_bearing_deg"]),
+            "long_cm": str(brick["long_cm"]),
+            "short_cm": str(brick["short_cm"]),
+        })
+    for blocker in sheet.get("blockers", []):
+        rows.append({
+            **shared,
+            "item": "block",
+            "marker_hint": blocker["object"],
+            "centre_x_cm": str(blocker["center_cm"][0]),
+            "centre_y_cm": str(blocker["center_cm"][1]),
+            "long_axis_bearing_deg": str(blocker["long_axis_bearing_deg"]),
+            "long_cm": str(blocker["long_cm"]),
+            "short_cm": str(blocker["short_cm"]),
+        })
+    if not rows:
+        sys.exit(f"{sheet_path} has no bricks or blockers to place.")
     return rows
 
 

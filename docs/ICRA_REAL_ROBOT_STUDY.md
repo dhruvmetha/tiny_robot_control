@@ -36,7 +36,22 @@ and export `NAMO_REPO` before anything plans, or every plan fails in
 ~30 ms with NO SUBGOALS. Every table run gets `--capture-scene` and an
 external `timeout`.
 
-1. Build the scene. The first capture is the reference layout.
+1. Build the scene with the live checker, never from raw coordinates.
+   Every twohop scene directory carries a `build_sheet.json`; point
+   `check_build.py` at it and it watches the overhead camera and prints a
+   live offset line per item while you nudge things into place:
+
+   ```
+   python scripts/check_build.py \
+     --sheet real_exp/environments/twohop_selected/<group>/<scene>/build_sheet.json \
+     --build-id <scene> --gui --auto 5
+   ```
+
+   Place each bar and block until its line reads OK (within 0.5 cm and
+   2 deg). Twohop sheets carry no contact checksum, so all-items-OK is
+   the bar. The same screen shows the robot start pose and the goal
+   marker position. The first `--capture-scene` capture of step 2 is the
+   reference layout.
 2. Nav-penalty baseline, once, on the table:
 
    ```
