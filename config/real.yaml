@@ -9,7 +9,7 @@ camera:
   # The index shifts across reboots and replugs. To find it again, run
   #   v4l2-ctl --list-formats -d /dev/videoN
   # and take the node that offers YUYV.
-  device: 5
+  device: 4
   resolution: "720p"
   fps: 60
   # Path to camera calibration file (camera matrix K and distortion D)
