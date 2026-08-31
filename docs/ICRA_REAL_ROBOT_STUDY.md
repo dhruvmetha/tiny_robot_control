@@ -104,7 +104,14 @@ external `timeout`.
    the baseline and on every trial.
 
    The uniform arm is the same command with `--best-first-prior uniform`
-   and no checkpoint. MPC execution is the default: one push per plan,
+   and no checkpoint.
+
+   Third arm, model-as-policy, added 2026-08-31 by Dhruv after both
+   search arms exhausted the 900-sim budget on hmax2/hard_004 without a
+   push. Same command with `--exec-mode reactive` added: the ranker
+   scores candidates at the live state and the robot executes the argmax
+   push unverified, then looks again. Run names `policy_r<i>`. Recorded
+   as its own arm; it never substitutes for a search row. MPC execution is the default: one push per plan,
    then replan from a fresh observation. Pass `--shuffle-seed` explicitly
    on every trial; that is what lands it in `config.json`.
 4. Reset between trials by hand, verified by eye. Dhruv chose no
