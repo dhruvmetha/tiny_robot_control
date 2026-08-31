@@ -64,8 +64,14 @@ external `timeout`.
    Record the call next to the row as
    `real_exp/results/formal_v2/<scene>/nav_verdict.json` holding
    `{"qualifies": true|false, "reason": "<one line>"}`, so the paper can
-   say how each scene entered or left the comparison. The nav record
-   stays in results either way.
+   say how each scene entered or left the comparison. The baseline run
+   writes a skeleton with `qualifies: null` and the row's evidence copied
+   in (d0d6095); fill it at the table, and it never overwrites a recorded
+   verdict. This file is the only authoritative record of the decision;
+   the row is evidence. Any analysis must fail loudly on a scene whose
+   `qualifies` is still null. Null means nobody decided, never false, and
+   treating it as false would silently drop scenes the same way the old
+   exit-code rule did. The nav record stays in results either way.
 3. Ten NAMO trials, alternating arms M-R-M-R-M-R-M-R-M-R. Never 5+5
    blocks, so battery sag and session drift spread across both arms:
 
