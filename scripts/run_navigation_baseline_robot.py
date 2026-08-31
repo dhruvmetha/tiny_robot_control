@@ -111,6 +111,40 @@ def report(outcome, mode: str) -> None:
         print("  run the NAMO trial on the same layout.")
 
 
+def write_verdict_skeleton(scene_dir: Path, outcome, row_path: Path) -> None:
+    """Leave a nav_verdict.json for the operator to fill in.
+
+    Scene qualification is a judgment call made at the table after watching
+    the drive, not a formula (ICRA_REAL_ROBOT_STUDY.md step 2). This writes
+    the shape with `qualifies` left null and copies in the evidence the doc
+    says to read, so the call can be made and recorded without opening a
+    second file mid-session.
+
+    Never overwrites. A verdict already recorded for this scene is a human
+    decision, and a rerun of the baseline is not grounds to discard it.
+    """
+    verdict_path = scene_dir / "nav_verdict.json"
+    if verdict_path.exists():
+        print(f"\n{verdict_path} already holds a verdict; left alone.")
+        return
+
+    row = outcome.as_row()
+    scene_dir.mkdir(parents=True, exist_ok=True)
+    verdict_path.write_text(json.dumps({
+        "qualifies": None,
+        "reason": "",
+        "_evidence": {k: row[k] for k in (
+            "reached", "distance_to_goal_cm", "objects_moved",
+            "objects_moved_cm", "stuck_retries", "stuck_causes",
+            "route_crosses", "failure_cause",
+        )},
+        "_row": row_path.name if row_path is not None else None,
+        "_note": "qualifies is the operator's call after watching the drive. "
+                 "Set it to true or false and give a one-line reason.",
+    }, indent=2))
+    print(f"wrote {verdict_path} (qualifies is unset, waiting on your call)")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Run the pure-navigation baseline on the real robot",
@@ -253,12 +287,21 @@ def main() -> int:
 
     report(planner.outcome, args.mode)
 
-    if args.out:
-        out_dir = Path(args.out)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        path = out_dir / f"nav_baseline_{args.mode}_{int(time.time())}.json"
+    # The row goes into the run directory whenever diagnostics are on, so the
+    # protocol's command produces the file the protocol tells you to read.
+    # --out stays an override for ad-hoc runs with no --diag-path.
+    row_dir = Path(args.out) if args.out else (
+        Path(recorder.root) if recorder is not None and recorder.enabled else None
+    )
+    path = None
+    if row_dir is not None:
+        row_dir.mkdir(parents=True, exist_ok=True)
+        path = row_dir / f"nav_baseline_{args.mode}_{int(time.time())}.json"
         path.write_text(json.dumps(planner.outcome.as_row(), indent=2))
         print(f"\nwrote {path}")
+
+    if args.diag_path:
+        write_verdict_skeleton(Path(args.diag_path), planner.outcome, path)
 
     if log_handle is not None:
         # Held open until here so the Tee captures the result block above.
