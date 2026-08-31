@@ -27,13 +27,14 @@ START = (0.15, 0.5)
 GOAL = (0.85, 0.5)
 
 
-def _grid(statics=None, movables=None):
+def _grid(statics=None, movables=None, **kwargs):
     return NavigationBaseline(
         bounds=BOUNDS,
         statics=statics or {},
         movables=movables or {},
         robot_width_cm=ROBOT_W_CM,
         robot_height_cm=ROBOT_H_CM,
+        **kwargs,
     )
 
 
@@ -188,3 +189,28 @@ def test_the_baseline_plans_on_the_planner_the_trials_navigate_with():
     # Proximity weighting is off, or a block would cost extra simply for
     # sitting near itself and the sweep threshold would mix two effects.
     assert room._config.obstacle_proximity_weight == PROXIMITY_WEIGHT_OFF
+
+
+# A block far from the buried start, so the only thing that can change its
+# price is the cost grid getting rebuilt underneath it.
+DISTANT_BLOCK = (0.5, 0.60, 0.10, 0.02, 0.0)
+
+
+def _cost_at(baseline, x, y):
+    gi, gj = baseline.planner._world_to_grid(x, y)
+    return float(baseline.planner._cost_grid[gj, gi])
+
+
+def test_a_trapped_start_does_not_wipe_the_price_of_the_movables():
+    """Regression. `apply_trapped_start_recovery` frees cells and then
+    rebuilds the cost grid from the mutated occupancy grid. Pricing before
+    that call meant a trapped start silently reset every movable to the cost
+    of floor, so `penalise` ran as `ignore` and nothing said so.
+    """
+    buried = _grid(statics={"wall": (0.15, 0.5, 0.05, 0.05, 0.0)},
+                   movables={"box": DISTANT_BLOCK})
+
+    result = buried.plan(START, GOAL, MOVABLE_COST_PENALISED)
+
+    assert result.start_was_trapped
+    assert _cost_at(buried, 0.5, 0.60) == pytest.approx(MOVABLE_COST_PENALISED)

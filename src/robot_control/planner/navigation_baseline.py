@@ -161,15 +161,16 @@ class NavigationBaseline:
                 f"make the route seek obstacles out."
             )
 
-        # Price the movables into the planner's own cost grid, then let its
-        # Dijkstra do the search. Rebuilt per call because the penalty is the
-        # one thing the two variants differ in.
-        cost_grid = np.ones_like(self.planner._cost_grid)
-        for covered in self._owner_cells.values():
-            cost_grid[covered] = movable_cost
-        self.planner._cost_grid = cost_grid
-
+        # Recover the start BEFORE pricing. Recovery frees cells and then
+        # rebuilds the cost grid from the mutated occupancy grid, so pricing
+        # first means a trapped start silently wipes the movable penalty and
+        # `penalise` quietly runs as `ignore`. Running it here leaves the call
+        # inside `WavefrontPlanner.plan` a no-op, because the start is free by
+        # then, so the priced grid survives.
         trapped = not self.planner.is_free(*start_xy)
+        self.planner.apply_trapped_start_recovery(start_xy)
+
+        self.planner._cost_grid = self._priced_cost_grid(movable_cost)
         waypoints = self.planner.plan(start_xy, goal_xy)
         if not waypoints:
             return NavResult(
@@ -188,10 +189,18 @@ class NavigationBaseline:
         wants a picture the grid holds whichever penalty ran last. This puts
         the one being drawn back.
         """
-        cost_grid = np.ones_like(self.planner._cost_grid)
+        self.planner._cost_grid = self._priced_cost_grid(movable_cost)
+
+    def _priced_cost_grid(self, movable_cost: float) -> np.ndarray:
+        """The base cost grid, with the movable price multiplied on top.
+
+        Multiplied rather than assigned, so that a base grid which is not
+        uniformly 1.0 keeps both effects pointing the same way.
+        """
+        cost_grid = self.planner._cost_grid.copy()
         for covered in self._owner_cells.values():
-            cost_grid[covered] = movable_cost
-        self.planner._cost_grid = cost_grid
+            cost_grid[covered] *= movable_cost
+        return cost_grid
 
     def _crossings(self, waypoints: Sequence[Tuple[float, float]]) -> Dict[str, int]:
         crossed: Dict[str, int] = {}
