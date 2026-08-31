@@ -134,3 +134,18 @@ def test_values_with_no_json_equivalent_still_degrade_to_strings():
 
     assert filtered["regions_opened"] == ["goal", "<Action>"]
     json.dumps(filtered)
+
+
+def test_budget_rule_reaches_the_trial_row():
+    """Two runs can report the same budget number and mean different things.
+
+    namo_cpp names its constant per-keyhole while defaulting to one allowance
+    shared across every boundary. Without the scope in the row, a reader has to
+    guess which rule produced the number, and the constant's name points at the
+    wrong guess.
+    """
+    filtered = _filter_algorithm_stats_for_diagnostics(
+        {"simulation_budget_scope": "full_problem", "simulations_used": 900}
+    )
+
+    assert filtered["simulation_budget_scope"] == "full_problem"

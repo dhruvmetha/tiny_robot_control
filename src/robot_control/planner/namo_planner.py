@@ -92,6 +92,13 @@ _DIAG_SAFE_STAT_KEYS = frozenset({
     # cannot say whether that fallback would ever have fired.
     "boundary_exhaustions",
     "iteration_trace",
+    # Which budget rule produced this result. namo_cpp calls its constant
+    # CANONICAL_KEYHOLE_SIMULATION_BUDGET and its protocol comment reads "900
+    # simulations per keyhole", but the scope it defaults to shares one
+    # allowance across every boundary, which is not per keyhole. Two runs can
+    # therefore report the same budget and mean different things, and a row
+    # without this cannot say which. See --budget-scope.
+    "simulation_budget_scope",
 })
 
 
