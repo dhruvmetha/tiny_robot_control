@@ -91,13 +91,17 @@ external `timeout`.
    blocks, so battery sag and session drift spread across both arms:
 
    ```
-   timeout <N> python scripts/run_namo.py --config config/real.yaml \
+   timeout 600 python scripts/run_namo.py --config config/real.yaml \
      --camera-service tcp://localhost:5556 --headless \
      --local-search best_first --best-first-prior model \
      --scorer-ckpt <HY5U_s2 path> --shuffle-seed <k> \
+     --hold-region-target --goal <X> <Y> \
      --diag-path real_exp/results/formal_v2/<scene> \
      --run-name model_r<i> --capture-scene
    ```
+
+   No goal marker is used; `--goal` comes from the scene's build sheet on
+   the baseline and on every trial.
 
    The uniform arm is the same command with `--best-first-prior uniform`
    and no checkpoint. MPC execution is the default: one push per plan,
@@ -158,17 +162,21 @@ came from the current physics. The divergence is a result:
   is the measured mitigation, and it is why this protocol executes one
   push per plan.
 
-## Open items before trial 1
+## Frozen at trial 1
 
-- Decide `--hold-region-target`. The superseded design's Amendment 2
-  argued that without it, each replan re-derives the region boundary from
-  scratch. A setup push opens nothing by definition, so the next replan
-  can aim at a different boundary and strand the push just made. That
-  bites one-push-at-a-time execution on multi-push scenes specifically,
-  and the command above passes neither that flag nor `--active-target`.
-  Decide, then write the decision here.
-- Pick the per-trial `timeout` value from the longest healthy run plus
-  margin.
+Dhruv froze both on 2026-08-31, before the first counted trial:
+
+- `--hold-region-target` is ON for every trial. Without it, each replan
+  re-derives the region boundary from scratch; a setup push opens nothing
+  by definition, so the next replan could aim at a different boundary and
+  strand the push just made. Holding matters most on the 2-chain scenes,
+  which are half the pool.
+- Per-trial `timeout` is 600 s. Both nav baselines on the first scene
+  finished under 60 s; a healthy NAMO trial has planning plus pushes on
+  top of that, and 600 caps a wedged run at ten minutes.
+
+## Open items
+
 - Fix the battery schedule: after how many runs the battery gets swapped
   or charged.
 
