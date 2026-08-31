@@ -80,10 +80,11 @@ def _block(x, y, w=10.0, d=10.0, static=False) -> ObjectPose:
                       is_static=static)
 
 
-def _planner(mode="ignore", goal=GOAL) -> NavigationBaselinePlanner:
+def _planner(mode="ignore", goal=GOAL, **kwargs) -> NavigationBaselinePlanner:
     return NavigationBaselinePlanner(
         goal_cm=goal, workspace_bounds_m=BOUNDS_M,
         robot_width_cm=ROBOT_W_CM, robot_height_cm=ROBOT_H_CM, mode=mode,
+        **kwargs,
     )
 
 
@@ -189,7 +190,9 @@ def test_it_does_not_replan_after_the_drive_ends():
     planner.notify_subgoal_done(obs, failed=True)
 
     assert planner.plan(obs) is None
-    assert planner.is_complete(obs)
+    # False, because the robot did not arrive. Runtime reads True as success.
+    assert planner.is_complete(obs) is False
+    assert planner._planning_failed is True
 
 
 # ─── The two variants differ, and differ the right way ──────────────────
@@ -223,7 +226,8 @@ def test_a_wall_blocks_both_variants_and_the_run_ends():
         obs = _obs(objects=wall)
 
         assert planner.plan(obs) is None
-        assert planner.is_complete(obs)
+        assert planner.is_complete(obs) is False
+        assert planner._planning_failed is True
         assert planner.outcome.failure == "no_route_around_static_geometry"
 
 
@@ -262,9 +266,10 @@ def test_arrival_is_decided_by_distance_not_by_the_controllers_verdict():
 
     planner.notify_subgoal_done(stalled, failed=False)
 
-    assert planner.is_complete(stalled)
+    assert planner.is_complete(stalled) is False
     assert planner.outcome.reached is False
     assert planner.outcome.failure == "stopped_short_of_goal"
+    assert planner._planning_failed is True
 
 
 def test_a_robot_that_arrives_is_recorded_as_reaching():
@@ -355,14 +360,20 @@ def test_it_is_not_complete_before_anything_has_been_planned():
     assert planner.outcome.reached is False
 
 
-def test_it_is_complete_once_planning_has_found_no_route():
-    """The same empty route AFTER planning is terminal, and says why."""
+def test_no_route_ends_the_run_as_a_failure_not_a_success():
+    """The empty route AFTER planning ends the run, through the failure door.
+
+    Runtime stops either way, because plan() returning None with is_complete()
+    False records "planner returned no subgoal while goal was unreachable".
+    The difference is what summary.json ends up saying.
+    """
     walled = {"wall": _block(24.0, 40.0, w=WIDTH_CM * 2, d=4.0, static=True)}
     planner = _planner()
     obs = _obs(objects=walled)
 
     assert planner.plan(obs) is None
-    assert planner.is_complete(obs) is True
+    assert planner.is_complete(obs) is False
+    assert planner._planning_failed is True
     assert planner.outcome.failure == "no_route_around_static_geometry"
 
 
@@ -376,3 +387,55 @@ def test_a_run_that_never_reaches_the_goal_is_never_marked_reached():
     planner.is_complete(far)
 
     assert planner.outcome.reached is False
+
+
+# ─── is_complete means arrived, not finished ────────────────────────────
+
+def test_only_an_actual_arrival_reports_complete():
+    """Regression, caught on the table 2026-08-31.
+
+    The penalise run stopped 33.6 cm short of the goal after 90 s and
+    Runtime wrote summary.json with outcome=success. Runtime grades a run by
+    calling is_complete and treating True as "goal reached" (runtime.py:1084,
+    1114, 1511). Returning True to mean "the run is over" told it the
+    baseline had solved a scene it had just failed.
+    """
+    planner = _planner()
+    planner.plan(_obs())
+    short = _obs(x=GOAL[0], y=GOAL[1] - 30.0)
+
+    planner.notify_subgoal_done(short, failed=False)
+
+    assert planner.is_complete(short) is False
+    assert planner.outcome.reached is False
+
+
+def test_a_timeout_is_a_failure_not_a_completion():
+    planner = _planner(timeout_s=0.0)
+    planner.plan(_obs())
+
+    assert planner.is_complete(_obs()) is False
+    assert planner.outcome.failure == "timed_out_short_of_goal"
+    assert planner._planning_failed is True
+
+
+def test_a_run_still_going_is_not_yet_marked_failed():
+    """_planning_failed drives summary.json. A wall-clock kill mid-drive must
+    leave it False, so the run reads as aborted rather than as a failure the
+    planner concluded."""
+    planner = _planner(timeout_s=600.0)
+    planner.plan(_obs(objects={"box": _block(24.0, 40.0)}))
+
+    assert planner.is_complete(_obs(y=30.0)) is False
+    assert planner._planning_failed is False
+
+
+def test_arriving_still_reports_complete():
+    """The success door must still open, or nothing ever succeeds."""
+    planner = _planner()
+    planner.plan(_obs())
+    arrived = _obs(x=GOAL[0], y=GOAL[1] - GOAL_TOLERANCE_CM / 2.0)
+
+    assert planner.is_complete(arrived) is True
+    assert planner.outcome.reached is True
+    assert planner._planning_failed is False
