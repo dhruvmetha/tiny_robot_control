@@ -111,7 +111,19 @@ external `timeout`.
    push. Same command with `--exec-mode reactive` added: the ranker
    scores candidates at the live state and the robot executes the argmax
    push unverified, then looks again. Run names `policy_r<i>`. Recorded
-   as its own arm; it never substitutes for a search row. MPC execution is the default: one push per plan,
+   as its own arm; it never substitutes for a search row.
+
+   Redefined 2026-08-31 by Dhruv (namo_cpp c825fa1) after policy_r3-r5
+   ended in ~4 s with zero pushes: the old run_reactive charged sim
+   no-ops against hmax (=2) and chained its second push through a
+   predicted state, both sim-benchmark assumptions. Now one call returns
+   one push, the first ranked candidate that moves at all in sim, and
+   the rollout happens on the table. Rows under the old definition keep
+   their `policy_r` names; rows under the new one are `policy2_r<i>`.
+   A/B on the same scene state and seed 19: old, a 4.2 s zero-push
+   failure; new, success at 157 s with 9 pushes (policy2_r1).
+
+   MPC execution is the default for the search arms: one push per plan,
    then replan from a fresh observation. Pass `--shuffle-seed` explicitly
    on every trial; that is what lands it in `config.json`.
 4. Reset between trials by hand, verified by eye. Dhruv chose no
