@@ -535,6 +535,21 @@ def line_for_robot(head: Dict[str, str],
             f"dtheta={dtheta:+6.1f}deg  {tag}")
 
 
+def build_accepted(verdict: Optional[str],
+                   head: Dict[str, str],
+                   observed: Dict[str, Tuple[float, float, float]]) -> bool:
+    """Whether the --gui auto-close should fire.
+
+    MARGINAL closes too: it means one contact within the tie tolerance,
+    which the checksum itself labels "nudge it or accept it", and the
+    formal_v2 reset rule is operator-eyeball anyway (Dhruv, 2026-08-31,
+    after two millimetre-nudge stalls at the table). Only FAIL, a
+    genuinely different scene, and a missing or misplaced robot hold the
+    window open.
+    """
+    return verdict in ("PASS", "MARGINAL") and robot_placed(head, observed)
+
+
 def robot_placed(head: Dict[str, str],
                  observed: Dict[str, Tuple[float, float, float]]) -> bool:
     """True when the robot start line would read OK, or the sheet has no
@@ -723,7 +738,7 @@ def main() -> None:
                 if window.wait_key(int(REFRESH_PERIOD_S * 1000)):
                     print("closed by user")
                     break
-                if verdict == "PASS" and robot_placed(rows[0], observed):
+                if build_accepted(verdict, rows[0], observed):
                     break
             elif select.select([sys.stdin], [], [], REFRESH_PERIOD_S)[0]:
                 sys.stdin.readline()
@@ -736,7 +751,7 @@ def main() -> None:
             window.close()
         source.close()
 
-    if args.gui and verdict == "PASS":
+    if args.gui and verdict in ("PASS", "MARGINAL"):
         sys.exit(0)
 
 

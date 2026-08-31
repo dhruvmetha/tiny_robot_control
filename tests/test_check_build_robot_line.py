@@ -61,6 +61,18 @@ def test_gui_close_gate_requires_robot_in_place():
     assert check_build.robot_placed({}, {})
 
 
+def test_marginal_checksum_closes_but_fail_does_not():
+    # The formal_v2 reset rule is operator-eyeball; MARGINAL means one
+    # contact within the tie tolerance and must not stall the table.
+    robot_ok = {check_build.ROBOT_KEY: (27.8, 7.4, 0.0)}
+    assert check_build.build_accepted("PASS", HEAD, robot_ok)
+    assert check_build.build_accepted("MARGINAL", HEAD, robot_ok)
+    assert not check_build.build_accepted("FAIL", HEAD, robot_ok)
+    assert not check_build.build_accepted(None, HEAD, robot_ok)
+    # A good checksum never closes past a misplaced robot.
+    assert not check_build.build_accepted("PASS", HEAD, {})
+
+
 def test_simulated_observation_includes_robot():
     rows = [{
         "marker_hint": "wall_10", "item": "brick",
