@@ -296,3 +296,83 @@ def test_the_row_names_the_arm_it_belongs_to():
     planner = _planner(mode="penalise")
 
     assert planner.outcome.as_row()["arm"] == "nav_baseline_penalise"
+
+
+# ─── The GUI has to be able to draw it ──────────────────────────────────
+
+def test_every_drawing_carries_a_uuid_and_a_type_the_canvas_knows():
+    """QtCanvas.update_drawings skips any drawing without a uuid, and
+    _create_drawing_item returns None for a type it does not handle. Either
+    mistake renders nothing and reports nothing, so the dry run would show a
+    blank table and give no reason.
+    """
+    known = {"line", "circle", "point", "rect", "path"}
+    planner = _planner()
+    planner.plan(_obs(objects={"box": _block(24.0, 40.0)}))
+
+    drawings = planner.get_drawings()
+
+    assert drawings
+    for drawing in drawings:
+        assert drawing.get("uuid"), f"no uuid: {drawing}"
+        assert drawing.get("type") in known, f"canvas cannot draw {drawing.get('type')!r}"
+
+
+def test_the_goal_marker_uses_the_key_the_canvas_reads():
+    """A point reads `position`. Passing x and y leaves it at the origin,
+    which is the bottom-left corner and looks like a real marker."""
+    planner = _planner()
+    planner.plan(_obs())
+
+    goal = next(d for d in planner.get_drawings() if d["uuid"] == "nav_baseline_goal")
+
+    assert goal["position"] == GOAL
+
+
+def test_the_route_is_drawn_once_it_exists():
+    planner = _planner()
+    assert not [d for d in planner.get_drawings() if d["type"] == "path"]
+
+    planner.plan(_obs(objects={"box": _block(24.0, 40.0)}))
+
+    route = next(d for d in planner.get_drawings() if d["type"] == "path")
+    assert len(route["points"]) >= 2
+
+
+# ─── Runtime asks is_complete before it asks plan ───────────────────────
+
+def test_it_is_not_complete_before_anything_has_been_planned():
+    """Runtime calls is_complete first. An empty route at that moment means
+    nobody has planned yet, not that no route exists.
+
+    Reading it the other way ended the run on tick one and, worse, made
+    Runtime write summary.json with outcome=success, filing a baseline that
+    never moved as a scene the robot drove.
+    """
+    planner = _planner()
+
+    assert planner.is_complete(_obs()) is False
+    assert planner.outcome.reached is False
+
+
+def test_it_is_complete_once_planning_has_found_no_route():
+    """The same empty route AFTER planning is terminal, and says why."""
+    walled = {"wall": _block(24.0, 40.0, w=WIDTH_CM * 2, d=4.0, static=True)}
+    planner = _planner()
+    obs = _obs(objects=walled)
+
+    assert planner.plan(obs) is None
+    assert planner.is_complete(obs) is True
+    assert planner.outcome.failure == "no_route_around_static_geometry"
+
+
+def test_a_run_that_never_reaches_the_goal_is_never_marked_reached():
+    """Whatever path is_complete takes, `reached` must follow the distance."""
+    planner = _planner()
+    far = _obs(x=1.0, y=1.0)
+
+    planner.is_complete(far)
+    planner.plan(far)
+    planner.is_complete(far)
+
+    assert planner.outcome.reached is False
