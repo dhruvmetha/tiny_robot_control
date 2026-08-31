@@ -47,18 +47,22 @@ external `timeout`.
      --run-name nav_penalise --capture-scene
    ```
 
-   Read the outcome row, `nav_baseline_penalise_<epoch>.json`, not the
-   exit code. A scene leaves the NAMO comparison only when `reached` is
-   true AND `objects_moved` is empty, which is the case where driving
-   alone genuinely sufficed. Its record stays in results either way.
+   Whether the scene qualifies for NAMO is Dhruv's judgment call at the
+   table, made after watching the drive (his decision, 2026-08-31,
+   replacing the earlier mechanical rules; neither the exit code nor any
+   row formula decides). The outcome row,
+   `nav_baseline_penalise_<epoch>.json`, is the evidence to read before
+   calling it: `reached`, `distance_to_goal_cm`, `objects_moved` and
+   `objects_moved_cm` (a reached goal with shoved blocks is bulldozing,
+   not driving), `stuck_retries` and `stuck_causes` (retry cycles since
+   the 2026-08-31 retreat-and-replan change, each cause "blocked" or
+   "under_commanded"), and `route_crosses`.
 
-   The exit code cannot carry that decision. It is 0 whenever the robot
-   arrived, and since 2026-08-31 the baseline retreats and replans up to
-   five times when it wedges, shoving the block a few centimetres each
-   attempt. So a scene the robot bulldozed through also exits 0, and
-   dropping it would discard a scene that demonstrably needed the block
-   moved. `stuck_retries` above zero is the tell; it counts the cycles
-   and `stuck_causes` names each one.
+   Record the call next to the row as
+   `real_exp/results/formal_v2/<scene>/nav_verdict.json` with
+   `{"qualifies": true|false, "reason": "<one line>"}` so the paper can
+   say how each scene entered or left the comparison. The nav record
+   stays in results either way.
 3. Ten NAMO trials, alternating arms M-R-M-R-M-R-M-R-M-R. Never 5+5
    blocks, so battery sag and session drift spread across both arms:
 
