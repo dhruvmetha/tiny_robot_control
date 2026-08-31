@@ -248,9 +248,17 @@ class NavigationBaselinePlanner(Planner):
         if not self._route_cm:
             self._drive_over = True
 
+    def attach_navigation_controller(self, controller) -> None:
+        """Let the planner read why a drive failed.
+
+        notify_subgoal_done carries only a boolean. The navigation controller
+        works out whether the robot was blocked or merely under-commanded, and
+        without a reference to it that distinction is computed and discarded.
+        """
+        self._navigation_controller = controller
+
     def _cause_from(self) -> str:
-        """What the controller called it, when the controller is reachable."""
-        controller = getattr(self, "navigation_controller", None)
+        controller = getattr(self, "_navigation_controller", None)
         return getattr(controller, "_failure_cause", None) or "stuck"
 
     def _plan_route(self, obs: Observation) -> List[Tuple[float, float]]:

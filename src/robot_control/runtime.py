@@ -364,6 +364,18 @@ class Runtime:
         return self._env
 
     @property
+    def controllers(self) -> Dict[str, Controller]:
+        """The live controller set, keyed by name.
+
+        Read-only access for callers that need to read a controller's state
+        after a subgoal ends. The navigation controller records WHY a drive
+        failed, and notify_subgoal_done carries only a boolean, so without
+        this the distinction between a blocked robot and an under-commanded
+        one is computed and then thrown away.
+        """
+        return dict(self._controllers)
+
+    @property
     def is_running(self) -> bool:
         """Check if runtime is running."""
         return self._running
@@ -842,6 +854,19 @@ class Runtime:
                 self._planner.set_diagnostics_recorder(self._diag)
             except AttributeError:
                 # Older planner type without diagnostics support — skip silently.
+                pass
+
+        # Same shape, for planners that want to read why a drive failed.
+        # notify_subgoal_done carries only a boolean, while the navigation
+        # controller works out whether the robot was blocked or merely
+        # under-commanded, so without this the distinction is computed and
+        # thrown away. Planners that do not want it simply lack the method.
+        if self._planner is not None and "navigation" in self._controllers:
+            try:
+                self._planner.attach_navigation_controller(
+                    self._controllers["navigation"]
+                )
+            except AttributeError:
                 pass
 
         # Per-plan sim-success capture. With --capture-sim-success on, every
