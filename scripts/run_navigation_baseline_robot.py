@@ -56,7 +56,7 @@ from robot_control.planner.navigation_baseline_planner import (
 # both arms read the same marker the same way.
 sys.path.insert(0, str(Path(__file__).parent))
 from _diag_setup import bootstrap_diagnostics  # noqa: E402
-from run_namo import detect_goal_from_camera  # noqa: E402
+from run_namo import WALL_CLOCK_TIMEOUT_REASON, detect_goal_from_camera  # noqa: E402
 
 GOAL_DETECT_TIMEOUT_S = 5.0
 
@@ -232,14 +232,19 @@ def main() -> int:
     # Runtime polls is_complete only between subgoals. So the run is meant to
     # be capped from outside, with `timeout 120 python scripts/...`.
     #
-    # `timeout` sends SIGTERM. Taking it here turns the kill into an ordinary
-    # shutdown, so Runtime writes summary.json on its normal path and the
-    # result below still gets printed and saved. Without this the row is lost
-    # exactly on the runs that matter most.
+    # `timeout` sends SIGTERM, and Python's default disposition kills the
+    # interpreter without running finally blocks, so Runtime would never write
+    # summary.json. Routing the signal through Runtime.abort() pins the reason
+    # as the terminal outcome first, so the summary says why the run ended
+    # instead of falling through to "stopped without a terminal result", and
+    # the result below still gets printed and saved.
+    #
+    # Same reason string run_namo uses, so a timed-out trial greps alike
+    # whichever arm produced it.
     def stop_on_signal(signum, _frame):
         print(f"\n[baseline] signal {signum}, stopping and recording where we got to")
-        planner.outcome.failure = planner.outcome.failure or "wall_clock_timeout"
-        runtime.stop()
+        planner.outcome.failure = planner.outcome.failure or WALL_CLOCK_TIMEOUT_REASON
+        runtime.abort(WALL_CLOCK_TIMEOUT_REASON)
 
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, stop_on_signal)
