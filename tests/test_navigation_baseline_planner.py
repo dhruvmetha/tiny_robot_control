@@ -496,3 +496,37 @@ def test_arriving_still_reports_complete():
     assert planner.is_complete(arrived) is True
     assert planner.outcome.reached is True
     assert planner._planning_failed is False
+
+
+# ─── The controller's reason has to reach the row ───────────────────────
+
+class _ControllerThatFailed:
+    def __init__(self, cause):
+        self._failure_cause = cause
+
+
+def test_the_controllers_reason_reaches_the_row_once_attached():
+    """notify_subgoal_done carries only a boolean. Without the attach the
+    controller works out blocked vs under_commanded and it is discarded, and
+    the row records a bare "stuck" for every cycle."""
+    planner = _planner()
+    planner.attach_navigation_controller(_ControllerThatFailed("under_commanded"))
+    obs = _obs(objects={"box": _block(24.0, 40.0)})
+    planner.plan(obs)
+
+    planner.notify_subgoal_done(obs, failed=True)
+
+    assert planner.outcome.stuck_causes == ["under_commanded"]
+    assert planner.outcome.as_row()["stuck_causes"] == "under_commanded"
+
+
+def test_an_unattached_planner_still_records_something():
+    """A planner driven outside Runtime has no controller to ask. It should
+    say so plainly rather than crash or leave the field empty."""
+    planner = _planner()
+    obs = _obs(objects={"box": _block(24.0, 40.0)})
+    planner.plan(obs)
+
+    planner.notify_subgoal_done(obs, failed=True)
+
+    assert planner.outcome.stuck_causes == ["stuck"]
