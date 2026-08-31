@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -59,6 +59,12 @@ class NavigateSubgoal(Subgoal):
     x: float  # Target x (cm)
     y: float  # Target y (cm)
     theta: Optional[float] = None  # Target orientation (degrees), None = any
+    # Route to drive, in cm, when the planner has already chosen one. The
+    # navigation controller plans its own route when this is None, which is
+    # what every NAMO subgoal does. The pure-navigation baseline sets it
+    # because its two variants differ in what a movable cell costs, and the
+    # controller's planner takes obstacles rather than costs.
+    path: Optional[List[Tuple[float, float]]] = None
 
 
 @dataclass

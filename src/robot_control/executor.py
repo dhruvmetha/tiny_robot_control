@@ -77,6 +77,7 @@ class SubgoalExecutor:
                 subgoal.theta,
                 (obs.robot_x, obs.robot_y),
                 obstacles,
+                path=subgoal.path,
             )
         elif isinstance(subgoal, PushSubgoal):
             if self._push is None:

@@ -259,6 +259,7 @@ class NavigationController(Controller):
         goal_theta: Optional[float],
         current_pos: Point,
         obstacles: List[ObstacleTuple],
+        path: Optional[List[Point]] = None,
     ) -> bool:
         """
         Plan and start navigation to goal.
@@ -269,6 +270,11 @@ class NavigationController(Controller):
             goal_theta: Optional goal orientation (degrees). If None, no post-rotation.
             current_pos: Current (x, y) position
             obstacles: List of (x, y, theta_deg, width, height) obstacles
+            path: Route to drive, in cm. When None this plans its own, which is
+                what every caller but the pure-navigation baseline does. The
+                baseline supplies one because its variants differ in what a
+                movable cell costs and `self._planner` takes obstacles, which
+                block, rather than costs, which merely discourage.
 
         Returns:
             True if planning succeeded and navigation started
@@ -283,8 +289,12 @@ class NavigationController(Controller):
             f"obstacles={len(obstacles)}"
         )
 
-        # Plan path
-        raw_path = self._planner.plan(current_pos, (goal_x, goal_y), obstacles)
+        # Plan path, unless the caller already chose one.
+        raw_path = (
+            list(path)
+            if path is not None
+            else self._planner.plan(current_pos, (goal_x, goal_y), obstacles)
+        )
 
         # Filter duplicate points (RVG returns duplicates at start/end)
         car_size = effective_robot_size_cm(self._config.car_width, self._config.car_height)
