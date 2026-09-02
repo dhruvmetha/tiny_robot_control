@@ -1,0 +1,106 @@
+{
+ "schema": "derived_from_env_xml",
+ "note": "NOT a generator build sheet. The v3_b2 pool ships env.xml only; this is read straight back out of that file so check_build has numbers to work with. Poses are MuJoCo world metres, yaw in degrees, half-extents as authored. The scene XML carries no robot body, the harness places it, so robot_start_m is read from the simulator after reset rather than parsed from the file.",
+ "scene": "v3_b2/hard_zig/rb_00149",
+ "robot_start_m": [
+  0.252879,
+  0.10555
+ ],
+ "goal_marker_m": [
+  0.179799,
+  0.712253
+ ],
+ "movables": [
+  {
+   "name": "obstacle_0_movable",
+   "x_m": 0.213238,
+   "y_m": 0.315641,
+   "yaw_deg": 18.904059,
+   "half_extent_m": [
+    0.0375,
+    0.06
+   ],
+   "height_m": 0.05
+  },
+  {
+   "name": "obstacle_1_movable",
+   "x_m": 0.09252,
+   "y_m": 0.2743,
+   "yaw_deg": 147.534107,
+   "half_extent_m": [
+    0.035,
+    0.075
+   ],
+   "height_m": 0.04
+  }
+ ],
+ "statics": [
+  {
+   "name": "wall_boundary_left",
+   "x_m": -0.01,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_right",
+   "x_m": 0.5,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_bottom",
+   "x_m": 0.245,
+   "y_m": -0.01,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_top",
+   "x_m": 0.245,
+   "y_m": 0.785,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_1",
+   "x_m": 0.390875,
+   "y_m": 0.280907,
+   "yaw_deg": -3.844822,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_2",
+   "x_m": 0.099051,
+   "y_m": 0.466017,
+   "yaw_deg": 3.644872,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  }
+ ],
+ "robot_start_yaw_rad": 0.0
+}
