@@ -162,6 +162,11 @@ def is_square(row: Dict[str, str]) -> bool:
 
 def load_sheet_rows(sheet_path: Path, build_id: str) -> List[Dict[str, str]]:
     if sheet_path.suffix == ".json":
+        import json
+        with sheet_path.open() as fh:
+            schema = json.load(fh).get("schema", "")
+        if schema == "derived_from_env_xml":
+            return rows_from_derived_sheet(sheet_path, build_id)
         return rows_from_twohop_sheet(sheet_path, build_id)
     with sheet_path.open() as fh:
         all_rows = list(csv.DictReader(fh))
@@ -204,7 +209,10 @@ def rows_from_derived_sheet(sheet_path: Path, build_id: str) -> List[Dict[str, s
 
     with sheet_path.open() as fh:
         sheet = json.load(fh)
-    scene = str(sheet.get("scene", ""))
+    # The v3-b2-all bundle omits the "scene" key; the scene directory name
+    # carries the same identity, so fall back to it and keep failing loudly
+    # on a command aimed at the wrong scene.
+    scene = str(sheet.get("scene", "")) or sheet_path.parent.name
     if not scene.endswith(build_id):
         sys.exit(f"build_id {build_id!r} does not match {sheet_path} "
                  f"(scene {scene!r}).")
