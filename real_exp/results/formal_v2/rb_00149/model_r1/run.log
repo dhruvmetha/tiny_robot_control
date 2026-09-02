@@ -1,0 +1,184 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/rb_00149/model_r1
+planner: full_namo  |  exec mode: search  local search: best_first/model  ckpt=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt  hmax=canonical  budget=canonical  scope=inherited  device=cuda
+
+Starting NAMO execution...
+Press ESCAPE to quit
+==================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/rb_00149/model_r1/recordings/session_2026-08-31_06-01-14/full_run.mp4
+[Runtime] Full-run video + per-subgoal meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/rb_00149/model_r1/recordings/session_2026-08-31_06-01-14
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! ROBOT 1 OFFLINE at startup !!
+!!   ap_connected=True, alive_ids=[], last_status=0.5s ago [fresh]
+!!   Planning will run (sim-only), but the robot CANNOT execute.
+!!   Restart the robot or check the camera_service serial link.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+[Trapped-start recovery] Robot at (25.0, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+
+[Trapped-start recovery] Robot at (25.0, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOBridge] Warming best-first scorer (checkpoint=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt, device=cuda); excluded from planning time
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed (autonomous): nav=0.40, push=0.40
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[NAMOPlanner] Best-first scorer warmup: 3745ms (recorded separately; excluded from planning_wall_time_ms)
+
+[Trapped-start recovery] Robot at (25.0, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+[Trapped-start recovery] Robot at (25.0, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+[Trapped-start recovery] Robot at (25.0, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+[Trapped-start recovery] Robot at (25.0, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[DIAG] plan #1 recorded (success=True)
+[NAMOPlanner] MPC mode: preserving 2 pushes from region_target, queuing only the first for real execution
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (9.3,27.2,θ=331.5°), edge=27, push_steps=2, robot at (25.0,10.7,θ=357.5°)
+[DIAG] subgoal #1 start recorded
+
+[Trapped-start recovery] Robot at (25.0, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(25.0,10.7) → approach=(6.2,15.2)
+[NAV] navigate_to: goal=(6.2,15.2) θ=61.5°, from=(25.0,10.7), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260831_060346_001.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state - -> PRE_ROTATING pose=(25.0,10.7,θ=357.5°) pre_target_θ=172.8° heading_err=+175.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(24.9,9.5,θ=131.0°) path_waypoints=23 final_wp=(6.2,14.8)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(6.7,13.8,θ=131.4°) goal_θ=61.5° heading_err=-69.9°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (9.3,27.2,θ=331.5°), robot at (6.2,14.2,θ=61.3°), edge=27, push_steps=2 (60 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(9.3,27.2) theta=331.5° size=(15x7.0)
+[PUSH DEBUG] Edge 27: face=1 sample=13
+[PUSH DEBUG] Theoretical: edge_pt (6.2,15.2) → mid_pt (11.9,25.8)
+[PUSH DEBUG] Actual line: (6.2,14.2) → (12.0,24.7)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (9.8, 20.4) theta=62.0°
+[PUSH] Δobject 'obj_1': Δpos=(+0.76,+4.66) |Δ|=4.72cm, Δθ=+13.11°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_1': (10.0, 31.8) theta=344.6° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.4cm
+[PUSH] Object 'wall_11': (9.6, 46.7) theta=93.9° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 26.2cm
+[PUSH] Object 'obj_4': (21.3, 31.4) theta=18.7° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 15.9cm
+[PUSH] Object 'wall_10': (39.3, 27.8) theta=86.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 30.4cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260831_060358.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260831_060358.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (6.1, 17.1) [BACKWARD]
+[PUSH] Retreat reached target after 157 steps: moved 3.0 cm, stopped 2.0 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (7.5, 18.5), target (6.1, 17.1)
+[Subgoal] <-- DONE (SUCCESS) after 17.2s, robot now at (7.5,18.5,θ=45.2°)
+[DIAG] subgoal #1 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_1, Δ=5.38cm, stuck=False)
+
+[Trapped-start recovery] Robot at (7.5, 18.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Push complete. Will try reuse from updated real scene for remaining chain len=1
+[Runtime] 🔌 Robot 1 → ONLINE (alive_ids=[1], ap_connected=True, last_status=1.0s ago)
+
+[Trapped-start recovery] Robot at (7.5, 18.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Reuse check from updated real scene: source=region_target, chain_len=2
+
+[Trapped-start recovery] Robot at (7.5, 18.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[DIAG] plan #2 recorded (success=False)
+[NAMOPlanner] Post-push reuse failed; falling back to full replanning
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+
+[Trapped-start recovery] Robot at (7.5, 18.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+[Trapped-start recovery] Robot at (7.5, 18.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+[Trapped-start recovery] Robot at (7.5, 18.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 5 write errors in last 6.4s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 4 write errors in last 5.7s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 4 write errors in last 5.3s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 5 write errors in last 5.6s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 5 write errors in last 6.5s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 2 write errors in last 7.0s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 3 write errors in last 6.7s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 3 write errors in last 6.2s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 5 write errors in last 8.1s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 5 write errors in last 6.5s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 4 write errors in last 7.4s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 5 write errors in last 7.6s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 3 write errors in last 7.0s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 4 write errors in last 6.9s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 3 write errors in last 5.2s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 4 write errors in last 6.3s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 4 write errors in last 6.0s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+[SerialSender] ⚠️ 4 write errors in last 5.5s (most recent: Write timeout)
+[SerialSender] ⚠️ Serial write error: Write timeout
+
+[Trapped-start recovery] Robot at (7.5, 18.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[DIAG] plan #3 recorded (success=False)
+[NAMOPlanner] Region target ro-bd3f3865f116 released: exhausted
+[Runtime] Planning failed - stopping robot
+[Runtime] Shutting down
+
+[Trapped-start recovery] Robot at (7.4, 18.3) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[Diagnostics] Wrote summary.json (outcome=failure)
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/rb_00149/model_r1/recordings/session_2026-08-31_06-01-14/full_run.mp4
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete

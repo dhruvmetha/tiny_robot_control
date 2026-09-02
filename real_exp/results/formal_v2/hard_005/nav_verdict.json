@@ -1,0 +1,18 @@
+{
+  "qualifies": true,
+  "reason": "Operator call: reached only by bulldozing, the route crossed obj_4 and shoved it 4.5 cm with 3 blocked retries. Not driving.",
+  "_evidence": {
+    "reached": true,
+    "distance_to_goal_cm": 1.45,
+    "objects_moved": "obj_4",
+    "objects_moved_cm": {
+      "obj_4": 4.47
+    },
+    "stuck_retries": 3,
+    "stuck_causes": "blocked,blocked,blocked",
+    "route_crosses": "obj_4",
+    "failure_cause": ""
+  },
+  "_row": "nav_baseline_penalise_1788173492.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

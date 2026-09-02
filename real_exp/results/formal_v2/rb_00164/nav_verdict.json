@@ -1,0 +1,18 @@
+{
+  "qualifies": true,
+  "reason": "Operator call: drive failed. Penalise route crossed both blocks, shoved obj_4 11.3 cm, and the car tipped over mid-shove; run killed at 36 s.",
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 51.46,
+    "objects_moved": "obj_4",
+    "objects_moved_cm": {
+      "obj_4": 11.34
+    },
+    "stuck_retries": 3,
+    "stuck_causes": "blocked,blocked,blocked",
+    "route_crosses": "obj_1,obj_4",
+    "failure_cause": "wall_clock_timeout"
+  },
+  "_row": "nav_baseline_penalise_1788172729.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

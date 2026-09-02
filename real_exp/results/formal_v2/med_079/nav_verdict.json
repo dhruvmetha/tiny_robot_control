@@ -1,0 +1,18 @@
+{
+  "qualifies": true,
+  "reason": "Operator call: drive failed, the car tipped over bulldozing obj_4 (shoved 4.1 cm) 19 s in. Second obj_4 tip-over of the day.",
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 37.4,
+    "objects_moved": "obj_4",
+    "objects_moved_cm": {
+      "obj_4": 4.12
+    },
+    "stuck_retries": 2,
+    "stuck_causes": "blocked,blocked",
+    "route_crosses": "obj_4",
+    "failure_cause": "wall_clock_timeout"
+  },
+  "_row": "nav_baseline_penalise_1788191087.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

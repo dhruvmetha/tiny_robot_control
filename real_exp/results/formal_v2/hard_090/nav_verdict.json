@@ -1,0 +1,18 @@
+{
+  "qualifies": true,
+  "reason": "Operator call: drive blocked at the stuck-retry limit, shoved obj_1 crossing it, stopped 24.7 cm short.",
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 24.69,
+    "objects_moved": "obj_1",
+    "objects_moved_cm": {
+      "obj_1": 1.73
+    },
+    "stuck_retries": 5,
+    "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+    "route_crosses": "obj_1",
+    "failure_cause": "stuck_retry_limit_reached"
+  },
+  "_row": "nav_baseline_penalise_1788189758.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

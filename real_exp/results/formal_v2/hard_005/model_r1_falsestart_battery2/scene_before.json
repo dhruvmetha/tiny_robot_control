@@ -1,0 +1,55 @@
+{
+  "captured_at_epoch": 1788173731.1986322,
+  "captured_at_observation_epoch": 1788173731.1228163,
+  "mode": "real",
+  "workspace": {
+    "width_cm": 49.0,
+    "height_cm": 77.5
+  },
+  "robot": {
+    "pose_cm": [
+      18.227793988537815,
+      14.345218816221147,
+      359.0507462728191
+    ],
+    "width_cm": 7,
+    "height_cm": 7,
+    "marker_id": 1
+  },
+  "goal_cm": null,
+  "objects": {
+    "wall_10": {
+      "pose_cm": [
+        11.317926100641479,
+        38.15195651073279,
+        51.82409389828706
+      ],
+      "width_cm": 19.5,
+      "depth_cm": 5.5,
+      "height_cm": 10.0,
+      "is_static": true
+    },
+    "wall_11": {
+      "pose_cm": [
+        37.867934526997004,
+        37.65603758462193,
+        42.07597908286397
+      ],
+      "width_cm": 19.5,
+      "depth_cm": 5.5,
+      "height_cm": 10.0,
+      "is_static": true
+    },
+    "obj_4": {
+      "pose_cm": [
+        27.106431204103835,
+        28.638023591356898,
+        318.4608235216668
+      ],
+      "width_cm": 12.0,
+      "depth_cm": 7.5,
+      "height_cm": 5.0,
+      "is_static": false
+    }
+  }
+}

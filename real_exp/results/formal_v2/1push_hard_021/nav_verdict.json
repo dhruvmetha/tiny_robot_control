@@ -1,0 +1,18 @@
+{
+  "qualifies": true,
+  "reason": "both nav variants wedge on obj_1, only route is through its doorway (Dhruv, 2026-08-31, ignore run row: nav_ignore/nav_baseline_ignore_1788161059.json)",
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 31.11,
+    "objects_moved": "obj_1",
+    "objects_moved_cm": {
+      "obj_1": 1.99
+    },
+    "stuck_retries": 5,
+    "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+    "route_crosses": "obj_1",
+    "failure_cause": "stuck_retry_limit_reached"
+  },
+  "_row": "nav_baseline_penalise_1788160782.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

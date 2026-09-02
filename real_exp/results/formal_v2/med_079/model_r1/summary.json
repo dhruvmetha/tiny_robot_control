@@ -1,0 +1,26 @@
+{
+  "run_name": "model_r1",
+  "outcome": "crashed",
+  "outcome_reason": "runtime did not write summary (probable crash before finally)",
+  "ended_at_epoch": 1788191332.811991,
+  "ended_at_utc": "2026-08-31T15:48:52.811Z",
+  "mode": "real",
+  "strategy": "primitive",
+  "algorithm": "full_namo",
+  "goal_target_cm": [
+    7.5,
+    62.6
+  ],
+  "totals": {
+    "plan_calls": 13,
+    "subgoals_dispatched": 7,
+    "subgoals_succeeded": 3,
+    "subgoals_failed": 4,
+    "pushes_attempted": 7,
+    "pushes_succeeded": 3,
+    "pushes_stuck": 4,
+    "connectivity_transitions": 1,
+    "offline_during_plan_count": 0
+  },
+  "scene_capture": {}
+}
