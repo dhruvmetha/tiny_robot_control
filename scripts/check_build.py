@@ -308,34 +308,49 @@ def rows_from_twohop_sheet(sheet_path: Path, build_id: str) -> List[Dict[str, st
     if build_id != scene_id:
         sys.exit(f"build_id {build_id!r} does not match {sheet_path} "
                  f"(scene_id {scene_id!r}).")
+    bricks = sheet.get("bricks")
+    if bricks is None:
+        bricks = sheet.get("gate_walls", [])
+    blockers = sheet.get("blockers")
+    if blockers is None:
+        blockers = sheet.get("movables", [])
+    push_kind = (sheet.get("gates") or [{}])[0].get("target", {}).get(
+        "push_kind", ""
+    )
+    if not push_kind:
+        push_kind = sheet.get("requested_profile", "")
     shared = {
         "build_id": scene_id,
-        "n_bricks": str(sheet.get("n_bricks", "")),
+        "n_bricks": str(sheet.get("n_bricks", len(bricks))),
         "robot_start_x_cm": str(sheet["robot_start_cm"][0]),
         "robot_start_y_cm": str(sheet["robot_start_cm"][1]),
         "robot_start_bearing_deg": str(sheet.get("robot_start_bearing_deg", 0.0)),
         "goal_x_cm": str(sheet["goal_cm"][0]),
         "goal_y_cm": str(sheet["goal_cm"][1]),
-        "push_kind": (sheet.get("gates") or [{}])[0].get("target", {})
-                     .get("push_kind", ""),
+        "push_kind": push_kind,
     }
     rows: List[Dict[str, str]] = []
-    for brick in sheet.get("bricks", []):
+    for brick in bricks:
         rows.append({
             **shared,
             "item": "brick",
-            "marker_hint": brick["marker_hint"],
+            "marker_hint": brick.get("marker_hint", brick.get("physical_id", "")),
             "centre_x_cm": str(brick["center_cm"][0]),
             "centre_y_cm": str(brick["center_cm"][1]),
             "long_axis_bearing_deg": str(brick["long_axis_bearing_deg"]),
             "long_cm": str(brick["long_cm"]),
             "short_cm": str(brick["short_cm"]),
         })
-    for blocker in sheet.get("blockers", []):
+    for blocker in blockers:
+        marker_hint = blocker.get("object", blocker.get("physical_role", ""))
+        # The generated sheets call the original tagged object obj_4a to
+        # distinguish it from the clone. The camera/config name remains obj_4.
+        if marker_hint == "obj_4a":
+            marker_hint = "obj_4"
         rows.append({
             **shared,
             "item": "block",
-            "marker_hint": blocker["object"],
+            "marker_hint": marker_hint,
             "centre_x_cm": str(blocker["center_cm"][0]),
             "centre_y_cm": str(blocker["center_cm"][1]),
             "long_axis_bearing_deg": str(blocker["long_axis_bearing_deg"]),
