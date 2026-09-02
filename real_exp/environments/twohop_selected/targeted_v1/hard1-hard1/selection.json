@@ -1,0 +1,459 @@
+{
+  "dhruv_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/twohop_selected/targeted_v1/hard1-hard1",
+  "profile": "hard1-hard1",
+  "replay_requirement": "hop trace 2 -> 1 -> 0 plus 2 mm / 1 degree independence",
+  "scenes": [
+    {
+      "actions": [
+        [
+          1,
+          "obstacle_0_movable",
+          [
+            [
+              31,
+              3
+            ]
+          ]
+        ],
+        [
+          1,
+          "obstacle_1_movable",
+          [
+            [
+              30,
+              4
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 27.9,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 133,
+          "n_valid_1push": 3,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.022556390977443608,
+          "solve_rate_hmax2": 0.022556390977443608,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 2,
+          "n_tried_1push": 134,
+          "n_valid_1push": 2,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.014925373134328358,
+          "solve_rate_hmax2": 0.014925373134328358,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00007",
+      "source_modules": [
+        {
+          "build_id": "hard_054",
+          "gate": 1,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0222,
+            "tier": "hard",
+            "tried": 135,
+            "valid_1push": 3,
+            "valid_first_push": 62
+          }
+        },
+        {
+          "build_id": "hard_041",
+          "gate": 2,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0121,
+            "tier": "hard",
+            "tried": 165,
+            "valid_1push": 2,
+            "valid_first_push": 108
+          }
+        }
+      ],
+      "xml": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/twohop_selected/targeted_v1/hard1-hard1/twohop_00007/env.xml"
+    },
+    {
+      "actions": [
+        [
+          1,
+          "obstacle_0_movable",
+          [
+            [
+              31,
+              3
+            ]
+          ]
+        ],
+        [
+          1,
+          "obstacle_1_movable",
+          [
+            [
+              30,
+              4
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 28.9,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 130,
+          "n_valid_1push": 3,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.023076923076923078,
+          "solve_rate_hmax2": 0.023076923076923078,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 1,
+          "n_tried_1push": 134,
+          "n_valid_1push": 1,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.007462686567164179,
+          "solve_rate_hmax2": 0.007462686567164179,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00081",
+      "source_modules": [
+        {
+          "build_id": "hard_054",
+          "gate": 1,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0222,
+            "tier": "hard",
+            "tried": 135,
+            "valid_1push": 3,
+            "valid_first_push": 62
+          }
+        },
+        {
+          "build_id": "hard_041",
+          "gate": 2,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0121,
+            "tier": "hard",
+            "tried": 165,
+            "valid_1push": 2,
+            "valid_first_push": 108
+          }
+        }
+      ],
+      "xml": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/twohop_selected/targeted_v1/hard1-hard1/twohop_00081/env.xml"
+    },
+    {
+      "actions": [
+        [
+          1,
+          "obstacle_0_movable",
+          [
+            [
+              31,
+              3
+            ]
+          ]
+        ],
+        [
+          1,
+          "obstacle_1_movable",
+          [
+            [
+              30,
+              4
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 26.0,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 131,
+          "n_valid_1push": 3,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.022900763358778626,
+          "solve_rate_hmax2": 0.022900763358778626,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 2,
+          "n_tried_1push": 139,
+          "n_valid_1push": 2,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.014388489208633094,
+          "solve_rate_hmax2": 0.014388489208633094,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00115",
+      "source_modules": [
+        {
+          "build_id": "hard_054",
+          "gate": 1,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0222,
+            "tier": "hard",
+            "tried": 135,
+            "valid_1push": 3,
+            "valid_first_push": 62
+          }
+        },
+        {
+          "build_id": "hard_041",
+          "gate": 2,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0121,
+            "tier": "hard",
+            "tried": 165,
+            "valid_1push": 2,
+            "valid_first_push": 108
+          }
+        }
+      ],
+      "xml": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/twohop_selected/targeted_v1/hard1-hard1/twohop_00115/env.xml"
+    },
+    {
+      "actions": [
+        [
+          1,
+          "obstacle_0_movable",
+          [
+            [
+              31,
+              3
+            ]
+          ]
+        ],
+        [
+          1,
+          "obstacle_1_movable",
+          [
+            [
+              30,
+              4
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 27.4,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 131,
+          "n_valid_1push": 3,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.022900763358778626,
+          "solve_rate_hmax2": 0.022900763358778626,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 1,
+          "n_tried_1push": 133,
+          "n_valid_1push": 1,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.007518796992481203,
+          "solve_rate_hmax2": 0.007518796992481203,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00135",
+      "source_modules": [
+        {
+          "build_id": "hard_054",
+          "gate": 1,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0222,
+            "tier": "hard",
+            "tried": 135,
+            "valid_1push": 3,
+            "valid_first_push": 62
+          }
+        },
+        {
+          "build_id": "hard_041",
+          "gate": 2,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0121,
+            "tier": "hard",
+            "tried": 165,
+            "valid_1push": 2,
+            "valid_first_push": 108
+          }
+        }
+      ],
+      "xml": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/twohop_selected/targeted_v1/hard1-hard1/twohop_00135/env.xml"
+    },
+    {
+      "actions": [
+        [
+          1,
+          "obstacle_0_movable",
+          [
+            [
+              31,
+              3
+            ]
+          ]
+        ],
+        [
+          1,
+          "obstacle_1_movable",
+          [
+            [
+              30,
+              4
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 26.5,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 130,
+          "n_valid_1push": 3,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.023076923076923078,
+          "solve_rate_hmax2": 0.023076923076923078,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 1,
+          "n_tried_1push": 139,
+          "n_valid_1push": 1,
+          "n_valid_first_push": 0,
+          "push_kind": "one_push",
+          "solve_rate_1push": 0.007194244604316547,
+          "solve_rate_hmax2": 0.007194244604316547,
+          "tier_1push": "hard",
+          "tier_hmax2": "hard",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00194",
+      "source_modules": [
+        {
+          "build_id": "hard_054",
+          "gate": 1,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0222,
+            "tier": "hard",
+            "tried": 135,
+            "valid_1push": 3,
+            "valid_first_push": 62
+          }
+        },
+        {
+          "build_id": "hard_041",
+          "gate": 2,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "1push",
+            "push_kind": "one_push",
+            "solve_rate": 0.0121,
+            "tier": "hard",
+            "tried": 165,
+            "valid_1push": 2,
+            "valid_first_push": 108
+          }
+        }
+      ],
+      "xml": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/twohop_selected/targeted_v1/hard1-hard1/twohop_00194/env.xml"
+    }
+  ],
+  "selected": 5,
+  "selection_namespace": "targeted_v1"
+}

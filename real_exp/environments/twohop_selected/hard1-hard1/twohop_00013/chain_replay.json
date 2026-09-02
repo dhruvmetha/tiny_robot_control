@@ -1,0 +1,317 @@
+{
+  "component_path": [
+    "robot",
+    "region_4",
+    "goal"
+  ],
+  "boundary_objects": [
+    [
+      "obstacle_0_movable"
+    ],
+    [
+      "obstacle_1_movable"
+    ]
+  ],
+  "goal_in_free_space": true,
+  "status": "solved",
+  "failure_reason": null,
+  "attempts": 2,
+  "actions": [
+    [
+      [
+        35,
+        1
+      ]
+    ],
+    [
+      [
+        30,
+        3
+      ]
+    ]
+  ],
+  "reachability_trace": [
+    {
+      "goal_reachable": false,
+      "reachable_objects": [
+        "obstacle_0_movable"
+      ],
+      "reachable_edges": {
+        "obstacle_0_movable": [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          38,
+          40,
+          42,
+          44,
+          46
+        ],
+        "obstacle_1_movable": []
+      }
+    },
+    {
+      "goal_reachable": false,
+      "reachable_objects": [
+        "obstacle_0_movable",
+        "obstacle_1_movable"
+      ],
+      "reachable_edges": {
+        "obstacle_0_movable": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          51,
+          53,
+          55,
+          57,
+          59
+        ],
+        "obstacle_1_movable": [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          43,
+          45
+        ]
+      }
+    },
+    {
+      "goal_reachable": true,
+      "reachable_objects": [
+        "obstacle_0_movable",
+        "obstacle_1_movable"
+      ],
+      "reachable_edges": {
+        "obstacle_0_movable": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          51,
+          53,
+          55,
+          57,
+          59
+        ],
+        "obstacle_1_movable": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16,
+          18,
+          20,
+          22,
+          24,
+          26,
+          28,
+          30,
+          32,
+          34,
+          36,
+          38,
+          40,
+          42,
+          44,
+          46,
+          48,
+          50,
+          52,
+          54,
+          56,
+          58,
+          59
+        ]
+      }
+    }
+  ],
+  "target_point_trace": [
+    [
+      0,
+      0
+    ],
+    [
+      44,
+      0
+    ],
+    [
+      44,
+      100
+    ]
+  ],
+  "target_point_thresholds": [
+    9,
+    20
+  ],
+  "object_pose_trace": [
+    {
+      "obstacle_0_movable": [
+        0.269,
+        0.24,
+        -0.16580627893946132
+      ],
+      "obstacle_1_movable": [
+        0.198,
+        0.49,
+        -0.39095375244672975
+      ]
+    },
+    {
+      "obstacle_0_movable": [
+        0.324380669443064,
+        0.2343581375266911,
+        0.08112203467982977
+      ],
+      "obstacle_1_movable": [
+        0.198,
+        0.49,
+        -0.39095375244672975
+      ]
+    },
+    {
+      "obstacle_0_movable": [
+        0.3243487313722141,
+        0.23434097901036438,
+        0.08153464977065364
+      ],
+      "obstacle_1_movable": [
+        0.12441218951787975,
+        0.5300495591140223,
+        -1.6739340798153817
+      ]
+    }
+  ],
+  "final_object_poses": {
+    "obstacle_0_movable": [
+      0.3243487313722141,
+      0.23434097901036438,
+      0.08153464977065364
+    ],
+    "obstacle_1_movable": [
+      0.12441218951787975,
+      0.5300495591140223,
+      -1.6739340798153817
+    ]
+  },
+  "candidate_rejections": {},
+  "mechanical_independence_failure": null
+}

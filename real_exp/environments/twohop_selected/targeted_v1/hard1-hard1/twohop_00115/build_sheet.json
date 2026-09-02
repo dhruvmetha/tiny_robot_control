@@ -1,0 +1,367 @@
+{
+  "angle_convention": "long_axis_bearing_deg = bearing of the item's LONG side in world, counter-clockwise from +X, in [0,180). Place by this, not by yaw. yaw_deg is the MuJoCo local-frame rotation and its meaning differs between bricks (long side on local X) and blocks (long side on local Y).",
+  "arena_cm": [
+    49.0,
+    77.5
+  ],
+  "blocker": {
+    "center_cm": [
+      26.9,
+      24.5
+    ],
+    "height_cm": 5.0,
+    "long_axis_bearing_deg": 80.5,
+    "long_cm": 12.0,
+    "object": "obj_4",
+    "short_cm": 7.5,
+    "size_cm": [
+      7.5,
+      12.0
+    ],
+    "yaw_deg": 170.5
+  },
+  "blockers": [
+    {
+      "center_cm": [
+        26.9,
+        24.5
+      ],
+      "height_cm": 5.0,
+      "long_axis_bearing_deg": 80.5,
+      "long_cm": 12.0,
+      "object": "obj_4",
+      "short_cm": 7.5,
+      "size_cm": [
+        7.5,
+        12.0
+      ],
+      "yaw_deg": 170.5
+    },
+    {
+      "center_cm": [
+        19.8,
+        49.5
+      ],
+      "height_cm": 4.0,
+      "long_axis_bearing_deg": 67.6,
+      "long_cm": 15.0,
+      "object": "obj_1",
+      "short_cm": 7.0,
+      "size_cm": [
+        7.0,
+        15.0
+      ],
+      "yaw_deg": 157.6
+    }
+  ],
+  "bricks": [
+    {
+      "center_cm": [
+        9.9,
+        28.3
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 2.7,
+      "long_cm": 19.5,
+      "marker_hint": "wall_9",
+      "short_cm": 5.5,
+      "yaw_deg": 2.7
+    },
+    {
+      "center_cm": [
+        35.5,
+        39.2
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 109.0,
+      "long_cm": 19.5,
+      "marker_hint": "wall_10",
+      "short_cm": 5.5,
+      "yaw_deg": 109.0
+    },
+    {
+      "center_cm": [
+        38.9,
+        54.1
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 171.0,
+      "long_cm": 19.5,
+      "marker_hint": "wall_11",
+      "short_cm": 5.5,
+      "yaw_deg": 171.0
+    },
+    {
+      "center_cm": [
+        13.7,
+        66.9
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 89.7,
+      "long_cm": 19.5,
+      "marker_hint": "wall_12",
+      "short_cm": 5.5,
+      "yaw_deg": 89.7
+    }
+  ],
+  "chain_replay_status": "passed",
+  "classification_note": "Source-module labels steer composition but do not transfer automatically. Label K1 exhaustively on this XML; materialize the canonical post-K1 state; then label K2 exhaustively on that XML.",
+  "classification_status": "measured_replay_validated",
+  "counterfactual_trace": {
+    "both_removed": {
+      "middle_to_goal": true,
+      "start_to_goal": true,
+      "start_to_middle": true
+    },
+    "initial": {
+      "middle_to_goal": false,
+      "start_to_goal": false,
+      "start_to_middle": false
+    },
+    "margin_both_removed": {
+      "middle_to_goal": false,
+      "start_to_goal": true,
+      "start_to_middle": false
+    },
+    "post_k1": {
+      "middle_to_goal": false,
+      "start_to_goal": false,
+      "start_to_middle": true
+    },
+    "remove_k2_only": {
+      "middle_to_goal": true,
+      "start_to_goal": false,
+      "start_to_middle": false
+    }
+  },
+  "gate_center_separation_cm": 26.0,
+  "gate_target_y_cm": [
+    24.5,
+    49.5
+  ],
+  "gates": [
+    {
+      "boundary_object": "obstacle_0_movable",
+      "index": 1,
+      "physical_object": "obj_4",
+      "proxy_open_frac": 0.0,
+      "proxy_reachable_contacts": 27,
+      "target": {
+        "axis": "1push",
+        "push_kind": "one_push",
+        "tier": "hard"
+      }
+    },
+    {
+      "boundary_object": "obstacle_1_movable",
+      "index": 2,
+      "physical_object": "obj_1",
+      "proxy_open_frac": 0.0,
+      "proxy_reachable_contacts": 29,
+      "target": {
+        "axis": "1push",
+        "push_kind": "one_push",
+        "tier": "hard"
+      }
+    }
+  ],
+  "generator": "gen_real_buildable_twohop.py",
+  "generator_seed": 64115,
+  "goal_cm": [
+    33.7,
+    68.1
+  ],
+  "independence_tolerance": {
+    "non_target_angle_deg": 1.0,
+    "non_target_position_mm": 2.0
+  },
+  "k1_canonical_opener": [
+    1,
+    "obstacle_0_movable",
+    [
+      [
+        31,
+        3
+      ]
+    ]
+  ],
+  "k2_canonical_opener": [
+    1,
+    "obstacle_1_movable",
+    [
+      [
+        30,
+        4
+      ]
+    ]
+  ],
+  "measured_gates": [
+    {
+      "classification_complete": true,
+      "n_open_within_2push": 3,
+      "n_tried_1push": 131,
+      "n_valid_1push": 3,
+      "n_valid_first_push": 0,
+      "push_kind": "one_push",
+      "solve_rate_1push": 0.022900763358778626,
+      "solve_rate_hmax2": 0.022900763358778626,
+      "tier_1push": "hard",
+      "tier_hmax2": "hard",
+      "timed_out": false
+    },
+    {
+      "classification_complete": true,
+      "n_open_within_2push": 2,
+      "n_tried_1push": 139,
+      "n_valid_1push": 2,
+      "n_valid_first_push": 0,
+      "push_kind": "one_push",
+      "solve_rate_1push": 0.014388489208633094,
+      "solve_rate_hmax2": 0.014388489208633094,
+      "tier_1push": "hard",
+      "tier_hmax2": "hard",
+      "timed_out": false
+    }
+  ],
+  "measured_profile": "hard1-hard1",
+  "mechanical_independence": {
+    "angle_tolerance_deg": 1.0,
+    "failure": null,
+    "k1_to_k2_angle_delta_deg": 0.0,
+    "k1_to_k2_position_delta_mm": 0.0,
+    "k2_to_k1_angle_delta_deg": 0.0174,
+    "k2_to_k1_position_delta_mm": 0.0205,
+    "position_tolerance_mm": 2.0,
+    "status": "passed"
+  },
+  "middle_anchor_cm": [
+    24.2,
+    35.9
+  ],
+  "n_bricks": 4,
+  "n_contacts": 27,
+  "object_order": [
+    "obj_4",
+    "obj_1"
+  ],
+  "open_frac": 0.0,
+  "opener_selection": "lexicographic_replay_stable_chain",
+  "post_k1_xml": "post_k1_env.xml",
+  "post_k2_xml": "post_k2_env.xml",
+  "replay_stable_openers": [
+    [
+      1,
+      "obstacle_0_movable",
+      [
+        [
+          31,
+          3
+        ]
+      ]
+    ],
+    [
+      1,
+      "obstacle_1_movable",
+      [
+        [
+          30,
+          4
+        ]
+      ]
+    ]
+  ],
+  "requested_profile": "hard1-hard1",
+  "robot_start_bearing_deg": 0.0,
+  "robot_start_cm": [
+    16.8,
+    11.6
+  ],
+  "run_namo_goal_flag": "--goal 34 68",
+  "scene_id": "twohop_00115",
+  "source_modules": [
+    {
+      "build_id": "hard_054",
+      "gate": 1,
+      "physical_object": "obj_4",
+      "source_label": {
+        "axis": "1push",
+        "push_kind": "one_push",
+        "solve_rate": 0.0222,
+        "tier": "hard",
+        "tried": 135,
+        "valid_1push": 3,
+        "valid_first_push": 62
+      }
+    },
+    {
+      "build_id": "hard_041",
+      "gate": 2,
+      "physical_object": "obj_1",
+      "source_label": {
+        "axis": "1push",
+        "push_kind": "one_push",
+        "solve_rate": 0.0121,
+        "tier": "hard",
+        "tried": 165,
+        "valid_1push": 2,
+        "valid_first_push": 108
+      }
+    }
+  ],
+  "tag_convention": "four configured bars are assigned deterministically as wall_9, wall_10, wall_11, and wall_12. wall_9 is a wall_10 clone with the same 19.5 cm by 5.5 cm dimensions and tag mounting convention. Place every wall by long_axis_bearing_deg.",
+  "targeted_spacing_search": {
+    "candidate_pairs": [
+      [
+        "hard_054",
+        "hard_071"
+      ],
+      [
+        "hard_020",
+        "hard_071"
+      ],
+      [
+        "hard_028",
+        "hard_071"
+      ],
+      [
+        "hard_054",
+        "hard_041"
+      ]
+    ],
+    "lower_step_cm": 0.5,
+    "upper_step_cm": 0.5
+  },
+  "terminal_state_canonical_openers": [
+    [
+      1,
+      "obstacle_0_movable",
+      [
+        [
+          31,
+          3
+        ]
+      ]
+    ],
+    [
+      1,
+      "obstacle_1_movable",
+      [
+        [
+          30,
+          4
+        ]
+      ]
+    ]
+  ],
+  "topology_target": {
+    "boundary_objects": [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    "hop_count": 2
+  }
+}

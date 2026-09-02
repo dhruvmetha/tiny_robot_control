@@ -1,0 +1,111 @@
+{
+  "actions": [
+    [
+      1,
+      "obstacle_0_movable",
+      [
+        [
+          31,
+          3
+        ]
+      ]
+    ],
+    [
+      1,
+      "obstacle_1_movable",
+      [
+        [
+          30,
+          4
+        ]
+      ]
+    ]
+  ],
+  "boundary_trace": [
+    [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    [
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    []
+  ],
+  "hop_trace": [
+    2,
+    1,
+    0
+  ],
+  "k1_label": {
+    "classification_complete": true,
+    "push_kind": "one_push",
+    "solve_rate_1push": 0.023076923076923078,
+    "tier_1push": "hard",
+    "tried": 130,
+    "valid": 3
+  },
+  "k1_protection": {
+    "angle_tolerance_deg": 1.0,
+    "failure": null,
+    "max_angle_delta_deg": 0.0,
+    "max_position_delta_mm": 0.0,
+    "objects": {
+      "obstacle_1_movable": {
+        "angle_delta_deg": 0.0,
+        "position_delta_mm": 0.0
+      }
+    },
+    "position_tolerance_mm": 2.0,
+    "status": "passed"
+  },
+  "k1_replay_candidates": 3,
+  "k1_steps": [
+    {
+      "depth": 3,
+      "done": true,
+      "edge": 31
+    }
+  ],
+  "k2_label": {
+    "classification_complete": true,
+    "push_kind": "one_push",
+    "solve_rate_1push": 0.007518796992481203,
+    "tier_1push": "hard",
+    "tried": 133,
+    "valid": 1
+  },
+  "k2_protection": {
+    "angle_tolerance_deg": 1.0,
+    "failure": null,
+    "max_angle_delta_deg": 0.0029,
+    "max_position_delta_mm": 0.0066,
+    "objects": {
+      "obstacle_0_movable": {
+        "angle_delta_deg": 0.0029,
+        "position_delta_mm": 0.0066
+      }
+    },
+    "position_tolerance_mm": 2.0,
+    "status": "passed"
+  },
+  "k2_steps": [
+    {
+      "depth": 4,
+      "done": true,
+      "edge": 30
+    }
+  ],
+  "post_k1_xml": "/scratch/tdn39/real_exp/results/twohop_search_hard1_targeted_v1/hard1-hard1/replay_stable/twohop_00081/post_k1_env.xml",
+  "post_k2_xml": "/scratch/tdn39/real_exp/results/twohop_search_hard1_targeted_v1/hard1-hard1/replay_stable/twohop_00081/post_k2_env.xml",
+  "rejects": {},
+  "scene_id": "twohop_00081",
+  "status": "passed",
+  "t_s": 41.62,
+  "xml_path": "/scratch/tdn39/real_exp/results/twohop_search_hard1_targeted_v1/hard1-hard1/selected/twohop_00081/env.xml"
+}

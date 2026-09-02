@@ -1,0 +1,299 @@
+{
+  "profile": "med2-med2",
+  "replay_requirement": "hop trace 2 -> 1 -> 0 plus 2 mm / 1 degree independence",
+  "scenes": [
+    {
+      "actions": [
+        [
+          2,
+          "obstacle_0_movable",
+          [
+            [
+              31,
+              1
+            ],
+            [
+              39,
+              4
+            ]
+          ]
+        ],
+        [
+          2,
+          "obstacle_1_movable",
+          [
+            [
+              30,
+              2
+            ],
+            [
+              40,
+              4
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 29.1,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 14,
+          "n_tried_1push": 114,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 14,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.12280701754385964,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 14,
+          "n_tried_1push": 107,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 14,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.1308411214953271,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00036",
+      "source_modules": [
+        {
+          "build_id": "med_080",
+          "gate": 1,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "hmax2",
+            "push_kind": "needs_2_chain",
+            "solve_rate": 0.128,
+            "tier": "med",
+            "tried": 125,
+            "valid_1push": 0,
+            "valid_first_push": 16
+          }
+        },
+        {
+          "build_id": "med_099",
+          "gate": 2,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "hmax2",
+            "push_kind": "needs_2_chain",
+            "solve_rate": 0.1071,
+            "tier": "med",
+            "tried": 140,
+            "valid_1push": 0,
+            "valid_first_push": 15
+          }
+        }
+      ]
+    },
+    {
+      "actions": [
+        [
+          2,
+          "obstacle_0_movable",
+          [
+            [
+              43,
+              3
+            ],
+            [
+              13,
+              4
+            ]
+          ]
+        ],
+        [
+          2,
+          "obstacle_1_movable",
+          [
+            [
+              38,
+              3
+            ],
+            [
+              40,
+              3
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 30.0,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 16,
+          "n_tried_1push": 110,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 16,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.14545454545454545,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 22,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 3,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.13636363636363635,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00043",
+      "source_modules": [
+        {
+          "build_id": "med_048",
+          "gate": 1,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "hmax2",
+            "push_kind": "needs_2_chain",
+            "solve_rate": 0.0667,
+            "tier": "med",
+            "tried": 135,
+            "valid_1push": 0,
+            "valid_first_push": 9
+          }
+        },
+        {
+          "build_id": "med_005",
+          "gate": 2,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "hmax2",
+            "push_kind": "needs_2_chain",
+            "solve_rate": 0.0522,
+            "tier": "med",
+            "tried": 115,
+            "valid_1push": 0,
+            "valid_first_push": 6
+          }
+        }
+      ]
+    },
+    {
+      "actions": [
+        [
+          2,
+          "obstacle_0_movable",
+          [
+            [
+              31,
+              1
+            ],
+            [
+              41,
+              3
+            ]
+          ]
+        ],
+        [
+          2,
+          "obstacle_1_movable",
+          [
+            [
+              32,
+              3
+            ],
+            [
+              40,
+              3
+            ]
+          ]
+        ]
+      ],
+      "gate_center_separation_cm": 31.1,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 14,
+          "n_tried_1push": 114,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 14,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.12280701754385964,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 7,
+          "n_tried_1push": 107,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 7,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.06542056074766354,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_00063",
+      "source_modules": [
+        {
+          "build_id": "med_080",
+          "gate": 1,
+          "physical_object": "obj_1",
+          "source_label": {
+            "axis": "hmax2",
+            "push_kind": "needs_2_chain",
+            "solve_rate": 0.128,
+            "tier": "med",
+            "tried": 125,
+            "valid_1push": 0,
+            "valid_first_push": 16
+          }
+        },
+        {
+          "build_id": "med_099",
+          "gate": 2,
+          "physical_object": "obj_4",
+          "source_label": {
+            "axis": "hmax2",
+            "push_kind": "needs_2_chain",
+            "solve_rate": 0.1071,
+            "tier": "med",
+            "tried": 140,
+            "valid_1push": 0,
+            "valid_first_push": 15
+          }
+        }
+      ]
+    }
+  ],
+  "selected": 3,
+  "selection_namespace": "donor_v2_all"
+}

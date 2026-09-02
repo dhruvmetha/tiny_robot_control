@@ -1,0 +1,58 @@
+{
+  "boundaries": [
+    {
+      "boundary_error": null,
+      "no_blocking_objects": false,
+      "no_pushable_blocker": false,
+      "no_reachable_blocker": false,
+      "objects": [
+        "obstacle_0_movable"
+      ],
+      "reachable_edges": {
+        "obstacle_0_movable": 27
+      },
+      "reachable_objects": [
+        "obstacle_0_movable"
+      ],
+      "source_region": "robot",
+      "target_region": "region_3"
+    },
+    {
+      "boundary_error": null,
+      "no_blocking_objects": false,
+      "no_pushable_blocker": true,
+      "no_reachable_blocker": true,
+      "objects": [
+        "obstacle_1_movable"
+      ],
+      "reachable_edges": {},
+      "reachable_objects": [],
+      "source_region": "region_3",
+      "target_region": "goal"
+    }
+  ],
+  "error": null,
+  "goal_clearance_m": 0.1697,
+  "goal_in_free_space": true,
+  "goal_label": "goal",
+  "goal_reachable_at_t0": false,
+  "hop_count": 2,
+  "hop_mismatch": false,
+  "n_reachable_objects": 1,
+  "n_regions": 5,
+  "no_blocking_objects": false,
+  "no_blocking_objects_any": false,
+  "no_path": false,
+  "no_pushable_blocker": false,
+  "no_pushable_blocker_any": true,
+  "no_reachable_blocker": false,
+  "no_reachable_blocker_any": true,
+  "region_path": [
+    "robot",
+    "region_3",
+    "goal"
+  ],
+  "robot_label": "robot",
+  "t_probe_s": 0.063,
+  "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_med2_donor_v2/med2-med2/twohop_00043/env.xml"
+}

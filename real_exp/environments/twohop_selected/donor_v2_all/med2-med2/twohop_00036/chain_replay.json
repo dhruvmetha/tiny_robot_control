@@ -1,0 +1,141 @@
+{
+  "actions": [
+    [
+      2,
+      "obstacle_0_movable",
+      [
+        [
+          31,
+          1
+        ],
+        [
+          39,
+          4
+        ]
+      ]
+    ],
+    [
+      2,
+      "obstacle_1_movable",
+      [
+        [
+          30,
+          2
+        ],
+        [
+          40,
+          4
+        ]
+      ]
+    ]
+  ],
+  "boundary_trace": [
+    [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    [
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    []
+  ],
+  "hop_trace": [
+    2,
+    1,
+    0
+  ],
+  "k1_label": {
+    "classification_complete": true,
+    "matches_profile": true,
+    "push_kind": "needs_2_chain",
+    "solve_rate_1push": 0.0,
+    "solve_rate_first_push": 0.12727272727272726,
+    "tier_1push": null,
+    "tier_hmax2": "med",
+    "tried": 114,
+    "tried_first_push": 110,
+    "valid": 0,
+    "valid_first_push": 14
+  },
+  "k1_protection": {
+    "angle_tolerance_deg": 1.0,
+    "failure": null,
+    "max_angle_delta_deg": 0.0,
+    "max_position_delta_mm": 0.0,
+    "objects": {
+      "obstacle_1_movable": {
+        "angle_delta_deg": 0.0,
+        "position_delta_mm": 0.0
+      }
+    },
+    "position_tolerance_mm": 2.0,
+    "status": "passed"
+  },
+  "k1_replay_candidates": 91,
+  "k1_steps": [
+    {
+      "depth": 1,
+      "done": true,
+      "edge": 31
+    },
+    {
+      "depth": 4,
+      "done": true,
+      "edge": 39
+    }
+  ],
+  "k2_label": {
+    "classification_complete": true,
+    "matches_profile": true,
+    "push_kind": "needs_2_chain",
+    "solve_rate_1push": 0.0,
+    "solve_rate_first_push": 0.14285714285714285,
+    "tier_1push": null,
+    "tier_hmax2": "med",
+    "tried": 109,
+    "tried_first_push": 98,
+    "valid": 0,
+    "valid_first_push": 14
+  },
+  "k2_protection": {
+    "angle_tolerance_deg": 1.0,
+    "failure": null,
+    "max_angle_delta_deg": 0.0,
+    "max_position_delta_mm": 0.0022,
+    "objects": {
+      "obstacle_0_movable": {
+        "angle_delta_deg": 0.0,
+        "position_delta_mm": 0.0022
+      }
+    },
+    "position_tolerance_mm": 2.0,
+    "status": "passed"
+  },
+  "k2_steps": [
+    {
+      "depth": 2,
+      "done": true,
+      "edge": 30
+    },
+    {
+      "depth": 4,
+      "done": true,
+      "edge": 40
+    }
+  ],
+  "post_k1_xml": "/scratch/tdn39/real_exp/results/twohop_search_med2_donor_v2/med2-med2/replay_stable/twohop_00036/post_k1_env.xml",
+  "post_k2_xml": "/scratch/tdn39/real_exp/results/twohop_search_med2_donor_v2/med2-med2/replay_stable/twohop_00036/post_k2_env.xml",
+  "rejects": {
+    "k1_replay_did_not_decrement": 1
+  },
+  "scene_id": "twohop_00036",
+  "status": "passed",
+  "t_s": 1986.6,
+  "xml_path": "/scratch/tdn39/real_exp/results/twohop_search_med2_donor_v2/med2-med2/selected/twohop_00036/env.xml"
+}
