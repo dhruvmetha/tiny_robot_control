@@ -101,5 +101,11 @@
    ],
    "height_m": 0.1
   }
- ]
+ ],
+ "doorway": {
+  "needs_both_blocks": true,
+  "has_route_around": false
+ },
+ "episodes": [],
+ "no_episode_reason": "no push opens the region within two pushes"
 }

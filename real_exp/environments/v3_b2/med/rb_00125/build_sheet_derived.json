@@ -101,5 +101,19 @@
    ],
    "height_m": 0.1
   }
+ ],
+ "doorway": {
+  "needs_both_blocks": true,
+  "has_route_around": false
+ },
+ "episodes": [
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "hard",
+   "n_green": 7,
+   "n_tried": 205,
+   "n_green_contact": 5
+  }
  ]
 }

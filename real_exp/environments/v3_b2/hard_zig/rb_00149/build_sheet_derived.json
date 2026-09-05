@@ -102,5 +102,19 @@
    "height_m": 0.1
   }
  ],
- "robot_start_yaw_rad": 0.0
+ "robot_start_yaw_rad": 0.0,
+ "doorway": {
+  "needs_both_blocks": false,
+  "has_route_around": true
+ },
+ "episodes": [
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "medium",
+   "n_green": 3,
+   "n_tried": 60,
+   "n_green_contact": 3
+  }
+ ]
 }

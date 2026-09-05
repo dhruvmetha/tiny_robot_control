@@ -123,5 +123,11 @@
    ],
    "height_m": 0.1
   }
- ]
+ ],
+ "doorway": {
+  "needs_both_blocks": false,
+  "has_route_around": true
+ },
+ "episodes": [],
+ "no_episode_reason": "solves, but no solving push touches the other movable"
 }
