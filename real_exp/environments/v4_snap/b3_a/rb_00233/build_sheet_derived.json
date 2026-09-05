@@ -1,0 +1,138 @@
+{
+ "schema": "derived_from_env_xml",
+ "note": "NOT a generator build sheet. This pool ships env.xml and nothing else, so poses are read back out of that file. robot_start_m comes from the simulator after reset, because the scene XML carries no robot body. Metres, yaw in degrees, half-extents as authored.",
+ "robot_start_m": [
+  0.38441,
+  0.169576
+ ],
+ "robot_start_yaw_rad": 0.0,
+ "goal_marker_m": [
+  0.075663,
+  0.535215
+ ],
+ "movables": [
+  {
+   "name": "obstacle_0_movable",
+   "x_m": 0.221572,
+   "y_m": 0.310661,
+   "yaw_deg": 170.623397,
+   "half_extent_m": [
+    0.035,
+    0.075
+   ],
+   "height_m": 0.04
+  },
+  {
+   "name": "obstacle_1_movable",
+   "x_m": 0.245819,
+   "y_m": 0.457495,
+   "yaw_deg": 157.702995,
+   "half_extent_m": [
+    0.0375,
+    0.06
+   ],
+   "height_m": 0.05
+  }
+ ],
+ "statics": [
+  {
+   "name": "wall_boundary_left",
+   "x_m": -0.01,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_right",
+   "x_m": 0.5,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_bottom",
+   "x_m": 0.245,
+   "y_m": -0.01,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_top",
+   "x_m": 0.245,
+   "y_m": 0.785,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_1",
+   "x_m": 0.390906,
+   "y_m": 0.305247,
+   "yaw_deg": 3.760932,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_2",
+   "x_m": 0.150188,
+   "y_m": 0.425912,
+   "yaw_deg": 83.44783,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_3",
+   "x_m": 0.150188,
+   "y_m": 0.183523,
+   "yaw_deg": 105.929242,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  }
+ ],
+ "doorway": {
+  "needs_both_blocks": true,
+  "has_route_around": false
+ },
+ "episodes": [
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "1push",
+   "tier": "hard",
+   "n_green": 1,
+   "n_tried": 25,
+   "n_green_contact": 1
+  },
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "2push",
+   "tier": "medium",
+   "n_green": 6,
+   "n_tried": 25,
+   "n_green_contact": 6
+  }
+ ]
+}

@@ -1,0 +1,127 @@
+{
+ "schema": "derived_from_env_xml",
+ "note": "NOT a generator build sheet. This pool ships env.xml and nothing else, so poses are read back out of that file. robot_start_m comes from the simulator after reset, because the scene XML carries no robot body. Metres, yaw in degrees, half-extents as authored.",
+ "robot_start_m": [
+  0.128153,
+  0.32412
+ ],
+ "robot_start_yaw_rad": 0.0,
+ "goal_marker_m": [
+  0.138731,
+  0.703304
+ ],
+ "movables": [
+  {
+   "name": "obstacle_0_movable",
+   "x_m": 0.250596,
+   "y_m": 0.405215,
+   "yaw_deg": 143.909064,
+   "half_extent_m": [
+    0.0375,
+    0.06
+   ],
+   "height_m": 0.05
+  },
+  {
+   "name": "obstacle_1_movable",
+   "x_m": 0.332026,
+   "y_m": 0.345855,
+   "yaw_deg": 132.208036,
+   "half_extent_m": [
+    0.035,
+    0.075
+   ],
+   "height_m": 0.04
+  }
+ ],
+ "statics": [
+  {
+   "name": "wall_boundary_left",
+   "x_m": -0.01,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_right",
+   "x_m": 0.5,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_bottom",
+   "x_m": 0.245,
+   "y_m": -0.01,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_top",
+   "x_m": 0.245,
+   "y_m": 0.785,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_1",
+   "x_m": 0.098041,
+   "y_m": 0.446356,
+   "yaw_deg": 1.169788,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_2",
+   "x_m": 0.343429,
+   "y_m": 0.527482,
+   "yaw_deg": 93.274695,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  }
+ ],
+ "doorway": {
+  "needs_both_blocks": false,
+  "has_route_around": true
+ },
+ "episodes": [
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "1push",
+   "tier": "medium",
+   "n_green": 31,
+   "n_tried": 150,
+   "n_green_contact": 27
+  },
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 46,
+   "n_tried": 150,
+   "n_green_contact": 40
+  }
+ ]
+}

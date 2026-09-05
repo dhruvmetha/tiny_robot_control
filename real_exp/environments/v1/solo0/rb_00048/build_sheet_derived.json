@@ -1,0 +1,116 @@
+{
+ "schema": "derived_from_env_xml",
+ "note": "NOT a generator build sheet. This pool ships env.xml and nothing else, so poses are read back out of that file. robot_start_m comes from the simulator after reset, because the scene XML carries no robot body. Metres, yaw in degrees, half-extents as authored.",
+ "robot_start_m": [
+  0.323709,
+  0.169869
+ ],
+ "robot_start_yaw_rad": 0.0,
+ "goal_marker_m": [
+  0.319342,
+  0.47317
+ ],
+ "movables": [
+  {
+   "name": "obstacle_0_movable",
+   "x_m": 0.130636,
+   "y_m": 0.337509,
+   "yaw_deg": 80.994802,
+   "half_extent_m": [
+    0.035,
+    0.075
+   ],
+   "height_m": 0.04
+  },
+  {
+   "name": "obstacle_1_movable",
+   "x_m": 0.147993,
+   "y_m": 0.447034,
+   "yaw_deg": 30.215133,
+   "half_extent_m": [
+    0.0375,
+    0.06
+   ],
+   "height_m": 0.05
+  }
+ ],
+ "statics": [
+  {
+   "name": "wall_boundary_left",
+   "x_m": -0.01,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_right",
+   "x_m": 0.5,
+   "y_m": 0.3875,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.01,
+    0.3975
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_bottom",
+   "x_m": 0.245,
+   "y_m": -0.01,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_boundary_top",
+   "x_m": 0.245,
+   "y_m": 0.785,
+   "yaw_deg": 0.0,
+   "half_extent_m": [
+    0.245,
+    0.01
+   ],
+   "height_m": 0.1
+  },
+  {
+   "name": "wall_inner_1",
+   "x_m": 0.389658,
+   "y_m": 0.326519,
+   "yaw_deg": -7.847191,
+   "half_extent_m": [
+    0.0975,
+    0.0275
+   ],
+   "height_m": 0.1
+  }
+ ],
+ "doorway": {
+  "needs_both_blocks": true,
+  "has_route_around": true
+ },
+ "episodes": [
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "1push",
+   "tier": "easy",
+   "n_green": 39,
+   "n_tried": 115,
+   "n_green_contact": 39
+  },
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 64,
+   "n_tried": 115,
+   "n_green_contact": 64
+  }
+ ]
+}
