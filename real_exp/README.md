@@ -26,6 +26,15 @@ revision used to launch the run; diagnostics records both repositories in
 
 - `shortlist.json` is the original gallery export.
 - `shortlist/` preserves each exported gallery record.
+- `environments/real_2mov/<pool>/<family>/<rb_id>/` holds the two-movable
+  rooms delivered from the sim side (1598 rooms across pools v1, v2, v3,
+  v3_b2, v3_snap, v4_rest, v4_snap). Each room has `env.xml`,
+  `build_sheet_derived.json`, and `sweep_record.json`. The pool names are
+  sweep batches, not generator recipes, and `rb_id` is a per-family counter,
+  so `pool/family/rb_id` is the only scene key. Do not rename below
+  `real_2mov/`; the sim side's cards, sweep records, and delivery scripts
+  key on that path. Results for these rooms go to
+  `results/real_2mov/<pool>/<family>/<rb_id>/<arm>/trialN/`.
 - `environments/<axis>/<build_id>/build_sheet.csv` contains the physical build
   sheet for a shortlisted scene.
 - `resolved_scenes.csv` records the selected build IDs, source XML provenance,

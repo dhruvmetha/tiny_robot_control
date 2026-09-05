@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 check_build = import_module("check_build")
 
 SHEET = (Path(__file__).resolve().parents[1] / "real_exp" / "environments" /
-         "v3_b2" / "hard_hc2" / "rb_00001" / "build_sheet_derived.json")
+         "real_2mov" / "v3_b2" / "hard_hc2" / "rb_00001" / "build_sheet_derived.json")
 
 
 def _sheet_copy(tmp_path: Path, dirname: str, **extra) -> Path:
