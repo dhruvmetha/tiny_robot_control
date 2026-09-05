@@ -34,12 +34,13 @@ Two policies are intentionally mirrored in code:
   `WavefrontPlanner::recompute_wavefront`.
 
 Those mirrors rely on cross-references and tests, not shared executable code.
-The tier-1 inflation margin is currently divergent:
+The tier-1 inflation margin is `0.001 m` in both sidecars, and every
+code fallback for a missing sidecar uses the same number:
 
-| Checkout | Sidecar | Tier-1 base margin |
-|---|---|---:|
-| `robot_control` | [`config/wavefront_inflation.yaml`](../config/wavefront_inflation.yaml) | `0.002 m` |
-| sibling `namo_cpp` | `namo_cpp/config/wavefront_inflation.yaml` | `0.005 m` |
+| Checkout | Sidecar | Tier-1 base margin | Fallback constant |
+|---|---|---:|---|
+| `robot_control` | [`config/wavefront_inflation.yaml`](../config/wavefront_inflation.yaml) | `0.001 m` | `DEFAULT_TIER1_BASE_INFLATION_MARGIN_M` in `wavefront_inflation_config.py` |
+| sibling `namo_cpp` | `namo_cpp/config/wavefront_inflation.yaml` | `0.001 m` | `kDefaultWavefrontTier1MarginM` in `goal_tolerance_utils.hpp` |
 
 These are separate files, and configuration discovery depends on the primary
 config's location. Python's
@@ -50,14 +51,11 @@ primary config remains inside the sibling checkout,
 beside the primary config or by walking its ancestors.
 
 The normal [`NAMOPlanBridge`](../src/robot_control/planner/namo_bridge.py) path
-is different. `NAMOPlanBridge._build_effective_namo_config` copies the primary
-YAML, with its runtime robot-size override, to
-`/tmp/namo_config_runtime_*.yaml`. C++ sidecar discovery then starts beside
-that temporary file and walks `/tmp`'s ancestors, so it does not reach
-`namo_cpp/config/wavefront_inflation.yaml`. On this bridge path the C++
-`PlanningConfig` default remains in effect; it is `0.005 m`, as is
-`kDefaultWavefrontTier1MarginM`. The sibling sidecar currently has the same
-number, but the bridge is not reading it.
+writes the runtime config into its own `/tmp/namo_config_runtime_*/`
+directory and copies `namo_cpp/config/wavefront_inflation.yaml` in beside
+it, so C++ sidecar discovery finds the sibling file. If that copy is ever
+missing, C++ falls back to `kDefaultWavefrontTier1MarginM`, which is kept
+equal to the sidecar value.
 
 The sidecars also differ at `push_approach.additional_margin_m` (`0.0 m` here,
 `0.003 m` in `namo_cpp`). When C++ does discover a sidecar, its current loader

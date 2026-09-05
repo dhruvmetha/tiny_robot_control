@@ -7,12 +7,19 @@ from pathlib import Path
 
 import yaml
 
+# Fallback tier-1 inflation margin when config/wavefront_inflation.yaml is
+# missing or lacks the key. Must equal tier1.base_inflation_margin_m in that
+# file (1 mm, the real_2mov study value) and kDefaultWavefrontTier1MarginM in
+# namo_cpp/include/wavefront/goal_tolerance_utils.hpp, so a missing sidecar
+# cannot make the two wavefront grids disagree (BUG-001).
+DEFAULT_TIER1_BASE_INFLATION_MARGIN_M = 0.001
+
 
 @dataclass(frozen=True)
 class WavefrontInflationConfig:
     """Inflation values in meters."""
 
-    tier1_base_inflation_margin_m: float = 0.002
+    tier1_base_inflation_margin_m: float = DEFAULT_TIER1_BASE_INFLATION_MARGIN_M
     navigation_additional_margin_m: float = 0.0
     push_approach_additional_margin_m: float = 0.003
     xml_min_separation_m: float = 0.005
@@ -46,7 +53,7 @@ def load_wavefront_inflation_config(
 
     return WavefrontInflationConfig(
         tier1_base_inflation_margin_m=_to_float(
-            data, "tier1", "base_inflation_margin_m", 0.002
+            data, "tier1", "base_inflation_margin_m", DEFAULT_TIER1_BASE_INFLATION_MARGIN_M
         ),
         navigation_additional_margin_m=_to_float(
             data, "navigation", "additional_margin_m", 0.0

@@ -12,6 +12,8 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
+from robot_control.utils.wavefront_inflation_config import DEFAULT_TIER1_BASE_INFLATION_MARGIN_M
+
 import numpy as np
 
 
@@ -20,7 +22,7 @@ class WavefrontConfig:
     """Configuration for wavefront planner."""
     resolution: float = 0.005  # 5mm grid resolution
     robot_radius: float = 0.025  # 25mm robot radius
-    inflation_margin: float = 0.005  # 5mm extra margin
+    inflation_margin: float = DEFAULT_TIER1_BASE_INFLATION_MARGIN_M  # tier-1 fallback, see wavefront_inflation_config
     obstacle_proximity_distance: float = 0.02  # 20mm - cost falloff distance from obstacles
     obstacle_proximity_weight: float = 5.0  # max extra cost multiplier at obstacle edge
 
