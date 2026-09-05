@@ -198,20 +198,44 @@ BAR_HALF_Y = 0.02
 WALL_BAR = (0.5, 0.15, BAR_HALF_X, BAR_HALF_Y, 0.0)
 BLOCK_BAR = (0.5, 0.60, BAR_HALF_X, BAR_HALF_Y, 0.0)
 
-# Measured off the grid above: at 5 mm cells with a 2 cm falloff, the free
-# cell one out from the wall costs 5.0, the next 3.0, and by the third the
-# margin is spent.
-WALL_EDGE_Y = 0.21
-WALL_NEAR_Y = 0.22
-WALL_CLEAR_Y = 0.24
-BLOCK_EDGE_Y = 0.66
+# The first free cell above a bar sits robot_radius + tier-1 margin past its
+# top face, so its y follows config/wavefront_inflation.yaml. _edge_y reads
+# it off the occupancy grid rather than pinning a number that moves when the
+# margin does. From that edge the 2 cm falloff spans four 5 mm cells and the
+# cost steps 5, 4, 3, 2 before it is spent.
+WALL_TOP_Y = WALL_BAR[1] + BAR_HALF_Y
+BLOCK_TOP_Y = BLOCK_BAR[1] + BAR_HALF_Y
 COST_AT_WALL_EDGE = 5.0
-COST_ONE_CELL_FURTHER = 3.0
+COST_TWO_CELLS_FURTHER = 3.0
+CELLS_TO_COST_3 = 2
+CELLS_TO_FREE = 4
+EDGE_SCAN_CELLS = 40  # well past any inflation the config could ask for
 
 
 def _cost_at(baseline, x, y):
     gi, gj = baseline.planner._world_to_grid(x, y)
     return float(baseline.planner._cost_grid[gj, gi])
+
+
+def _cell_m(baseline):
+    return baseline.planner._config.resolution
+
+
+def _edge_y(baseline, top_y, x=0.5):
+    """Centre y of the first free cell above the bar whose top face is at top_y.
+
+    Scans by grid index and returns a cell centre, so callers can step whole
+    cells from it without a world y landing on a cell boundary, where floor
+    rounds either way.
+    """
+    planner = baseline.planner
+    cell = _cell_m(baseline)
+    y_min = planner._bounds[2]
+    gi, gj_top = planner._world_to_grid(x, top_y)
+    for gj in range(gj_top + 1, gj_top + 1 + EDGE_SCAN_CELLS):
+        if planner._grid[gj, gi] == planner.FREE:
+            return y_min + (gj + 0.5) * cell
+    raise AssertionError(f"no free cell within {EDGE_SCAN_CELLS} cells above y={top_y}")
 
 
 def _bars(movable_cost=MOVABLE_COST_IGNORED):
@@ -236,10 +260,12 @@ def test_floor_beside_a_wall_costs_more_than_open_floor():
     """Without this the route scrapes the wall and the robot clips it, which
     fails the run for a driving reason rather than a reachability one."""
     bars = _bars()
+    edge = _edge_y(bars, WALL_TOP_Y)
+    cell = _cell_m(bars)
 
-    assert _cost_at(bars, 0.5, WALL_EDGE_Y) == pytest.approx(COST_AT_WALL_EDGE)
-    assert _cost_at(bars, 0.5, WALL_NEAR_Y) == pytest.approx(COST_ONE_CELL_FURTHER)
-    assert _cost_at(bars, 0.5, WALL_CLEAR_Y) == pytest.approx(COST_FREE)
+    assert _cost_at(bars, 0.5, edge) == pytest.approx(COST_AT_WALL_EDGE)
+    assert _cost_at(bars, 0.5, edge + CELLS_TO_COST_3 * cell) == pytest.approx(COST_TWO_CELLS_FURTHER)
+    assert _cost_at(bars, 0.5, edge + CELLS_TO_FREE * cell) == pytest.approx(COST_FREE)
 
 
 def test_floor_beside_a_movable_costs_exactly_open_floor():
@@ -253,14 +279,14 @@ def test_floor_beside_a_movable_costs_exactly_open_floor():
     """
     bars = _bars()
 
-    assert _cost_at(bars, 0.5, BLOCK_EDGE_Y) == pytest.approx(COST_FREE)
+    assert _cost_at(bars, 0.5, _edge_y(bars, BLOCK_TOP_Y)) == pytest.approx(COST_FREE)
 
 
 def test_a_wall_and_a_movable_of_the_same_size_are_priced_differently():
     """The single claim, read straight off the grid."""
     bars = _bars()
 
-    assert _cost_at(bars, 0.5, WALL_EDGE_Y) > _cost_at(bars, 0.5, BLOCK_EDGE_Y)
+    assert _cost_at(bars, 0.5, _edge_y(bars, WALL_TOP_Y)) > _cost_at(bars, 0.5, _edge_y(bars, BLOCK_TOP_Y))
 
 
 def test_the_margin_can_be_turned_off():
@@ -269,7 +295,7 @@ def test_the_margin_can_be_turned_off():
                  wall_proximity_weight=PROXIMITY_WEIGHT_OFF)
     room.plan_for_image(MOVABLE_COST_IGNORED)
 
-    assert _cost_at(room, 0.5, WALL_EDGE_Y) == pytest.approx(COST_FREE)
+    assert _cost_at(room, 0.5, _edge_y(room, WALL_TOP_Y)) == pytest.approx(COST_FREE)
 
 
 def test_a_penalised_block_costs_more_than_the_wall_margin_beside_it():
@@ -281,8 +307,10 @@ def test_a_penalised_block_costs_more_than_the_wall_margin_beside_it():
     """
     bars = _bars(movable_cost=MOVABLE_COST_PENALISED)
 
+    wall_near = _edge_y(bars, WALL_TOP_Y) + CELLS_TO_COST_3 * _cell_m(bars)
+
     assert _cost_at(bars, 0.5, 0.60) == pytest.approx(MOVABLE_COST_PENALISED)
-    assert _cost_at(bars, 0.5, 0.60) > _cost_at(bars, 0.5, WALL_NEAR_Y)
+    assert _cost_at(bars, 0.5, 0.60) > _cost_at(bars, 0.5, wall_near)
 
 
 def test_a_trapped_start_does_not_wipe_the_price_of_the_movables():
