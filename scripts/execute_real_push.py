@@ -1151,6 +1151,14 @@ def parse_args() -> argparse.Namespace:
         help="Override navigation.max_speed from controller.yaml.",
     )
     p.add_argument(
+        "--safety-filter",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Turn the push safety filter on (--safety-filter) or off "
+             "(--no-safety-filter) for this run. If unset, uses "
+             "safety_filter.enabled from controller.yaml.",
+    )
+    p.add_argument(
         "--allow-overwrite",
         action="store_true",
         help="Reuse an existing --run-name directory instead of erroring out. "
@@ -1287,6 +1295,7 @@ def main() -> int:
         record_video_dir=getattr(args, "record_video", None),
         nav_speed_override=args.nav_speed,
         push_speed_override=args.push_speed,
+        safety_filter_override=args.safety_filter,
     )
     runtime_config.diagnostics_recorder = recorder
     runtime_config.capture_scene = bool(getattr(args, "capture_scene", False))

@@ -1,6 +1,6 @@
 """Controller configuration dataclasses."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -80,11 +80,24 @@ class PushConfig:
 
 
 @dataclass
+class SafetyFilterConfig:
+    """The optional push safety filter (controller/safety_filter.py)."""
+
+    # Opt-in. --safety-filter / --no-safety-filter override this for one run.
+    enabled: bool = False
+    # Stop when the robot outline comes within this of a wall or the table
+    # edge. Eight ticks of warning at the fastest observed 0.18 cm per tick
+    # (real_exp/results/formal_v2 pushes); above the 0.5 cm marker jitter.
+    robot_static_margin_cm: float = 1.5
+
+
+@dataclass
 class ControllerConfigs:
     """Container for all controller configs."""
 
     navigation: NavigationConfig
     push: PushConfig
+    safety_filter: SafetyFilterConfig = field(default_factory=SafetyFilterConfig)
 
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> "ControllerConfigs":
@@ -94,6 +107,7 @@ class ControllerConfigs:
 
         nav_data = data.get("navigation", {})
         push_data = data.get("push", {})
+        safety_data = data.get("safety_filter", {})
 
         return cls(
             navigation=NavigationConfig(
@@ -136,6 +150,10 @@ class ControllerConfigs:
                 min_push_rotation_deg=push_data.get("min_push_rotation_deg", 15.0),
                 show_wavefront=push_data.get("show_wavefront", False),
             ),
+            safety_filter=SafetyFilterConfig(
+                enabled=bool(safety_data.get("enabled", False)),
+                robot_static_margin_cm=float(safety_data.get("robot_static_margin_cm", 1.5)),
+            ),
         )
 
     @classmethod
@@ -144,6 +162,7 @@ class ControllerConfigs:
         return cls(
             navigation=NavigationConfig(),
             push=PushConfig(),
+            safety_filter=SafetyFilterConfig(),
         )
 
 

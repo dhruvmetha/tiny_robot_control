@@ -46,6 +46,7 @@ from robot_control.controller.edge_points import (
     get_edge_point,
 )
 from robot_control.controller.follow_path import FollowPathController
+from robot_control.controller.safety_filter import SafetyFilter, Violation
 from robot_control.core.types import (
     Action,
     NavigateSubgoal,
@@ -159,6 +160,7 @@ class PushController(Controller):
         nav_controller: Optional["NavigationController"] = None,
         push_config: Optional[PushConfig] = None,
         max_speed: Optional[float] = None,
+        safety_filter: Optional[SafetyFilter] = None,
     ) -> None:
         """
         Initialize push controller.
@@ -168,10 +170,15 @@ class PushController(Controller):
             nav_controller: Navigation controller for approach phase (optional)
             push_config: Push parameters (from YAML). If None, uses defaults.
             max_speed: Override max speed (if None, uses push_config value)
+            safety_filter: Optional wall-clearance guard. None leaves every
+                phase exactly as it runs without it.
         """
         self._config = config
         self._nav_controller = nav_controller
         self._push_config = push_config or PushConfig()
+        # Lives for the session, like the walls it knows about. Every use is
+        # guarded by an `is not None` check so the filter is a pure add-on.
+        self._safety_filter = safety_filter
         self._max_speed = max_speed if max_speed is not None else self._push_config.max_speed
 
         # Match the C++ planner's edge-point spawn offset exactly:
@@ -233,6 +240,17 @@ class PushController(Controller):
         # did_fail() so the upstream blacklist gets the (object_id, edge_idx) entry.
         self._push_movement_inadequate: bool = False
 
+        # Safety filter outcome for this push. `_robot_collision_abort` feeds
+        # did_fail() so the planner blacklists the edge, matching sim's
+        # robot-wall failure. `_clearance_at_start` is taken lazily at the
+        # first check of each phase (advance/push, then retreat) so the
+        # started-inside rule compares against that phase's own start.
+        self._abort_violation: Optional[Violation] = None
+        self._robot_collision_abort: bool = False
+        self._clearance_at_start: Optional[float] = None
+        self._last_outline: Optional[List[Point]] = None
+        self._last_check_violated: bool = False
+
         # Visualization
         self._target_point: Optional[Point] = None
         self._target_point_at_start: Optional[Point] = None
@@ -268,6 +286,17 @@ class PushController(Controller):
             return Action.stop()
 
         self._object_pose = obj
+
+        # Every frame before the push itself is a chance to see a wall marker
+        # the camera missed on another frame. Walls never move, so a wall is
+        # recorded once and the call is a set-membership check afterwards.
+        if self._safety_filter is not None and self._state in (
+            PushState.IDLE,
+            PushState.COMPUTING_APPROACH,
+            PushState.APPROACHING,
+            PushState.ADVANCING,
+        ):
+            self._safety_filter.add_statics(obs)
 
         # State machine
         if self._state == PushState.IDLE:
@@ -500,7 +529,13 @@ class PushController(Controller):
 
         # Simple forward motion at fixed speed
         advance_speed = self._push_config.advance_speed
-        return Action(left_speed=advance_speed, right_speed=advance_speed)
+        action = Action(left_speed=advance_speed, right_speed=advance_speed)
+
+        violation = self._safety_check(obs)
+        if violation is not None:
+            self._finish_push(obs, violation)
+            return Action.stop()
+        return action
 
     def _handle_pushing(
         self, obs: Observation, obj: ObjectPose, subgoal: PushSubgoal
@@ -510,9 +545,7 @@ class PushController(Controller):
         # Total ticks = NAMO push_steps * config.push_steps (ticks per NAMO step)
         total_ticks = subgoal.push_steps * self._push_config.push_steps
         if self._step_count >= total_ticks:
-            self._print_wavefront_status(obs, show=self._push_config.show_wavefront)
-            self._state = PushState.RETREATING
-            self._retreat_step_count = 0
+            self._finish_push(obs, None)
             return self._handle_retreating(obs)
 
         # Compute push direction based on dynamic_direction setting
@@ -593,7 +626,68 @@ class PushController(Controller):
         # Increment step count
         self._step_count += 1
 
+        violation = self._safety_check(obs)
+        if violation is not None:
+            self._finish_push(obs, violation)
+            return Action.stop()
         return action
+
+    def _safety_check(self, obs: Observation) -> Optional[Violation]:
+        """Ask the safety filter whether the robot is entering a wall band.
+
+        None when no filter is installed, so the phases run untouched.
+        """
+        if self._safety_filter is None:
+            return None
+        if self._clearance_at_start is None:
+            self._clearance_at_start = self._safety_filter.robot_clearance(
+                obs.robot_x, obs.robot_y, obs.robot_theta
+            ).distance_cm
+        xs, ys = self._safety_filter.robot_outline(obs.robot_x, obs.robot_y, obs.robot_theta)
+        self._last_outline = list(zip(xs.tolist(), ys.tolist()))
+        violation = self._safety_filter.check_entering(
+            obs.robot_x, obs.robot_y, obs.robot_theta, self._clearance_at_start
+        )
+        self._last_check_violated = violation is not None
+        return violation
+
+    def _finish_push(self, obs: Observation, violation: Optional[Violation]) -> None:
+        """End the push phase and arm the retreat.
+
+        The normal end (tick budget spent) and a safety-filter abort share
+        this so the stuck evaluation, the PUSH COMPLETE report and the
+        retreat set-up cannot drift apart. An abort from ADVANCING has no
+        push-start pose yet; it takes the current one so the push still
+        produces a pushes.jsonl record, which the stuck rule then marks.
+        """
+        if violation is not None:
+            self._abort_violation = violation
+            self._robot_collision_abort = True
+            start = (
+                f"{violation.distance_at_start_cm:.2f}"
+                if violation.distance_at_start_cm is not None else "n/a"
+            )
+            print(
+                f"[PUSH] !! CLEARANCE: robot {violation.distance_now_cm:.2f}cm from "
+                f"'{violation.static_name}' (was {start}cm at start, margin "
+                f"{self._safety_filter.margin_cm:.2f}cm) in {self._state.value}. "
+                f"Stopping the push and marking the edge FAILED."
+            )
+            if self._push_start_obj_pose is None:
+                obj = self._object_pose
+                if obj is not None:
+                    self._push_start_obj_pose = (obj.x, obj.y, obj.theta)
+                self._push_start_robot_pose = (obs.robot_x, obs.robot_y, obs.robot_theta)
+                self._push_start_obs_timestamp = (
+                    float(obs.timestamp) if getattr(obs, "timestamp", None) is not None else None
+                )
+        self._print_wavefront_status(obs, show=self._push_config.show_wavefront)
+        self._state = PushState.RETREATING
+        self._retreat_step_count = 0
+        # The retreat measures "started inside" against its own first tick,
+        # not the push's, or an abort at 1.4 cm would re-fire on the first
+        # reverse tick while the robot is already moving away.
+        self._clearance_at_start = None
 
     def _find_retreat_target(self, obs: Observation) -> Tuple[Optional[Point], bool]:
         """Nearest free cell to back into, backward cone preferred.
@@ -628,14 +722,28 @@ class PushController(Controller):
 
         self._retreat_step_count += 1
         retreat_speed = -self._push_config.retreat_speed
-        return Action(left_speed=retreat_speed, right_speed=retreat_speed)
+        action = Action(left_speed=retreat_speed, right_speed=retreat_speed)
 
-    # Every way the retreat can end. All four set PushState.FINISHED, which is
+        # The blind reverse is the one motion nothing validated. The smart
+        # retreat aims at a wavefront-free cell; this one just backs up.
+        violation = self._safety_check(obs)
+        if violation is not None:
+            print(
+                f"[PUSH] !! CLEARANCE: blind retreat {violation.distance_now_cm:.2f}cm "
+                f"from '{violation.static_name}', stopping."
+            )
+            self._report_retreat_outcome(obs, self.RETREAT_CLEARANCE_STOP)
+            self._state = PushState.FINISHED
+            return Action.stop()
+        return action
+
+    # Every way the retreat can end. All five set PushState.FINISHED, which is
     # why the outcome has to be said out loud: downstream sees one state.
     RETREAT_ARRIVED = "reached target"
     RETREAT_TIMEOUT = "TIMEOUT"
     RETREAT_BLIND_DONE = "blind reverse ended"
     RETREAT_NAV_DONE = "navigation reported done"
+    RETREAT_CLEARANCE_STOP = "stopped by the safety filter"
 
     def _report_retreat_outcome(self, obs: Observation, outcome: str) -> None:
         """Say how far the robot actually travelled, not only that it stopped.
@@ -1027,7 +1135,11 @@ class PushController(Controller):
           The robot still retreats normally, but did_fail returns True so the
           upstream planner blacklists (object_id, edge_idx).
         """
-        return self._state == PushState.FAILED or self._push_movement_inadequate
+        return (
+            self._state == PushState.FAILED
+            or self._push_movement_inadequate
+            or self._robot_collision_abort
+        )
 
     def get_last_push_summary(self, post_obs: "Observation") -> Optional[Dict[str, object]]:
         """Return a structured summary of the most recently completed push,
@@ -1094,6 +1206,18 @@ class PushController(Controller):
             "stuck": bool(self._push_movement_inadequate),
             "stuck_threshold_cm": self._push_config.min_push_displacement_cm,
             "stuck_threshold_deg": self._push_config.min_push_rotation_deg,
+            "safety_filter": self._safety_filter is not None,
+            "abort_reason": (
+                self._abort_violation.reason if self._abort_violation is not None else None
+            ),
+            "abort_distance_now_cm": (
+                self._abort_violation.distance_now_cm
+                if self._abort_violation is not None else None
+            ),
+            "abort_distance_at_start_cm": (
+                self._abort_violation.distance_at_start_cm
+                if self._abort_violation is not None else None
+            ),
         }
 
     def _print_wavefront_status(self, obs: Observation, show: bool = False) -> None:
@@ -1196,6 +1320,13 @@ class PushController(Controller):
         self._push_start_obs_timestamp = None
         self._push_movement_inadequate = False
 
+        # Reset safety filter outcome (the filter itself outlives the push)
+        self._abort_violation = None
+        self._robot_collision_abort = False
+        self._clearance_at_start = None
+        self._last_outline = None
+        self._last_check_violated = False
+
         # Reset follow path controller
         self._follow_path_controller.reset()
 
@@ -1217,9 +1348,10 @@ class PushController(Controller):
         if self._state == PushState.ADVANCING:
             return f"ADVANCING ({self._advance_step_count}/{self._push_config.advance_steps})"
         if self._state == PushState.RETREATING:
+            suffix = " CLEARANCE ABORT" if self._abort_violation is not None else ""
             if self._retreat_target:
-                return f"RETREATING (step {self._retreat_step_count})"
-            return f"RETREATING ({self._retreat_step_count}/{self._push_config.retreat_steps})"
+                return f"RETREATING (step {self._retreat_step_count}){suffix}"
+            return f"RETREATING ({self._retreat_step_count}/{self._push_config.retreat_steps}){suffix}"
         if self._state == PushState.APPROACHING:
             return (
                 f"APPROACHING ({self._approach_step_count}/"
@@ -1299,6 +1431,27 @@ class PushController(Controller):
         # Always show all edge points when we have an object (for debugging)
         if self._object_pose:
             drawings.extend(self.get_all_edge_drawings(self._object_pose))
+
+        # Safety filter: the walls it knows and the outline it last checked,
+        # red once the check has fired.
+        if self._safety_filter is not None:
+            for box in self._safety_filter.statics:
+                corners = box.corners()
+                drawings.append({
+                    "uuid": f"safety_static_{box.name}",
+                    "type": "path",
+                    "points": corners + [corners[0]],
+                    "color": "#FF4040" if self._last_check_violated else "#808080",
+                    "width": 1,
+                })
+            if self._last_outline:
+                drawings.append({
+                    "uuid": "safety_robot_outline",
+                    "type": "path",
+                    "points": self._last_outline + [self._last_outline[0]],
+                    "color": "#FF0000" if self._last_check_violated else "#00C000",
+                    "width": 2,
+                })
 
         return drawings
 

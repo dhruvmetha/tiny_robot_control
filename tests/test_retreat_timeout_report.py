@@ -45,6 +45,8 @@ def _retreating_controller(step_count):
     controller._retreat_step_count = step_count
     controller._retreat_start_pose = RETREAT_START
     controller._nav_controller = None
+    # The blind fallback now asks the safety filter; none installed here.
+    controller._safety_filter = None
     controller._state = PushState.RETREATING
     return controller
 

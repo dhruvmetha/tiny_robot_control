@@ -221,6 +221,18 @@ def _build_config_payload(
         except Exception as exc:
             objects_yaml = {"_error": f"failed to load: {exc!r}"}
 
+    # controller.yaml too: the push speeds and the safety_filter block are
+    # what a run's behaviour depends on, and the flag alone does not say
+    # whether the yaml had the filter on.
+    controller_yaml = None
+    try:
+        from robot_control.controller.config import DEFAULT_CONTROLLER_YAML
+
+        with open(DEFAULT_CONTROLLER_YAML) as f:
+            controller_yaml = yaml.safe_load(f)
+    except Exception as exc:
+        controller_yaml = {"_error": f"failed to load: {exc!r}"}
+
     return {
         "run_name": resolved_run_name,
         "started_at_epoch": now,
@@ -233,6 +245,7 @@ def _build_config_payload(
         "config_yaml": config_yaml,
         "objects_yaml_path": getattr(args, "objects", None),
         "objects_yaml": objects_yaml,
+        "controller_yaml": controller_yaml,
         "diagnostics": {
             "capture_scene": bool(getattr(args, "capture_scene", False)),
             "diag_path": str(Path(args.diag_path).expanduser().resolve()),

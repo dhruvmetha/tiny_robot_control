@@ -1182,6 +1182,7 @@ def run_interactive_mode(args):
         record_video_dir=getattr(args, "record_video", None),
         nav_speed_override=args.nav_speed,
         push_speed_override=args.push_speed,
+        safety_filter_override=args.safety_filter,
         step_confirm=args.step_confirm,
     )
 
@@ -1769,6 +1770,7 @@ def run_automatic_mode(args):
             initial_speed=args.speed,
             nav_speed_override=args.nav_speed,
             push_speed_override=args.push_speed,
+            safety_filter_override=args.safety_filter,
             quit_on_complete=not args.no_quit,
             step_confirm=args.step_confirm,
             show_gui=not args.headless,
@@ -1784,6 +1786,7 @@ def run_automatic_mode(args):
             record_video_dir=getattr(args, "record_video", None),
             nav_speed_override=args.nav_speed,
             push_speed_override=args.push_speed,
+            safety_filter_override=args.safety_filter,
             step_confirm=args.step_confirm,
             show_gui=not args.headless,
             show_camera=not args.headless,
@@ -2305,6 +2308,14 @@ def main():
         default=None,
         help="Override max speed for push controller (0-1). "
              "If unset, uses push.max_speed from controller.yaml.",
+    )
+    parser.add_argument(
+        "--safety-filter",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Turn the push safety filter on (--safety-filter) or off "
+             "(--no-safety-filter) for this run. If unset, uses "
+             "safety_filter.enabled from controller.yaml.",
     )
 
     args = parser.parse_args()
