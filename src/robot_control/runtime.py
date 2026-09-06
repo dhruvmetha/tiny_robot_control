@@ -17,7 +17,8 @@ from robot_control.controller import (
     FollowPathController,
     PushController,
 )
-from robot_control.controller.config import load_controller_configs
+from robot_control.controller.config import ControllerConfigs, load_controller_configs
+from robot_control.controller.safety_filter import SafetyFilter
 from robot_control.coordinator import ControlCoordinator
 from robot_control.core.types import (
     Action,
@@ -119,6 +120,23 @@ def _load_objects_yaml(objects_path: str) -> Dict[str, "ObjectDefinition"]:
     return object_defs
 
 
+def build_safety_filter(
+    controller_configs: ControllerConfigs,
+    workspace: WorkspaceConfig,
+    override: Optional[bool],
+) -> Optional[SafetyFilter]:
+    """The push safety filter for this run, or None when it is off.
+
+    The run flag beats the yaml in both directions; None lets the yaml decide.
+    """
+    enabled = controller_configs.safety_filter.enabled if override is None else override
+    if not enabled:
+        return None
+    return SafetyFilter(
+        workspace, margin_cm=controller_configs.safety_filter.robot_static_margin_cm
+    )
+
+
 @dataclass
 class RuntimeConfig:
     """Configuration for Runtime."""
@@ -152,6 +170,11 @@ class RuntimeConfig:
     # (controller.yaml: navigation.max_speed / push.max_speed).
     nav_speed_override: Optional[float] = None
     push_speed_override: Optional[float] = None
+
+    # Optional push safety filter. None follows controller.yaml's
+    # safety_filter.enabled; True/False is this run's --safety-filter /
+    # --no-safety-filter flag and beats the yaml either way.
+    safety_filter_override: Optional[bool] = None
 
     # Control options
     initial_controller: str = "keyboard"
@@ -630,11 +653,15 @@ class Runtime:
         # Create push controller with navigation controller for approach phase.
         # Pass push_speed_override if user set --push-speed; else use YAML
         # push.max_speed.
+        safety_filter = build_safety_filter(
+            controller_configs, self._workspace_config, self._config.safety_filter_override
+        )
         push = PushController(
             self._workspace_config,
             nav_controller=navigation,
             push_config=controller_configs.push,
             max_speed=self._config.push_speed_override,
+            safety_filter=safety_filter,
         )
 
         # Confirm what speeds are actually in effect (useful when debugging
@@ -643,6 +670,10 @@ class Runtime:
             f"[Runtime] Speeds in effect: nav={navigation.max_speed:.2f}, "
             f"push={push.max_speed:.2f}, keyboard/follow_path={self._config.initial_speed:.2f}"
         )
+        if safety_filter is not None:
+            print(f"[Runtime] Safety filter: ON (margin {safety_filter.margin_cm:.2f} cm)")
+        else:
+            print("[Runtime] Safety filter: OFF")
 
         return {
             "keyboard": keyboard,

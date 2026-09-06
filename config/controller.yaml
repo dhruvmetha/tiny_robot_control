@@ -73,3 +73,13 @@ push:
 
   # Debug visualization
   show_wavefront: false          # cv2.imshow conflicts with PyQt6 event loop; image still saved to /tmp/wavefront
+
+# Optional push safety filter (src/robot_control/controller/safety_filter.py).
+# Off by default. --safety-filter / --no-safety-filter on run_namo.py and
+# execute_real_push.py override `enabled` for one run; config.json records
+# both the flag and this block.
+safety_filter:
+  enabled: false
+  robot_static_margin_cm: 1.5    # stop when the robot outline is this close to a wall or
+                                 # the table edge. 8 ticks of warning at the fastest
+                                 # observed 0.18 cm/tick (real_exp/results/formal_v2 pushes)
