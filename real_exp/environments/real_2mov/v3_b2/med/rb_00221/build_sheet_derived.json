@@ -106,6 +106,15 @@
   "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [],
- "no_episode_reason": "no push opens the region within two pushes"
+ "episodes": [
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "2push",
+   "tier": "medium",
+   "n_green": 6,
+   "n_tried": 75,
+   "n_green_contact": 6
+  }
+ ],
+ "inflation_margin_m": 0.001
 }

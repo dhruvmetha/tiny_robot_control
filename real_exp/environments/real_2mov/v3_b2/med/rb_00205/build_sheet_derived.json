@@ -106,6 +106,15 @@
   "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [],
- "no_episode_reason": "qualifies, but its recorded solution did not replay from a clean start"
+ "episodes": [
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "medium",
+   "n_green": 14,
+   "n_tried": 90,
+   "n_green_contact": 14
+  }
+ ],
+ "inflation_margin_m": 0.001
 }

@@ -117,14 +117,6 @@
   "needs_both_blocks": true,
   "has_route_around": false
  },
- "episodes": [
-  {
-   "object_id": "obstacle_1_movable",
-   "horizon": "2push",
-   "tier": "hard",
-   "n_green": 1,
-   "n_tried": 135,
-   "n_green_contact": 1
-  }
- ]
+ "episodes": [],
+ "inflation_margin_m": 0.001
 }

@@ -106,6 +106,31 @@
   "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [],
- "no_episode_reason": "no push opens the region within two pushes"
+ "episodes": [
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 31,
+   "n_tried": 40,
+   "n_green_contact": 3
+  },
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "1push",
+   "tier": "easy",
+   "n_green": 51,
+   "n_tried": 160,
+   "n_green_contact": 44
+  },
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 39,
+   "n_tried": 160,
+   "n_green_contact": 33
+  }
+ ],
+ "inflation_margin_m": 0.001
 }

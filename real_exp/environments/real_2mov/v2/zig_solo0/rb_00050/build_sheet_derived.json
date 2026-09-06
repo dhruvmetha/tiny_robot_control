@@ -103,25 +103,10 @@
   }
  ],
  "doorway": {
-  "needs_both_blocks": true,
+  "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "1push",
-   "tier": "medium",
-   "n_green": 7,
-   "n_tried": 140,
-   "n_green_contact": 7
-  },
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "2push",
-   "tier": "easy",
-   "n_green": 111,
-   "n_tried": 140,
-   "n_green_contact": 77
-  }
- ]
+ "episodes": [],
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "goal region already reachable at the root at this margin"
 }

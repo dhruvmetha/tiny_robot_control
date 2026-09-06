@@ -114,25 +114,26 @@
   }
  ],
  "doorway": {
-  "needs_both_blocks": true,
-  "has_route_around": false
+  "needs_both_blocks": false,
+  "has_route_around": true
  },
  "episodes": [
   {
    "object_id": "obstacle_0_movable",
    "horizon": "1push",
    "tier": "medium",
-   "n_green": 6,
+   "n_green": 12,
    "n_tried": 75,
-   "n_green_contact": 6
+   "n_green_contact": 12
   },
   {
    "object_id": "obstacle_0_movable",
    "horizon": "2push",
    "tier": "easy",
-   "n_green": 27,
+   "n_green": 44,
    "n_tried": 75,
-   "n_green_contact": 27
+   "n_green_contact": 44
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

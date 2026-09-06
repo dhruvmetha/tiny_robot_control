@@ -118,5 +118,6 @@
   "has_route_around": true
  },
  "episodes": [],
- "no_episode_reason": "no push opens the region within two pushes"
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "goal region already reachable at the root at this margin"
 }

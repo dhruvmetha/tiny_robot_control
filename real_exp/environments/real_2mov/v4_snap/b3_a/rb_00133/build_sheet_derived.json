@@ -114,17 +114,10 @@
   }
  ],
  "doorway": {
-  "needs_both_blocks": true,
-  "has_route_around": false
+  "needs_both_blocks": false,
+  "has_route_around": true
  },
- "episodes": [
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "2push",
-   "tier": "hard",
-   "n_green": 1,
-   "n_tried": 185,
-   "n_green_contact": 1
-  }
- ]
+ "episodes": [],
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "no goal region to sample at this margin"
 }

@@ -106,30 +106,7 @@
   "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [
-  {
-   "object_id": "obstacle_1_movable",
-   "horizon": "1push",
-   "tier": "easy",
-   "n_green": 61,
-   "n_tried": 175,
-   "n_green_contact": 61
-  },
-  {
-   "object_id": "obstacle_1_movable",
-   "horizon": "2push",
-   "tier": "easy",
-   "n_green": 43,
-   "n_tried": 175,
-   "n_green_contact": 15
-  },
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "2push",
-   "tier": "easy",
-   "n_green": 30,
-   "n_tried": 40,
-   "n_green_contact": 30
-  }
- ]
+ "episodes": [],
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "no goal region to sample at this margin"
 }

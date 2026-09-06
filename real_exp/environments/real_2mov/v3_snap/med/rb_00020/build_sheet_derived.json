@@ -108,20 +108,21 @@
  },
  "episodes": [
   {
+   "object_id": "obstacle_0_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 50,
+   "n_tried": 65,
+   "n_green_contact": 50
+  },
+  {
    "object_id": "obstacle_1_movable",
    "horizon": "2push",
    "tier": "easy",
    "n_green": 36,
-   "n_tried": 100,
+   "n_tried": 90,
    "n_green_contact": 36
-  },
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "2push",
-   "tier": "easy",
-   "n_green": 45,
-   "n_tried": 50,
-   "n_green_contact": 45
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

@@ -128,6 +128,31 @@
   "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [],
- "no_episode_reason": "solves, but no solving push touches the other movable"
+ "episodes": [
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "1push",
+   "tier": "medium",
+   "n_green": 5,
+   "n_tried": 30,
+   "n_green_contact": 0
+  },
+  {
+   "object_id": "obstacle_0_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 10,
+   "n_tried": 30,
+   "n_green_contact": 0
+  },
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 20,
+   "n_tried": 30,
+   "n_green_contact": 0
+  }
+ ],
+ "inflation_margin_m": 0.001
 }

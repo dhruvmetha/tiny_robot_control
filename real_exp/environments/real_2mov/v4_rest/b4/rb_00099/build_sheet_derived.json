@@ -128,14 +128,7 @@
   "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "2push",
-   "tier": "medium",
-   "n_green": 3,
-   "n_tried": 50,
-   "n_green_contact": 3
-  }
- ]
+ "episodes": [],
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "goal region already reachable at the root at this margin"
 }

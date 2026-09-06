@@ -126,5 +126,6 @@
    "n_tried": 75,
    "n_green_contact": 2
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

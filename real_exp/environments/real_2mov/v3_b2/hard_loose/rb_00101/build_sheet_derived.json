@@ -118,5 +118,5 @@
   "has_route_around": true
  },
  "episodes": [],
- "no_episode_reason": "no push opens the region within two pushes"
+ "inflation_margin_m": 0.001
 }

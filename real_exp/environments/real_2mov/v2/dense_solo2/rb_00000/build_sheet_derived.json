@@ -111,17 +111,26 @@
    "object_id": "obstacle_0_movable",
    "horizon": "1push",
    "tier": "medium",
-   "n_green": 12,
-   "n_tried": 90,
-   "n_green_contact": 12
+   "n_green": 15,
+   "n_tried": 95,
+   "n_green_contact": 15
   },
   {
    "object_id": "obstacle_0_movable",
    "horizon": "2push",
    "tier": "easy",
-   "n_green": 49,
-   "n_tried": 90,
-   "n_green_contact": 17
+   "n_green": 46,
+   "n_tried": 95,
+   "n_green_contact": 46
+  },
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 55,
+   "n_tried": 60,
+   "n_green_contact": 55
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

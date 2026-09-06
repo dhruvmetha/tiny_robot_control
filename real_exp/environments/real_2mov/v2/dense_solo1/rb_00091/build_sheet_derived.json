@@ -103,8 +103,8 @@
   }
  ],
  "doorway": {
-  "needs_both_blocks": false,
-  "has_route_around": true
+  "needs_both_blocks": true,
+  "has_route_around": false
  },
  "episodes": [
   {
@@ -112,8 +112,9 @@
    "horizon": "2push",
    "tier": "medium",
    "n_green": 29,
-   "n_tried": 205,
+   "n_tried": 215,
    "n_green_contact": 1
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

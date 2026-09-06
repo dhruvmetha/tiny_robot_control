@@ -111,9 +111,10 @@
    "object_id": "obstacle_0_movable",
    "horizon": "2push",
    "tier": "easy",
-   "n_green": 21,
-   "n_tried": 50,
-   "n_green_contact": 21
+   "n_green": 28,
+   "n_tried": 65,
+   "n_green_contact": 28
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

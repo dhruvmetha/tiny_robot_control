@@ -106,22 +106,7 @@
   "needs_both_blocks": false,
   "has_route_around": true
  },
- "episodes": [
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "1push",
-   "tier": "medium",
-   "n_green": 23,
-   "n_tried": 105,
-   "n_green_contact": 19
-  },
-  {
-   "object_id": "obstacle_0_movable",
-   "horizon": "2push",
-   "tier": "easy",
-   "n_green": 47,
-   "n_tried": 105,
-   "n_green_contact": 11
-  }
- ]
+ "episodes": [],
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "no goal region to sample at this margin"
 }

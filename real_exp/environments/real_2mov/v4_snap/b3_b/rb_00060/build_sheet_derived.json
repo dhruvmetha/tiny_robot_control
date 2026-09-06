@@ -123,8 +123,9 @@
    "horizon": "2push",
    "tier": "hard",
    "n_green": 3,
-   "n_tried": 80,
+   "n_tried": 85,
    "n_green_contact": 3
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

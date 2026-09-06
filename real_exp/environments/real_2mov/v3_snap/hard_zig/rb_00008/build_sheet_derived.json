@@ -111,25 +111,34 @@
    "object_id": "obstacle_0_movable",
    "horizon": "1push",
    "tier": "easy",
-   "n_green": 19,
+   "n_green": 23,
    "n_tried": 55,
    "n_green_contact": 3
-  },
-  {
-   "object_id": "obstacle_1_movable",
-   "horizon": "2push",
-   "tier": "easy",
-   "n_green": 157,
-   "n_tried": 200,
-   "n_green_contact": 154
   },
   {
    "object_id": "obstacle_0_movable",
    "horizon": "2push",
    "tier": "easy",
-   "n_green": 26,
+   "n_green": 22,
    "n_tried": 55,
    "n_green_contact": 4
+  },
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "1push",
+   "tier": "hard",
+   "n_green": 6,
+   "n_tried": 205,
+   "n_green_contact": 0
+  },
+  {
+   "object_id": "obstacle_1_movable",
+   "horizon": "2push",
+   "tier": "easy",
+   "n_green": 159,
+   "n_tried": 205,
+   "n_green_contact": 159
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }

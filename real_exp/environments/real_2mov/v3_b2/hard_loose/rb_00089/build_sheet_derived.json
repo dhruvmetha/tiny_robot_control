@@ -107,5 +107,6 @@
   "has_route_around": true
  },
  "episodes": [],
- "no_episode_reason": "solves, but no solving push touches the other movable"
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "no goal region to sample at this margin"
 }

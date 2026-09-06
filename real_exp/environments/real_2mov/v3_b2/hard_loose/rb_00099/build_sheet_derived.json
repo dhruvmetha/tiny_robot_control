@@ -107,5 +107,6 @@
   "has_route_around": true
  },
  "episodes": [],
- "no_episode_reason": "qualifies, but its recorded solution did not replay from a clean start"
+ "inflation_margin_m": 0.001,
+ "no_episode_reason": "no goal region to sample at this margin"
 }

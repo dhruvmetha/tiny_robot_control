@@ -114,17 +114,18 @@
   }
  ],
  "doorway": {
-  "needs_both_blocks": true,
-  "has_route_around": false
+  "needs_both_blocks": false,
+  "has_route_around": true
  },
  "episodes": [
   {
    "object_id": "obstacle_1_movable",
    "horizon": "2push",
-   "tier": "hard",
-   "n_green": 1,
-   "n_tried": 110,
-   "n_green_contact": 1
+   "tier": "medium",
+   "n_green": 17,
+   "n_tried": 115,
+   "n_green_contact": 17
   }
- ]
+ ],
+ "inflation_margin_m": 0.001
 }
