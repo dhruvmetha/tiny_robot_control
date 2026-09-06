@@ -8,6 +8,14 @@
 # Every label shipped before today was made at 5 mm. These 204 rooms were correct then and are
 # not problems now. Do not build them. 324 episodes ride on them.
 #
+# 
+# EVERY row describes the COMMITTED env.xml, which is byte-identical to our pool copy on all
+# 1598 delivered scenes (checked 2026-09-06). A room edited in the working tree here, such as
+# a goal shifted on the table, is invisible to us, and NO label we ship describes it: moving
+# the goal changes which pushes open the region, so the tiers and the solving-push lists go
+# with it, not just this verdict. v3_b2/hard_loose/rb_00150 is one such room as of 09-02.
+# List them with: git status --porcelain real_exp/environments/real_2mov | grep env.xml
+# 
 # room<TAB>reason
 v1/solo0/rb_00004	goal_open
 v1/solo0/rb_00015	goal_open
