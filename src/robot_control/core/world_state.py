@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from threading import Event, Lock
 from typing import Optional
 
@@ -38,8 +39,27 @@ class WorldState:
         pub.subscribe(self._on_sensor, Topics.SENSOR_VISION)
 
     def _on_sensor(self, obs: Observation) -> None:
-        """Handle incoming sensor observation."""
+        """Handle incoming sensor observation.
+
+        The camera publishes even when the robot marker is out of frame, with
+        the robot pose set to None. Every controller reads the robot pose off
+        the world state, so that None must never reach them: the objects and
+        goal from the new frame are taken, and the robot pose is carried over
+        from the last frame that saw it. Until the robot has been seen once
+        there is nothing to carry over, and the observation is dropped, which
+        is what happened before the camera published robot-less frames.
+        """
         with self._lock:
+            if not obs.has_robot:
+                prev = self._obs
+                if prev is None or not prev.has_robot:
+                    return
+                obs = replace(
+                    obs,
+                    robot_x=prev.robot_x,
+                    robot_y=prev.robot_y,
+                    robot_theta=prev.robot_theta,
+                )
             self._obs = obs
         self._update_event.set()
         # Republish for async subscribers (GUI)

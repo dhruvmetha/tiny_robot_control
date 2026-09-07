@@ -21,15 +21,29 @@ class ObjectPose:
 
 @dataclass
 class Observation:
-    """Observation from the environment."""
+    """Observation from the environment.
 
-    robot_x: float
-    robot_y: float
-    robot_theta: float
+    The robot pose is None when the camera did not see the robot marker in
+    this frame. Objects and the goal are still reported, so a scene can be
+    checked or captured with the robot out of frame. Consumers that drive the
+    robot must check ``has_robot`` and keep their last pose otherwise.
+    """
+
+    robot_x: Optional[float]
+    robot_y: Optional[float]
+    robot_theta: Optional[float]
     objects: Dict[str, ObjectPose]
     timestamp: float
     goal_x: Optional[float] = None  # Goal position from marker 0 (cm)
     goal_y: Optional[float] = None  # Goal position from marker 0 (cm)
+
+    @property
+    def has_robot(self) -> bool:
+        return (
+            self.robot_x is not None
+            and self.robot_y is not None
+            and self.robot_theta is not None
+        )
 
 
 @dataclass

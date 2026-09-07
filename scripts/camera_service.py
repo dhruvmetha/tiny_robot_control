@@ -169,10 +169,13 @@ def main():
                 if obs.goal_x is not None
                 else "N/A"
             )
+            robot_str = (
+                f"({obs.robot_x:.1f}, {obs.robot_y:.1f})" if obs.has_robot else "N/A"
+            )
             print(
                 f"[CameraService] {obs_count} obs | {rate:.1f} Hz | "
                 f"objects: {n_objects} | goal: {goal_str} | "
-                f"robot: ({obs.robot_x:.1f}, {obs.robot_y:.1f})"
+                f"robot: {robot_str}"
             )
             last_print_time = now
             last_print_count = obs_count

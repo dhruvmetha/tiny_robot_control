@@ -50,10 +50,11 @@ def bytes_to_obs(data: bytes) -> Observation:
             is_static=obj_d.get("is_static", False),
         )
 
+    # Robot fields are null on the wire when the marker was out of frame.
     return Observation(
-        robot_x=d["robot_x"],
-        robot_y=d["robot_y"],
-        robot_theta=d["robot_theta"],
+        robot_x=d.get("robot_x"),
+        robot_y=d.get("robot_y"),
+        robot_theta=d.get("robot_theta"),
         timestamp=d["timestamp"],
         goal_x=d.get("goal_x"),
         goal_y=d.get("goal_y"),

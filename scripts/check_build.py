@@ -463,7 +463,8 @@ class ServiceCameraSource:
         if obs is None:
             return {}
         out = {name: (p.x, p.y, p.theta) for name, p in obs.objects.items()}
-        out[ROBOT_KEY] = (obs.robot_x, obs.robot_y, obs.robot_theta)
+        if obs.has_robot:
+            out[ROBOT_KEY] = (obs.robot_x, obs.robot_y, obs.robot_theta)
         return out
 
     def close(self) -> None:
@@ -494,7 +495,8 @@ class DirectCameraSource:
         if obs is None:
             return {}
         out = {name: (p.x, p.y, p.theta) for name, p in obs.objects.items()}
-        out[ROBOT_KEY] = (obs.robot_x, obs.robot_y, obs.robot_theta)
+        if obs.has_robot:
+            out[ROBOT_KEY] = (obs.robot_x, obs.robot_y, obs.robot_theta)
         return out
 
     def close(self) -> None:

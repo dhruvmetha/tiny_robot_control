@@ -285,31 +285,30 @@ class ArucoObserver:
                         # Too old - remove from cache
                         del self._object_cache[name]
 
-            if robot_pose is not None:
-                x_cm, y_cm, yaw_deg = robot_pose
-                obs = Observation(
-                    robot_x=x_cm,
-                    robot_y=y_cm,
-                    robot_theta=yaw_deg,
-                    objects=objects,
-                    timestamp=timestamp,
-                    goal_x=goal_pos[0] if goal_pos else None,
-                    goal_y=goal_pos[1] if goal_pos else None,
-                )
-                with self._lock:
-                    self._observation = obs
-                # Publish observation
-                pub.sendMessage(Topics.SENSOR_VISION, obs=obs)
+            # Publish every frame the workspace is solved, robot seen or not.
+            # Gating this on the robot marker used to drop the objects just
+            # detected: with the robot out of frame the checker and the scene
+            # capture saw nothing at all, and the service's status line froze
+            # on the last robot pose.
+            x_cm, y_cm, yaw_deg = robot_pose if robot_pose is not None else (None, None, None)
+            obs = Observation(
+                robot_x=x_cm,
+                robot_y=y_cm,
+                robot_theta=yaw_deg,
+                objects=objects,
+                timestamp=timestamp,
+                goal_x=goal_pos[0] if goal_pos else None,
+                goal_y=goal_pos[1] if goal_pos else None,
+            )
+            with self._lock:
+                self._observation = obs
+            pub.sendMessage(Topics.SENSOR_VISION, obs=obs)
 
             # Add status text
             if vis is not None:
-                with self._lock:
-                    obs = self._observation
-                if obs is not None:
-                    goal_str = "OK" if obs.goal_x is not None else "N/A"
-                    status = f"Robot: OK | Objects: {len(obs.objects)} | Goal: {goal_str}"
-                else:
-                    status = "Robot: N/A"
+                goal_str = "OK" if obs.goal_x is not None else "N/A"
+                robot_str = "OK" if obs.has_robot else "N/A"
+                status = f"Robot: {robot_str} | Objects: {len(obs.objects)} | Goal: {goal_str}"
                 self._put_text(vis, status, (10, 30))
         else:
             if vis is not None:
