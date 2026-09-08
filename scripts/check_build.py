@@ -805,6 +805,11 @@ def parse_args() -> argparse.Namespace:
                           "printing the verdict, once a checksum comes back PASS; "
                           "requires --auto, since Enter-to-check is a terminal "
                           "affordance the GUI window does not have focus for")
+    ap.add_argument("--no-camera-window", action="store_true",
+                     help="with --gui, draw only the schematic and skip the raw "
+                          "camera-feed window. The camera service's own --show "
+                          "window already carries the live view, so the second "
+                          "copy is redundant during a build")
     args = ap.parse_args()
 
     if not args.simulate:
@@ -848,7 +853,11 @@ def main() -> None:
 
     window = None
     if args.gui:
-        frame_address = None if args.direct_camera else frame_request_address(args.camera_service)
+        frame_address = (
+            None
+            if args.direct_camera or args.no_camera_window
+            else frame_request_address(args.camera_service)
+        )
         window = LiveWindow(rows, args.build_id, frame_address)
 
     last_checksum_time = time.time()
