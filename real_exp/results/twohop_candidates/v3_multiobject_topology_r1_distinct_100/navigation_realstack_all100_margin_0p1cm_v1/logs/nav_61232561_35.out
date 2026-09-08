@@ -1,3 +1,0 @@
-[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(8.0,9.0), obstacles=11
-[NAV] state - -> PRE_ROTATING pose=(8.0,9.0,θ=0.0°) pre_target_θ=86.6° heading_err=+86.6°
-[NAV] state PRE_ROTATING -> FOLLOWING pose=(8.1,9.1,θ=47.9°) path_waypoints=70 final_wp=(24.8,64.2)

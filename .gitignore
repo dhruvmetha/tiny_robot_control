@@ -75,3 +75,11 @@ build_python
 # Scene jpgs are end-state evidence (~100KB each) and stay; video does not.
 real_exp/**/recordings/
 real_exp/**/*.mp4
+# Cluster scheduler stdout/stderr. A sweep writes one .out and one .err per
+# array task, so the 2026-09-08 commit swept in 5724 of them, 23 MB, before
+# they were untracked. The sweep summaries and provenance next to them are
+# the actual evidence and stay in git.
+real_exp/**/logs/*.out
+real_exp/**/logs/*.err
+real_exp/**/slurm-*.out
+real_exp/**/slurm-*.err

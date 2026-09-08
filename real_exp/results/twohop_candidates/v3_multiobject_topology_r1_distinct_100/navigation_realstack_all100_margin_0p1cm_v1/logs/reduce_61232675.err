@@ -1,7 +1,0 @@
-Traceback (most recent call last):
-  File "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/jobs/aggregate_nav_realstack.py", line 217, in <module>
-    raise SystemExit(main())
-                     ^^^^^^
-  File "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/jobs/aggregate_nav_realstack.py", line 183, in main
-    raise RuntimeError("\n".join(violations[:50]))
-RuntimeError: /scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/med2-med2/twohop_multi_00312:penalise: trajectory audit failed: commands_within_speed

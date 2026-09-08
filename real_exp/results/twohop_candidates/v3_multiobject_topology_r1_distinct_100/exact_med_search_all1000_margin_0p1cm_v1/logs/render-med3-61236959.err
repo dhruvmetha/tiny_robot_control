@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1/scripts/render_env_with_regions.py", line 22, in <module>
-    import namo_rl  # noqa: E402
-    ^^^^^^^^^^^^^^
-ModuleNotFoundError: No module named 'namo_rl'
