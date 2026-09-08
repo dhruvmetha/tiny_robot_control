@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "catalog": "1hop_1obj",
+  "updated_on": "2026-09-05",
+  "environment_count": 2,
+  "scope": "The two one-hop, one-movable-object environments selected for the real-robot study.",
+  "identity_rule": "Use uid, not build_id alone. build_id values are reused independently across action-horizon sheets.",
+  "classification_rule": {
+    "hops": 1,
+    "movable_object_count": 1,
+    "evidence": "Each exported card has one scene.movable entry and region labels containing only robot and goal.",
+    "hmax2_note": "hmax2 is a two-push action horizon on the same object, not a two-hop topology."
+  },
+  "environments": [
+    {
+      "uid": "hmax2__easy_020__5f0639e3",
+      "build_id": "easy_020",
+      "axis": "hmax2",
+      "tier": "easy",
+      "gallery_file": "hmax2__easy_020__5f0639e3.json",
+      "gallery_card": "cards/hmax2__easy_020__5f0639e3.json",
+      "source_xml": "/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00217/env.xml",
+      "source_xml_present_on_dhruv_linux": false,
+      "card_sha256": "22ed639dacebf08434e081ca4cdb9560b48f60ba448f3820b9b9fb71df00786b",
+      "scene_geometry_sha256": "5a3c2b6efbbdc6ee3759d6fb4292a599b491224800c5ae8ba9ee87f86eb01549",
+      "task": {
+        "horizon": "2push",
+        "object_id": "obstacle_0_movable",
+        "movable_object_count": 1,
+        "region_labels": ["robot", "goal"],
+        "hop_count": 1,
+        "density_pct": 31.2,
+        "n_green": 39,
+        "n_tried": 125
+      },
+      "build": {
+        "build_sheet": "../environments/hmax2/easy_020/build_sheet.csv",
+        "robot_start_cm": [26.5, 20.0, 0.0],
+        "goal_cm": [29.7, 71.0]
+      },
+      "collected": {
+        "result_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/hmax2/easy_020",
+        "real_namo": {
+          "model_pure_policy": {"successes": 5, "trials": 5},
+          "model_search": {"successes": 5, "trials": 5},
+          "uniform_search": {"successes": 5, "trials": 5}
+        },
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true,
+          "ignore": {"reached": false, "distance_to_goal_cm": 43.94, "stuck_retries": 5},
+          "penalise": {"reached": false, "distance_to_goal_cm": 41.74, "stuck_retries": 5},
+          "verdict": "nav_verdict.json"
+        },
+        "dynamic_simulation_navigation": {"status": "not_tested"}
+      }
+    },
+    {
+      "uid": "1push__hard_021__bf3e3cdf",
+      "build_id": "hard_021",
+      "axis": "1push",
+      "tier": "hard",
+      "gallery_file": "1push__hard_021__bf3e3cdf.json",
+      "gallery_card": "cards/1push__hard_021__bf3e3cdf.json",
+      "source_xml": "/common/users/dm1487/scratch_namo/real_buildable/pool2/med_304/rb_00042/env.xml",
+      "source_xml_present_on_dhruv_linux": false,
+      "card_sha256": "c4336da7b44aad9ff8527cc79c559e119d985cadc93d9943ecefd67ff0e6c676",
+      "scene_geometry_sha256": "7e41d4e2b34264943739ca538df4d6d90d2eaf6cbf013fb39da025f4c1af976c",
+      "task": {
+        "horizon": "1push",
+        "object_id": "obstacle_0_movable",
+        "movable_object_count": 1,
+        "region_labels": ["robot", "goal"],
+        "hop_count": 1,
+        "density_pct": 0.714,
+        "n_green": 1,
+        "n_tried": 140
+      },
+      "build": {
+        "build_sheet": "../environments/1push/hard_021/build_sheet.csv",
+        "build_sheet_selector": "build_id=hard_021",
+        "robot_start_cm": [27.8, 7.4, 0.0],
+        "goal_cm": [42.3, 57.7]
+      },
+      "collected": {
+        "result_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/1push_hard_021",
+        "real_namo": {
+          "model_prior_best_first_search": {"successes": 5, "trials": 5},
+          "uniform_prior_best_first_search": {"successes": 5, "trials": 5},
+          "model_pure_policy": {"status": "not_collected"}
+        },
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true,
+          "ignore": {"reached": false, "distance_to_goal_cm": 30.82, "stuck_retries": 5},
+          "penalise": {"reached": false, "distance_to_goal_cm": 31.15, "stuck_retries": 5},
+          "verdict": "nav_verdict.json"
+        },
+        "dynamic_simulation_navigation": {"status": "not_tested"}
+      }
+    }
+  ]
+}

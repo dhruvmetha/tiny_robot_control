@@ -1,0 +1,11 @@
+[NAV] navigate_to: goal=(18.9,66.1) θ=any, from=(25.2,12.5), obstacles=9
+[NAV] state - -> PRE_ROTATING pose=(25.2,12.5,θ=180.0°) pre_target_θ=131.8° heading_err=-48.2°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(25.0,12.5,θ=171.9°) path_waypoints=88 final_wp=(18.8,66.2)
+[NAV] !! NO PROGRESS (blocked): robot at (7.5,43.0,θ=6.2°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] No free cell behind the robot; backing out blind.
+[NAV] state FOLLOWING -> RETREATING pose=(7.4,43.0,θ=6.7°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (blocked).
+[NAV] navigate_to: goal=(18.9,66.1) θ=any, from=(3.6,42.2), obstacles=9
+[NAV] state RETREATING -> PRE_ROTATING pose=(3.6,42.2,θ=-1.2°) pre_target_θ=44.3° heading_err=+45.5°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(3.8,42.2,θ=3.8°) path_waypoints=40 final_wp=(18.2,66.2)
+nav_baseline_penalise: status=success reached=True distance_to_goal_cm=1.86 sim_time_s=41.467 -> /scratch/tdn39/real_exp/results/navigation_sim/rb_00182_mirror_x_penalise_realstack_v1/nav_baseline_penalise

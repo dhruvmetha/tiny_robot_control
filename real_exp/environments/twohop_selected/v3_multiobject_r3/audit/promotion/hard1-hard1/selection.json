@@ -1,0 +1,22 @@
+{
+  "eligible": 1,
+  "limit": 40,
+  "scenes": [
+    {
+      "donor_pair_id": "hard_hc1/rb_00002/hard_084",
+      "mirror_family_id": "adc6f15d75bf9b27459adb467dcae4015150feab1374be9120135f929b48e264",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/r1/screens/multiobject/hard1-hard1/twohop_multi_00015.json",
+      "scene_id": "twohop_multi_00015",
+      "source_family": "hard_hc1",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_r1/hard1-hard1/twohop_multi_00015/env.xml"
+    }
+  ],
+  "selected": 1,
+  "thresholds": {
+    "auxiliary_position_m": 0.05,
+    "auxiliary_yaw_deg": 20.0,
+    "mirrors_share_family": true,
+    "wall_position_m": 0.05,
+    "wall_yaw_deg": 15.0
+  }
+}

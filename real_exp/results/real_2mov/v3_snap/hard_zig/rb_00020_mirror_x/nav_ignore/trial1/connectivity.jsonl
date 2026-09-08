@@ -1,0 +1,2 @@
+{"at_epoch": 1788473007.2657127, "at_utc_iso": "2026-09-03T22:03:27.265Z", "event": "initial", "online": false, "alive_ids": [], "ap_connected": true, "target_robot_id": 1, "context": "startup"}
+{"at_epoch": 1788473024.8972826, "at_utc_iso": "2026-09-03T22:03:44.897Z", "event": "transition", "online": true, "alive_ids": [1], "ap_connected": true, "last_status_age_sec": 0.6727566719055176, "target_robot_id": 1, "context": "plan()"}

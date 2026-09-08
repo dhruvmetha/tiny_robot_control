@@ -1,0 +1,61 @@
+✓ NAMO env active on hal0328.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1
+Building namo_rl (Release) into ./build_python
+Using MuJoCo from: /scratch/tdn39/mujoco_pip
+Target arch (-march): x86-64-v3
+Using Python: Python 3.11.15 (/scratch/tdn39/envs/namo/bin/python), SOABI=cpython-311-x86_64-linux-gnu
+-- Using MuJoCo from: /scratch/tdn39/mujoco_pip
+-- yaml-cpp found - using YAML parser
+-- Building Python bindings...
+-- Found Python3: /scratch/tdn39/envs/namo/bin/python
+-- Python3 version: 3.11.15
+-- Python3 include dir: /scratch/tdn39/envs/namo/include/python3.11
+-- Python3 libraries: /scratch/tdn39/envs/namo/lib/libpython3.11.so
+-- Python3 SOABI: cpython-311-x86_64-linux-gnu
+-- Downloading compatible pybind11 for Python 3.11.15...
+-- pybind11 v2.12.0 
+-- Python bindings will be built as 'namo_rl' module
+-- Target Python3 SOABI: cpython-311-x86_64-linux-gnu
+-- Module suffix will be: cpython-311-x86_64-linux-gnu.so
+-- Configuring done (0.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: /scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python
+[  5%] Linking CXX shared module namo_rl.cpython-311-x86_64-linux-gnu.so
+[100%] Built target namo_rl
+
+Build completed successfully.
+Stamped build_python/BUILD_INFO:
+  git_sha=088360c5e176255b85676377d6f52166ee0e5c3d
+  cpp_tree=2cc00efda1355cfd27294709d1a82d6eab14c7ee
+  src_tree=ec31ebc53e1c03ee1cccadedeafb2da1a92f7bd2
+  dirty_cpp=0
+  built_at=2026-09-04T12:26:29-04:00
+  host=hal0328.amarel.rutgers.edu
+  python=Python 3.11.15
+  march=x86-64-v3
+  mj_path=/scratch/tdn39/mujoco_pip
+Canonical PYTHONPATH usage:
+  export PYTHONPATH=/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python:$PYTHONPATH
+[ 12%] Building CXX object CMakeFiles/test_wheel_spin.dir/tests/test_wheel_spin.cpp.o
+[ 62%] Building CXX object CMakeFiles/test_wheel_spin.dir/src/core/parameter_loader.cpp.o
+[ 62%] Building CXX object CMakeFiles/test_wheel_spin.dir/src/environment/namo_environment.cpp.o
+[ 62%] Building CXX object CMakeFiles/test_wheel_spin.dir/src/core/mujoco_wrapper.cpp.o
+[ 87%] Building CXX object CMakeFiles/test_wheel_spin.dir/src/robot/diff_drive_adapter.cpp.o
+[ 87%] Building CXX object CMakeFiles/test_wheel_spin.dir/src/config/config_manager.cpp.o
+[ 87%] Building CXX object CMakeFiles/test_wheel_spin.dir/src/robot/holonomic_adapter.cpp.o
+[100%] Linking CXX executable test_wheel_spin
+[100%] Built target test_wheel_spin
+Loading scene : test_xml/little-car-modeling-package/artifacts/nav_env.xml
+Loading config: config/namo_config_car.yaml
+
+[Case 1] Straight-line drive, both wheels +10.0000 rad/s for 1000 steps
+  start: xy=(-0.3000, 0.3000), yaw=-0.0000 deg
+  end  : xy=(-0.1230, 0.3000), yaw=0.0000 deg
+  wheels rotated: left=25.8232 rad, right=25.8232 rad
+  chassis displacement: 177.0076 mm
+  PASS
+
+[Case 2] Logical CCW spin, left=-10.0000 rad/s, right=+10.0000 rad/s for 200 steps
+  start: xy=(-0.1230, 0.3000), yaw=0.0000 deg
+  end  : yaw=-55.5123 deg
+  wheels rotated: left=-11.4587 rad, right=5.1856 rad
+  signed yaw change: -55.5123 deg

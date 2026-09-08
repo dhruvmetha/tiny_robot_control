@@ -1,0 +1,129 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/1push_hard_021/nav_penalise/trial1
+Goal given: (42.3, 57.7) cm
+
+Pure navigation baseline, mode 'penalise'. No pushes will be planned.
+Press ESCAPE to quit
+============================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/1push_hard_021/nav_penalise/trial1/recordings/session_2026-09-03_18-32-42/full_run.mp4
+[Runtime] Full-run video + per-subgoal meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/1push_hard_021/nav_penalise/trial1/recordings/session_2026-09-03_18-32-42
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[Runtime] 🔌 Robot 1 ONLINE at startup (alive_ids=[1], ap_connected=True)
+[Diagnostics] ⚠️ scene_before.xml capture failed: no xml source path provided
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+[Subgoal] --> DISPATCH NAVIGATE: target=(42.3,57.7), robot at (27.9,7.9,θ=90.7°)
+==================================================
+[DIAG] subgoal #1 start recorded
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00[NAV] navigate_to: goal=(42.3,57.7) θ=any, from=(27.9,7.9), obstacles=4
+
+[NAV] state - -> PRE_ROTATING pose=(27.9,7.9,θ=90.7°) pre_target_θ=138.8° heading_err=+48.1°
+Robot ID: 1
+Dry run: False
+Speed (autonomous): nav=0.40, push=0.40
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(28.0,7.7,θ=94.5°) path_waypoints=77 final_wp=(42.2,57.8)
+[NAV] !! NO PROGRESS (blocked): robot at (23.1,32.3,θ=148.8°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (26.2, 28.4)
+[NAV] state FOLLOWING -> RETREATING pose=(23.1,32.3,θ=148.8°)
+[NAV] Retreat done after 53 ticks (reached the cell); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 11.4s, robot now at (24.1,31.0,θ=125.5°)
+[DIAG] subgoal #1 end recorded (outcome=failed)
+[Subgoal] --> DISPATCH NAVIGATE: target=(42.3,57.7), robot at (24.1,31.0,θ=125.5°)
+[DIAG] subgoal #2 start recorded
+[NAV] navigate_to: goal=(42.3,57.7) θ=any, from=(24.1,31.0), obstacles=4
+[NAV] state RETREATING -> PRE_ROTATING pose=(24.1,31.0,θ=125.5°) pre_target_θ=119.1° heading_err=-6.5°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(24.1,30.9,θ=125.9°) path_waypoints=50 final_wp=(42.2,57.8)
+[NAV] !! NO PROGRESS (blocked): robot at (23.5,32.9,θ=146.4°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (26.5, 28.9)
+[NAV] state FOLLOWING -> RETREATING pose=(23.5,32.9,θ=146.4°)
+[NAV] Retreat done after 69 ticks (reached the cell); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 10.3s, robot now at (24.4,31.7,θ=123.4°)
+[DIAG] subgoal #2 end recorded (outcome=failed)
+[Subgoal] --> DISPATCH NAVIGATE: target=(42.3,57.7), robot at (24.4,31.7,θ=123.4°)
+[DIAG] subgoal #3 start recorded
+[NAV] navigate_to: goal=(42.3,57.7) θ=any, from=(24.4,31.7), obstacles=4
+[NAV] state RETREATING -> PRE_ROTATING pose=(24.4,31.7,θ=123.4°) pre_target_θ=125.1° heading_err=+1.7°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(24.5,31.6,θ=124.6°) path_waypoints=51 final_wp=(42.2,57.8)
+[NAV] !! NO PROGRESS (blocked): robot at (24.3,35.4,θ=135.7°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (27.8, 28.1)
+[NAV] state FOLLOWING -> RETREATING pose=(24.3,35.4,θ=135.7°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 12.9s, robot now at (25.7,32.3,θ=113.0°)
+[DIAG] subgoal #3 end recorded (outcome=failed)
+[Subgoal] --> DISPATCH NAVIGATE: target=(42.3,57.7), robot at (25.7,32.3,θ=113.0°)
+[DIAG] subgoal #4 start recorded
+[NAV] navigate_to: goal=(42.3,57.7) θ=any, from=(25.7,32.3), obstacles=4
+[NAV] state RETREATING -> PRE_ROTATING pose=(25.7,32.3,θ=113.0°) pre_target_θ=124.1° heading_err=+11.2°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(25.7,32.3,θ=112.9°) path_waypoints=51 final_wp=(42.2,57.8)
+[NAV] !! NO PROGRESS (blocked): robot at (24.1,34.8,θ=156.1°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (29.8, 29.2)
+[NAV] state FOLLOWING -> RETREATING pose=(24.1,34.8,θ=156.1°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 7.2s, robot now at (26.0,32.9,θ=133.3°)
+[DIAG] subgoal #4 end recorded (outcome=failed)
+[Subgoal] --> DISPATCH NAVIGATE: target=(42.3,57.7), robot at (26.0,32.9,θ=133.3°)
+[DIAG] subgoal #5 start recorded
+[NAV] navigate_to: goal=(42.3,57.7) θ=any, from=(26.0,32.9), obstacles=4
+[NAV] state RETREATING -> PRE_ROTATING pose=(26.0,32.9,θ=133.3°) pre_target_θ=153.4° heading_err=+20.2°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(26.0,32.8,θ=133.1°) path_waypoints=50 final_wp=(42.2,57.8)
+[NAV] !! NO PROGRESS (blocked): robot at (23.8,34.1,θ=158.6°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (29.0, 29.5)
+[NAV] state FOLLOWING -> RETREATING pose=(23.8,34.1,θ=158.5°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 7.0s, robot now at (26.2,31.8,θ=136.3°)
+[DIAG] subgoal #5 end recorded (outcome=failed)
+[Subgoal] --> DISPATCH NAVIGATE: target=(42.3,57.7), robot at (26.2,31.8,θ=136.3°)
+[DIAG] subgoal #6 start recorded
+[NAV] navigate_to: goal=(42.3,57.7) θ=any, from=(26.2,31.8), obstacles=4
+[NAV] state RETREATING -> PRE_ROTATING pose=(26.2,31.8,θ=136.3°) pre_target_θ=146.9° heading_err=+10.6°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(26.2,31.8,θ=136.3°) path_waypoints=52 final_wp=(42.2,57.8)
+[NAV] !! NO PROGRESS (blocked): robot at (23.5,33.3,θ=154.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (28.1, 29.5)
+[NAV] state FOLLOWING -> RETREATING pose=(23.5,33.3,θ=155.0°)
+[NAV] Retreat done after 81 ticks (reached the cell); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 7.0s, robot now at (25.4,31.5,θ=138.4°)
+[DIAG] subgoal #6 end recorded (outcome=failed)
+[Runtime] Planning failed - stopping robot
+[Runtime] Shutting down
+[Diagnostics] ⚠️ scene_after.xml capture failed: no xml source path provided
+[Diagnostics] Wrote summary.json (outcome=failure)
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/1push_hard_021/nav_penalise/trial1/recordings/session_2026-09-03_18-32-42/full_run.mp4
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete
+
+============================================================
+  arm                : nav_baseline_penalise
+  reached            : False
+  stopped at         : (25.39, 31.54) cm
+  distance to goal   : 31.15 cm
+  route waypoints    : 65
+  route crossed      : obj_1
+  objects shoved     : obj_1
+  elapsed            : 56.1 s
+  failure            : stuck_retry_limit_reached
+============================================================
+
+  Driving alone did not reach the goal. Reset the scene, then
+  run the NAMO trial on the same layout.
+
+wrote /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/formal_v2/1push_hard_021/nav_penalise/trial1/nav_baseline_penalise_1788474819.json
+
+real_exp/results/formal_v2/1push_hard_021/nav_verdict.json already holds a verdict; left alone.

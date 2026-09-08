@@ -1,0 +1,641 @@
+{
+  "arm": "nav_baseline_ignore",
+  "control_hz": 30.0,
+  "control_ticks": 1045,
+  "controller_config": "/scratch/tdn39/real_exp/code/robot_control_nav_realstack_v1/config/controller.yaml",
+  "controller_parameters": {
+    "navigation": {
+      "goal_tolerance_ratio": 0.2,
+      "max_speed": 0.4,
+      "obstacle_proximity_distance_cm": 2.0,
+      "obstacle_proximity_weight": 5.0,
+      "planner": "wavefront",
+      "pre_rotation_skip_angle": 45.0,
+      "robot_geometry_scale": 1.0,
+      "rotation_speed_max": 0.25,
+      "rotation_speed_min": 0.15,
+      "rotation_stable_time": 0.5,
+      "rotation_tolerance_deg": 2.5,
+      "wavefront_debug_dir": "output_dump/wavefront",
+      "wheel_deadband": 0.05
+    },
+    "push_retreat": {
+      "advance_speed": 0.15,
+      "advance_steps": 0,
+      "approach_skip_angle": 30.0,
+      "approach_skip_distance": 1.0,
+      "dynamic_direction": false,
+      "edge_offset_margin_cm": 1.0,
+      "lookahead_ratio": 1.0,
+      "max_approach_steps": 180,
+      "max_speed": 0.4,
+      "min_push_displacement_cm": 2.0,
+      "min_push_rotation_deg": 5.0,
+      "points_per_face": 15,
+      "push_steps": 30,
+      "retreat_cone_angle": 20.0,
+      "retreat_max_dist": 15.0,
+      "retreat_min_dist": 5.0,
+      "retreat_speed": 0.15,
+      "retreat_steer_gain": 0.3,
+      "retreat_steps": 100,
+      "retreat_tolerance": 2.0,
+      "show_wavefront": false,
+      "standoff_multiplier": 0.6,
+      "wheel_deadband": 0.05
+    }
+  },
+  "controller_stack": {
+    "executor": "SubgoalExecutor",
+    "navigation_controller": "NavigationController",
+    "path_follower": "FollowPathController",
+    "planner": "NavigationBaselinePlanner"
+  },
+  "distance_to_goal_cm": 1.96,
+  "elapsed_s": 34.8,
+  "failure_cause": "",
+  "final_robot_pose": {
+    "theta_deg": 103.44733246972045,
+    "x_cm": 9.870273460069034,
+    "y_cm": 65.41533832484456
+  },
+  "goal_cm": [
+    8.0,
+    66.0
+  ],
+  "harness_limit_reached": false,
+  "harness_limit_ticks": 3600,
+  "initial_robot_pose": {
+    "theta_deg": 0.0,
+    "x_cm": 16.0,
+    "y_cm": 9.0
+  },
+  "mode": "ignore",
+  "n_sims": 0,
+  "namo_config": "/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/config/namo_config_complete_skill15_car_1x.yaml",
+  "namo_rl_binding": "/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python/namo_rl.cpython-311-x86_64-linux-gnu.so",
+  "nav_speed": 0.4,
+  "objects_moved": "obstacle_0_movable,obstacle_1_movable",
+  "objects_moved_cm": {
+    "obstacle_0_movable": 12.05,
+    "obstacle_1_movable": 27.31
+  },
+  "outcome": {
+    "arm": "nav_baseline_ignore",
+    "distance_to_goal_cm": 1.96,
+    "elapsed_s": 34.8,
+    "failure_cause": "",
+    "objects_moved": "obstacle_0_movable,obstacle_1_movable",
+    "objects_moved_cm": {
+      "obstacle_0_movable": 12.05,
+      "obstacle_1_movable": 27.31
+    },
+    "reached": true,
+    "route_crosses": "obstacle_0_movable,obstacle_1_movable",
+    "route_waypoints": 128,
+    "stopped_x_cm": 9.88,
+    "stopped_y_cm": 65.43,
+    "stuck_causes": "",
+    "stuck_retries": 0
+  },
+  "planned_route_cm": [
+    [
+      16.25,
+      9.25
+    ],
+    [
+      15.75,
+      9.75
+    ],
+    [
+      15.25,
+      10.25
+    ],
+    [
+      14.75,
+      10.75
+    ],
+    [
+      14.250000000000002,
+      11.25
+    ],
+    [
+      13.750000000000002,
+      11.75
+    ],
+    [
+      13.750000000000002,
+      12.25
+    ],
+    [
+      13.750000000000002,
+      12.75
+    ],
+    [
+      13.750000000000002,
+      13.25
+    ],
+    [
+      13.750000000000002,
+      13.750000000000002
+    ],
+    [
+      13.750000000000002,
+      14.250000000000002
+    ],
+    [
+      13.750000000000002,
+      14.75
+    ],
+    [
+      13.750000000000002,
+      15.25
+    ],
+    [
+      13.750000000000002,
+      15.75
+    ],
+    [
+      13.750000000000002,
+      16.25
+    ],
+    [
+      13.750000000000002,
+      16.75
+    ],
+    [
+      13.750000000000002,
+      17.25
+    ],
+    [
+      13.750000000000002,
+      17.75
+    ],
+    [
+      13.750000000000002,
+      18.25
+    ],
+    [
+      13.750000000000002,
+      18.75
+    ],
+    [
+      13.750000000000002,
+      19.25
+    ],
+    [
+      14.250000000000002,
+      19.75
+    ],
+    [
+      14.250000000000002,
+      20.25
+    ],
+    [
+      14.250000000000002,
+      20.75
+    ],
+    [
+      14.250000000000002,
+      21.25
+    ],
+    [
+      14.75,
+      21.75
+    ],
+    [
+      14.75,
+      22.25
+    ],
+    [
+      14.75,
+      22.75
+    ],
+    [
+      14.75,
+      23.25
+    ],
+    [
+      15.25,
+      23.75
+    ],
+    [
+      15.25,
+      24.25
+    ],
+    [
+      15.25,
+      24.75
+    ],
+    [
+      15.75,
+      25.25
+    ],
+    [
+      15.75,
+      25.75
+    ],
+    [
+      15.75,
+      26.25
+    ],
+    [
+      15.75,
+      26.75
+    ],
+    [
+      16.25,
+      27.250000000000004
+    ],
+    [
+      16.25,
+      27.750000000000004
+    ],
+    [
+      16.25,
+      28.250000000000004
+    ],
+    [
+      16.25,
+      28.750000000000004
+    ],
+    [
+      16.75,
+      29.25
+    ],
+    [
+      17.25,
+      29.75
+    ],
+    [
+      17.75,
+      30.25
+    ],
+    [
+      18.25,
+      30.75
+    ],
+    [
+      18.75,
+      31.25
+    ],
+    [
+      19.25,
+      31.75
+    ],
+    [
+      19.75,
+      32.25
+    ],
+    [
+      20.25,
+      32.75
+    ],
+    [
+      20.75,
+      33.25
+    ],
+    [
+      21.25,
+      33.75
+    ],
+    [
+      21.25,
+      34.25
+    ],
+    [
+      21.75,
+      34.75
+    ],
+    [
+      21.75,
+      35.25
+    ],
+    [
+      21.75,
+      35.75
+    ],
+    [
+      21.75,
+      36.25
+    ],
+    [
+      21.75,
+      36.75
+    ],
+    [
+      21.75,
+      37.25
+    ],
+    [
+      22.25,
+      37.75
+    ],
+    [
+      22.75,
+      38.25
+    ],
+    [
+      23.25,
+      38.75
+    ],
+    [
+      23.75,
+      39.25
+    ],
+    [
+      24.25,
+      39.75
+    ],
+    [
+      24.75,
+      40.25
+    ],
+    [
+      25.25,
+      40.75
+    ],
+    [
+      25.75,
+      41.25
+    ],
+    [
+      26.25,
+      41.75
+    ],
+    [
+      26.25,
+      42.25
+    ],
+    [
+      26.25,
+      42.75
+    ],
+    [
+      26.25,
+      43.25
+    ],
+    [
+      26.25,
+      43.75
+    ],
+    [
+      26.25,
+      44.25
+    ],
+    [
+      26.25,
+      44.75
+    ],
+    [
+      26.25,
+      45.25
+    ],
+    [
+      26.25,
+      45.75
+    ],
+    [
+      26.25,
+      46.25
+    ],
+    [
+      26.25,
+      46.75
+    ],
+    [
+      26.25,
+      47.25
+    ],
+    [
+      26.25,
+      47.75
+    ],
+    [
+      26.25,
+      48.25
+    ],
+    [
+      26.25,
+      48.75
+    ],
+    [
+      26.25,
+      49.25
+    ],
+    [
+      26.25,
+      49.75
+    ],
+    [
+      26.25,
+      50.25000000000001
+    ],
+    [
+      26.25,
+      50.75000000000001
+    ],
+    [
+      26.25,
+      51.24999999999999
+    ],
+    [
+      26.25,
+      51.74999999999999
+    ],
+    [
+      26.25,
+      52.25
+    ],
+    [
+      26.25,
+      52.75
+    ],
+    [
+      26.25,
+      53.25
+    ],
+    [
+      26.25,
+      53.75
+    ],
+    [
+      26.25,
+      54.25
+    ],
+    [
+      26.25,
+      54.75
+    ],
+    [
+      25.75,
+      55.25
+    ],
+    [
+      25.25,
+      55.75
+    ],
+    [
+      24.75,
+      56.25
+    ],
+    [
+      24.25,
+      56.75
+    ],
+    [
+      23.75,
+      57.25
+    ],
+    [
+      23.25,
+      57.75
+    ],
+    [
+      22.75,
+      58.25
+    ],
+    [
+      22.25,
+      58.75
+    ],
+    [
+      21.75,
+      59.25
+    ],
+    [
+      21.25,
+      59.75
+    ],
+    [
+      20.75,
+      60.25
+    ],
+    [
+      20.25,
+      60.75000000000001
+    ],
+    [
+      19.75,
+      61.25000000000001
+    ],
+    [
+      19.25,
+      61.75000000000001
+    ],
+    [
+      18.75,
+      62.25000000000001
+    ],
+    [
+      18.25,
+      62.75000000000001
+    ],
+    [
+      17.75,
+      63.25000000000001
+    ],
+    [
+      17.25,
+      63.75000000000001
+    ],
+    [
+      16.75,
+      64.25
+    ],
+    [
+      16.25,
+      64.75
+    ],
+    [
+      15.75,
+      65.25
+    ],
+    [
+      15.25,
+      65.75
+    ],
+    [
+      14.75,
+      66.25
+    ],
+    [
+      14.250000000000002,
+      66.25
+    ],
+    [
+      13.750000000000002,
+      66.25
+    ],
+    [
+      13.25,
+      66.25
+    ],
+    [
+      12.75,
+      66.25
+    ],
+    [
+      12.25,
+      66.25
+    ],
+    [
+      11.75,
+      66.25
+    ],
+    [
+      11.25,
+      66.25
+    ],
+    [
+      10.75,
+      66.25
+    ],
+    [
+      10.25,
+      66.25
+    ],
+    [
+      9.75,
+      66.25
+    ],
+    [
+      9.25,
+      66.25
+    ],
+    [
+      8.75,
+      66.25
+    ],
+    [
+      8.25,
+      66.25
+    ]
+  ],
+  "planning_calls": 1,
+  "planning_wall_clock_s": 0.07014516089111567,
+  "reached": true,
+  "reason": "goal reached",
+  "route_crosses": "obstacle_0_movable,obstacle_1_movable",
+  "route_waypoints": 128,
+  "scene_xml": "/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/hard1-hard1/twohop_multi_00678/env.xml",
+  "schema_version": 1,
+  "simulation_time_s": 34.83333333333392,
+  "status": "success",
+  "stopped_x_cm": 9.88,
+  "stopped_y_cm": 65.43,
+  "stuck_causes": "",
+  "stuck_retries": 0,
+  "trajectory": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00678/nav_baseline_ignore/trajectory.jsonl",
+  "wall_clock_elapsed_s": 1.6340139349922538,
+  "wavefront_inflation": {
+    "navigation_additional_margin_m": 0.0,
+    "push_approach_additional_margin_m": 0.0,
+    "tier1_base_inflation_margin_m": 0.001,
+    "xml_collision_additional_margin_m": 0.08,
+    "xml_min_separation_m": 0.005
+  },
+  "wavefront_inflation_config": "/scratch/tdn39/real_exp/code/robot_control_nav_realstack_v1/config/wavefront_inflation.yaml",
+  "wavefront_inflation_config_sha256": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726",
+  "wheel_command_limit_rad_s": 25.0
+}

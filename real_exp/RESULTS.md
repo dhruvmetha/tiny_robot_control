@@ -14,15 +14,15 @@ count toward the 15.
 
 ## Where collection stands
 
-43 of 75 protocol trials are collected across 5 environments.
+70 of 75 protocol trials are collected across 5 environments.
 
 | environment | scene | tier | model policy | model search | uniform search | complete |
 | --- | --- | --- | --- | --- | --- | --- |
 | `hmax2__easy_020__5f0639e3` | `hmax2/easy_020` | easy | 5/5 | 5/5 | 5/5 | yes |
 | `1push__hard_021__bf3e3cdf` | `1push/hard_021` | hard | 0/0 | 5/5 | 5/5 | no |
-| `2push__env__obstacle_0_movable__0489c6b2` | `v3/hard_loose/rb_00180` | hard | 1/1 | 0/0 | 0/0 | no |
+| `2push__env__obstacle_0_movable__0489c6b2` | `v3/hard_loose/rb_00180` | hard | 5/5 | 0/5 | 0/5 | yes |
 | `2push__env__obstacle_0_movable__febcb94c` | `v2/zig_solo0/rb_00034` | hard | 5/5 | 5/5 | 1/5 | yes |
-| `2push__env__obstacle_0_movable__fbdce248` | `v2/dense_solo0/rb_00121` | medium | 1/1 | 0/0 | 1/1 | no |
+| `2push__env__obstacle_0_movable__fbdce248` | `v2/dense_solo0/rb_00121` | medium | 5/5 | 5/5 | 3/5 | yes |
 
 Counts read successes over trials collected, not over the five the protocol asks for.
 
@@ -90,15 +90,35 @@ Scene `1push/hard_021`, tier hard, catalog `1hop_simple`.
 
 Scene `v3/hard_loose/rb_00180`, tier hard, catalog `1hop_simple`.
 
-**model policy.** 1 of 1 reached the goal.
+**model policy.** 5 of 5 reached the goal.
 
 | trial | outcome | pushes | stuck | plans | sims | planning |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| trial1 | success | 4 | 0 | 4 | 0 | 0.6 s |
+| trial1 | success | 1 | 0 | 1 | 0 | 0.2 s |
+| trial2 | success | 1 | 0 | 1 | 0 | 0.2 s |
+| trial3 | success | 1 | 0 | 1 | 0 | 0.2 s |
+| trial4 | success | 1 | 0 | 1 | 0 | 0.2 s |
+| trial5 | success | 1 | 0 | 1 | 0 | 0.2 s |
 
-**model search.** Not collected.
+**model search.** 0 of 5 reached the goal.
 
-**uniform search.** Not collected.
+| trial | outcome | pushes | stuck | plans | sims | planning |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| trial1 | failure | 0 | 0 | 1 | 900 | 202.3 s |
+| trial2 | failure | 0 | 0 | 1 | 900 | 211.6 s |
+| trial3 | failure | 0 | 0 | 1 | 900 | 210.6 s |
+| trial4 | failure | 0 | 0 | 1 | 900 | 189.9 s |
+| trial5 | failure | 0 | 0 | 1 | 900 | 192.2 s |
+
+**uniform search.** 0 of 5 reached the goal.
+
+| trial | outcome | pushes | stuck | plans | sims | planning |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| trial1 | failure | 0 | 0 | 1 | 900 | 150.3 s |
+| trial2 | failure | 0 | 0 | 1 | 900 | 149.9 s |
+| trial3 | failure | 0 | 0 | 1 | 900 | 155.9 s |
+| trial4 | failure | 0 | 0 | 1 | 900 | 150.5 s |
+| trial5 | failure | 0 | 0 | 1 | 900 | 147.4 s |
 
 ## `2push__env__obstacle_0_movable__febcb94c`
 
@@ -138,16 +158,32 @@ Scene `v2/zig_solo0/rb_00034`, tier hard, catalog `1hop_multi_int`.
 
 Scene `v2/dense_solo0/rb_00121`, tier medium, catalog `1hop_multi_int`.
 
-**model policy.** 1 of 1 reached the goal.
+**model policy.** 5 of 5 reached the goal.
 
 | trial | outcome | pushes | stuck | plans | sims | planning |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| trial1 | success | 4 | 1 | 4 | 0 | 0.4 s |
+| trial1 | success | 2 | 0 | 2 | 0 | 0.2 s |
+| trial2 | success | 2 | 0 | 2 | 0 | 0.2 s |
+| trial3 | success | 2 | 0 | 2 | 0 | 0.2 s |
+| trial4 | success | 3 | 0 | 3 | 0 | 0.3 s |
+| trial5 | success | 2 | 0 | 2 | 0 | 0.2 s |
 
-**model search.** Not collected.
-
-**uniform search.** 1 of 1 reached the goal.
+**model search.** 5 of 5 reached the goal.
 
 | trial | outcome | pushes | stuck | plans | sims | planning |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| trial1 | success | 8 | 3 | 10 | 644 | 146.5 s |
+| trial1 | success | 2 | 0 | 4 | 17 | 6.2 s |
+| trial2 | success | 2 | 0 | 2 | 13 | 5.4 s |
+| trial3 | success | 2 | 0 | 2 | 28 | 10.2 s |
+| trial4 | success | 3 | 0 | 5 | 31 | 12.0 s |
+| trial5 | success | 3 | 1 | 4 | 32 | 12.2 s |
+
+**uniform search.** 3 of 5 reached the goal.
+
+| trial | outcome | pushes | stuck | plans | sims | planning |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| trial1 | success | 4 | 0 | 7 | 314 | 70.9 s |
+| trial2 | success | 9 | 3 | 14 | 118 | 26.0 s |
+| trial3 | success | 2 | 0 | 2 | 367 | 81.4 s |
+| trial4 | failure | 13 | 7 | 19 | 1092 | 220.1 s |
+| trial5 | failure | 5 | 2 | 10 | 1340 | 263.8 s |

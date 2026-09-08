@@ -1,0 +1,18 @@
+{
+  "qualifies": false,
+  "reason": "Navigation succeeded: penalised navigation reached the goal in trials 1 and 2 by bulldozing obj_4. The operator accepted the environment as navigation-solvable and waived trial 3 on 2026-09-03.",
+  "_evidence": {
+    "reached": true,
+    "distance_to_goal_cm": 1.17,
+    "objects_moved": "obj_4",
+    "objects_moved_cm": {
+      "obj_4": 11.2
+    },
+    "stuck_retries": 0,
+    "stuck_causes": "",
+    "route_crosses": "obj_4",
+    "failure_cause": ""
+  },
+  "_row": "nav_penalise/trial2/nav_baseline_penalise_1788473901.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

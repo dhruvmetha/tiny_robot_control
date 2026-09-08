@@ -1,0 +1,4 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__9147aba2/model_search/trial1
+Error: --exec-mode search without --hold-region-target would run, and run the wrong pipeline: the unheld planner re-derives the boundary on every replan and retries with reshuffled seeds, while the mode comparison is defined on the held loop, so the trial would be filed under the search arm while running code the reactive arm never touches. Pass --hold-region-target (or --active-target) for a mode-arm run, or omit --exec-mode for an ordinary unheld run.
+[Diagnostics] Wrote summary.json (outcome=crashed)

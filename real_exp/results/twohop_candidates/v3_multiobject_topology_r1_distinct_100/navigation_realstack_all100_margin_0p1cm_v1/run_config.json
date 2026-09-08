@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "experiment": "dynamic_closed_loop_navigation_baselines",
+  "scene_count": 100,
+  "input_by_profile": {
+    "hard1-hard1": 50,
+    "med2-med2": 50
+  },
+  "scene_manifest_sha256": "295d9c0a59b3212233df71b32226e5982324231ea0933633949b423515d84002",
+  "scene_bundle_source_revision": "a0e2111",
+  "modes": [
+    "nav_baseline_ignore",
+    "nav_baseline_penalise"
+  ],
+  "control": {
+    "control_hz": 30.0,
+    "normalized_nav_speed": 0.4,
+    "baseline_timeout_sim_s": 90.0,
+    "harness_limit_sim_s": 120.0
+  },
+  "result_contract": {
+    "real_baseline_row_fields_at_top_level": true,
+    "nested_outcome_copy_retained": true,
+    "terminal_stop_included_within_harness_limit": true,
+    "harness_limit_control_ticks": 3600,
+    "successful_result_published_after_trajectory": true,
+    "stale_result_removed_before_overwrite_attempt": true
+  },
+  "controller_stack": {
+    "planner": "NavigationBaselinePlanner",
+    "executor": "SubgoalExecutor",
+    "navigation_controller": "NavigationController",
+    "path_follower": "FollowPathController"
+  },
+  "physics": {
+    "engine": "existing namo_cpp MuJoCo RLEnvironment",
+    "adapter_role": "unit conversion plus one normalized wheel-command tick",
+    "fresh_environment_per_mode": true,
+    "namo_planning_simulations_per_arm": 0
+  },
+  "wavefront_inflation": {
+    "tier1_margin_m": 0.001,
+    "tier1_margin_cm": 0.1,
+    "robot_radius_cm": 3.5,
+    "total_static_inflation_cm": 3.6,
+    "other_inflation_terms_changed": false,
+    "effective_navigation_config_sha256": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726",
+    "namo_cpp_sidecar_sha256": "f8ab35e1e24af86ecf569418b924317b6ccb4c3f5f532e8d155aa5f8ca6edf3d",
+    "preserved_context_terms": {
+      "robot_control_navigation_additional_margin_m": 0.0,
+      "robot_control_push_approach_additional_margin_m": 0.0,
+      "namo_cpp_navigation_additional_margin_m": 0.0,
+      "namo_cpp_push_approach_additional_margin_m": 0.003,
+      "xml_collision_min_separation_m": 0.005,
+      "xml_collision_additional_margin_m": 0.08
+    }
+  },
+  "source": {
+    "robot_control_base_revision": "fce48ef9df9db8379164fdda5fad6693da221a37",
+    "robot_control_parity_revision": "326946be8adf307e72d5d299920004d56fe84243",
+    "robot_control_dhruv_handoff_revision": "d869420c3a6e488db93a0822c8214f3066f4e875",
+    "robot_control_production_files_sha256": "d25863fc357c0e21de31519dbe01adcee59608d908a4a30a5a0038928bfeaaf9",
+    "robot_control_production_files_sha256_method": "sha256 of canonical compact JSON mapping relative path to file sha256",
+    "robot_control_production_files": {
+      "config/controller.yaml": "68dcb34e9c892c955ec7a7bfc0e2a424ea871151eae3a29872faeccaae573e18",
+      "config/real.yaml": "4bf1e4f8acce6d0dfb68faed18439ed29a456c19659026cc36e6550c5f998272",
+      "config/wavefront_inflation.yaml": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726",
+      "scripts/run_navigation_baseline_sim.py": "cb587f4554663f7dca85bdc263292e97fe9fb4508054f083c1f395d2b83ee709",
+      "src/robot_control/controller/factory.py": "ebb967f9e33d33418e4573cbd214afaee8e5e57fbf1c52adcb0fe64d3503e5ea",
+      "src/robot_control/controller/navigation.py": "724ec8d3619bfc44c821307c0520db8a004953a4d3b638a27acb3cc53e45b03e",
+      "src/robot_control/environment/namo_mujoco.py": "b430d78e8f0b7769c0c0b7cee9be3161836a6565efb801915240748c5df86d75",
+      "src/robot_control/executor.py": "304cfdf8a16f1f5499161fec32cf2d46f59f091cd5cf9c4ffd706273898fb25f",
+      "src/robot_control/navigation_baseline_sim.py": "48de437396e2a1cdc17514b99194a2be5fe1c80c65a69fc255b2032601d50a96",
+      "src/robot_control/planner/navigation_baseline.py": "f4270d0cb26e9e74bc5d2856ed4cfeb27a44522a2982a83308b12e0289e025c9",
+      "src/robot_control/planner/navigation_baseline_planner.py": "2364339900cc2b6ef4125213a3a368194ee8540b84a48e84a5d7e6bb8cf3e159",
+      "src/robot_control/utils/wavefront.py": "9289ff97d2882d7e89668c7c7cf626ae566757d1ae15d4e543f324d97b1dd457",
+      "src/robot_control/utils/wavefront_inflation_config.py": "77ca4d5b810a2e5aff94054c36b7216518c453466bf02f841281a0492cd8b34e"
+    },
+    "namo_cpp_base_revision": "339a0dcbbfa705343ea7c290a4937ec1e4ac4429",
+    "namo_cpp_amarel_revision": "3e3fbec172b028b90bb877a6e3f49c957cf62bb3",
+    "namo_cpp_upstream_parity_revision": "3df35995f11c941ec07246cf9bfb0e862719ac9d"
+  },
+  "validation_scope": {
+    "robot_control_full_suite": "590 passed on dhruv-linux",
+    "namo_cpp_dhruv_focused_suite": "17 passed plus native wheel/config tests",
+    "dhruv_real_binding_cli_smoke": "/tmp/nav-realstack-cli-smoke.vX2rYQ (both arms, flat-schema and limit audit passed)",
+    "navigation_gate": [
+      "test_wheel_spin",
+      "test_config_manager_schema",
+      "python/tests/test_wheel_control_bridge.py",
+      "python/tests/test_car_reset_baseline.py"
+    ],
+    "excluded_unrelated_push_physics_tests": {
+      "file": "python/tests/test_push_stuck_after_motion.py",
+      "reason": "pure-navigation baselines do not invoke NAMO push execution",
+      "amarel_mujoco_3p8p1_observation": "2 failed and 5 passed when run in build 61232542"
+    }
+  },
+  "outputs": {
+    "navigation_realstack_csv_sha256": "31affe6bc1ab701a453c709ae5a164575c07df64480b83f1f82883bbf4d42248",
+    "both_navigation_baselines_failed_csv_sha256": "03c3d94be3697edba79e6feb1f0f021d3c18b16f9e1f363fde5ae0df688cfd40",
+    "summary_json_sha256": "5a05c946438c19abe065cb45ae26ab8b5a8808ab95d3ab90959d62496032a29c",
+    "result_json_count": 200,
+    "nonempty_array_or_reducer_error_logs": 0,
+    "harness_limited_arms": 30,
+    "harness_limited_tick_time_pairs": [[3600, 120.0]]
+  },
+  "jobs": {
+    "build": 61233172,
+    "smoke_scene_0": 61232560,
+    "initial_array_scenes_1_through_99": 61232561,
+    "harness_timeout_retry_array": 61232674,
+    "harness_timeout_retry_indices": [
+      1,
+      7,
+      19,
+      23,
+      24,
+      35,
+      36,
+      37,
+      48,
+      52,
+      61,
+      64,
+      66,
+      70,
+      71,
+      75,
+      77,
+      78,
+      82,
+      87,
+      88,
+      96,
+      97,
+      98
+    ],
+    "uniform_revision_array_scenes_0_through_99": 61232867,
+    "final_margin_only_array_scenes_0_through_99": 61233003,
+    "review_fixed_array_scenes_0_through_99": 61233173,
+    "reducer": 61233174,
+    "previous_successful_reducers": [61232757, 61232765, 61232925, 61233004],
+    "final_package": 61233299,
+    "previous_packages": [61232770, 61232969, 61233106, 61233126],
+    "wheel_direction_diagnostic": 61232529,
+    "superseded_failed_builds": [
+      61232246,
+      61232256,
+      61232267,
+      61232525,
+      61232542,
+      61233159
+    ],
+    "superseded_cancelled_or_replaced_jobs": [
+      61232247,
+      61232248,
+      61232249,
+      61232260,
+      61232261,
+      61232262,
+      61232268,
+      61232269,
+      61232270,
+      61232526,
+      61232527,
+      61232528,
+      61232531,
+      61232532,
+      61232543,
+      61232544,
+      61232545,
+      61232553,
+      61232554,
+      61232555,
+      61232562,
+      61232675,
+      61233163,
+      61233164
+    ]
+  },
+  "supersedes": {
+    "path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1",
+    "reason": "that run computed static grid routes and did not execute the robot controller or MuJoCo wheel dynamics"
+  }
+}

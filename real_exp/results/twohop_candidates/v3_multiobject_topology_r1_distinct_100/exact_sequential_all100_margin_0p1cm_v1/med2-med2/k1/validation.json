@@ -1,0 +1,19 @@
+{
+  "manifest": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/promotion_distinct_v2_100/med2-med2/promotion_manifest.txt",
+  "manifest_rows": 50,
+  "merged_rows": 50,
+  "nodecrement_xml_artifacts": 1,
+  "profile": "med2-med2",
+  "semantic_reject_counts": {
+    "status_not_ok": 1,
+    "wrong_opened_boundary": 2
+  },
+  "stage": "k1",
+  "status_counts": {
+    "no_opener_decrements_hop": 1,
+    "ok": 49
+  },
+  "unique_inputs": 50,
+  "unreferenced_xml_artifacts": [],
+  "validated_post_k1": 47
+}

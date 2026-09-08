@@ -1,0 +1,18 @@
+{
+  "qualifies": true,
+  "reason": "Both navigation methods failed on trial 1 after five blocked retries, satisfying the operator rule that one failure within three trials marks a navigation method as failed (2026-09-03).",
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 41.74,
+    "objects_moved": "obj_1",
+    "objects_moved_cm": {
+      "obj_1": 5.62
+    },
+    "stuck_retries": 5,
+    "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+    "route_crosses": "obj_1",
+    "failure_cause": "stuck_retry_limit_reached"
+  },
+  "_row": "nav_penalise/trial1/nav_baseline_penalise_1788474167.json",
+  "_note": "Ignore trial 1 and penalise trial 1 both failed; no additional navigation trials are required by the operator protocol."
+}

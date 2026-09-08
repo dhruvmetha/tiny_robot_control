@@ -1,0 +1,487 @@
+{
+  "arm": "nav_baseline_penalise",
+  "control_hz": 30.0,
+  "control_ticks": 3600,
+  "controller_config": "/scratch/tdn39/real_exp/code/robot_control_nav_realstack_v1/config/controller.yaml",
+  "controller_parameters": {
+    "navigation": {
+      "goal_tolerance_ratio": 0.2,
+      "max_speed": 0.4,
+      "obstacle_proximity_distance_cm": 2.0,
+      "obstacle_proximity_weight": 5.0,
+      "planner": "wavefront",
+      "pre_rotation_skip_angle": 45.0,
+      "robot_geometry_scale": 1.0,
+      "rotation_speed_max": 0.25,
+      "rotation_speed_min": 0.15,
+      "rotation_stable_time": 0.5,
+      "rotation_tolerance_deg": 2.5,
+      "wavefront_debug_dir": "output_dump/wavefront",
+      "wheel_deadband": 0.05
+    },
+    "push_retreat": {
+      "advance_speed": 0.15,
+      "advance_steps": 0,
+      "approach_skip_angle": 30.0,
+      "approach_skip_distance": 1.0,
+      "dynamic_direction": false,
+      "edge_offset_margin_cm": 1.0,
+      "lookahead_ratio": 1.0,
+      "max_approach_steps": 180,
+      "max_speed": 0.4,
+      "min_push_displacement_cm": 2.0,
+      "min_push_rotation_deg": 5.0,
+      "points_per_face": 15,
+      "push_steps": 30,
+      "retreat_cone_angle": 20.0,
+      "retreat_max_dist": 15.0,
+      "retreat_min_dist": 5.0,
+      "retreat_speed": 0.15,
+      "retreat_steer_gain": 0.3,
+      "retreat_steps": 100,
+      "retreat_tolerance": 2.0,
+      "show_wavefront": false,
+      "standoff_multiplier": 0.6,
+      "wheel_deadband": 0.05
+    }
+  },
+  "controller_stack": {
+    "executor": "SubgoalExecutor",
+    "navigation_controller": "NavigationController",
+    "path_follower": "FollowPathController",
+    "planner": "NavigationBaselinePlanner"
+  },
+  "distance_to_goal_cm": 30.67,
+  "elapsed_s": 120.0,
+  "failure_cause": "simulation_harness_tick_limit_reached",
+  "final_robot_pose": {
+    "theta_deg": 78.00027788259061,
+    "x_cm": 37.96539740901262,
+    "y_cm": 38.39761335613359
+  },
+  "goal_cm": [
+    24.5,
+    66.0
+  ],
+  "harness_limit_reached": true,
+  "harness_limit_ticks": 3600,
+  "initial_robot_pose": {
+    "theta_deg": 0.0,
+    "x_cm": 8.0,
+    "y_cm": 9.0
+  },
+  "mode": "penalise",
+  "n_sims": 0,
+  "namo_config": "/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/config/namo_config_complete_skill15_car_1x.yaml",
+  "namo_rl_binding": "/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python/namo_rl.cpython-311-x86_64-linux-gnu.so",
+  "nav_speed": 0.4,
+  "objects_moved": "obstacle_0_movable",
+  "objects_moved_cm": {
+    "obstacle_0_movable": 27.23
+  },
+  "outcome": {
+    "arm": "nav_baseline_penalise",
+    "distance_to_goal_cm": 30.67,
+    "elapsed_s": 120.0,
+    "failure_cause": "simulation_harness_tick_limit_reached",
+    "objects_moved": "obstacle_0_movable",
+    "objects_moved_cm": {
+      "obstacle_0_movable": 27.23
+    },
+    "reached": false,
+    "route_crosses": "obstacle_1_movable",
+    "route_waypoints": 90,
+    "stopped_x_cm": 37.98,
+    "stopped_y_cm": 38.45,
+    "stuck_causes": "blocked",
+    "stuck_retries": 1
+  },
+  "planned_route_cm": [
+    [
+      33.75,
+      27.750000000000004
+    ],
+    [
+      34.25,
+      27.250000000000004
+    ],
+    [
+      34.75,
+      27.250000000000004
+    ],
+    [
+      35.25,
+      27.250000000000004
+    ],
+    [
+      35.75,
+      27.750000000000004
+    ],
+    [
+      36.25,
+      28.250000000000004
+    ],
+    [
+      36.75,
+      28.750000000000004
+    ],
+    [
+      37.25,
+      29.25
+    ],
+    [
+      37.75,
+      29.75
+    ],
+    [
+      37.75,
+      30.25
+    ],
+    [
+      37.75,
+      30.75
+    ],
+    [
+      37.75,
+      31.25
+    ],
+    [
+      37.75,
+      31.75
+    ],
+    [
+      37.75,
+      32.25
+    ],
+    [
+      37.75,
+      32.75
+    ],
+    [
+      37.75,
+      33.25
+    ],
+    [
+      37.75,
+      33.75
+    ],
+    [
+      37.75,
+      34.25
+    ],
+    [
+      37.75,
+      34.75
+    ],
+    [
+      37.75,
+      35.25
+    ],
+    [
+      37.75,
+      35.75
+    ],
+    [
+      37.75,
+      36.25
+    ],
+    [
+      37.75,
+      36.75
+    ],
+    [
+      37.75,
+      37.25
+    ],
+    [
+      37.75,
+      37.75
+    ],
+    [
+      37.75,
+      38.25
+    ],
+    [
+      37.75,
+      38.75
+    ],
+    [
+      37.25,
+      39.25
+    ],
+    [
+      36.75,
+      39.75
+    ],
+    [
+      36.25,
+      40.25
+    ],
+    [
+      35.75,
+      40.75
+    ],
+    [
+      35.25,
+      41.25
+    ],
+    [
+      34.75,
+      41.75
+    ],
+    [
+      34.25,
+      42.25
+    ],
+    [
+      33.75,
+      42.75
+    ],
+    [
+      33.25,
+      43.25
+    ],
+    [
+      32.75,
+      43.75
+    ],
+    [
+      32.25,
+      44.25
+    ],
+    [
+      31.75,
+      44.75
+    ],
+    [
+      31.25,
+      45.25
+    ],
+    [
+      30.75,
+      45.75
+    ],
+    [
+      30.25,
+      46.25
+    ],
+    [
+      29.75,
+      46.25
+    ],
+    [
+      29.25,
+      46.25
+    ],
+    [
+      28.750000000000004,
+      46.25
+    ],
+    [
+      28.250000000000004,
+      46.25
+    ],
+    [
+      27.750000000000004,
+      46.25
+    ],
+    [
+      27.250000000000004,
+      46.25
+    ],
+    [
+      26.75,
+      46.25
+    ],
+    [
+      26.25,
+      46.25
+    ],
+    [
+      25.75,
+      46.75
+    ],
+    [
+      25.25,
+      47.25
+    ],
+    [
+      24.75,
+      47.75
+    ],
+    [
+      24.25,
+      48.25
+    ],
+    [
+      23.75,
+      48.75
+    ],
+    [
+      23.25,
+      49.25
+    ],
+    [
+      22.75,
+      49.75
+    ],
+    [
+      22.25,
+      50.25000000000001
+    ],
+    [
+      22.25,
+      50.75000000000001
+    ],
+    [
+      22.25,
+      51.24999999999999
+    ],
+    [
+      22.25,
+      51.74999999999999
+    ],
+    [
+      22.25,
+      52.25
+    ],
+    [
+      22.25,
+      52.75
+    ],
+    [
+      22.25,
+      53.25
+    ],
+    [
+      22.25,
+      53.75
+    ],
+    [
+      22.25,
+      54.25
+    ],
+    [
+      22.25,
+      54.75
+    ],
+    [
+      22.25,
+      55.25
+    ],
+    [
+      22.25,
+      55.75
+    ],
+    [
+      22.25,
+      56.25
+    ],
+    [
+      22.25,
+      56.75
+    ],
+    [
+      22.25,
+      57.25
+    ],
+    [
+      22.25,
+      57.75
+    ],
+    [
+      22.25,
+      58.25
+    ],
+    [
+      22.25,
+      58.75
+    ],
+    [
+      22.25,
+      59.25
+    ],
+    [
+      22.25,
+      59.75
+    ],
+    [
+      22.25,
+      60.25
+    ],
+    [
+      22.25,
+      60.75000000000001
+    ],
+    [
+      22.25,
+      61.25000000000001
+    ],
+    [
+      22.25,
+      61.75000000000001
+    ],
+    [
+      22.75,
+      62.25000000000001
+    ],
+    [
+      23.25,
+      62.75000000000001
+    ],
+    [
+      23.75,
+      63.25000000000001
+    ],
+    [
+      24.25,
+      63.75000000000001
+    ],
+    [
+      24.75,
+      64.25
+    ],
+    [
+      24.75,
+      64.75
+    ],
+    [
+      24.75,
+      65.25
+    ],
+    [
+      24.75,
+      65.75
+    ],
+    [
+      24.75,
+      66.25
+    ]
+  ],
+  "planning_calls": 2,
+  "planning_wall_clock_s": 0.07198617211543024,
+  "reached": false,
+  "reason": "simulation_harness_tick_limit_reached",
+  "route_crosses": "obstacle_1_movable",
+  "route_waypoints": 90,
+  "scene_xml": "/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/hard1-hard1/twohop_multi_00749/env.xml",
+  "schema_version": 1,
+  "simulation_time_s": 119.99999999999575,
+  "status": "failure",
+  "stopped_x_cm": 37.98,
+  "stopped_y_cm": 38.45,
+  "stuck_causes": "blocked",
+  "stuck_retries": 1,
+  "trajectory": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00749/nav_baseline_penalise/trajectory.jsonl",
+  "wall_clock_elapsed_s": 6.001606224104762,
+  "wavefront_inflation": {
+    "navigation_additional_margin_m": 0.0,
+    "push_approach_additional_margin_m": 0.0,
+    "tier1_base_inflation_margin_m": 0.001,
+    "xml_collision_additional_margin_m": 0.08,
+    "xml_min_separation_m": 0.005
+  },
+  "wavefront_inflation_config": "/scratch/tdn39/real_exp/code/robot_control_nav_realstack_v1/config/wavefront_inflation.yaml",
+  "wavefront_inflation_config_sha256": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726",
+  "wheel_command_limit_rad_s": 25.0
+}

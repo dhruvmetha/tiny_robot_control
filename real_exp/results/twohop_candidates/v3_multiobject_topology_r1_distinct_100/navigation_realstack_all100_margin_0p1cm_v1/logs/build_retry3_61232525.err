@@ -1,0 +1,3 @@
+lto-wrapper: warning: using serial compilation of 2 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+  FAIL: logical left < right did not produce positive counter-clockwise yaw above threshold (14.3239 deg)

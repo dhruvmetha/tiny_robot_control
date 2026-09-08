@@ -1,0 +1,62 @@
+{
+  "schema": "derived_from_env_xml",
+  "scene": "v3_snap/hard_zig/rb_00020_mirror_x",
+  "note": "Canonical live state captured for v3_snap/hard_zig/rb_00020 on 2026-09-02T23:22:20-04:00, then reflected across the 49 cm horizontal/short coordinate: x' = 0.49 - x, y' = y. The goal is reflected with the scene. The robot only needs to start within its allowed region.",
+  "robot_start_m": [
+    0.1917956050568758,
+    0.06091285040974992
+  ],
+  "robot_start_yaw_rad": 3.141592653589793,
+  "goal_marker_m": [
+    0.257073,
+    0.687989
+  ],
+  "movables": [
+    {
+      "name": "obstacle_0_movable",
+      "x_m": 0.2034679756932268,
+      "y_m": 0.2224902565096886,
+      "yaw_deg": 4.1302571978688,
+      "half_extent_m": [
+        0.035,
+        0.075
+      ],
+      "height_m": 0.04
+    },
+    {
+      "name": "obstacle_1_movable",
+      "x_m": 0.0850385798758014,
+      "y_m": 0.2181844394088666,
+      "yaw_deg": 54.9496309468833,
+      "half_extent_m": [
+        0.0375,
+        0.06
+      ],
+      "height_m": 0.05
+    }
+  ],
+  "statics": [
+    {
+      "name": "wall_inner_1",
+      "x_m": 0.3580086981924396,
+      "y_m": 0.2566100968231398,
+      "yaw_deg": 10.49178253413731,
+      "half_extent_m": [
+        0.0975,
+        0.0275
+      ],
+      "height_m": 0.1
+    },
+    {
+      "name": "wall_inner_2",
+      "x_m": 0.1021764636373334,
+      "y_m": 0.4744557338002259,
+      "yaw_deg": 172.9183033526821,
+      "half_extent_m": [
+        0.0975,
+        0.0275
+      ],
+      "height_m": 0.1
+    }
+  ]
+}

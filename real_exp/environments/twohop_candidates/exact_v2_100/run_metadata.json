@@ -1,0 +1,74 @@
+{
+  "amarel_result_root": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_labels_v2_100",
+  "bounded_full_namo_screen": {
+    "twohop_multi_00001": {
+      "elapsed_s": 15.244745,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "replay_status": "passed",
+      "simulator_calls": 13
+    },
+    "twohop_multi_00087": {
+      "elapsed_s": 12.248245,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "replay_status": "passed",
+      "simulator_calls": 16
+    },
+    "twohop_multi_00385": {
+      "elapsed_s": 14.990105,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "replay_status": "passed",
+      "simulator_calls": 35
+    },
+    "twohop_multi_00933": {
+      "elapsed_s": 75.219281,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "replay_status": "passed",
+      "simulator_calls": 36
+    },
+    "twohop_multi_00972": {
+      "elapsed_s": 14.581976,
+      "hop_trace": [
+        2,
+        1,
+        0
+      ],
+      "replay_status": "passed",
+      "simulator_calls": 31
+    }
+  },
+  "exact_selected": {
+    "hard1-hard1": 0,
+    "med2-med2": 5
+  },
+  "jobs": {
+    "hard1-hard1_k1": 61220223,
+    "hard1-hard1_k2": 61220332,
+    "med2-med2_k1": 61220235,
+    "med2-med2_k2": 61220434,
+    "selected_render": 61220673
+  },
+  "scene_ids": [
+    "twohop_multi_00001",
+    "twohop_multi_00087",
+    "twohop_multi_00385",
+    "twohop_multi_00933",
+    "twohop_multi_00972"
+  ],
+  "source_revision": "13320a0602843716e217d8cc88b23b293bb33887"
+}

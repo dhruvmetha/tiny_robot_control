@@ -1,0 +1,6 @@
+{
+  "operator_verdict": "failure",
+  "reason": "Robot fell off the table mid-run on 2026-09-08; the operator ruled it a navigation failure rather than a hardware abort. The recorded summary says outcome=aborted / wall_clock_timeout because the session was interrupted to recover the robot.",
+  "ruled_by": "operator",
+  "ruled_on": "2026-09-08"
+}

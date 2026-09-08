@@ -1,0 +1,60 @@
+✓ NAMO env active on hal0348.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1
+Building namo_rl (Release) into ./build_python
+Using MuJoCo from: /scratch/tdn39/mujoco_pip
+Target arch (-march): x86-64-v3
+Using Python: Python 3.11.15 (/scratch/tdn39/envs/namo/bin/python), SOABI=cpython-311-x86_64-linux-gnu
+-- Using MuJoCo from: /scratch/tdn39/mujoco_pip
+-- yaml-cpp found - using YAML parser
+-- Building Python bindings...
+-- Found Python3: /scratch/tdn39/envs/namo/bin/python
+-- Python3 version: 3.11.15
+-- Python3 include dir: /scratch/tdn39/envs/namo/include/python3.11
+-- Python3 libraries: /scratch/tdn39/envs/namo/lib/libpython3.11.so
+-- Python3 SOABI: cpython-311-x86_64-linux-gnu
+-- Downloading compatible pybind11 for Python 3.11.15...
+-- pybind11 v2.12.0 
+-- Python bindings will be built as 'namo_rl' module
+-- Target Python3 SOABI: cpython-311-x86_64-linux-gnu
+-- Module suffix will be: cpython-311-x86_64-linux-gnu.so
+-- Configuring done (0.4s)
+-- Generating done (0.0s)
+-- Build files have been written to: /scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python
+[100%] Built target namo_rl
+
+Build completed successfully.
+Stamped build_python/BUILD_INFO:
+  git_sha=87b53c4e779e20b6af727413ad92b3ff015f1ada
+  cpp_tree=2cc00efda1355cfd27294709d1a82d6eab14c7ee
+  src_tree=ec31ebc53e1c03ee1cccadedeafb2da1a92f7bd2
+  dirty_cpp=0
+  built_at=2026-09-04T12:53:00-04:00
+  host=hal0348.amarel.rutgers.edu
+  python=Python 3.11.15
+  march=x86-64-v3
+  mj_path=/scratch/tdn39/mujoco_pip
+Canonical PYTHONPATH usage:
+  export PYTHONPATH=/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python:$PYTHONPATH
+[100%] Built target test_wheel_spin
+Loading scene : test_xml/little-car-modeling-package/artifacts/nav_env.xml
+Loading config: config/namo_config_car.yaml
+
+[Case 1] Straight-line drive, both wheels +10.0000 rad/s for 1000 steps
+  start: xy=(-0.3000, 0.3000), yaw=-0.0000 deg
+  end  : xy=(-0.1230, 0.3000), yaw=0.0000 deg
+  wheels rotated: left=25.8232 rad, right=25.8232 rad
+  chassis displacement: 177.0076 mm
+  PASS
+
+[Case 2] Logical CCW spin, left=-10.0000 rad/s, right=+10.0000 rad/s for 200 steps
+  start: xy=(-0.3000, 0.3000), yaw=-0.0000 deg
+  end  : yaw=75.2741 deg
+  wheels rotated: left=8.5712 rad, right=-8.5712 rad
+  accumulated signed yaw change: 578.9961 deg
+  PASS
+
+All wheel-spin checks passed.
+..........                                                               [100%]
+10 passed in 0.94s
+binding: /scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python/namo_rl.cpython-311-x86_64-linux-gnu.so
+93bf15b93ee957b507f22187e9aab703e0bfa2f305870b90ac9e9a64baef0fa3  build_python/namo_rl.cpython-311-x86_64-linux-gnu.so
+e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726  config/wavefront_inflation.yaml

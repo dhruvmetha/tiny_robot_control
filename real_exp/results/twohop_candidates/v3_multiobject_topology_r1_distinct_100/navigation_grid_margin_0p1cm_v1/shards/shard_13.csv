@@ -1,0 +1,6 @@
+scene,movables,ignored_reached,ignored_crosses,penalised_reached,penalised_crosses,penalised_hits,clear_route_at_penalty,needs_a_push,failure,start_was_trapped
+/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/med2-med2/twohop_multi_00353,3,True,68,True,59,"obstacle_0_movable,obstacle_1_movable",,True,,False
+/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/med2-med2/twohop_multi_00385,3,True,63,True,50,"obstacle_0_movable,obstacle_1_movable",,True,,False
+/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/med2-med2/twohop_multi_00389,3,True,84,True,58,"obstacle_0_movable,obstacle_1_movable",,True,,False
+/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/med2-med2/twohop_multi_00392,3,True,53,True,51,"obstacle_0_movable,obstacle_1_movable",,True,,False
+/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/med2-med2/twohop_multi_00395,3,True,68,True,52,"obstacle_0_movable,obstacle_1_movable",,True,,False

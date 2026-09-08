@@ -1,0 +1,14 @@
+{
+  "status": "failure",
+  "failure_cause": "autonomous_navigation_failed",
+  "failure_detail": "The experiment owner marked the penalise baseline as a failure after repeated blocked/no-progress attempts without reaching the goal.",
+  "recorded_on": "2026-09-05",
+  "automated_run_completed": false,
+  "automated_evidence": {
+    "completed_failed_subgoals": 4,
+    "fifth_attempt_started": true,
+    "completed_outcome": "failed",
+    "stuck_cause": "blocked"
+  },
+  "note": "The human table-side verdict is authoritative. The partial automated trace and video are preserved; no summary row was synthesized."
+}

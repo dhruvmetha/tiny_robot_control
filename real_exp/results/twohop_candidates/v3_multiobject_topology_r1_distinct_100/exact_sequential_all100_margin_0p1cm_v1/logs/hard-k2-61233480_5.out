@@ -1,0 +1,13 @@
+✓ NAMO env active on halk0037.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1
+  [Progress] 37 primitives tried (18.4/sec) — current: obj=obstacle_1_movable edge=13 depth=2 neighbour='goal'
+  [Progress] 58 primitives tried (10.4/sec) — current: obj=obstacle_1_movable edge=42 depth=2 neighbour='goal'
+  [Progress] 73 primitives tried (7.4/sec) — current: obj=obstacle_1_movable edge=25 depth=3 neighbour='goal'
+  [Progress] 87 primitives tried (7.0/sec) — current: obj=obstacle_1_movable edge=41 depth=3 neighbour='goal'
+  [Progress] 99 primitives tried (5.7/sec) — current: obj=obstacle_1_movable edge=17 depth=4 neighbour='goal'
+  [Progress] 110 primitives tried (5.5/sec) — current: obj=obstacle_1_movable edge=34 depth=4 neighbour='goal'
+  [Progress] 121 primitives tried (5.0/sec) — current: obj=obstacle_1_movable edge=3 depth=5 neighbour='goal'
+  [Progress] 130 primitives tried (4.2/sec) — current: obj=obstacle_1_movable edge=21 depth=5 neighbour='goal'
+  [Progress] 140 primitives tried (4.6/sec) — current: obj=obstacle_1_movable edge=35 depth=5 neighbour='goal'
+  [Progress] 149 primitives tried (4.4/sec) — current: obj=obstacle_1_movable edge=46 depth=5 neighbour='goal'
+1/1 21s no_opener_decrements_hop
+done 1 rows -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_labels_v2_100_margin_0p1cm_v1/hard1-hard1/k2/shards/task_0005/rows.jsonl in 21s

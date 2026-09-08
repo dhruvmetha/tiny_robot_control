@@ -1,0 +1,267 @@
+{
+  "arena_cm": [
+    49.0,
+    77.5
+  ],
+  "classification_note": "Source labels steer composition only; measure K1 and K2 on composed states.",
+  "classification_status": "needs_revalidation",
+  "clone_readiness": "obj_4b requires a unique ArUco tag before real trials.",
+  "counterfactual_trace": {
+    "both_openers_removed": [
+      true,
+      true,
+      true
+    ],
+    "initial": [
+      false,
+      false,
+      false
+    ],
+    "margin_both_openers_removed": [
+      false,
+      false,
+      true
+    ],
+    "post_k1": [
+      true,
+      false,
+      false
+    ],
+    "remove_auxiliary_only": [
+      false,
+      false,
+      false
+    ],
+    "remove_k2_only": [
+      false,
+      true,
+      false
+    ]
+  },
+  "exact_geometry_id": "f42e95686d8edf4643015c26b3db017bf2e9f441a07818137b7f3e2e1d1a5db1",
+  "gate_contract": {
+    "boundary_objects": [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    "gate_members": [
+      [
+        "obstacle_0_movable",
+        "obstacle_2_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ]
+  },
+  "gate_walls": [
+    {
+      "center_cm": [
+        34.6,
+        19.3
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 8.6,
+      "long_cm": 19.5,
+      "physical_id": "wall_9",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_1",
+      "yaw_deg": 8.6
+    },
+    {
+      "center_cm": [
+        27.4,
+        28.7
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 27.9,
+      "long_cm": 19.5,
+      "physical_id": "wall_10",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_2",
+      "yaw_deg": 27.9
+    },
+    {
+      "center_cm": [
+        38.9,
+        44.5
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 10.6,
+      "long_cm": 19.5,
+      "physical_id": "wall_11",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_3",
+      "yaw_deg": 10.6
+    },
+    {
+      "center_cm": [
+        13.9,
+        53.5
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 70.5,
+      "long_cm": 19.5,
+      "physical_id": "wall_12",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_4",
+      "yaw_deg": 70.5
+    }
+  ],
+  "generator": "gen_real_buildable_twohop_multiobject.py",
+  "generator_seed": 9022026,
+  "goal_cm": [
+    8.0,
+    64.0
+  ],
+  "middle_anchor_cm": [
+    16.0,
+    36.5
+  ],
+  "movables": [
+    {
+      "center_cm": [
+        7.5,
+        24.0
+      ],
+      "height_cm": 4.0,
+      "long_axis_bearing_deg": 94.6,
+      "long_cm": 15.0,
+      "physical_role": "obj_1",
+      "short_cm": 7.0,
+      "sim_id": "obstacle_0_movable",
+      "source_shape": "obj_1",
+      "yaw_deg": 4.6
+    },
+    {
+      "center_cm": [
+        26.0,
+        49.0
+      ],
+      "height_cm": 5.0,
+      "long_axis_bearing_deg": 22.6,
+      "long_cm": 12.0,
+      "physical_role": "obj_4b",
+      "short_cm": 7.5,
+      "sim_id": "obstacle_1_movable",
+      "source_shape": "obj_4",
+      "yaw_deg": 112.6
+    },
+    {
+      "center_cm": [
+        8.8,
+        8.3
+      ],
+      "height_cm": 5.0,
+      "long_axis_bearing_deg": 121.7,
+      "long_cm": 12.0,
+      "physical_role": "obj_4a",
+      "short_cm": 7.5,
+      "sim_id": "obstacle_2_movable",
+      "source_shape": "obj_4",
+      "yaw_deg": 31.7
+    }
+  ],
+  "multi_gate_index": 0,
+  "normalized_layout_id": "283386aa5393a2ef18e46bc3328ad785fb47e692342892729fa9b310be96b6b2",
+  "physical_roles": {
+    "obstacle_0_movable": "obj_1",
+    "obstacle_1_movable": "obj_4b",
+    "obstacle_2_movable": "obj_4a"
+  },
+  "requested_profile": "hard1-hard1",
+  "robot_start_bearing_deg": 0.0,
+  "robot_start_cm": [
+    33.0,
+    11.0
+  ],
+  "run_namo_goal_flag": "--goal 8.0 64.0",
+  "scene_id": "twohop_multi_00589",
+  "source_multiobject": {
+    "auxiliary": {
+      "cx": 0.087593,
+      "cy": 0.233832,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.553446157282137
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00154/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "b6d61d20ff4c185ea279cdcc621e9dcbc7193bcfc71c973c013dfa77dace633d",
+    "goal": [
+      0.137115,
+      0.688304
+    ],
+    "robot_start": [
+      0.33251399134672804,
+      0.1351386619478184
+    ],
+    "solve_rate": 0.5879,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00154/env.xml",
+    "source_scene_id": "rb_00154",
+    "target": {
+      "cx": 0.075,
+      "cy": 0.390679,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.08011862372780638
+    },
+    "walls": [
+      {
+        "cx": 0.34577,
+        "cy": 0.343888,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.14936527738567473
+      },
+      {
+        "cx": 0.274038,
+        "cy": 0.437522,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.48624977680317144
+      }
+    ],
+    "xml_sha256": "2d77fb31679075b505a3ec9b3a846f0fac28aee0c43cdea34386a952f84d9ba9"
+  },
+  "source_singleobject": {
+    "build_id": "hard_084",
+    "physical_object": "obj_4",
+    "source_label": {
+      "axis": "1push",
+      "push_kind": "one_push",
+      "solve_rate": 0.0333,
+      "tier": "hard",
+      "tried": 30,
+      "valid_1push": 1,
+      "valid_first_push": 10
+    }
+  },
+  "topology_target": {
+    "boundary_objects": [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    "hop_count": 2
+  }
+}

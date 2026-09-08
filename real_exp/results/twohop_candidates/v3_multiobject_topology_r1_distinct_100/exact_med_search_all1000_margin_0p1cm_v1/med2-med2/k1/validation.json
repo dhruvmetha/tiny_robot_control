@@ -1,0 +1,24 @@
+{
+  "manifest": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/med2-med2/manifest.txt",
+  "manifest_rows": 1000,
+  "merged_rows": 1000,
+  "nodecrement_xml_artifacts": 75,
+  "profile": "med2-med2",
+  "semantic_reject_counts": {
+    "status_not_ok": 315,
+    "wrong_hop_transition": 10,
+    "wrong_opened_boundary": 19,
+    "wrong_output_next_boundary": 1
+  },
+  "stage": "k1",
+  "status_counts": {
+    "no_kh1_opener": 108,
+    "no_opener_decrements_hop": 79,
+    "no_region_path": 41,
+    "ok": 685,
+    "scene_timeout": 87
+  },
+  "unique_inputs": 1000,
+  "unreferenced_xml_artifacts": [],
+  "validated_post_k1": 655
+}

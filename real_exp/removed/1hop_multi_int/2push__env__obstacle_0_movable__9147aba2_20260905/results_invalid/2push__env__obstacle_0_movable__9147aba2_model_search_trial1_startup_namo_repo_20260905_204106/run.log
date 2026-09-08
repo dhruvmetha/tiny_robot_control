@@ -1,0 +1,4 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__9147aba2/model_search/trial1
+Error: $NAMO_REPO is set to /home/dhruv/projects_dhruv/namo/robot_control, which does not hold python/namo/cpp_bindings. Point it at the namo_cpp checkout or unset it.
+[Diagnostics] Wrote summary.json (outcome=crashed)

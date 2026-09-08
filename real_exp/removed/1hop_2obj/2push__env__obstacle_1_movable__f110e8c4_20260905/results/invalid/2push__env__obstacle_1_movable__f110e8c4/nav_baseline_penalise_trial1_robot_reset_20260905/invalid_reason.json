@@ -1,0 +1,8 @@
+{
+  "status": "invalid",
+  "excluded_from_results": true,
+  "reason": "Robot required a physical reset during the run.",
+  "original_arm": "nav_baseline_penalise",
+  "original_trial": "trial1",
+  "recorded_on": "2026-09-05"
+}

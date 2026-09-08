@@ -1,0 +1,1379 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/model_pure_policy/trial5
+planner: full_namo  |  exec mode: greedy_policy  local search: best_first/model  ckpt=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt  hmax=2  budget=canonical  scope=inherited  device=cuda
+
+Starting NAMO execution...
+Press ESCAPE to quit
+==================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/model_pure_policy/trial5/recordings/session_2026-09-03_00-03-16/full_run.mp4
+[Runtime] Full-run video + per-subgoal meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/model_pure_policy/trial5/recordings/session_2026-09-03_00-03-16
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[Runtime] 🔌 Robot 1 ONLINE at startup (alive_ids=[1], ap_connected=True)
+
+[Trapped-start recovery] Robot at (23.5, 6.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[SerialSender] ⚠️ Car 1 DISCONNECTED (alive now: [])
+
+[Trapped-start recovery] Robot at (23.5, 6.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed (autonomous): nav=0.40, push=0.40
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOBridge] Warming best-first scorer (checkpoint=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt, device=cuda); excluded from planning time
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[NAMOPlanner] Best-first scorer warmup: 3732ms (recorded separately; excluded from planning_wall_time_ms)
+
+[Trapped-start recovery] Robot at (23.5, 6.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #1: 174ms, cumulative: 174ms
+[DIAG] plan #1 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (20.4,21.9,θ=185.4°), edge=16, push_steps=5, robot at (23.5,6.6,θ=88.6°)
+[DIAG] subgoal #1 start recorded
+
+[Trapped-start recovery] Robot at (23.5, 6.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(23.5,6.6) → approach=(21.0,9.9)
+[NAV] navigate_to: goal=(21.0,9.9) θ=95.4°, from=(23.5,6.6), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000320_001.png (98x155)
+[NAV] navigate_to: already at goal (all 6 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(23.5,6.6,θ=88.6°) goal_θ=95.4° heading_err=+6.8°
+[NAV] !! STALL: stuck in POST_ROTATING for 150 ticks, target_θ=95.4°, current_θ=88.5°, heading_err=+6.8°. Likely cause: rotation tolerance / stable-hold not converging.
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (20.4,21.9,θ=185.4°), robot at (20.6,6.0,θ=94.1°), edge=16, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(20.4,21.9) theta=185.4° size=(15x7.0)
+[PUSH DEBUG] Edge 16: face=0 sample=8
+[PUSH DEBUG] Theoretical: edge_pt (21.1,9.9) → mid_pt (19.9,21.8)
+[PUSH DEBUG] Actual line: (20.6,6.0) → (19.5,17.9)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.7, 24.6) theta=93.7°
+[PUSH] Δobject 'obj_1': Δpos=(-0.94,+13.49) |Δ|=13.52cm, Δθ=-1.36°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.4, 21.7) theta=52.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.8cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 24.1cm
+[PUSH] Object 'obj_1': (19.5, 35.4) theta=184.0° size=(15x7.0)
+[PUSH]   Distance robot→object center: 10.8cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 16.9cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000349.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000349.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.1, 19.6) [BACKWARD]
+[PUSH] Retreat reached target after 90 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.8, 21.5), target (19.1, 19.6)
+[Subgoal] <-- DONE (SUCCESS) after 32.2s, robot now at (18.8,21.4,θ=92.2°)
+[DIAG] subgoal #1 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_1, Δ=13.49cm, stuck=False)
+[NAMOPlanner] Greedy policy step complete; replanning from fresh camera observation
+
+[Trapped-start recovery] Robot at (18.8, 21.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+
+[Trapped-start recovery] Robot at (18.8, 21.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #2: 106ms, cumulative: 280ms
+[DIAG] plan #2 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.5,35.3,θ=184.3°), edge=18, push_steps=5, robot at (18.8,21.4,θ=92.2°)
+[DIAG] subgoal #2 start recorded
+
+[Trapped-start recovery] Robot at (18.8, 21.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.8,21.4) → approach=(19.4,23.3)
+[NAV] navigate_to: goal=(19.4,23.3) θ=94.3°, from=(18.8,21.4), obstacles=4
+[WavefrontPathPlanner] Start blocked at (18.8, 21.4) cm — applied trapped-start recovery (now FREE)
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000353_002.png (98x155)
+[NAV] navigate_to: already at goal (all 3 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.8,21.4,θ=92.2°) goal_θ=94.3° heading_err=+2.0°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (19.5,35.3,θ=184.3°), robot at (18.8,21.4,θ=92.5°), edge=18, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.5,35.3) theta=184.3° size=(15x7.0)
+[PUSH DEBUG] Edge 18: face=0 sample=9
+[PUSH DEBUG] Theoretical: edge_pt (19.4,23.3) → mid_pt (18.5,35.3)
+[PUSH DEBUG] Actual line: (18.8,21.4) → (17.9,33.3)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.2, 24.5) theta=94.2°
+[PUSH] Δobject 'obj_1': Δpos=(+0.04,+0.03) |Δ|=0.06cm, Δθ=+0.13°
+[PUSH] !! STUCK: object moved 0.06cm (<2.0cm) AND rotated 0.13° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.4, 21.7) theta=52.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.2cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 23.9cm
+[PUSH] Object 'obj_1': (19.5, 35.4) theta=184.4° size=(15x7.0)
+[PUSH]   Distance robot→object center: 10.9cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.4cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000358.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000358.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.4, 19.7) [BACKWARD]
+[PUSH] Retreat reached target after 87 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.8, 21.5), target (19.4, 19.7)
+[Subgoal] <-- DONE (FAILED) after 8.5s, robot now at (18.8,21.5,θ=103.1°)
+[DIAG] subgoal #2 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.00cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=18
+[NAMOPlanner] Blacklisted (obj_1, edge=18); blacklist size now 1
+[NAMOPlanner] Replanning (attempt 1/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.8, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=5 for replan attempt 1
+
+[Trapped-start recovery] Robot at (18.8, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #3: 99ms, cumulative: 380ms
+[DIAG] plan #3 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.5,35.4,θ=184.2°), edge=20, push_steps=5, robot at (18.8,21.5,θ=103.1°)
+[DIAG] subgoal #3 start recorded
+
+[Trapped-start recovery] Robot at (18.8, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.8,21.5) → approach=(18.9,23.3)
+[NAV] navigate_to: goal=(18.9,23.3) θ=94.2°, from=(18.8,21.5), obstacles=4
+[WavefrontPathPlanner] Start blocked at (18.8, 21.5) cm — applied trapped-start recovery (now FREE)
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000401_003.png (98x155)
+[NAV] navigate_to: already at goal (all 4 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.8,21.5,θ=103.1°) goal_θ=94.2° heading_err=-8.9°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (19.5,35.4,θ=184.3°), robot at (18.9,21.1,θ=92.5°), edge=20, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.5,35.4) theta=184.3° size=(15x7.0)
+[PUSH DEBUG] Edge 20: face=0 sample=10
+[PUSH DEBUG] Theoretical: edge_pt (18.9,23.3) → mid_pt (18.0,35.2)
+[PUSH DEBUG] Actual line: (18.9,21.1) → (18.0,33.1)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.3, 24.5) theta=94.0°
+[PUSH] Δobject 'obj_1': Δpos=(+0.08,+0.03) |Δ|=0.08cm, Δθ=+0.22°
+[PUSH] !! STUCK: object moved 0.08cm (<2.0cm) AND rotated 0.22° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.3, 21.7) theta=53.0° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.4cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 24.0cm
+[PUSH] Object 'obj_1': (19.6, 35.4) theta=184.5° size=(15x7.0)
+[PUSH]   Distance robot→object center: 10.9cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.3cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000407.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000407.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.1, 19.6) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 1.4 cm, stopped 3.6 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.4, 23.1), target (19.1, 19.6)
+[Subgoal] <-- DONE (FAILED) after 12.7s, robot now at (18.4,23.1,θ=87.7°)
+[DIAG] subgoal #3 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.06cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=20
+[NAMOPlanner] Blacklisted (obj_1, edge=20); blacklist size now 2
+[NAMOPlanner] Replanning (attempt 2/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.4, 23.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=6 for replan attempt 2
+
+[Trapped-start recovery] Robot at (18.4, 23.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #4: 108ms, cumulative: 487ms
+[DIAG] plan #4 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.5,35.4,θ=184.2°), edge=22, push_steps=5, robot at (18.4,23.1,θ=87.7°)
+[DIAG] subgoal #4 start recorded
+
+[Trapped-start recovery] Robot at (18.4, 23.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] >>> PUSHING start (skip-approach): obj 'obj_1' at (19.5,35.4,θ=184.2°), robot at (18.4,23.1,θ=87.7°), edge=22, push_steps=5
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.5,35.4) theta=184.2° size=(15x7.0)
+[PUSH DEBUG] Edge 22: face=0 sample=11
+[PUSH DEBUG] Theoretical: edge_pt (18.4,23.2) → mid_pt (17.5,35.2)
+[PUSH DEBUG] Actual line: (18.4,23.1) → (17.6,35.1)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.3, 24.5) theta=94.6°
+[PUSH] Δobject 'obj_1': Δpos=(+0.07,+0.03) |Δ|=0.08cm, Δθ=+0.50°
+[PUSH] !! STUCK: object moved 0.08cm (<2.0cm) AND rotated 0.50° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.4, 21.7) theta=52.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.3cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 24.0cm
+[PUSH] Object 'obj_1': (19.6, 35.4) theta=184.7° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.0cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.3cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000419.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000419.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.1, 19.6) [BACKWARD]
+[PUSH] Retreat reached target after 89 steps: moved 3.0 cm, stopped 2.0 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.6, 21.5), target (19.1, 19.6)
+[Subgoal] <-- DONE (FAILED) after 8.0s, robot now at (18.6,21.5,θ=98.2°)
+[DIAG] subgoal #4 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.03cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=22
+[NAMOPlanner] Blacklisted (obj_1, edge=22); blacklist size now 3
+[NAMOPlanner] Replanning (attempt 3/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.6, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=7 for replan attempt 3
+
+[Trapped-start recovery] Robot at (18.6, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #5: 88ms, cumulative: 575ms
+[DIAG] plan #5 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.6,35.4,θ=184.6°), edge=12, push_steps=5, robot at (18.6,21.5,θ=98.2°)
+[DIAG] subgoal #5 start recorded
+
+[Trapped-start recovery] Robot at (18.6, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.6,21.5) → approach=(21.0,23.4)
+[NAV] navigate_to: goal=(21.0,23.4) θ=94.6°, from=(18.6,21.5), obstacles=4
+[WavefrontPathPlanner] Start blocked at (18.6, 21.5) cm — applied trapped-start recovery (now FREE)
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000422_004.png (98x155)
+[NAV] navigate_to: already at goal (all 5 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.6,21.5,θ=98.2°) goal_θ=94.6° heading_err=-3.6°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (19.6,35.4,θ=184.8°), robot at (18.7,21.1,θ=93.3°), edge=12, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.6,35.4) theta=184.8° size=(15x7.0)
+[PUSH DEBUG] Edge 12: face=0 sample=6
+[PUSH DEBUG] Theoretical: edge_pt (21.1,23.4) → mid_pt (20.1,35.4)
+[PUSH DEBUG] Actual line: (18.7,21.1) → (17.7,33.1)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.0, 24.5) theta=95.1°
+[PUSH] Δobject 'obj_1': Δpos=(+0.06,+0.04) |Δ|=0.07cm, Δθ=-0.02°
+[PUSH] !! STUCK: object moved 0.07cm (<2.0cm) AND rotated -0.02° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.4, 21.7) theta=52.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.1cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 23.9cm
+[PUSH] Object 'obj_1': (19.6, 35.4) theta=184.8° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.0cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.6cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000428.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000428.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.3, 19.7) [BACKWARD]
+[PUSH] Retreat reached target after 85 steps: moved 3.0 cm, stopped 2.0 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.7, 21.5), target (19.3, 19.7)
+[Subgoal] <-- DONE (FAILED) after 8.7s, robot now at (18.7,21.5,θ=103.7°)
+[DIAG] subgoal #5 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.00cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=12
+[NAMOPlanner] Blacklisted (obj_1, edge=12); blacklist size now 4
+[NAMOPlanner] Replanning (attempt 4/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=8 for replan attempt 4
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #6: 99ms, cumulative: 674ms
+[DIAG] plan #6 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.6,35.4,θ=184.8°), edge=14, push_steps=5, robot at (18.7,21.5,θ=103.7°)
+[DIAG] subgoal #6 start recorded
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.7,21.5) → approach=(20.6,23.4)
+[NAV] navigate_to: goal=(20.6,23.4) θ=94.8°, from=(18.7,21.5), obstacles=4
+[WavefrontPathPlanner] Start blocked at (18.7, 21.5) cm — applied trapped-start recovery (now FREE)
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000431_005.png (98x155)
+[NAV] navigate_to: already at goal (all 4 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.7,21.5,θ=103.7°) goal_θ=94.8° heading_err=-8.9°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (19.6,35.4,θ=184.7°), robot at (18.7,21.2,θ=96.3°), edge=14, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.6,35.4) theta=184.7° size=(15x7.0)
+[PUSH DEBUG] Edge 14: face=0 sample=7
+[PUSH DEBUG] Theoretical: edge_pt (20.6,23.4) → mid_pt (19.6,35.4)
+[PUSH DEBUG] Actual line: (18.7,21.2) → (17.7,33.2)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.0, 24.5) theta=94.6°
+[PUSH] Δobject 'obj_1': Δpos=(+0.00,+0.03) |Δ|=0.03cm, Δθ=-0.18°
+[PUSH] !! STUCK: object moved 0.03cm (<2.0cm) AND rotated -0.18° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.3, 21.7) theta=53.0° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.1cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 23.9cm
+[PUSH] Object 'obj_1': (19.6, 35.4) theta=184.5° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.0cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.6cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000438.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000438.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.3, 19.7) [BACKWARD]
+[PUSH] Retreat reached target after 90 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.7, 21.5), target (19.3, 19.7)
+[Subgoal] <-- DONE (FAILED) after 9.5s, robot now at (18.7,21.5,θ=103.1°)
+[DIAG] subgoal #6 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.05cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=14
+[NAMOPlanner] Blacklisted (obj_1, edge=14); blacklist size now 5
+[NAMOPlanner] Replanning (attempt 5/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=9 for replan attempt 5
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #7: 84ms, cumulative: 759ms
+[DIAG] plan #7 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.5,35.4,θ=184.3°), edge=16, push_steps=5, robot at (18.7,21.5,θ=103.1°)
+[DIAG] subgoal #7 start recorded
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.7,21.5) → approach=(19.9,23.4)
+[NAV] navigate_to: goal=(19.9,23.4) θ=94.3°, from=(18.7,21.5), obstacles=4
+[WavefrontPathPlanner] Start blocked at (18.7, 21.5) cm — applied trapped-start recovery (now FREE)
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000441_006.png (98x155)
+[NAV] navigate_to: already at goal (all 4 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.7,21.5,θ=103.1°) goal_θ=94.3° heading_err=-8.9°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (19.5,35.4,θ=184.4°), robot at (18.8,21.0,θ=92.5°), edge=16, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.5,35.4) theta=184.4° size=(15x7.0)
+[PUSH DEBUG] Edge 16: face=0 sample=8
+[PUSH DEBUG] Theoretical: edge_pt (20.0,23.4) → mid_pt (19.0,35.3)
+[PUSH DEBUG] Actual line: (18.8,21.0) → (17.8,33.0)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.1, 24.5) theta=94.4°
+[PUSH] Δobject 'obj_1': Δpos=(+0.02,+0.02) |Δ|=0.03cm, Δθ=+0.08°
+[PUSH] !! STUCK: object moved 0.03cm (<2.0cm) AND rotated 0.08° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.4, 21.7) theta=53.0° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.1cm
+[PUSH] Object 'wall_11': (10.1, 47.1) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 23.9cm
+[PUSH] Object 'obj_1': (19.6, 35.4) theta=184.5° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.0cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.5cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000447.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000447.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.3, 19.7) [BACKWARD]
+[PUSH] Retreat reached target after 91 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.7, 21.5), target (19.3, 19.7)
+[Subgoal] <-- DONE (FAILED) after 9.1s, robot now at (18.7,21.5,θ=102.8°)
+[DIAG] subgoal #7 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.03cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=16
+[NAMOPlanner] Blacklisted (obj_1, edge=16); blacklist size now 6
+[NAMOPlanner] Replanning (attempt 6/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=10 for replan attempt 6
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #8: 114ms, cumulative: 873ms
+[DIAG] plan #8 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.5,35.4,θ=184.4°), edge=10, push_steps=5, robot at (18.7,21.5,θ=102.8°)
+[DIAG] subgoal #8 start recorded
+
+[Trapped-start recovery] Robot at (18.7, 21.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.7,21.5) → approach=(21.4,23.5)
+[NAV] navigate_to: goal=(21.4,23.5) θ=94.4°, from=(18.7,21.5), obstacles=4
+[WavefrontPathPlanner] Start blocked at (18.7, 21.5) cm — applied trapped-start recovery (now FREE)
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000450_007.png (98x155)
+[NAV] navigate_to: already at goal (all 5 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.7,21.5,θ=102.8°) goal_θ=94.4° heading_err=-8.4°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (19.5,35.4,θ=184.4°), robot at (18.8,21.1,θ=92.3°), edge=10, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.5,35.4) theta=184.4° size=(15x7.0)
+[PUSH DEBUG] Edge 10: face=0 sample=5
+[PUSH DEBUG] Theoretical: edge_pt (21.4,23.5) → mid_pt (20.5,35.4)
+[PUSH DEBUG] Actual line: (18.8,21.1) → (17.8,33.0)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.2, 24.5) theta=94.6°
+[PUSH] Δobject 'obj_1': Δpos=(+0.07,+0.03) |Δ|=0.08cm, Δθ=+0.28°
+[PUSH] !! STUCK: object moved 0.08cm (<2.0cm) AND rotated 0.28° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.4, 21.7) theta=52.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.2cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 23.9cm
+[PUSH] Object 'obj_1': (19.6, 35.4) theta=184.7° size=(15x7.0)
+[PUSH]   Distance robot→object center: 11.0cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.4cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000456.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000456.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.0, 19.6) [BACKWARD]
+[PUSH] Retreat reached target after 90 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.6, 21.5), target (19.0, 19.6)
+[Subgoal] <-- DONE (FAILED) after 9.1s, robot now at (18.6,21.4,θ=98.5°)
+[DIAG] subgoal #8 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.03cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=10
+[NAMOPlanner] Blacklisted (obj_1, edge=10); blacklist size now 7
+[NAMOPlanner] Replanning (attempt 7/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.6, 21.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=11 for replan attempt 7
+
+[Trapped-start recovery] Robot at (18.6, 21.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #9: 100ms, cumulative: 973ms
+[DIAG] plan #9 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (19.5,35.4,θ=184.4°), edge=8, push_steps=5, robot at (18.6,21.4,θ=98.5°)
+[DIAG] subgoal #9 start recorded
+
+[Trapped-start recovery] Robot at (18.6, 21.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.6,21.4) → approach=(22.0,23.5)
+[NAV] navigate_to: goal=(22.0,23.5) θ=94.4°, from=(18.6,21.4), obstacles=4
+[WavefrontPathPlanner] Start blocked at (18.6, 21.4) cm — applied trapped-start recovery (now FREE)
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000459_008.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(18.6,21.4,θ=98.5°) pre_target_θ=41.7° heading_err=-56.8°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(18.6,21.0,θ=82.7°) path_waypoints=6 final_wp=(21.2,23.8)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(20.3,23.1,θ=44.2°) goal_θ=94.4° heading_err=+50.2°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (19.6,35.4,θ=184.4°), robot at (20.7,24.1,θ=96.9°), edge=8, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(19.6,35.4) theta=184.4° size=(15x7.0)
+[PUSH DEBUG] Edge 8: face=0 sample=4
+[PUSH DEBUG] Theoretical: edge_pt (22.0,23.5) → mid_pt (21.0,35.5)
+[PUSH DEBUG] Actual line: (20.7,24.1) → (19.7,36.1)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (20.5, 24.7) theta=95.0°
+[PUSH] Δobject 'obj_1': Δpos=(+0.12,+0.02) |Δ|=0.12cm, Δθ=+0.81°
+[PUSH] !! STUCK: object moved 0.12cm (<2.0cm) AND rotated 0.81° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (8.3, 21.7) theta=52.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 12.5cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 24.7cm
+[PUSH] Object 'obj_1': (19.7, 35.4) theta=185.2° size=(15x7.0)
+[PUSH]   Distance robot→object center: 10.7cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 15.1cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000508.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000508.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (19.2, 19.9) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 2.3 cm, stopped 2.7 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (19.8, 22.5), target (19.2, 19.9)
+[Subgoal] <-- DONE (FAILED) after 14.8s, robot now at (19.8,22.5,θ=65.2°)
+[DIAG] subgoal #9 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_1, Δ=0.16cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_1 edge=8
+[NAMOPlanner] Blacklisted (obj_1, edge=8); blacklist size now 8
+[NAMOPlanner] Replanning (attempt 8/20) with new random seed...
+
+[Trapped-start recovery] Robot at (19.8, 22.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=12 for replan attempt 8
+
+[Trapped-start recovery] Robot at (19.8, 22.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #10: 177ms, cumulative: 1150ms
+[DIAG] plan #10 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (8.4,21.7,θ=53.0°), edge=43, push_steps=5, robot at (19.8,22.5,θ=65.2°)
+[DIAG] subgoal #10 start recorded
+
+[Trapped-start recovery] Robot at (19.8, 22.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(19.8,22.5) → approach=(4.1,14.6)
+[NAV] navigate_to: goal=(4.1,14.6) θ=53.0°, from=(19.8,22.5), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000515_009.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(19.8,22.5,θ=65.2°) pre_target_θ=-83.4° heading_err=-148.7°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(19.1,22.6,θ=317.8°) path_waypoints=36 final_wp=(4.2,14.3)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(4.7,13.3,θ=128.4°) goal_θ=53.0° heading_err=-75.4°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (8.3,21.7,θ=53.0°), robot at (4.1,12.8,θ=52.9°), edge=43, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(8.3,21.7) theta=53.0° size=(12.0x7.5)
+[PUSH DEBUG] Edge 43: face=3 sample=6
+[PUSH DEBUG] Theoretical: edge_pt (4.1,14.6) → mid_pt (9.0,21.2)
+[PUSH DEBUG] Actual line: (4.1,12.8) → (9.0,19.4)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (16.9, 29.7) theta=49.2°
+[PUSH] Δobject 'obj_4': Δpos=(+12.45,+14.33) |Δ|=18.98cm, Δθ=-5.08°
+[PUSH] Robot position is FREE in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.6cm
+[PUSH] Object 'obj_4': (20.8, 36.0) theta=47.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.4cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 19.1cm
+[PUSH] Object 'obj_1': (27.1, 40.3) theta=227.3° size=(15x7.0)
+[PUSH]   Distance robot→object center: 14.7cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000531.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000531.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (12.5, 27.3) [BACKWARD]
+[PUSH] Retreat reached target after 108 steps: moved 3.0 cm, stopped 2.0 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (14.1, 28.4), target (12.5, 27.3)
+[Subgoal] <-- DONE (SUCCESS) after 20.0s, robot now at (14.1,28.4,θ=29.2°)
+[DIAG] subgoal #10 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_4, Δ=19.18cm, stuck=False)
+[NAMOPlanner] Dropped 8 blacklist entry/entries for ['obj_1', 'obj_4'] (their body frames moved); 0 retained
+[NAMOPlanner] Greedy policy step complete; replanning from fresh camera observation
+
+[Trapped-start recovery] Robot at (14.1, 28.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+
+[Trapped-start recovery] Robot at (14.1, 28.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #11: 104ms, cumulative: 1254ms
+[DIAG] plan #11 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (21.0,36.1,θ=49.4°), edge=41, push_steps=5, robot at (14.1,28.4,θ=29.2°)
+[DIAG] subgoal #11 start recorded
+
+[Trapped-start recovery] Robot at (14.1, 28.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(14.1,28.4) → approach=(17.0,28.7)
+[NAV] navigate_to: goal=(17.0,28.7) θ=49.4°, from=(14.1,28.4), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000535_010.png (98x155)
+[NAV] navigate_to: already at goal (all 4 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(14.1,28.4,θ=29.2°) goal_θ=49.4° heading_err=+20.1°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (21.0,36.1,θ=49.3°), robot at (14.6,28.8,θ=50.3°), edge=41, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(21.0,36.1) theta=49.3° size=(12.0x7.5)
+[PUSH DEBUG] Edge 41: face=3 sample=5
+[PUSH DEBUG] Theoretical: edge_pt (16.9,28.7) → mid_pt (22.3,35.0)
+[PUSH DEBUG] Actual line: (14.6,28.8) → (20.0,35.0)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (16.3, 30.9) theta=50.2°
+[PUSH] Δobject 'obj_4': Δpos=(+0.29,+0.10) |Δ|=0.31cm, Δθ=+2.06°
+[PUSH] !! STUCK: object moved 0.31cm (<2.0cm) AND rotated 2.06° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is FREE in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.2cm
+[PUSH] Object 'obj_4': (21.3, 36.2) theta=51.4° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.3cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 20.1cm
+[PUSH] Object 'obj_1': (27.4, 40.8) theta=231.1° size=(15x7.0)
+[PUSH]   Distance robot→object center: 14.9cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000542.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000542.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (12.0, 28.4) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 2.3 cm, stopped 2.7 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (14.3, 29.9), target (12.0, 28.4)
+[Subgoal] <-- DONE (FAILED) after 13.5s, robot now at (14.3,29.9,θ=19.4°)
+[DIAG] subgoal #11 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.30cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=41
+[NAMOPlanner] Blacklisted (obj_4, edge=41); blacklist size now 1
+[NAMOPlanner] Replanning (attempt 1/20) with new random seed...
+
+[Trapped-start recovery] Robot at (14.3, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=5 for replan attempt 1
+
+[Trapped-start recovery] Robot at (14.3, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #12: 86ms, cumulative: 1340ms
+[DIAG] plan #12 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (21.3,36.2,θ=51.5°), edge=39, push_steps=5, robot at (14.3,29.9,θ=19.4°)
+[DIAG] subgoal #12 start recorded
+
+[Trapped-start recovery] Robot at (14.3, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(14.3,29.9) → approach=(18.2,28.1)
+[NAV] navigate_to: goal=(18.2,28.1) θ=51.5°, from=(14.3,29.9), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000548_011.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(14.3,29.9,θ=19.4°) pre_target_θ=-35.6° heading_err=-55.0°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(14.1,29.8,θ=4.9°) path_waypoints=7 final_wp=(18.2,28.3)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(16.9,28.5,θ=334.7°) goal_θ=51.5° heading_err=+76.7°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (21.3,36.2,θ=51.5°), robot at (17.7,28.4,θ=52.7°), edge=39, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(21.3,36.2) theta=51.5° size=(12.0x7.5)
+[PUSH DEBUG] Edge 39: face=3 sample=4
+[PUSH DEBUG] Theoretical: edge_pt (18.2,28.1) → mid_pt (23.3,34.6)
+[PUSH DEBUG] Actual line: (17.7,28.4) → (22.9,34.8)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (19.9, 29.5) theta=57.9°
+[PUSH] Δobject 'obj_4': Δpos=(+0.95,+0.40) |Δ|=1.03cm, Δθ=+7.20°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 20.0cm
+[PUSH] Object 'obj_4': (22.2, 36.6) theta=58.7° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.4cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 16.2cm
+[PUSH] Object 'obj_1': (27.8, 41.9) theta=238.2° size=(15x7.0)
+[PUSH]   Distance robot→object center: 14.7cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000557.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000557.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.9, 26.5) [BACKWARD]
+[PUSH] Retreat reached target after 104 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (17.4, 27.8), target (15.9, 26.5)
+[Subgoal] <-- DONE (SUCCESS) after 12.0s, robot now at (17.4,27.8,θ=35.1°)
+[DIAG] subgoal #12 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_4, Δ=1.06cm, stuck=False)
+[NAMOPlanner] Dropped 1 blacklist entry/entries for ['obj_1', 'obj_4'] (their body frames moved); 0 retained
+[NAMOPlanner] Greedy policy step complete; replanning from fresh camera observation
+
+[Trapped-start recovery] Robot at (17.4, 27.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+
+[Trapped-start recovery] Robot at (17.4, 27.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #13: 92ms, cumulative: 1431ms
+[DIAG] plan #13 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (22.3,36.6,θ=59.2°), edge=41, push_steps=5, robot at (17.4,27.8,θ=35.1°)
+[DIAG] subgoal #13 start recorded
+
+[Trapped-start recovery] Robot at (17.4, 27.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(17.4,27.8) → approach=(19.5,28.7)
+[NAV] navigate_to: goal=(19.5,28.7) θ=59.2°, from=(17.4,27.8), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000601_012.png (98x155)
+[NAV] navigate_to: already at goal (all 4 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(17.4,27.8,θ=35.1°) goal_θ=59.2° heading_err=+24.1°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (22.3,36.6,θ=59.4°), robot at (17.9,28.3,θ=59.7°), edge=41, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(22.3,36.6) theta=59.4° size=(12.0x7.5)
+[PUSH DEBUG] Edge 41: face=3 sample=5
+[PUSH DEBUG] Theoretical: edge_pt (19.5,28.7) → mid_pt (23.7,35.7)
+[PUSH DEBUG] Actual line: (17.9,28.3) → (22.1,35.4)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (19.1, 30.4) theta=60.5°
+[PUSH] Δobject 'obj_4': Δpos=(+0.31,+0.15) |Δ|=0.35cm, Δθ=+2.27°
+[PUSH] !! STUCK: object moved 0.35cm (<2.0cm) AND rotated 2.27° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.9cm
+[PUSH] Object 'obj_4': (22.6, 36.8) theta=61.6° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.3cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.2cm
+[PUSH] Object 'obj_1': (28.0, 42.4) theta=241.0° size=(15x7.0)
+[PUSH]   Distance robot→object center: 14.9cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000608.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000608.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.3, 27.2) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 1.2 cm, stopped 3.8 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.2, 29.6), target (15.3, 27.2)
+[Subgoal] <-- DONE (FAILED) after 13.6s, robot now at (18.2,29.6,θ=27.2°)
+[DIAG] subgoal #13 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.37cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=41
+[NAMOPlanner] Blacklisted (obj_4, edge=41); blacklist size now 1
+[NAMOPlanner] Replanning (attempt 1/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.2, 29.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=5 for replan attempt 1
+
+[Trapped-start recovery] Robot at (18.2, 29.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #14: 84ms, cumulative: 1515ms
+[DIAG] plan #14 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (22.6,36.8,θ=61.6°), edge=39, push_steps=5, robot at (18.2,29.6,θ=27.2°)
+[DIAG] subgoal #14 start recorded
+
+[Trapped-start recovery] Robot at (18.2, 29.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.2,29.6) → approach=(20.9,28.3)
+[NAV] navigate_to: goal=(20.9,28.3) θ=61.6°, from=(18.2,29.6), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000614_013.png (98x155)
+[NAV] navigate_to: already at goal (all 6 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.2,29.6,θ=27.2°) goal_θ=61.6° heading_err=+34.4°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (22.6,36.8,θ=61.7°), robot at (18.4,29.7,θ=63.5°), edge=39, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(22.6,36.8) theta=61.7° size=(12.0x7.5)
+[PUSH DEBUG] Edge 39: face=3 sample=4
+[PUSH DEBUG] Theoretical: edge_pt (21.0,28.3) → mid_pt (24.9,35.5)
+[PUSH DEBUG] Actual line: (18.4,29.7) → (22.3,36.9)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.9, 30.7) theta=63.3°
+[PUSH] Δobject 'obj_4': Δpos=(+0.20,+0.16) |Δ|=0.26cm, Δθ=+2.09°
+[PUSH] !! STUCK: object moved 0.26cm (<2.0cm) AND rotated 2.09° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.6cm
+[PUSH] Object 'obj_4': (22.8, 36.9) theta=63.8° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.3cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.4cm
+[PUSH] Object 'obj_1': (28.1, 42.7) theta=243.8° size=(15x7.0)
+[PUSH]   Distance robot→object center: 15.1cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000621.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000621.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.3, 27.3) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 1.1 cm, stopped 3.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.1, 30.0), target (15.3, 27.3)
+[Subgoal] <-- DONE (FAILED) after 13.2s, robot now at (18.1,30.0,θ=31.9°)
+[DIAG] subgoal #14 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.27cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=39
+[NAMOPlanner] Blacklisted (obj_4, edge=39); blacklist size now 2
+[NAMOPlanner] Replanning (attempt 2/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.1, 30.0) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=6 for replan attempt 2
+
+[Trapped-start recovery] Robot at (18.1, 30.0) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #15: 85ms, cumulative: 1600ms
+[DIAG] plan #15 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (22.8,36.9,θ=63.6°), edge=43, push_steps=5, robot at (18.1,30.0,θ=31.9°)
+[DIAG] subgoal #15 start recorded
+
+[Trapped-start recovery] Robot at (18.1, 30.0) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.1,30.0) → approach=(19.9,29.1)
+[NAV] navigate_to: goal=(19.9,29.1) θ=63.6°, from=(18.1,30.0), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000628_014.png (98x155)
+[NAV] navigate_to: already at goal (all 4 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.1,30.0,θ=31.9°) goal_θ=63.6° heading_err=+31.8°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (22.8,36.9,θ=63.6°), robot at (18.9,30.7,θ=62.8°), edge=43, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(22.8,36.9) theta=63.6° size=(12.0x7.5)
+[PUSH DEBUG] Edge 43: face=3 sample=6
+[PUSH DEBUG] Theoretical: edge_pt (19.9,29.1) → mid_pt (23.6,36.5)
+[PUSH DEBUG] Actual line: (18.9,30.7) → (22.6,38.1)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (19.0, 30.7) theta=63.2°
+[PUSH] Δobject 'obj_4': Δpos=(+0.02,+0.02) |Δ|=0.03cm, Δθ=+0.32°
+[PUSH] !! STUCK: object moved 0.03cm (<2.0cm) AND rotated 0.32° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is FREE in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.6cm
+[PUSH] Object 'obj_4': (22.9, 36.9) theta=63.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.3cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.4cm
+[PUSH] Object 'obj_1': (28.2, 42.7) theta=243.6° size=(15x7.0)
+[PUSH]   Distance robot→object center: 15.1cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000635.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000635.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.4, 27.3) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 1.1 cm, stopped 3.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (18.2, 29.9), target (15.4, 27.3)
+[Subgoal] <-- DONE (FAILED) after 13.9s, robot now at (18.2,29.9,θ=31.1°)
+[DIAG] subgoal #15 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.02cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=43
+[NAMOPlanner] Blacklisted (obj_4, edge=43); blacklist size now 3
+[NAMOPlanner] Replanning (attempt 3/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.2, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=7 for replan attempt 3
+
+[Trapped-start recovery] Robot at (18.2, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #16: 97ms, cumulative: 1697ms
+[DIAG] plan #16 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (22.9,36.9,θ=63.8°), edge=47, push_steps=5, robot at (18.2,29.9,θ=31.1°)
+[DIAG] subgoal #16 start recorded
+
+[Trapped-start recovery] Robot at (18.2, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.2,29.9) → approach=(18.5,29.9)
+[NAV] navigate_to: goal=(18.5,29.9) θ=63.8°, from=(18.2,29.9), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000642_015.png (98x155)
+[NAV] !! navigate_to FAILED: planner returned 1 raw points, 1 after dedup. Treating as FAILED.
+[PUSH] navigate_to() returned: False, nav_state=FAILED
+[PUSH] Navigation planning failed for approach to (18.5, 29.9)
+[PUSH]   Robot position: (18.2, 29.9)
+[PUSH]   Distance to approach: 0.3cm
+[PUSH]   Obstacles passed to navigation: 4
+[PUSH]     [0] pos=(22.9, 36.9) theta=63.8° size=(12x8)
+[PUSH]     [1] pos=(10.1, 47.0) theta=82.4° size=(20x6)
+[PUSH]     [2] pos=(35.6, 25.6) theta=101.6° size=(20x6)
+[PUSH]     [3] pos=(28.1, 42.7) theta=243.5° size=(15x7)
+[PUSH]   Wavefront check: robot=FREE, goal=FREE
+[PUSH]   Wavefront CAN find path (1 waypoints) - RVG is the issue
+[Subgoal] <-- DONE (FAILED) after 0.1s, robot now at (18.2,29.9,θ=31.1°)
+[DIAG] subgoal #16 end recorded (outcome=failed)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=47
+[NAMOPlanner] Blacklisted (obj_4, edge=47); blacklist size now 4
+[NAMOPlanner] Replanning (attempt 4/20) with new random seed...
+
+[Trapped-start recovery] Robot at (18.2, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=8 for replan attempt 4
+
+[Trapped-start recovery] Robot at (18.2, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #17: 85ms, cumulative: 1782ms
+[DIAG] plan #17 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (22.9,36.9,θ=63.9°), edge=45, push_steps=5, robot at (18.2,29.9,θ=31.1°)
+[DIAG] subgoal #17 start recorded
+
+[Trapped-start recovery] Robot at (18.2, 29.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(18.2,29.9) → approach=(19.2,29.5)
+[NAV] navigate_to: goal=(19.2,29.5) θ=63.9°, from=(18.2,29.9), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000642_016.png (98x155)
+[NAV] navigate_to: already at goal (all 2 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(18.2,29.9,θ=31.1°) goal_θ=63.9° heading_err=+32.7°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (22.8,36.9,θ=63.7°), robot at (19.0,30.7,θ=62.7°), edge=45, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(22.8,36.9) theta=63.7° size=(12.0x7.5)
+[PUSH DEBUG] Edge 45: face=3 sample=7
+[PUSH DEBUG] Theoretical: edge_pt (19.2,29.5) → mid_pt (22.8,36.9)
+[PUSH DEBUG] Actual line: (19.0,30.7) → (22.7,38.1)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (19.2, 30.7) theta=63.7°
+[PUSH] Δobject 'obj_4': Δpos=(+0.07,+0.04) |Δ|=0.08cm, Δθ=+0.82°
+[PUSH] !! STUCK: object moved 0.08cm (<2.0cm) AND rotated 0.82° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.7cm
+[PUSH] Object 'obj_4': (22.9, 37.0) theta=64.5° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.3cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.2cm
+[PUSH] Object 'obj_1': (28.1, 42.8) theta=244.8° size=(15x7.0)
+[PUSH]   Distance robot→object center: 15.0cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000650.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000650.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.6, 27.2) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 2.2 cm, stopped 2.8 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (17.5, 29.2), target (15.6, 27.2)
+[Subgoal] <-- DONE (FAILED) after 14.1s, robot now at (17.5,29.2,θ=33.4°)
+[DIAG] subgoal #17 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.06cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=45
+[NAMOPlanner] Blacklisted (obj_4, edge=45); blacklist size now 5
+[NAMOPlanner] Replanning (attempt 5/20) with new random seed...
+
+[Trapped-start recovery] Robot at (17.5, 29.2) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=9 for replan attempt 5
+
+[Trapped-start recovery] Robot at (17.5, 29.2) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #18: 85ms, cumulative: 1867ms
+[DIAG] plan #18 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (22.9,36.9,θ=64.6°), edge=49, push_steps=5, robot at (17.5,29.2,θ=33.4°)
+[DIAG] subgoal #18 start recorded
+
+[Trapped-start recovery] Robot at (17.5, 29.2) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(17.5,29.2) → approach=(17.8,30.2)
+[NAV] navigate_to: goal=(17.8,30.2) θ=64.6°, from=(17.5,29.2), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000656_017.png (98x155)
+[NAV] navigate_to: already at goal (all 2 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(17.5,29.2,θ=33.4°) goal_θ=64.6° heading_err=+31.3°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (22.9,36.9,θ=64.6°), robot at (18.4,30.0,θ=64.9°), edge=49, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(22.9,36.9) theta=64.6° size=(12.0x7.5)
+[PUSH DEBUG] Edge 49: face=3 sample=9
+[PUSH DEBUG] Theoretical: edge_pt (17.8,30.2) → mid_pt (21.4,37.7)
+[PUSH DEBUG] Actual line: (18.4,30.0) → (21.9,37.5)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.8, 31.0) theta=65.4°
+[PUSH] Δobject 'obj_4': Δpos=(+0.16,+0.12) |Δ|=0.20cm, Δθ=+1.27°
+[PUSH] !! STUCK: object moved 0.20cm (<2.0cm) AND rotated 1.27° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (23.1, 37.1) theta=65.9° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.4cm
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.3° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.2cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.7cm
+[PUSH] Object 'obj_1': (28.2, 43.0) theta=244.7° size=(15x7.0)
+[PUSH]   Distance robot→object center: 15.3cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000704.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000704.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.3, 27.5) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 2.2 cm, stopped 2.8 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (17.1, 29.5), target (15.3, 27.5)
+[Subgoal] <-- DONE (FAILED) after 14.0s, robot now at (17.1,29.5,θ=34.9°)
+[DIAG] subgoal #18 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.21cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=49
+[NAMOPlanner] Blacklisted (obj_4, edge=49); blacklist size now 6
+[NAMOPlanner] Replanning (attempt 6/20) with new random seed...
+
+[Trapped-start recovery] Robot at (17.1, 29.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=10 for replan attempt 6
+
+[Trapped-start recovery] Robot at (17.1, 29.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #19: 90ms, cumulative: 1957ms
+[DIAG] plan #19 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (23.1,37.0,θ=66.0°), edge=53, push_steps=5, robot at (17.1,29.5,θ=34.9°)
+[DIAG] subgoal #19 start recorded
+
+[Trapped-start recovery] Robot at (17.1, 29.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(17.1,29.5) → approach=(16.6,30.9)
+[NAV] navigate_to: goal=(16.6,30.9) θ=66.0°, from=(17.1,29.5), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000711_018.png (98x155)
+[NAV] navigate_to: already at goal (all 3 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(17.1,29.5,θ=34.9°) goal_θ=66.0° heading_err=+31.1°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (23.1,37.0,θ=68.1°), robot at (18.0,30.3,θ=66.8°), edge=53, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(23.1,37.0) theta=68.1° size=(12.0x7.5)
+[PUSH DEBUG] Edge 53: face=3 sample=11
+[PUSH DEBUG] Theoretical: edge_pt (16.9,30.6) → mid_pt (19.9,38.3)
+[PUSH DEBUG] Actual line: (18.0,30.3) → (21.0,38.0)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.4, 31.4) theta=67.6°
+[PUSH] Δobject 'obj_4': Δpos=(+0.22,+0.13) |Δ|=0.26cm, Δθ=-0.60°
+[PUSH] !! STUCK: object moved 0.26cm (<2.0cm) AND rotated -0.60° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is FREE in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.7cm
+[PUSH] Object 'obj_4': (23.3, 37.1) theta=67.5° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.6cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.2cm
+[PUSH] Object 'obj_1': (28.3, 43.3) theta=247.0° size=(15x7.0)
+[PUSH]   Distance robot→object center: 15.5cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000718.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000718.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.0, 27.7) [BACKWARD]
+[PUSH] Retreat TIMEOUT after 200 steps: moved 2.2 cm, stopped 2.8 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (16.8, 29.8), target (15.0, 27.7)
+[Subgoal] <-- DONE (FAILED) after 14.0s, robot now at (16.8,29.8,θ=37.9°)
+[DIAG] subgoal #19 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.28cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=53
+[NAMOPlanner] Blacklisted (obj_4, edge=53); blacklist size now 7
+[NAMOPlanner] Replanning (attempt 7/20) with new random seed...
+
+[Trapped-start recovery] Robot at (16.8, 29.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=11 for replan attempt 7
+
+[Trapped-start recovery] Robot at (16.8, 29.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #20: 86ms, cumulative: 2043ms
+[DIAG] plan #20 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (23.4,37.1,θ=67.6°), edge=55, push_steps=5, robot at (16.8,29.8,θ=37.9°)
+[DIAG] subgoal #20 start recorded
+
+[Trapped-start recovery] Robot at (16.8, 29.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(16.8,29.8) → approach=(16.3,31.2)
+[NAV] navigate_to: goal=(16.3,31.2) θ=67.6°, from=(16.8,29.8), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000725_019.png (98x155)
+[NAV] navigate_to: already at goal (all 4 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(16.8,29.8,θ=37.9°) goal_θ=67.6° heading_err=+29.7°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (23.3,37.2,θ=67.1°), robot at (17.6,30.6,θ=67.7°), edge=55, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(23.3,37.2) theta=67.1° size=(12.0x7.5)
+[PUSH DEBUG] Edge 55: face=3 sample=12
+[PUSH DEBUG] Theoretical: edge_pt (16.1,31.2) → mid_pt (19.3,38.8)
+[PUSH DEBUG] Actual line: (17.6,30.6) → (20.8,38.2)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (17.8, 31.6) theta=68.0°
+[PUSH] Δobject 'obj_4': Δpos=(+0.23,+0.11) |Δ|=0.26cm, Δθ=+1.01°
+[PUSH] !! STUCK: object moved 0.26cm (<2.0cm) AND rotated 1.01° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.2cm
+[PUSH] Object 'obj_4': (23.5, 37.3) theta=68.1° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 8.0cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.6° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.8cm
+[PUSH] Object 'obj_1': (28.3, 43.4) theta=248.2° size=(15x7.0)
+[PUSH]   Distance robot→object center: 15.8cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000732.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000732.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (14.5, 27.9) [BACKWARD]
+[PUSH] Retreat reached target after 102 steps: moved 3.0 cm, stopped 2.0 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (15.8, 29.4), target (14.5, 27.9)
+[Subgoal] <-- DONE (FAILED) after 10.8s, robot now at (15.8,29.4,θ=45.4°)
+[DIAG] subgoal #20 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.15cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=55
+[NAMOPlanner] Blacklisted (obj_4, edge=55); blacklist size now 8
+[NAMOPlanner] Replanning (attempt 8/20) with new random seed...
+
+[Trapped-start recovery] Robot at (15.8, 29.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=12 for replan attempt 8
+
+[Trapped-start recovery] Robot at (15.8, 29.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #21: 83ms, cumulative: 2126ms
+[DIAG] plan #21 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (23.4,37.2,θ=69.2°), edge=59, push_steps=5, robot at (15.8,29.4,θ=45.4°)
+[DIAG] subgoal #21 start recorded
+
+[Trapped-start recovery] Robot at (15.8, 29.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(15.8,29.4) → approach=(14.9,31.7)
+[NAV] navigate_to: goal=(14.9,31.7) θ=69.2°, from=(15.8,29.4), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000736_020.png (98x155)
+[NAV] navigate_to: already at goal (all 5 waypoints within 3.5cm of robot). Skipping FOLLOWING.
+[PUSH] navigate_to() returned: True, nav_state=POST_ROTATING
+[NAV] state - -> POST_ROTATING pose=(15.8,29.4,θ=45.4°) goal_θ=69.2° heading_err=+23.7°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (23.4,37.2,θ=68.1°), robot at (16.1,30.0,θ=68.5°), edge=59, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(23.4,37.2) theta=68.1° size=(12.0x7.5)
+[PUSH DEBUG] Edge 59: face=3 sample=14
+[PUSH DEBUG] Theoretical: edge_pt (14.7,31.8) → mid_pt (17.8,39.5)
+[PUSH DEBUG] Actual line: (16.1,30.0) → (19.2,37.6)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (16.8, 32.1) theta=68.4°
+[PUSH] Δobject 'obj_4': Δpos=(+0.23,+0.01) |Δ|=0.23cm, Δθ=+0.28°
+[PUSH] !! STUCK: object moved 0.23cm (<2.0cm) AND rotated 0.28° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'obj_4': (23.6, 37.3) theta=68.4° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 8.6cm
+[PUSH] Object 'wall_11': (10.1, 47.1) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 16.4cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 19.9cm
+[PUSH] Object 'obj_1': (28.2, 43.5) theta=249.6° size=(15x7.0)
+[PUSH]   Distance robot→object center: 16.2cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000743.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000743.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (13.5, 28.4) [BACKWARD]
+[PUSH] Retreat reached target after 120 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (14.7, 29.9), target (13.5, 28.4)
+[Subgoal] <-- DONE (FAILED) after 11.1s, robot now at (14.6,29.8,θ=46.9°)
+[DIAG] subgoal #21 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.30cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=59
+[NAMOPlanner] Blacklisted (obj_4, edge=59); blacklist size now 9
+[NAMOPlanner] Replanning (attempt 9/20) with new random seed...
+
+[Trapped-start recovery] Robot at (14.6, 29.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=13 for replan attempt 9
+
+[Trapped-start recovery] Robot at (14.6, 29.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #22: 97ms, cumulative: 2223ms
+[DIAG] plan #22 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (23.7,37.3,θ=69.1°), edge=51, push_steps=5, robot at (14.6,29.8,θ=46.9°)
+[DIAG] subgoal #22 start recorded
+
+[Trapped-start recovery] Robot at (14.6, 29.8) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(14.6,29.8) → approach=(18.3,30.5)
+[NAV] navigate_to: goal=(18.3,30.5) θ=69.1°, from=(14.6,29.8), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000747_021.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(14.6,29.8,θ=46.9°) pre_target_θ=7.1° heading_err=-39.8°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(14.6,29.7,θ=46.9°) path_waypoints=5 final_wp=(18.2,30.2)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(17.4,30.6,θ=358.6°) goal_θ=69.1° heading_err=+70.4°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (23.7,37.3,θ=69.2°), robot at (18.2,30.6,θ=70.6°), edge=51, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(23.7,37.3) theta=69.2° size=(12.0x7.5)
+[PUSH DEBUG] Edge 51: face=3 sample=10
+[PUSH DEBUG] Theoretical: edge_pt (18.3,30.5) → mid_pt (21.3,38.2)
+[PUSH DEBUG] Actual line: (18.2,30.6) → (21.1,38.3)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (18.5, 31.5) theta=70.0°
+[PUSH] Δobject 'obj_4': Δpos=(+0.05,+0.10) |Δ|=0.11cm, Δθ=+1.21°
+[PUSH] !! STUCK: object moved 0.11cm (<2.0cm) AND rotated 1.21° (<5.0°). Marking subgoal as FAILED for blacklist.
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 17.6cm
+[PUSH] Object 'obj_4': (23.7, 37.4) theta=70.4° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.8cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.1cm
+[PUSH] Object 'obj_1': (28.3, 43.6) theta=250.1° size=(15x7.0)
+[PUSH]   Distance robot→object center: 15.6cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000755.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000755.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (15.3, 27.7) [BACKWARD]
+[PUSH] Retreat reached target after 89 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (16.4, 29.2), target (15.3, 27.7)
+[Subgoal] <-- DONE (FAILED) after 11.3s, robot now at (16.4,29.2,θ=47.8°)
+[DIAG] subgoal #22 end recorded (outcome=failed)
+[DIAG] push recorded (obj=obj_4, Δ=0.07cm, stuck=True)
+[NAMOPlanner] Subgoal FAILED: obj_4 edge=51
+[NAMOPlanner] Blacklisted (obj_4, edge=51); blacklist size now 10
+[NAMOPlanner] Replanning (attempt 10/20) with new random seed...
+
+[Trapped-start recovery] Robot at (16.4, 29.2) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOPlanner] Using shuffle_seed=14 for replan attempt 10
+
+[Trapped-start recovery] Robot at (16.4, 29.2) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #23: 83ms, cumulative: 2306ms
+[DIAG] plan #23 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (23.7,37.3,θ=70.3°), edge=8, push_steps=5, robot at (16.4,29.2,θ=47.8°)
+[DIAG] subgoal #23 start recorded
+
+[Trapped-start recovery] Robot at (16.4, 29.2) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(16.4,29.2) → approach=(13.2,39.3)
+[NAV] navigate_to: goal=(13.2,39.3) θ=-19.7°, from=(16.4,29.2), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000759_022.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(16.4,29.2,θ=47.8°) pre_target_θ=154.5° heading_err=+106.7°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(16.5,29.1,θ=111.0°) path_waypoints=19 final_wp=(12.8,39.2)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(11.9,38.6,θ=48.7°) goal_θ=-19.7° heading_err=-68.4°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (23.7,37.3,θ=69.9°), robot at (11.3,39.2,θ=339.8°), edge=8, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(23.7,37.3) theta=69.9° size=(12.0x7.5)
+[PUSH DEBUG] Edge 8: face=0 sample=4
+[PUSH DEBUG] Theoretical: edge_pt (13.3,39.4) → mid_pt (23.2,35.8)
+[PUSH DEBUG] Actual line: (11.3,39.2) → (21.2,35.5)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (31.7, 31.9) theta=339.4°
+[PUSH] Δobject 'obj_4': Δpos=(+18.20,-3.52) |Δ|=18.54cm, Δθ=+30.48°
+[PUSH] Robot position is FREE in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=81.5° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 26.4cm
+[PUSH] Object 'obj_4': (41.9, 33.8) theta=100.4° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 10.4cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 7.4cm
+[PUSH] Object 'obj_1': (28.4, 43.6) theta=256.1° size=(15x7.0)
+[PUSH]   Distance robot→object center: 12.1cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000811.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000811.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (27.9, 35.2) [BACKWARD]
+[PUSH] Retreat reached target after 151 steps: moved 3.1 cm, stopped 2.0 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (29.6, 34.1), target (27.9, 35.2)
+[Subgoal] <-- DONE (SUCCESS) after 17.3s, robot now at (29.6,34.1,θ=322.0°)
+[DIAG] subgoal #23 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_4, Δ=18.79cm, stuck=False)
+[NAMOPlanner] Dropped 10 blacklist entry/entries for ['obj_1', 'obj_4'] (their body frames moved); 0 retained
+[NAMOPlanner] Greedy policy step complete; replanning from fresh camera observation
+
+[Trapped-start recovery] Robot at (29.6, 34.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+
+[Trapped-start recovery] Robot at (29.6, 34.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #24: 140ms, cumulative: 2446ms
+[DIAG] plan #24 recorded (success=True)
+[Subgoal] --> DISPATCH PUSH: obj 'obj_1' at (28.4,43.6,θ=256.7°), edge=42, push_steps=5, robot at (29.6,34.1,θ=322.0°)
+[DIAG] subgoal #24 start recorded
+
+[Trapped-start recovery] Robot at (29.6, 34.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(29.6,34.1) → approach=(25.5,36.0)
+[NAV] navigate_to: goal=(25.5,36.0) θ=76.7°, from=(29.6,34.1), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000816_023.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(29.6,34.1,θ=322.0°) pre_target_θ=163.0° heading_err=-158.9°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(29.9,34.6,θ=204.8°) path_waypoints=7 final_wp=(25.8,36.2)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(26.0,35.1,θ=128.7°) goal_θ=76.7° heading_err=-52.0°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_1' at (28.3,43.6,θ=256.7°), robot at (25.6,34.8,θ=76.5°), edge=42, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(28.3,43.6) theta=256.7° size=(15x7.0)
+[PUSH DEBUG] Edge 42: face=2 sample=6
+[PUSH DEBUG] Theoretical: edge_pt (25.5,36.0) → mid_pt (27.3,43.8)
+[PUSH DEBUG] Actual line: (25.6,34.8) → (27.4,42.6)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (30.4, 56.4) theta=74.4°
+[PUSH] Δobject 'obj_1': Δpos=(+4.86,+19.79) |Δ|=20.38cm, Δθ=+10.45°
+[PUSH] Robot position is FREE in wavefront
+[PUSH] Object 'wall_11': (10.1, 47.0) theta=82.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 22.4cm
+[PUSH] Object 'obj_4': (42.2, 34.1) theta=102.2° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 25.2cm
+[PUSH] Object 'wall_10': (35.6, 25.6) theta=101.4° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 31.2cm
+[PUSH] Object 'obj_1': (33.2, 63.4) theta=267.1° size=(15x7.0)
+[PUSH]   Distance robot→object center: 7.5cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260903_000826.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260903_000826.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (27.5, 52.3) [BACKWARD]
+[PUSH] Retreat reached target after 130 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (28.4, 54.0), target (27.5, 52.3)
+[Subgoal] <-- DONE (SUCCESS) after 14.6s, robot now at (28.4,54.0,θ=58.0°)
+[DIAG] subgoal #24 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_1, Δ=21.45cm, stuck=False)
+[NAMOPlanner] Greedy policy step complete; replanning from fresh camera observation
+[NAMOPlanner] Goal point BLOCKED but region is open - retargeting to (23.2, 69.8) [2.6cm from goal, cap=12.0cm]
+[DIAG] plan #25 recorded (success=True)
+[Subgoal] --> DISPATCH NAVIGATE: target=(23.2,69.8), robot at (28.4,54.0,θ=58.0°)
+[DIAG] subgoal #25 start recorded
+
+[Trapped-start recovery] Robot at (28.4, 54.0) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAV] navigate_to: goal=(23.2,69.8) θ=any, from=(28.4,54.0), obstacles=4
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260903_000831_024.png (98x155)
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(28.4,54.0,θ=58.0°) pre_target_θ=138.7° heading_err=+80.7°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(28.5,53.9,θ=97.5°) path_waypoints=28 final_wp=(23.2,69.8)
+[Subgoal] <-- DONE (SUCCESS) after 6.9s, robot now at (22.2,70.4,θ=12.4°)
+[DIAG] subgoal #25 end recorded (outcome=success)
+[NAMOPlanner] GOAL REACHED (success-with-retarget)! Distance to retarget point: 1.2cm | Total planning: 24 calls, 2446ms cumulative
+[Runtime] Plan complete - stopping robot
+[Runtime] Shutting down
+
+[Trapped-start recovery] Robot at (22.2, 70.4) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[Diagnostics] Wrote summary.json (outcome=success)
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/model_pure_policy/trial5/recordings/session_2026-09-03_00-03-16/full_run.mp4
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete

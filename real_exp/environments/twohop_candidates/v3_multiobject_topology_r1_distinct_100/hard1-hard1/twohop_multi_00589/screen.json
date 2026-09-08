@@ -1,0 +1,442 @@
+{
+  "actions": [
+    {
+      "depth": 1,
+      "edge_idx": 36,
+      "object_id": "obstacle_0_movable",
+      "target": [
+        0.0021702209673849855,
+        0.24282309814350894,
+        -0.03895070666646165
+      ]
+    },
+    {
+      "depth": 4,
+      "edge_idx": 34,
+      "object_id": "obstacle_1_movable",
+      "target": [
+        0.22238125769224162,
+        0.6641411715426379,
+        -2.1156964411813974
+      ]
+    }
+  ],
+  "branch": "multiobject",
+  "cached_replay": null,
+  "checkpoint": {
+    "path": "/scratch/tdn39/real_exp/checkpoints/HY5U_s2.ckpt",
+    "sha256": "3cf348cf7ba247f2cb143376371fc06771665793783d12e3b37bf596e0e5a854"
+  },
+  "checkpoint_path": "/scratch/tdn39/real_exp/checkpoints/HY5U_s2.ckpt",
+  "checkpoint_sha256": "3cf348cf7ba247f2cb143376371fc06771665793783d12e3b37bf596e0e5a854",
+  "elapsed_s": 8.637622,
+  "gate_contract": {
+    "boundary_objects": [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    "gate_members": [
+      [
+        "obstacle_0_movable",
+        "obstacle_2_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ]
+  },
+  "hop_trace": [
+    2,
+    1,
+    0
+  ],
+  "profile": "hard1-hard1",
+  "rejection_reason": null,
+  "replay": {
+    "action_completion": [
+      true,
+      true
+    ],
+    "actions": [
+      {
+        "depth": 1,
+        "edge_idx": 36,
+        "object_id": "obstacle_0_movable",
+        "target": [
+          0.0021702209673849855,
+          0.24282309814350894,
+          -0.03895070666646165
+        ]
+      },
+      {
+        "depth": 4,
+        "edge_idx": 34,
+        "object_id": "obstacle_1_movable",
+        "target": [
+          0.22238125769224162,
+          0.6641411715426379,
+          -2.1156964411813974
+        ]
+      }
+    ],
+    "boundary_trace": [
+      [
+        [
+          "obstacle_0_movable"
+        ],
+        [
+          "obstacle_1_movable"
+        ]
+      ],
+      [
+        [
+          "obstacle_1_movable"
+        ]
+      ],
+      []
+    ],
+    "gate_contract": {
+      "boundary_objects": [
+        [
+          "obstacle_0_movable"
+        ],
+        [
+          "obstacle_1_movable"
+        ]
+      ],
+      "gate_members": [
+        [
+          "obstacle_0_movable",
+          "obstacle_2_movable"
+        ],
+        [
+          "obstacle_1_movable"
+        ]
+      ]
+    },
+    "hop_trace": [
+      2,
+      1,
+      0
+    ],
+    "mechanical_independence": {
+      "angle_tolerance_deg": 1.0,
+      "failure": null,
+      "k1_to_k2": {
+        "angle_delta_deg": 0.0,
+        "missing": false,
+        "object_id": "obstacle_1_movable",
+        "position_delta_mm": 0.0,
+        "within_tolerance": true
+      },
+      "k1_to_k2_members": [
+        {
+          "angle_delta_deg": 0.0,
+          "missing": false,
+          "object_id": "obstacle_1_movable",
+          "position_delta_mm": 0.0,
+          "within_tolerance": true
+        }
+      ],
+      "k2_to_k1": {
+        "angle_delta_deg": 0.0251,
+        "missing": false,
+        "object_id": "obstacle_0_movable",
+        "position_delta_mm": 0.017,
+        "within_tolerance": true
+      },
+      "k2_to_k1_members": [
+        {
+          "angle_delta_deg": 0.0251,
+          "missing": false,
+          "object_id": "obstacle_0_movable",
+          "position_delta_mm": 0.017,
+          "within_tolerance": true
+        },
+        {
+          "angle_delta_deg": 0.0,
+          "missing": false,
+          "object_id": "obstacle_2_movable",
+          "position_delta_mm": 0.0,
+          "within_tolerance": true
+        }
+      ],
+      "position_tolerance_mm": 2.0,
+      "status": "passed"
+    },
+    "rejection_reason": null,
+    "status": "passed"
+  },
+  "scene_id": "twohop_multi_00589",
+  "search_config": {
+    "planner_config": {
+      "algorithm_params": {
+        "best_first_agg": "mean5",
+        "best_first_combine": "q",
+        "best_first_hmax": 1,
+        "best_first_prior": "model",
+        "best_first_raw": true,
+        "full_namo_audit_next_keyhole_reachability": true,
+        "full_namo_budget_scope": "keyhole",
+        "full_namo_keyhole_simulation_budget": 100,
+        "full_namo_local_search": "best_first",
+        "full_namo_preserve_next_keyhole_access": true,
+        "full_namo_use_cpp_unified_wavefront": true,
+        "goal_strategy": "random_rollout",
+        "max_push_steps": 5,
+        "ml_device": "cpu",
+        "ml_seed": 42,
+        "namo_config_path": "/cache/home/tdn39/projects/namo/namo_cpp_twohop_multiobject/config/namo_config_complete_skill15_car_1x.yaml",
+        "primitive_data_dir": "/cache/home/tdn39/projects/namo/namo_cpp_twohop_multiobject/data",
+        "primitive_prefix": "1x_car_d5_",
+        "push_budget": {
+          "limit": 100,
+          "used": 0
+        },
+        "region_max_chain_depth": 1,
+        "region_selection_strategy": "ml_first",
+        "region_snapshot_seed": 42,
+        "region_success_min_reachable": 1,
+        "region_use_cpp_unified_wavefront": true,
+        "scorer_ckpt": "/scratch/tdn39/real_exp/checkpoints/HY5U_s2.ckpt",
+        "shuffle_seed": 42,
+        "xml_file": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00589/env.xml"
+      },
+      "collect_stats": true,
+      "goals_per_region": 100,
+      "max_depth": 5,
+      "max_goals_per_object": 5,
+      "max_search_time_seconds": 300.0,
+      "max_terminal_checks": 5000,
+      "random_seed": 42,
+      "verbose": false
+    },
+    "solve_task": {
+      "audit_next_keyhole_reachability": true,
+      "best_first_prior": "model",
+      "config_path": "/cache/home/tdn39/projects/namo/namo_cpp_twohop_multiobject/config/namo_config_complete_skill15_car_1x.yaml",
+      "full_namo_max_iterations": null,
+      "goal_strategy": "random_rollout",
+      "goals_per_region": 100,
+      "local_search": "best_first",
+      "max_push_steps": 5,
+      "ml_device": "cpu",
+      "path_length_n": 2,
+      "preserve_next_keyhole_access": true,
+      "primitive_data_dir": "/cache/home/tdn39/projects/namo/namo_cpp_twohop_multiobject/data",
+      "primitive_prefix": "1x_car_d5_",
+      "region_frontier_beam_width": null,
+      "region_max_chain_depth": 1,
+      "region_selection_strategy": "ml_first",
+      "region_success_min_reachable": 1,
+      "rollout_samples_per_state": null,
+      "scorer_ckpt": "/scratch/tdn39/real_exp/checkpoints/HY5U_s2.ckpt",
+      "seed": 42,
+      "simulation_budget": 100,
+      "simulation_budget_scope": "keyhole",
+      "use_cpp_snapshot": true,
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00589/env.xml"
+    }
+  },
+  "simulator_calls": 5,
+  "solution_source": "full_namo",
+  "solver_result": {
+    "kind": "solved",
+    "row": {
+      "iteration_trace": [
+        {
+          "blocked_boundaries": [],
+          "chosen_path": [
+            "robot",
+            "region_3",
+            "goal"
+          ],
+          "chosen_target_region": "region_3",
+          "goal_region": "goal",
+          "iteration": 1,
+          "next_keyhole_reachability": {
+            "exact_edge_sets_unchanged": true,
+            "hop_reduced_by_one": true,
+            "object_identity_unchanged": true,
+            "object_poses_unchanged": true,
+            "objects": {
+              "obstacle_1_movable": {
+                "exact_edge_set_unchanged": true,
+                "gained_edges": [],
+                "lost_edges": [],
+                "pose_dtheta_deg": 0.0,
+                "pose_dxy_mm": 0.0,
+                "pose_unchanged": true,
+                "reachable_edges_after": [
+                  25,
+                  27,
+                  29,
+                  30,
+                  32,
+                  34
+                ],
+                "reachable_edges_before": [
+                  25,
+                  27,
+                  29,
+                  30,
+                  32,
+                  34
+                ]
+              }
+            },
+            "objects_after": [
+              "obstacle_1_movable"
+            ],
+            "objects_before": [
+              "obstacle_1_movable"
+            ],
+            "path_after": [
+              "robot",
+              "goal"
+            ],
+            "path_hops_after": 1,
+            "path_hops_before": 2,
+            "preserved": true,
+            "status": "ok"
+          },
+          "outcome": "opened_target",
+          "rejection_breakdown": {},
+          "robot_neighbors": [
+            "region_3"
+          ],
+          "robot_region": "robot",
+          "target_summary": {
+            "attempt_count": 1,
+            "boundary_exhausted": false,
+            "detail_reasons": [
+              "success"
+            ],
+            "failure_reason": "success",
+            "future_interface": {
+              "accepted": 1,
+              "accepted_detail": {
+                "accepted": true,
+                "failure_reasons": [],
+                "goal_reachable": false,
+                "objects": {
+                  "obstacle_1_movable": {
+                    "all_original_edges_reachable": true,
+                    "gained_edges": [],
+                    "lost_edges": [],
+                    "pose_dtheta_deg": 0.0,
+                    "pose_dxy_mm": 0.0,
+                    "pose_unchanged": true,
+                    "reachable_edges_after": [
+                      25,
+                      27,
+                      29,
+                      30,
+                      32,
+                      34
+                    ],
+                    "reachable_edges_before": [
+                      25,
+                      27,
+                      29,
+                      30,
+                      32,
+                      34
+                    ]
+                  }
+                }
+              },
+              "checks": 1,
+              "first_rejection": null,
+              "rejected": 0,
+              "rejection_reasons": {}
+            },
+            "local_neighbors": [
+              "region_3"
+            ],
+            "local_robot_label": "robot",
+            "target_is_immediate_neighbor": true,
+            "target_neighbor": "region_3"
+          },
+          "total_primitives_attempted": 4
+        },
+        {
+          "blocked_boundaries": [],
+          "chosen_path": [
+            "robot",
+            "goal"
+          ],
+          "chosen_target_region": "goal",
+          "goal_region": "goal",
+          "iteration": 2,
+          "outcome": "opened_target",
+          "rejection_breakdown": {},
+          "robot_neighbors": [
+            "goal"
+          ],
+          "robot_region": "robot",
+          "target_summary": {
+            "attempt_count": 1,
+            "boundary_exhausted": false,
+            "detail_reasons": [
+              "success"
+            ],
+            "failure_reason": "success",
+            "local_neighbors": [
+              "goal"
+            ],
+            "local_robot_label": "robot",
+            "target_is_immediate_neighbor": true,
+            "target_neighbor": "goal"
+          },
+          "total_primitives_attempted": 5
+        },
+        {
+          "blocked_boundaries": [],
+          "iteration": 3,
+          "outcome": "goal_reachable"
+        }
+      ],
+      "path_length_n": 2,
+      "simulation_budget_keyholes_attempted": 2,
+      "simulation_budget_limit_per_keyhole": 100,
+      "simulation_budget_scope": "keyhole",
+      "simulation_budget_used_by_keyhole": [
+        4,
+        1
+      ],
+      "simulation_budget_used_total": 5,
+      "solution": [
+        {
+          "depth": 1,
+          "edge_idx": 36,
+          "object_id": "obstacle_0_movable",
+          "target": [
+            0.0021702209673849855,
+            0.24282309814350894,
+            -0.03895070666646165
+          ]
+        },
+        {
+          "depth": 4,
+          "edge_idx": 34,
+          "object_id": "obstacle_1_movable",
+          "target": [
+            0.22238125769224162,
+            0.6641411715426379,
+            -2.1156964411813974
+          ]
+        }
+      ],
+      "solution_length": 2,
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00589/env.xml"
+    }
+  },
+  "status": "passed",
+  "timeout_evidence": null,
+  "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00589/env.xml"
+}

@@ -1,0 +1,15 @@
+✓ NAMO env active on hal0250.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1
+  [Progress] 29 primitives tried (14.5/sec) — current: obj=obstacle_0_movable edge=57 depth=1 neighbour='region_3'
+  [Progress] 43 primitives tried (6.4/sec) — current: obj=obstacle_0_movable edge=25 depth=2 neighbour='region_3'
+  [Progress] 59 primitives tried (7.2/sec) — current: obj=obstacle_0_movable edge=3 depth=3 neighbour='region_3'
+  [Progress] 68 primitives tried (4.1/sec) — current: obj=obstacle_0_movable edge=21 depth=3 neighbour='region_3'
+  [Progress] 77 primitives tried (4.4/sec) — current: obj=obstacle_0_movable edge=39 depth=3 neighbour='region_3'
+  [Progress] 87 primitives tried (4.7/sec) — current: obj=obstacle_0_movable edge=7 depth=4 neighbour='region_3'
+  [Progress] 93 primitives tried (2.9/sec) — current: obj=obstacle_0_movable edge=19 depth=4 neighbour='region_3'
+  [Progress] 100 primitives tried (3.4/sec) — current: obj=obstacle_0_movable edge=33 depth=4 neighbour='region_3'
+  [Progress] 111 primitives tried (4.7/sec) — current: obj=obstacle_0_movable edge=3 depth=5 neighbour='region_3'
+  [Progress] 117 primitives tried (2.6/sec) — current: obj=obstacle_0_movable edge=15 depth=5 neighbour='region_3'
+  [Progress] 123 primitives tried (2.5/sec) — current: obj=obstacle_0_movable edge=27 depth=5 neighbour='region_3'
+  [Progress] 132 primitives tried (4.4/sec) — current: obj=obstacle_0_movable edge=47 depth=5 neighbour='region_3'
+1/1 27s no_kh1_opener
+done 1 rows -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_hard_search_all1136_margin_0p1cm_v1/hard1-hard1/k1_tail/shards/task_0113/rows.jsonl in 27s

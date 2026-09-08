@@ -1,0 +1,8 @@
+[NAV] navigate_to: goal=(24.5,66.0) θ=any, from=(41.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(41.0,9.0,θ=0.0°) pre_target_θ=129.3° heading_err=+129.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(41.0,9.2,θ=91.0°) path_waypoints=78 final_wp=(24.8,66.2)
+nav_baseline_ignore: status=success reached=True distance_to_goal_cm=1.47 sim_time_s=29.067 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00654/nav_baseline_ignore
+[NAV] navigate_to: goal=(24.5,66.0) θ=any, from=(41.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(41.0,9.0,θ=0.0°) pre_target_θ=86.6° heading_err=+86.6°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(41.1,9.1,θ=47.9°) path_waypoints=83 final_wp=(24.8,66.2)
+nav_baseline_penalise: status=success reached=True distance_to_goal_cm=1.42 sim_time_s=24.367 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00654/nav_baseline_penalise

@@ -1,0 +1,173 @@
+{
+  "arm": "nav_baseline_penalise",
+  "control_hz": 30.0,
+  "control_ticks": 1646,
+  "controller_config": "/scratch/tdn39/real_exp/code/robot_control_nav_realstack_v1/config/controller.yaml",
+  "controller_parameters": {
+    "navigation": {
+      "goal_tolerance_ratio": 0.2,
+      "max_speed": 0.4,
+      "obstacle_proximity_distance_cm": 2.0,
+      "obstacle_proximity_weight": 5.0,
+      "planner": "wavefront",
+      "pre_rotation_skip_angle": 45.0,
+      "robot_geometry_scale": 1.0,
+      "rotation_speed_max": 0.25,
+      "rotation_speed_min": 0.15,
+      "rotation_stable_time": 0.5,
+      "rotation_tolerance_deg": 2.5,
+      "wavefront_debug_dir": "output_dump/wavefront",
+      "wheel_deadband": 0.05
+    },
+    "push_retreat": {
+      "advance_speed": 0.15,
+      "advance_steps": 0,
+      "approach_skip_angle": 30.0,
+      "approach_skip_distance": 1.0,
+      "dynamic_direction": false,
+      "edge_offset_margin_cm": 1.0,
+      "lookahead_ratio": 1.0,
+      "max_approach_steps": 180,
+      "max_speed": 0.4,
+      "min_push_displacement_cm": 2.0,
+      "min_push_rotation_deg": 5.0,
+      "points_per_face": 15,
+      "push_steps": 30,
+      "retreat_cone_angle": 20.0,
+      "retreat_max_dist": 15.0,
+      "retreat_min_dist": 5.0,
+      "retreat_speed": 0.15,
+      "retreat_steer_gain": 0.3,
+      "retreat_steps": 100,
+      "retreat_tolerance": 2.0,
+      "show_wavefront": false,
+      "standoff_multiplier": 0.6,
+      "wheel_deadband": 0.05
+    }
+  },
+  "controller_stack": {
+    "executor": "SubgoalExecutor",
+    "navigation_controller": "NavigationController",
+    "path_follower": "FollowPathController",
+    "planner": "NavigationBaselinePlanner"
+  },
+  "distance_to_goal_cm": 4.81,
+  "elapsed_s": 54.8,
+  "failure_cause": "",
+  "final_robot_pose": {
+    "theta_deg": 166.92222468541564,
+    "x_cm": 12.55851611281566,
+    "y_cm": 69.32355045977187
+  },
+  "goal_cm": [
+    8.0,
+    68.0
+  ],
+  "harness_limit_reached": false,
+  "harness_limit_ticks": 3600,
+  "initial_robot_pose": {
+    "theta_deg": 0.0,
+    "x_cm": 24.5,
+    "y_cm": 9.0
+  },
+  "mode": "penalise",
+  "n_sims": 0,
+  "namo_config": "/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/config/namo_config_complete_skill15_car_1x.yaml",
+  "namo_rl_binding": "/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python/namo_rl.cpython-311-x86_64-linux-gnu.so",
+  "nav_speed": 0.4,
+  "objects_moved": "obstacle_0_movable,obstacle_1_movable",
+  "objects_moved_cm": {
+    "obstacle_0_movable": 8.07,
+    "obstacle_1_movable": 30.33
+  },
+  "outcome": {
+    "arm": "nav_baseline_penalise",
+    "distance_to_goal_cm": 4.81,
+    "elapsed_s": 54.8,
+    "failure_cause": "",
+    "objects_moved": "obstacle_0_movable,obstacle_1_movable",
+    "objects_moved_cm": {
+      "obstacle_0_movable": 8.07,
+      "obstacle_1_movable": 30.33
+    },
+    "reached": true,
+    "route_crosses": "obstacle_1_movable",
+    "route_waypoints": 11,
+    "stopped_x_cm": 12.62,
+    "stopped_y_cm": 69.34,
+    "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+    "stuck_retries": 5
+  },
+  "planned_route_cm": [
+    [
+      13.25,
+      64.75
+    ],
+    [
+      12.75,
+      64.75
+    ],
+    [
+      12.25,
+      64.75
+    ],
+    [
+      11.75,
+      64.75
+    ],
+    [
+      11.25,
+      65.25
+    ],
+    [
+      10.75,
+      65.75
+    ],
+    [
+      10.25,
+      66.25
+    ],
+    [
+      9.75,
+      66.75
+    ],
+    [
+      9.25,
+      67.25
+    ],
+    [
+      8.75,
+      67.75
+    ],
+    [
+      8.25,
+      68.25
+    ]
+  ],
+  "planning_calls": 6,
+  "planning_wall_clock_s": 0.07317955000326037,
+  "reached": true,
+  "reason": "goal reached",
+  "route_crosses": "obstacle_1_movable",
+  "route_waypoints": 11,
+  "scene_xml": "/scratch/tdn39/real_exp/environments/twohop_candidates_topology_distinct_100/hard1-hard1/twohop_multi_00194/env.xml",
+  "schema_version": 1,
+  "simulation_time_s": 54.86666666666611,
+  "status": "success",
+  "stopped_x_cm": 12.62,
+  "stopped_y_cm": 69.34,
+  "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+  "stuck_retries": 5,
+  "trajectory": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00194/nav_baseline_penalise/trajectory.jsonl",
+  "wall_clock_elapsed_s": 3.2161188200116158,
+  "wavefront_inflation": {
+    "navigation_additional_margin_m": 0.0,
+    "push_approach_additional_margin_m": 0.0,
+    "tier1_base_inflation_margin_m": 0.001,
+    "xml_collision_additional_margin_m": 0.08,
+    "xml_min_separation_m": 0.005
+  },
+  "wavefront_inflation_config": "/scratch/tdn39/real_exp/code/robot_control_nav_realstack_v1/config/wavefront_inflation.yaml",
+  "wavefront_inflation_config_sha256": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726",
+  "wheel_command_limit_rad_s": 25.0
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "real_exp_canonical_reset_observation_v1",
+  "scene": "v3_snap/hard_zig/rb_00020",
+  "captured_at": "2026-09-02T23:22:20-04:00",
+  "captured_at_epoch": 1788405740.552481,
+  "camera_service": "tcp://localhost:5556",
+  "goal_cm": [
+    23.2927,
+    68.7989
+  ],
+  "goal_changed": false,
+  "robot_pose_is_reset_target": false,
+  "robot_cm_deg_at_capture": [
+    37.08781367467577,
+    9.36738464766749,
+    68.58379837718559
+  ],
+  "physical_to_scene_mapping": {
+    "wall_10": "wall_inner_1",
+    "wall_11": "wall_inner_2",
+    "obj_1": "obstacle_0_movable",
+    "obj_4": "obstacle_1_movable"
+  },
+  "objects_cm_deg_raw_camera": {
+    "obj_1": [
+      28.653202430677318,
+      22.24902565096886,
+      175.8697428021312
+    ],
+    "obj_4": [
+      40.49614201241986,
+      21.81844394088666,
+      125.0503690531167
+    ],
+    "wall_10": [
+      13.199130180756043,
+      25.66100968231398,
+      79.50821746586269
+    ],
+    "wall_11": [
+      38.782353636266656,
+      47.445573380022594,
+      97.08169664731793
+    ]
+  },
+  "notes": [
+    "All four object poses came from one camera-service observation.",
+    "The placement sheet stores meters and simulator yaw conventions; walls use the configured marker-to-long-axis 90-degree offset.",
+    "The exact robot pose is recorded only for provenance and is not a reset requirement."
+  ]
+}

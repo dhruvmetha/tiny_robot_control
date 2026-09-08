@@ -1,0 +1,16 @@
+{
+  "file": "2push__env__obstacle_0_movable__fbdce248.json",
+  "scene": "v2/dense_solo0/rb_00121",
+  "family": "dense_solo0",
+  "horizon": "2push",
+  "object_id": "obstacle_0_movable",
+  "tier": "medium",
+  "density_pct": 5.455,
+  "n_green": 3,
+  "n_tried": 55,
+  "region": "goal",
+  "n_green_contact": 3,
+  "contact_pct": 100,
+  "gallery_id": "v2/dense_solo0/rb_00121",
+  "dataset": "../real_2mov/"
+}

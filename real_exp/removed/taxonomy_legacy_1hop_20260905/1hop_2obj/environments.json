@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "catalog": "1hop_2obj",
+  "updated_on": "2026-09-05",
+  "environment_count": 1,
+  "identity_rule": "Use the full uid, not rb_00180 alone; build IDs are reused across pools.",
+  "classification_rule": {
+    "hop_count": 1,
+    "movable_object_count": 2,
+    "hop_evidence": "Selected by the experiment owner for the 1hop_2obj stratum.",
+    "object_evidence": "The staged XML and derived build record each contain obstacle_0_movable and obstacle_1_movable."
+  },
+  "environments": [
+    {
+      "uid": "2push__env__obstacle_0_movable__0489c6b2",
+      "scene_uid": "v3__hard_loose__rb_00180",
+      "scene": "v3/hard_loose/rb_00180",
+      "family": "hard_loose",
+      "tier": "hard",
+      "gallery_file": "2push__env__obstacle_0_movable__0489c6b2.json",
+      "selection_record": "environment/selection.json",
+      "source": {
+        "original_xml": "/common/users/dm1487/scratch_namo/real_buildable_2mov/v3/hard_loose/rb_00180/env.xml",
+        "dhruv_linux_staged_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/real_2mov/v3/hard_loose/rb_00180",
+        "catalog_xml": "environment/rb_00180/env.xml",
+        "catalog_build_sheet": "environment/rb_00180/build_sheet_derived.json",
+        "catalog_sweep_record": "environment/rb_00180/sweep_record.json",
+        "env_xml_sha256": "d166f845a6c717fc37615f94b73b1531d106c03f7617c3d9e8ef776861c1e84e",
+        "build_sheet_derived_sha256": "82ac70ed807d71b4551bb9ab2b4704914fed8e4f5c326847ecca1047c446608f",
+        "sweep_record_sha256": "23c70889afa163f1463458617304ced783160e1f8be857e395aa721b1b1b8d0e"
+      },
+      "task": {
+        "horizon": "2push",
+        "initial_object_id": "obstacle_0_movable",
+        "movable_object_ids": ["obstacle_0_movable", "obstacle_1_movable"],
+        "movable_object_count": 2,
+        "region": "goal",
+        "hop_count": 1,
+        "density_pct": 1.333,
+        "n_green": 1,
+        "n_tried": 75,
+        "n_green_contact": 1,
+        "contact_pct": 100
+      },
+      "build": {
+        "robot_start_cm": [41.1561, 7.8505, 0.0],
+        "goal_cm": [35.6066, 68.2536],
+        "movables": {
+          "obstacle_0_movable": [27.2516, 36.0232, 71.735525],
+          "obstacle_1_movable": [41.2452, 31.4049, 17.906461]
+        },
+        "statics": {
+          "wall_inner_1": [10.1043, 40.7406, 11.639201],
+          "wall_inner_2": [33.3108, 49.2088, 104.611878]
+        }
+      },
+      "collected": {
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true,
+          "verdict": "results/real/2push__env__obstacle_0_movable__0489c6b2/nav_verdict.json",
+          "penalise": {
+            "status": "failure",
+            "trial": 1,
+            "human_verdict": "results/real/2push__env__obstacle_0_movable__0489c6b2/nav_baseline_penalise/trial1/human_verdict.json"
+          },
+          "ignore": {
+            "status": "failure",
+            "trial": 1,
+            "distance_to_goal_cm": 39.82,
+            "stuck_retries": 5,
+            "result": "results/real/2push__env__obstacle_0_movable__0489c6b2/nav_baseline_ignore/trial1/nav_baseline_ignore_1788651241.json",
+            "human_verdict": "results/real/2push__env__obstacle_0_movable__0489c6b2/nav_baseline_ignore/trial1/human_verdict.json"
+          }
+        },
+        "real_namo": {
+          "status": "model_policy_in_progress",
+          "next_arm": "model_pure_policy",
+          "next_trial": 2,
+          "shuffle_seed": 1,
+          "result_root": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_pure_policy",
+          "trials": [
+            {
+              "trial": 1,
+              "shuffle_seed": 0,
+              "outcome": "success",
+              "pushes_succeeded": 4,
+              "planning_wall_time_ms": 580.4653870000038,
+              "simulations_used": 0,
+              "model_warmup_ms_excluded": 4007.663481000236,
+              "final_distance_to_goal_cm": 1.2016949521507754,
+              "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_pure_policy/trial1/summary.json"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

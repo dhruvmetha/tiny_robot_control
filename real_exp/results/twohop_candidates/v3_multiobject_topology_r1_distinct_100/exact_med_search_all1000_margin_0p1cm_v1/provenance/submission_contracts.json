@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "reconstructed from the frozen entrypoint, manifests, scheduler accounting, and successful shard layout",
+  "entrypoint": "provenance/scripts/real_twohop_v3_multiobject_label.slurm",
+  "shared_exports": {
+    "RUN_ENV": "provenance/run.env",
+    "LABEL_PROFILE": "med2-med2",
+    "CHAIN_DEPTH": "2",
+    "SCENE_TIMEOUT": "900"
+  },
+  "frozen_environment": {
+    "run_environment": "provenance/run.env",
+    "activation_script_reference_copy": "provenance/environment/activate.sh",
+    "labeling_algorithm_config": "provenance/config/region_opening_exhaustive_2push_multihop_car.yaml",
+    "labeling_binding_path_at_execution": "/cache/home/tdn39/projects/namo/namo_cpp_twohop_339a0dc/build_python",
+    "labeling_binding_sha256": "8827080ee877179aae170e676d44a1c11e999755cf31d09dc304346c22ef8968"
+  },
+  "k1": {
+    "LABEL_STAGE": "k1",
+    "LABEL_MANIFEST": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/med2-med2/manifest.txt",
+    "packaged_manifest": "provenance/inputs/source_manifest.txt",
+    "LABEL_OUT_BASE": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/k1",
+    "jobs": [
+      {"job_id": 61235652, "array": "0-399"},
+      {"job_id": 61236085, "array": "400-599"},
+      {"job_id": 61236197, "array": "600-699"},
+      {"job_id": 61236435, "array": "700-849"},
+      {"job_id": 61236620, "array": "850-999"},
+      {"job_id": 61236816, "array": "485", "purpose": "replacement for preempted task"}
+    ]
+  },
+  "k2": {
+    "LABEL_STAGE": "k2",
+    "aggregate_manifest": "manifests/submitted_exact_med_k1_post.xmls.txt",
+    "aggregate_manifest_order": "same order as med2-med2/exact_med_k1_candidates.tsv and the combined K2 rows",
+    "LABEL_OUT_BASE_pattern": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/k2_exact/batch{batch}",
+    "jobs": [
+      {"job_id": 61235859, "batch": 1, "manifest": "manifests/exact_med_k1_batch1_post.xmls.txt", "array": "0-0", "items": 1},
+      {"job_id": 61235970, "batch": 2, "manifest": "manifests/exact_med_k1_batch2_post.xmls.txt", "array": "0-0", "items": 1},
+      {"job_id": 61236135, "batch": 3, "manifest": "manifests/exact_med_k1_batch3_post.xmls.txt", "array": "0-4", "items": 5},
+      {"job_id": 61236331, "batch": 4, "manifest": "manifests/exact_med_k1_batch4_post.xmls.txt", "array": "0-4", "items": 5},
+      {"job_id": 61236592, "batch": 5, "manifest": "manifests/exact_med_k1_batch5_post.xmls.txt", "array": "0-8", "items": 9},
+      {"job_id": 61236784, "batch": 6, "manifest": "manifests/exact_med_k1_batch6_post.xmls.txt", "array": "0-19", "items": 20},
+      {"job_id": 61236819, "batch": 7, "manifest": "manifests/exact_med_k1_batch7_post.xmls.txt", "array": "0-12", "items": 13},
+      {"job_id": 61236845, "batch": 8, "manifest": "manifests/exact_med_k1_batch8_post.xmls.txt", "array": "0-7", "items": 8},
+      {"job_id": 61236877, "batch": 9, "manifest": "manifests/exact_med_k1_batch9_post.xmls.txt", "array": "0-3", "items": 4},
+      {"job_id": 61236909, "batch": 10, "manifest": "manifests/exact_med_k1_batch10_post.xmls.txt", "array": "0-0", "items": 1},
+      {"job_id": 61236920, "batch": 11, "manifest": "manifests/exact_med_k1_batch11_post.xmls.txt", "array": "0-2", "items": 3}
+    ]
+  }
+}

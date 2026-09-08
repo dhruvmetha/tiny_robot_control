@@ -1,0 +1,19 @@
+{
+  "plan_index": 2,
+  "attempt_index": 0,
+  "start_xml": "plan_002_start.xml",
+  "chain": [
+    {
+      "object_id": "obj_4",
+      "sim_object_id": "obstacle_2_movable",
+      "edge_idx": 45,
+      "push_steps": 5,
+      "depth": 4
+    }
+  ],
+  "starting_robot_pose_sim": [
+    0.39940445685742104,
+    0.33636716496629676,
+    0.9380044538134418
+  ]
+}

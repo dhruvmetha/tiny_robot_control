@@ -1,0 +1,6 @@
+✓ NAMO env active on halk0099.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1
+  [Progress] 23 primitives tried (11.1/sec) — current: obj=obstacle_0_movable edge=41 depth=4 neighbour='region_4'
+  [Progress] 31 primitives tried (1.8/sec) — current: obj=obstacle_0_movable edge=35 depth=1 neighbour='region_4'
+  [Progress] 77 primitives tried (22.8/sec) — current: obj=obstacle_0_movable edge=47 depth=1 neighbour='region_4'
+1/1 10s ok
+done 1 rows -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/k1/shards/task_0166/rows.jsonl in 10s

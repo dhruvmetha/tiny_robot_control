@@ -1,0 +1,8 @@
+{
+  "frames": 2510,
+  "fps": 30,
+  "duration_s": 83.66666666666667,
+  "max_pose_position_error_cm": 1.570092458683775e-14,
+  "max_pose_angle_error_deg": 2.842170943040401e-14,
+  "output": "/scratch/tdn39/real_exp/results/navigation_sim/2push__v3_snap__hard_loose__rb_00022__f110e8c4_navigation_realstack_v1/rb_00022__nav_baseline_penalise__sim.mp4"
+}

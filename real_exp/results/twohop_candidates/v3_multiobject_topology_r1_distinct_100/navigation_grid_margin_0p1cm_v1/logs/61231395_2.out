@@ -1,0 +1,23 @@
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00351_ignored.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00351_penalised.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00366_ignored.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00366_penalised.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00369_ignored.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00369_penalised.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00370_ignored.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00370_penalised.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00371_ignored.png (98x155)
+[Wavefront] Saved grid image to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/twohop_candidates_topology_distinct_100_hard1-hard1_twohop_multi_00371_penalised.png (98x155)
+scene                                                      movables  drives through  clear at
+  tes_topology_distinct_100/hard1-hard1/twohop_multi_00351        3              47     never
+  tes_topology_distinct_100/hard1-hard1/twohop_multi_00366        3              50     never
+  tes_topology_distinct_100/hard1-hard1/twohop_multi_00369        3              64     never
+  tes_topology_distinct_100/hard1-hard1/twohop_multi_00370        3              67     never
+  tes_topology_distinct_100/hard1-hard1/twohop_multi_00371        3              52     never
+
+5 scenes scored, 0 skipped
+  5 need a push: every route to the goal crosses a movable
+  0 solvable by driving round everything
+
+wrote /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/shards/shard_2.csv
+wrote route images to /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_grid_all100_margin_0p1cm_v1/images/

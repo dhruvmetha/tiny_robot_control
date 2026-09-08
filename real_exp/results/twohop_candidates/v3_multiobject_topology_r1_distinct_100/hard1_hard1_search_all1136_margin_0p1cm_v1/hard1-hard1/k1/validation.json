@@ -1,0 +1,22 @@
+{
+  "manifest": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_hard_search_all1136_margin_0p1cm_v1/manifests/hard1-hard1_0000_1000.txt",
+  "manifest_rows": 1001,
+  "merged_rows": 1001,
+  "nodecrement_xml_artifacts": 84,
+  "profile": "hard1-hard1",
+  "semantic_reject_counts": {
+    "status_not_ok": 622,
+    "wrong_opened_boundary": 21,
+    "wrong_output_next_boundary": 4
+  },
+  "stage": "k1",
+  "status_counts": {
+    "no_kh1_opener": 415,
+    "no_opener_decrements_hop": 155,
+    "no_region_path": 52,
+    "ok": 379
+  },
+  "unique_inputs": 1001,
+  "unreferenced_xml_artifacts": [],
+  "validated_post_k1": 354
+}

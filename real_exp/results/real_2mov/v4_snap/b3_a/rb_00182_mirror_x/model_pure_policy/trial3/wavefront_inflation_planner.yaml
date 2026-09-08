@@ -1,0 +1,25 @@
+# Centralized wavefront inflation settings for namo_cpp.
+# All values are in meters.
+#
+# Tier-1 inflation is the base additive margin applied to robot half-extents
+# during obstacle inflation in wavefront occupancy grids.
+tier1:
+  base_inflation_margin_m: 0.001   # 1 mm real-world safety margin. Matches
+                                   # robot_control/config/wavefront_inflation.yaml
+                                   # at 1× scale (BUG-001 alignment).
+
+# Edge-offset geometry is configured per primary YAML via:
+#   planning.wavefront_edge_offset_margin
+# This sidecar only defines the shared tier-1 inflation margin.
+
+# The fields below are documented here so all wavefront-related inflation knobs
+# are in one place, even when certain layers are consumed by other modules.
+navigation:
+  additional_margin_m: 0.0
+
+push_approach:
+  additional_margin_m: 0.003
+
+xml_collision_resolution:
+  min_separation_m: 0.005
+  additional_margin_m: 0.08

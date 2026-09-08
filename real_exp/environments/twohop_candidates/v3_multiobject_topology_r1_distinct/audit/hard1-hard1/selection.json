@@ -1,0 +1,353 @@
+{
+  "distinctness_policy": {
+    "categorical_topology_changes_are_distinct": true,
+    "donor_ids": "soft_coverage_only",
+    "gate_separation": "recorded_not_scored",
+    "geometry_scope": "local_gate_geometry_only",
+    "reflection": "one_global_left_right",
+    "task_anchors": "recorded_not_scored",
+    "wall_assignment": "best_permutation_within_gate"
+  },
+  "effective_thresholds": {
+    "auxiliary_position_m": 0.05,
+    "auxiliary_yaw_deg": 20.0,
+    "dimension_tolerance_cm": 0.5,
+    "mirrors_share_family": true,
+    "wall_position_m": 0.05,
+    "wall_yaw_deg": 15.0
+  },
+  "eligible": 135,
+  "limit": 40,
+  "prior_exclusions": 2,
+  "prior_incompatible_topology": 0,
+  "scenes": [
+    {
+      "donor_pair_id": "hard_loose/rb_00085/hard_088",
+      "mirror_family_id": "95976090508d092aec1b03a0a9416d56f7255dd7e149f4032dac40a41138d9f1",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00524.json",
+      "scene_id": "twohop_multi_00524",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00524/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00217/hard_086",
+      "mirror_family_id": "a8a3269670b555264930f7f526bb8b721823269c09278e517d50aa41d5a6de3e",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00978.json",
+      "scene_id": "twohop_multi_00978",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00978/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00112/hard_088",
+      "mirror_family_id": "376d301490d7caa136800486fe4ccfe936aa8689353113bd8bba0dcbf14f8c14",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00289.json",
+      "scene_id": "twohop_multi_00289",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00289/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00234/hard_005",
+      "mirror_family_id": "9af56bc82f9cb08621535e8745c59c908bb018597648140434ce9c5b4d74b89a",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_01080.json",
+      "scene_id": "twohop_multi_01080",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_01080/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00217/hard_084",
+      "mirror_family_id": "23390e26bd9b9c29a7600677a38813d4fecad34ee9e1ec912483830f6b8e02cf",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00606.json",
+      "scene_id": "twohop_multi_00606",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00606/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00175/hard_026",
+      "mirror_family_id": "5b68c6885ff0b87063dc042174cd97d420df0f00da7cdbd3eab9378da768398d",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00746.json",
+      "scene_id": "twohop_multi_00746",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00746/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00224/hard_092",
+      "mirror_family_id": "0870acda4db7d853c901fb652f980777a1265968c494c931280a0a84c8df6c8b",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00725.json",
+      "scene_id": "twohop_multi_00725",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00725/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00096/hard_086",
+      "mirror_family_id": "5d995e2c2857a4ba0ecc1c64282c885e28fde15535c849c6e52dd1c5e40ee410",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00466.json",
+      "scene_id": "twohop_multi_00466",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00466/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00134/hard_026",
+      "mirror_family_id": "3593ce1d92aaee3114989d6095e790e6646b097fac106777bd29b3f1dce5f312",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00074.json",
+      "scene_id": "twohop_multi_00074",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00074/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00234/hard_096",
+      "mirror_family_id": "71bf3425c1ba8712f03537211d737f67a68a00de7092845540912fa86e59adce",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00523.json",
+      "scene_id": "twohop_multi_00523",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00523/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00085/hard_068",
+      "mirror_family_id": "882cf1bb936da7fdb42a13198bc424b1eda078b55cda9e2bf579d12b5b1e5878",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00705.json",
+      "scene_id": "twohop_multi_00705",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00705/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00164/hard_056",
+      "mirror_family_id": "c7b018fb0ecd30568ba84f83febfd34b0394fc8e5203f6b893d34ef8e004ef17",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00678.json",
+      "scene_id": "twohop_multi_00678",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00678/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00224/hard_066",
+      "mirror_family_id": "59702a8abe517219ffb6ca68e7cfa1f8a7af99e1b74b19c91a40a1dfb90a0a99",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00531.json",
+      "scene_id": "twohop_multi_00531",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00531/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00218/hard_056",
+      "mirror_family_id": "e46f7d0959857e618c9f910d51c0d843a8cd43ddf16ab8325ea48583c61c977b",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00194.json",
+      "scene_id": "twohop_multi_00194",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00194/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00218/hard_042",
+      "mirror_family_id": "8f8dfd8a946ab0ac7dce882a32b4dc5ec8b4b80dd5c44fa24be6837cf68effaa",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00505.json",
+      "scene_id": "twohop_multi_00505",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00505/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00153/hard_086",
+      "mirror_family_id": "842be3b964579707905aeef074daefd25838a1b3174897444743a88d136e1c57",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00569.json",
+      "scene_id": "twohop_multi_00569",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00569/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00096/hard_088",
+      "mirror_family_id": "307408ca79b8b955cbb08519ac366fb20b7f9a03fbd7caa7bd241b28e949d659",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00179.json",
+      "scene_id": "twohop_multi_00179",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00179/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00168/hard_056",
+      "mirror_family_id": "dc49465a317766a7b0df9a79a7ca1475bbbc97ce153f09fc50c1b213ffba14c2",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_01018.json",
+      "scene_id": "twohop_multi_01018",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_01018/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00168/hard_022",
+      "mirror_family_id": "4c3d117e36e09d296ae279cda3dbc44178cc10c7bcc7b9262a633dfc445cde66",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00331.json",
+      "scene_id": "twohop_multi_00331",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00331/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00153/hard_084",
+      "mirror_family_id": "23524fd897c93938769bc902f8f2a78077f310f0873ed9c057a302898d6f0f82",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00477.json",
+      "scene_id": "twohop_multi_00477",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00477/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00112/hard_028",
+      "mirror_family_id": "9be47f4f4cd8679217c3c163a27640bf8a43f55d4850a5841e1d009c0516324a",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00086.json",
+      "scene_id": "twohop_multi_00086",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00086/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00217/hard_038",
+      "mirror_family_id": "aac435388452cfbdd772a8e53536792c27afcdf46690f05479ef536c0236e443",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00371.json",
+      "scene_id": "twohop_multi_00371",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00371/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00096/hard_042",
+      "mirror_family_id": "c7d5d48ca1a41b55887c4ab8984ad0caf483406729d98a471e5a6dc811f1352b",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00370.json",
+      "scene_id": "twohop_multi_00370",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00370/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00112/hard_005",
+      "mirror_family_id": "56e6df90dd9b86f7235f591a7f7fe6edf1ef5091020397ca0db34c3c2bf3f27f",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00620.json",
+      "scene_id": "twohop_multi_00620",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00620/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00175/hard_038",
+      "mirror_family_id": "448bc137c92c501df62a4840d4bc707675118a5f3d958a4d8e77ab477f87895f",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00672.json",
+      "scene_id": "twohop_multi_00672",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00672/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00112/hard_086",
+      "mirror_family_id": "e391eea8fabb1a18700d42aa7bd88ee5577cc618e4335bf575c10ff9611a910e",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00588.json",
+      "scene_id": "twohop_multi_00588",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00588/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00201/hard_096",
+      "mirror_family_id": "0f59ea12c35633fac441c802667024eb4bd987a67d64b45881c318abd205bf88",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00237.json",
+      "scene_id": "twohop_multi_00237",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00237/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00201/hard_005",
+      "mirror_family_id": "07997d34b3e8b17b28aedb84d412d28711f801d39c3e220be651669c8560b5e6",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00351.json",
+      "scene_id": "twohop_multi_00351",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00351/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00234/hard_084",
+      "mirror_family_id": "5b8f87ad687083ef63d68064c52c24266a2f23410fa11045206e404840130b90",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00696.json",
+      "scene_id": "twohop_multi_00696",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00696/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00112/hard_056",
+      "mirror_family_id": "a0814839483f373b7aa2ba28de63cf41c1a2791485b845ddd4291abc2f6d8ef6",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00935.json",
+      "scene_id": "twohop_multi_00935",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00935/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00118/hard_086",
+      "mirror_family_id": "44ce8bd88de262bbebb086c3197d917fbff0c955cbd043f47d37cca0db606bb0",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00749.json",
+      "scene_id": "twohop_multi_00749",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00749/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00154/hard_084",
+      "mirror_family_id": "5ede1c3cb918235250a86491a439d3c47930786aa3dbc7ebf6919ad103ab1f64",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00589.json",
+      "scene_id": "twohop_multi_00589",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00589/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00153/hard_088",
+      "mirror_family_id": "04a9b462f598e29f6b059939bd8f0a524ec44208af0e952d6c3014568cad0047",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_01071.json",
+      "scene_id": "twohop_multi_01071",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_01071/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00164/hard_028",
+      "mirror_family_id": "4268df1cf808bc19350ecdd1c980d9a6c610aa81ba01aa34e41cf1cc9e30b808",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00934.json",
+      "scene_id": "twohop_multi_00934",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00934/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00085/hard_005",
+      "mirror_family_id": "963603744931d2f5d59ec2a1e1ee66abaf721f42a84247faab686f39b2aeaaac",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00386.json",
+      "scene_id": "twohop_multi_00386",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00386/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00164/hard_005",
+      "mirror_family_id": "93f1d07aa3be80f1e1eeea8d037c1bafa7a92fc00d1f57d5b5c22fbbbfbd9eed",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00142.json",
+      "scene_id": "twohop_multi_00142",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00142/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00134/hard_005",
+      "mirror_family_id": "13629fe3357dff34518632cf9d35ff5f4f0d90dd9e4ebf29685b3a0632108212",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00852.json",
+      "scene_id": "twohop_multi_00852",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00852/env.xml"
+    },
+    {
+      "donor_pair_id": "hard_loose/rb_00164/hard_084",
+      "mirror_family_id": "a19f655053c13e8c30b4d0e335b7f45edc2586f2cc4d1ac25e587631d19c219e",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_00366.json",
+      "scene_id": "twohop_multi_00366",
+      "source_family": "hard_loose",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_00366/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00154/hard_066",
+      "mirror_family_id": "91acdce2335b854b4303dc22090068783f49690b3e445d19a0b0981fd1f78b5d",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_01111.json",
+      "scene_id": "twohop_multi_01111",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_01111/env.xml"
+    },
+    {
+      "donor_pair_id": "med/rb_00154/hard_022",
+      "mirror_family_id": "c6d024e5183f1e59b86af9f86b5da24a08dbb501bc865093ba0a3b96f25217a5",
+      "record_path": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/screens/multiobject/hard1-hard1/twohop_multi_01024.json",
+      "scene_id": "twohop_multi_01024",
+      "source_family": "med",
+      "xml_path": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/twohop_multi_01024/env.xml"
+    }
+  ],
+  "selected": 40,
+  "thresholds": {
+    "auxiliary_position_m": 0.05,
+    "auxiliary_yaw_deg": 20.0,
+    "mirrors_share_family": true,
+    "wall_position_m": 0.05,
+    "wall_yaw_deg": 15.0
+  }
+}

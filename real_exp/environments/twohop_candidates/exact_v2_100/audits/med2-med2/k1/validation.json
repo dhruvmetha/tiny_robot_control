@@ -1,0 +1,12 @@
+{
+  "manifest_rows": 50,
+  "merged_rows": 50,
+  "post_next_reachable_diagnostic_empty": 1,
+  "profile": "med2-med2",
+  "status_counts": {
+    "no_opener_decrements_hop": 2,
+    "ok": 48
+  },
+  "unique_inputs": 50,
+  "validated_post_k1": 48
+}

@@ -1,0 +1,7 @@
+{
+  "status": "failure",
+  "failure_cause": "manual_intervention",
+  "failure_detail": "The robot had to be repositioned manually during execution; the automated reached=true terminal pose is not an autonomous navigation success.",
+  "recorded_on": "2026-09-05",
+  "automated_result_preserved": "nav_baseline_penalise_1788648260.json"
+}

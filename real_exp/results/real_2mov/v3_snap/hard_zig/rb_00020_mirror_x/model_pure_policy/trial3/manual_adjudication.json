@@ -1,0 +1,14 @@
+{
+  "schema": "real_exp_manual_adjudication_v1",
+  "scene": "v3_snap/hard_zig/rb_00020_mirror_x",
+  "arm": "model_pure_policy",
+  "trial": 3,
+  "seed": 2,
+  "adjudicated_at": "2026-09-02T23:49:20-04:00",
+  "outcome": "failure",
+  "reason": "robot_fell_over",
+  "revisit_candidate": true,
+  "automatic_runtime_outcome": "success",
+  "automatic_final_distance_to_goal_cm": 1.3661453920312225,
+  "note": "Manual physical-outcome adjudication overrides the automatic camera-distance result. All original trial artifacts are retained."
+}

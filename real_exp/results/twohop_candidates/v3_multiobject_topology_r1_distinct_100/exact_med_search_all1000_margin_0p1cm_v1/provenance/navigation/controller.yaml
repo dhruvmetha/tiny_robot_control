@@ -1,0 +1,75 @@
+# Controller configuration
+# Only contains parameters actually loaded by code
+
+# Navigation controller
+navigation:
+  max_speed: 0.4                 # CAN be overridden by --nav-speed. Aligned with push.max_speed.
+  pre_rotation_skip_angle: 45.0  # degrees - skip pre-rotation if heading error < this
+  robot_geometry_scale: 1.0      # RVG robot inflation (1.0 = half robot size, matches wavefront)
+  goal_tolerance_ratio: 0.2      # goal_tolerance = ratio * car_size
+  planner: "wavefront"           # "wavefront" or "rvg"
+  wavefront_debug_dir: "output_dump/wavefront"  # Save wavefront path images here (null to disable)
+  obstacle_proximity_distance_cm: 2.0  # cm - how far from obstacles the extra cost extends
+  obstacle_proximity_weight: 5.0       # max cost multiplier at obstacle edge (0 to disable)
+
+  # Rotation parameters
+  rotation_tolerance_deg: 2.5    # degrees - rotation complete when within this
+  rotation_stable_time: 0.5      # seconds - hold at target before done
+  rotation_speed_max: 0.25       # max wheel speed for rotation
+  rotation_speed_min: 0.15       # min wheel speed for rotation
+  wheel_deadband: 0.05           # motor deadband threshold
+
+# Push controller
+# Aligned to sim: sim runs each NAMO push step for 0.75 s at 0.05 m/s (5 cm/s).
+# Was push_steps=50 (~1.67 s) and max_speed=0.5 — about 2.2× longer and 10×
+# faster than what the primitive .dat values were generated under, so the
+# real robot used to overshoot sim predictions badly. Setting both to sim
+# values makes primitive predictions actually match real-robot behavior.
+push:
+  max_speed: 0.4                 # Normalized wheel PWM ∈ [0, 1]. Was 0.2 (stiction
+                                 # band) → 0.3 → 0.4. At 0.4 firmware delivers
+                                 # 34.8%/40% to the wheels (RIGHT_GAIN=0.87 trim) —
+                                 # both well above stiction. Drift was ~3° / 3 s
+                                 # in last test, acceptable.
+  edge_offset_margin_cm: 1.0     # Match namo_cpp planning.wavefront_edge_offset_margin=0.01 m
+                                 # so runtime edge points use standoff = robot_radius + 1.0 cm.
+  standoff_multiplier: 0.6       # Legacy field only; runtime now requires edge_offset_margin_cm.
+  wheel_deadband: 0.05           # motor deadband threshold
+  lookahead_ratio: 1.0           # lookahead as fraction of robot car_size. Was 0.3 — short
+                                 # lookahead amplifies camera-heading-noise into PP curvature
+                                 # corrections; 1.0 matches the Tier-1 PP calibration setting
+                                 # which produced clean (no-wiggle) tracking.
+  push_steps: 30                # ~1.00 s per NAMO push step at 30 Hz (sim currently uses 550 control ticks/step)
+  dynamic_direction: false       # true = update push direction every step, false = fix at start
+
+  # Approach phase parameters
+  approach_skip_distance: 1.0    # cm - skip approach if closer than this
+  approach_skip_angle: 30.0      # degrees - skip approach if angle error < this
+
+  # Edge point generation (matches namo_cpp algorithm)
+  # 1 = legacy (4 edges), 3 = standard (12 edges), 15 = high-res (60 edges)
+  points_per_face: 15
+
+  # Advance phase parameters (close gap before pushing)
+  advance_speed: 0.15            # Forward speed
+  advance_steps: 0              # Ticks to advance (~1 second at 30Hz)
+
+  # Retreat phase parameters (back up after push to clear object)
+  retreat_speed: 0.15            # Backup speed (applied as negative)
+  retreat_steps: 100             # Ticks to back up (~3.3 seconds at 30Hz) - fallback only
+  retreat_min_dist: 5.0          # cm - always retreat at least this far
+  retreat_max_dist: 15.0         # cm - max search distance for free cell
+
+  # Stuck-detection: if a push moves the object less than BOTH thresholds, mark
+  # subgoal as FAILED → planner blacklists (object_id, edge_idx) and won't retry.
+  # Note: AND-logic — a push that translates well OR rotates substantially is
+  # considered useful. Only when both are tiny is the push declared stuck.
+  min_push_displacement_cm: 2.0  # cm - below this counts as "didn't translate"
+  min_push_rotation_deg: 5.0     # deg - below this counts as "didn't rotate enough".
+                                 # Was 15.0 until 2026-08-31 (Dhruv): marker yaw noise
+                                 # is 1-2 deg, and rotation is real progress on this
+                                 # hardware (policy2_r1 opened hard_004 with a 71.6 deg
+                                 # swing), so a 10 deg rotation must not ban its edge.
+
+  # Debug visualization
+  show_wavefront: false          # cv2.imshow conflicts with PyQt6 event loop; image still saved to /tmp/wavefront

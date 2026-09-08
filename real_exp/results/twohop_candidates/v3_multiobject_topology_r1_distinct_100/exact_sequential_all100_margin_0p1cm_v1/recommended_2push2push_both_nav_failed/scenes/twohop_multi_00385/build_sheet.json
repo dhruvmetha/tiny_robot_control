@@ -1,0 +1,269 @@
+{
+  "arena_cm": [
+    49.0,
+    77.5
+  ],
+  "classification_note": "Source labels steer composition only; measure K1 and K2 on composed states.",
+  "classification_status": "needs_revalidation",
+  "clone_readiness": "obj_4b requires a unique ArUco tag before real trials.",
+  "counterfactual_trace": {
+    "both_openers_removed": [
+      true,
+      true,
+      true
+    ],
+    "initial": [
+      false,
+      false,
+      false
+    ],
+    "margin_both_openers_removed": [
+      true,
+      true,
+      true
+    ],
+    "post_k1": [
+      true,
+      false,
+      false
+    ],
+    "remove_auxiliary_only": [
+      false,
+      false,
+      false
+    ],
+    "remove_k2_only": [
+      false,
+      true,
+      false
+    ]
+  },
+  "exact_geometry_id": "0cd6b1e5ec2440b68479d55b3beac6c2ee6d0dd081d2eefb28260f36ac3faef8",
+  "gate_contract": {
+    "boundary_objects": [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    "gate_members": [
+      [
+        "obstacle_0_movable",
+        "obstacle_2_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ]
+  },
+  "gate_walls": [
+    {
+      "center_cm": [
+        38.9,
+        17.4
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 170.8,
+      "long_cm": 19.5,
+      "physical_id": "wall_9",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_1",
+      "yaw_deg": 170.8
+    },
+    {
+      "center_cm": [
+        10.1,
+        38.3
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 171.1,
+      "long_cm": 19.5,
+      "physical_id": "wall_10",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_2",
+      "yaw_deg": 171.1
+    },
+    {
+      "center_cm": [
+        39.1,
+        53.2
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 176.5,
+      "long_cm": 19.5,
+      "physical_id": "wall_11",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_3",
+      "yaw_deg": 176.5
+    },
+    {
+      "center_cm": [
+        13.8,
+        65.3
+      ],
+      "height_cm": 10.0,
+      "long_axis_bearing_deg": 71.1,
+      "long_cm": 19.5,
+      "physical_id": "wall_12",
+      "short_cm": 5.5,
+      "sim_id": "wall_inner_4",
+      "yaw_deg": 71.1
+    }
+  ],
+  "generator": "gen_real_buildable_twohop_multiobject.py",
+  "generator_seed": 9022026,
+  "goal_cm": [
+    24.5,
+    68.0
+  ],
+  "middle_anchor_cm": [
+    33.0,
+    37.5
+  ],
+  "movables": [
+    {
+      "center_cm": [
+        14.1,
+        22.0
+      ],
+      "height_cm": 5.0,
+      "long_axis_bearing_deg": 140.9,
+      "long_cm": 12.0,
+      "physical_role": "obj_4a",
+      "short_cm": 7.5,
+      "sim_id": "obstacle_0_movable",
+      "source_shape": "obj_4",
+      "yaw_deg": 50.9
+    },
+    {
+      "center_cm": [
+        21.0,
+        53.0
+      ],
+      "height_cm": 5.0,
+      "long_axis_bearing_deg": 21.9,
+      "long_cm": 12.0,
+      "physical_role": "obj_4b",
+      "short_cm": 7.5,
+      "sim_id": "obstacle_1_movable",
+      "source_shape": "obj_4",
+      "yaw_deg": 111.9
+    },
+    {
+      "center_cm": [
+        26.0,
+        12.3
+      ],
+      "height_cm": 4.0,
+      "long_axis_bearing_deg": 162.4,
+      "long_cm": 15.0,
+      "physical_role": "obj_1",
+      "short_cm": 7.0,
+      "sim_id": "obstacle_2_movable",
+      "source_shape": "obj_1",
+      "yaw_deg": 72.4
+    }
+  ],
+  "multi_gate_index": 0,
+  "normalized_layout_id": "c58bc3e76873f199e7df9d89741ef13523ef789e32d658b1163790e30ddfa792",
+  "physical_roles": {
+    "obstacle_0_movable": "obj_4a",
+    "obstacle_1_movable": "obj_4b",
+    "obstacle_2_movable": "obj_1"
+  },
+  "requested_profile": "med2-med2",
+  "robot_start_bearing_deg": 0.0,
+  "robot_start_cm": [
+    8.0,
+    9.0
+  ],
+  "run_namo_goal_flag": "--goal 24.5 68.0",
+  "scene_id": "twohop_multi_00385",
+  "source_multiobject": {
+    "auxiliary": {
+      "cx": 0.260035,
+      "cy": 0.163762,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.263720270765626
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00164/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "6444494979c07de2cd0166ced4f1e74efc2654d01a499b9ed0a55198a090e7ce",
+    "goal": [
+      0.08393,
+      0.602099
+    ],
+    "robot_start": [
+      0.13387914287725416,
+      0.09245452459739636
+    ],
+    "solve_rate": 0.2933,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [
+      "med2-med2"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00164/env.xml",
+    "source_scene_id": "rb_00164",
+    "target": {
+      "cx": 0.14052,
+      "cy": 0.260872,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.8884596637414958
+    },
+    "walls": [
+      {
+        "cx": 0.389365,
+        "cy": 0.21447,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.15988175879356656
+      },
+      {
+        "cx": 0.100574,
+        "cy": 0.424213,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.15478567663042342
+      }
+    ],
+    "xml_sha256": "4c31ef0c5c1c8d9f8b7e30d497d49e1e4cc2f2a0bc178b705142b8cceb4f69f9"
+  },
+  "source_singleobject": {
+    "build_id": "med_095",
+    "physical_object": "obj_4",
+    "source_label": {
+      "axis": "hmax2",
+      "push_kind": "needs_2_chain",
+      "solve_rate": 0.1037,
+      "tier": "med",
+      "tried": 135,
+      "valid_1push": 0,
+      "valid_first_push": 14
+    }
+  },
+  "topology_target": {
+    "boundary_objects": [
+      [
+        "obstacle_0_movable"
+      ],
+      [
+        "obstacle_1_movable"
+      ]
+    ],
+    "hop_count": 2
+  }
+}

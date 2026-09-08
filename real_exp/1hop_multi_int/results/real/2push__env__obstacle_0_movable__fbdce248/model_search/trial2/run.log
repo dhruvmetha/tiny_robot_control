@@ -1,0 +1,208 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2
+planner: full_namo  |  exec mode: search  local search: best_first/model  ckpt=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt  hmax=canonical  budget=canonical  scope=inherited  device=cuda
+
+Starting NAMO execution...
+Press ESCAPE to quit
+==================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Safety filter: OFF
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/recordings/session_2026-09-08_01-32-42/full_run.mp4
+[Runtime] Full-run video + per-subgoal meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/recordings/session_2026-09-08_01-32-42
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! ROBOT 1 OFFLINE at startup !!
+!!   ap_connected=True, alive_ids=[], last_status=0.5s ago [fresh]
+!!   Planning will run (sim-only), but the robot CANNOT execute.
+!!   Restart the robot or check the camera_service serial link.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+[Trapped-start recovery] Robot at (35.0, 9.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOBridge] Warming best-first scorer (checkpoint=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt, device=cuda); excluded from planning time
+
+[Trapped-start recovery] Robot at (35.0, 9.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+[Trapped-start recovery] Robot at (35.0, 9.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[Runtime] sim-success: start XML → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/sim_replay_start.xml
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed (autonomous): nav=0.40, push=0.40
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[NAMOPlanner] Best-first scorer warmup: 3794ms (recorded separately; excluded from planning_wall_time_ms)
+
+[Trapped-start recovery] Robot at (35.0, 9.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Plan #1: 4917ms, cumulative: 4917ms
+[DIAG] plan #1 recorded (success=True)
+[NAMOPlanner] MPC mode: preserving 2 pushes from fresh_plan, queuing only the first for real execution
+[sim_replay_subprocess] re-encoded plan_001_replay.mp4 to H.264 for compatibility
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/sim_replays/plan_001_replay.mp4 (5900 frames @ 30 fps, stride=17)
+[Runtime] sim-success per-plan: plan #1 (2 push(es)) → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/sim_replays/
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (38.2,22.5,θ=64.7°), edge=43, push_steps=5, robot at (35.0,9.9,θ=97.2°)
+[DIAG] subgoal #1 start recorded
+
+[Trapped-start recovery] Robot at (35.0, 9.9) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(35.0,9.9) → approach=(35.5,14.6)
+[NAV] navigate_to: goal=(35.5,14.6) θ=64.7°, from=(35.0,9.9), obstacles=5
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260908_013256_001.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state - -> PRE_ROTATING pose=(35.0,9.9,θ=97.2°) pre_target_θ=93.4° heading_err=-3.9°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(35.0,9.9,θ=97.3°) path_waypoints=6 final_wp=(35.2,14.8)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(35.1,13.8,θ=83.2°) goal_θ=64.7° heading_err=-18.5°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (38.3,22.4,θ=64.7°), robot at (34.7,14.8,θ=66.0°), edge=43, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(38.3,22.4) theta=64.7° size=(12.0x7.5)
+[PUSH DEBUG] Edge 43: face=3 sample=6
+[PUSH DEBUG] Theoretical: edge_pt (35.5,14.6) → mid_pt (39.0,22.1)
+[PUSH DEBUG] Actual line: (34.7,14.8) → (38.2,22.3)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (39.8, 29.8) theta=56.8°
+[PUSH] Δobject 'obj_4': Δpos=(+3.63,+14.77) |Δ|=15.21cm, Δθ=+22.52°
+[PUSH] Robot position is FREE in wavefront
+[PUSH] Object 'wall_12': (12.8, 37.2) theta=227.1° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 28.0cm
+[PUSH] Object 'obj_4': (41.9, 37.2) theta=87.2° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.7cm
+[PUSH] Object 'wall_10': (19.7, 22.4) theta=243.7° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 21.4cm
+[PUSH] Object 'obj_1': (46.5, 48.7) theta=182.0° size=(15x7.0)
+[PUSH]   Distance robot→object center: 20.1cm
+[PUSH] Object 'wall_11': (24.9, 39.9) theta=61.2° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 18.0cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260908_013305.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260908_013305.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (35.8, 26.8) [BACKWARD]
+[PUSH] Retreat reached target after 83 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (37.2, 28.1), target (35.8, 26.8)
+[Subgoal] <-- DONE (SUCCESS) after 11.6s, robot now at (37.2,28.1,θ=39.6°)
+[DIAG] subgoal #1 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_4, Δ=15.80cm, stuck=False)
+
+[Trapped-start recovery] Robot at (37.2, 28.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Push complete. Will try reuse from updated real scene for remaining chain len=1
+[Runtime] 🔌 Robot 1 → ONLINE (alive_ids=[1], ap_connected=True, last_status=0.6s ago)
+
+[Trapped-start recovery] Robot at (37.2, 28.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Reuse check from updated real scene: source=fresh_plan, chain_len=2
+
+[Trapped-start recovery] Robot at (37.2, 28.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[DIAG] plan #2 recorded (success=True)
+[NAMOPlanner] Reusing suffix chain (1 pushes) from updated real scene
+[sim_replay_subprocess] re-encoded plan_002_replay.mp4 to H.264 for compatibility
+[sim_replay_subprocess] wrote /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/sim_replays/plan_002_replay.mp4 (2950 frames @ 30 fps, stride=17)
+[Runtime] sim-success per-plan: plan #2 (1 push(es)) → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/sim_replays/
+[Subgoal] --> DISPATCH PUSH: obj 'obj_4' at (42.1,37.8,θ=88.5°), edge=43, push_steps=5, robot at (37.2,28.1,θ=39.6°)
+[DIAG] subgoal #2 start recorded
+
+[Trapped-start recovery] Robot at (37.2, 28.1) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[PUSH] Starting navigation: robot=(37.2,28.1) → approach=(42.7,29.5)
+[NAV] navigate_to: goal=(42.7,29.5) θ=88.5°, from=(37.2,28.1), obstacles=5
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260908_013310_002.png (98x155)
+[PUSH] navigate_to() returned: True, nav_state=PRE_ROTATING
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(37.2,28.1,θ=39.6°) pre_target_θ=2.7° heading_err=-36.9°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(36.9,28.0,θ=39.8°) path_waypoints=8 final_wp=(42.8,29.8)
+[NAV] state FOLLOWING -> POST_ROTATING pose=(42.1,28.7,θ=16.5°) goal_θ=88.5° heading_err=+72.0°
+[PUSH] Navigation done - transitioning to ADVANCING (nav_state=FINISHED)
+[PUSH] >>> PUSHING start: obj 'obj_4' at (42.1,37.8,θ=88.5°), robot at (42.5,28.7,θ=86.0°), edge=43, push_steps=5 (150 ticks)
+[PUSH DEBUG] ========== PUSH START ==========
+[PUSH DEBUG] Object: pos=(42.1,37.8) theta=88.5° size=(12.0x7.5)
+[PUSH DEBUG] Edge 43: face=3 sample=6
+[PUSH DEBUG] Theoretical: edge_pt (42.7,29.5) → mid_pt (42.9,37.7)
+[PUSH DEBUG] Actual line: (42.5,28.7) → (42.7,37.0)
+[PUSH DEBUG] Mode: FIXED
+[PUSH DEBUG] ================================
+
+[PUSH] ========== PUSH COMPLETE ==========
+[PUSH] Robot: (43.0, 52.4) theta=90.0°
+[PUSH] Δobject 'obj_4': Δpos=(-0.14,+21.53) |Δ|=21.53cm, Δθ=+3.30°
+[PUSH] Robot position is BLOCKED in wavefront
+[PUSH] Object 'wall_12': (12.8, 37.2) theta=227.1° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 33.8cm
+[PUSH] Object 'wall_10': (19.7, 22.4) theta=243.7° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 38.0cm
+[PUSH] Object 'obj_4': (41.9, 59.3) theta=91.8° size=(12.0x7.5)
+[PUSH]   Distance robot→object center: 7.0cm
+[PUSH] Object 'obj_1': (45.7, 70.9) theta=148.5° size=(15x7.0)
+[PUSH]   Distance robot→object center: 18.8cm
+[PUSH] Object 'wall_11': (24.8, 39.9) theta=61.1° size=(19.5x5.5)
+[PUSH]   Distance robot→object center: 22.0cm
+[Wavefront] Saved grid image to /tmp/wavefront/wavefront_20260908_013320.png (98x155)
+[PUSH] Wavefront saved to: /tmp/wavefront/wavefront_20260908_013320.png
+[PUSH] ======================================
+
+[PUSH] Retreat target: (41.3, 47.7) [BACKWARD]
+[PUSH] Retreat reached target after 71 steps: moved 3.1 cm, stopped 1.9 cm from target (tolerance 2.0 cm, commanded speed 0.15), robot at (41.7, 49.5), target (41.3, 47.7)
+[Subgoal] <-- DONE (SUCCESS) after 12.0s, robot now at (41.7,49.5,θ=74.4°)
+[DIAG] subgoal #2 end recorded (outcome=success)
+[DIAG] push recorded (obj=obj_4, Δ=21.89cm, stuck=False)
+
+[Trapped-start recovery] Robot at (41.7, 49.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal is NOW REACHABLE - skipping committed-chain reuse
+
+[Trapped-start recovery] Robot at (41.7, 49.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAMOPlanner] Goal REACHABLE - navigating to (20.1, 58.6) [dist=23.4cm]
+[Subgoal] --> DISPATCH NAVIGATE: target=(20.1,58.6), robot at (41.7,49.5,θ=74.4°)
+[DIAG] subgoal #3 start recorded
+
+[Trapped-start recovery] Robot at (41.7, 49.5) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[NAV] navigate_to: goal=(20.1,58.6) θ=any, from=(41.7,49.5), obstacles=5
+[Wavefront] Saved grid image to output_dump/wavefront/wavefront_20260908_013323_003.png (98x155)
+[NAV] state POST_ROTATING -> PRE_ROTATING pose=(41.7,49.5,θ=74.4°) pre_target_θ=176.8° heading_err=+102.4°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(41.9,49.4,θ=136.4°) path_waypoints=31 final_wp=(20.2,58.8)
+[Subgoal] <-- DONE (SUCCESS) after 6.1s, robot now at (20.9,58.6,θ=186.3°)
+[DIAG] subgoal #3 end recorded (outcome=success)
+[NAMOPlanner] GOAL REACHED! Distance: 0.8cm | Total planning: 2 calls, 5339ms cumulative
+[Runtime] Plan complete - stopping robot
+[Runtime] Shutting down
+
+[Trapped-start recovery] Robot at (20.9, 58.6) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[Diagnostics] Wrote summary.json (outcome=success)
+[Runtime] sim-success: chain (2 push(es)) → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/success_chain.json
+[sim_replay_subprocess] step 1 (object=obj_4 edge=43 depth=4) FAILED: Action not applicable. Halting chain (remaining 1 step(s) skipped).
+[sim_replay_subprocess] failure produced no qpos dump; using current env full_state for a static failure frame
+[sim_replay_subprocess] re-encoded success_sim_replay.mp4 to H.264 for compatibility
+[sim_replay_subprocess] rendered failure context to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/success_sim_replay.mp4 (failed at step 1)
+[sim_replay] subprocess exited with status 2; see [sim_replay_subprocess] lines above for details
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__fbdce248/model_search/trial2/recordings/session_2026-09-08_01-32-42/full_run.mp4
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete

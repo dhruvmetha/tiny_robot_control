@@ -1,0 +1,29 @@
+{
+  "outcome": "failure",
+  "start_xml": "sim_replay_start.xml",
+  "chain": [
+    {
+      "object_id": "obj_4",
+      "edge_idx": 35,
+      "push_steps": 5,
+      "depth": 4
+    },
+    {
+      "object_id": "obj_4",
+      "edge_idx": 41,
+      "push_steps": 5,
+      "depth": 4
+    },
+    {
+      "object_id": "obj_4",
+      "edge_idx": 4,
+      "push_steps": 5,
+      "depth": 4
+    }
+  ],
+  "starting_robot_pose_sim": [
+    0.35252553660702646,
+    0.06152217649727701,
+    1.5191828681333046
+  ]
+}

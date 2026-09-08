@@ -1,0 +1,56 @@
+{
+  "run_name": "trial1",
+  "outcome": "success",
+  "outcome_reason": "goal reached",
+  "started_at_epoch": 1788767979.3398838,
+  "ended_at_epoch": 1788768080.1398249,
+  "duration_sec": 100.79994106292725,
+  "mode": "real",
+  "strategy": "primitive",
+  "algorithm": "full_namo",
+  "goal_target_cm": [
+    38.4845,
+    65.4918
+  ],
+  "final_robot_pose_cm": [
+    36.707930201703334,
+    65.40538416141138,
+    13.773016586285621
+  ],
+  "final_distance_to_goal_cm": 1.7786702744968839,
+  "totals": {
+    "plan_calls": 5,
+    "subgoals_dispatched": 4,
+    "subgoals_succeeded": 4,
+    "subgoals_failed": 0,
+    "pushes_attempted": 3,
+    "pushes_succeeded": 3,
+    "pushes_stuck": 0,
+    "connectivity_transitions": 0,
+    "offline_during_plan_count": 0
+  },
+  "planning": {
+    "wall_time_ms_total": 34511.144328003866,
+    "wall_time_ms_fresh_search": 34208.51084899914,
+    "wall_time_ms_reuse_verification": 302.6334790047258,
+    "simulations_used_total": 104,
+    "simulations_used_fresh_search": 102,
+    "simulations_used_reuse_verification": 2,
+    "model_warmup_ms": 3775.3001949895406
+  },
+  "connectivity": {
+    "online_at_start": true,
+    "transitions": 0,
+    "total_offline_sec": 0.0,
+    "offline_during_plan_count": 0
+  },
+  "scene_capture": {
+    "scene_before_jpg": "scene_before.jpg",
+    "scene_before_json": "scene_before.json",
+    "scene_before_xml": "scene_before.xml",
+    "scene_after_jpg": "scene_after.jpg",
+    "scene_after_json": "scene_after.json",
+    "scene_after_xml": "scene_after.xml",
+    "errors": []
+  }
+}

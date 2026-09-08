@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "run_name": "exact_med_search_all1000_margin_0p1cm_v1",
+  "profile": "med2-med2",
+  "inputs": 1000,
+  "k1": {
+    "rows": 1000,
+    "valid_ordered_transitions": 655,
+    "exact_medium_hits": 70,
+    "status_counts": {
+      "ok": 685,
+      "no_kh1_opener": 108,
+      "no_opener_decrements_hop": 79,
+      "no_region_path": 41,
+      "scene_timeout": 87
+    }
+  },
+  "k2_on_exact_medium_k1": {
+    "rows": 70,
+    "valid_ordered_transitions": 4,
+    "status_counts": {
+      "ok": 4,
+      "no_kh1_opener": 62,
+      "no_opener_decrements_hop": 2,
+      "scene_timeout": 2
+    }
+  },
+  "exact_medium_to_medium": {
+    "count": 3,
+    "all_pairs_distinct": true,
+    "scene_ids": [
+      "twohop_multi_00037",
+      "twohop_multi_00143",
+      "twohop_multi_00710"
+    ],
+    "recommended_both_navigation_failed": [
+      "twohop_multi_00037",
+      "twohop_multi_00143"
+    ],
+    "navigation_solvable_alternate": [
+      "twohop_multi_00710"
+    ]
+  },
+  "navigation": {
+    "scene_count": 3,
+    "arm_count": 6,
+    "both_failed": 2,
+    "penalise_only_succeeded": 1,
+    "controller_stack_audit_passed": true,
+    "trajectory_audit_passed": true,
+    "speed": 0.4,
+    "n_sims_per_arm": 0
+  },
+  "effective_labeling_margins_m": {
+    "tier1_base": 0.001,
+    "navigation_contribution": 0.0,
+    "push_approach": 0.003,
+    "xml_minimum_collision": 0.005,
+    "table_inflation": 0.08
+  }
+}

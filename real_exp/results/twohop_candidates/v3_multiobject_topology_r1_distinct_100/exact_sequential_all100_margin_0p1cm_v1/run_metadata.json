@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "run_name": "exact_sequential_all100_margin_0p1cm_v1",
+  "completed_at": "2026-09-04T14:36:16-04:00",
+  "result": {
+    "input_rows": 100,
+    "discovery_profile_rows": {
+      "hard1-hard1": 50,
+      "med2-med2": 50
+    },
+    "complete_sequential_pairs": 58,
+    "incomplete_pairs": 42,
+    "mechanical_independence_passed": 58,
+    "requested_exact_matches": {
+      "hard1-hard1": 0,
+      "med2-med2": 0
+    }
+  },
+  "ordered_transition_contract": {
+    "k1": {
+      "input_hops": 2,
+      "output_hops": 1,
+      "opened_boundary": [
+        "obstacle_0_movable"
+      ],
+      "next_boundary": [
+        "obstacle_1_movable"
+      ]
+    },
+    "k2": {
+      "input": "exact post-K1 XML",
+      "input_hops": 1,
+      "output_hops": 0,
+      "opened_boundary": [
+        "obstacle_1_movable"
+      ],
+      "next_boundary": []
+    },
+    "mechanical_independence_tolerance": {
+      "position_mm": 2.0,
+      "angle_deg": 1.0
+    }
+  },
+  "exact_label_definitions": {
+    "hard1-hard1": "Both gates complete and uncensored; each has at least one one-push opener and 0 < solve_rate_1push < 0.05.",
+    "med2-med2": "Both gates complete and uncensored; each has zero one-push openers, at least one valid two-push first step, and 0.05 <= solve_rate_hmax2 < 0.30."
+  },
+  "effective_margins_m": {
+    "tier1_base": 0.001,
+    "navigation_contribution": 0.0,
+    "push_approach": 0.003,
+    "xml_minimum_collision": 0.005,
+    "table_inflation": 0.08
+  },
+  "labeling": {
+    "seed": 42,
+    "chain_depth": {
+      "hard1-hard1": {
+        "k1": 1,
+        "k2": 1
+      },
+      "med2-med2": {
+        "k1": 2,
+        "k2": 2
+      }
+    },
+    "neighbor_timeout_s": 600.0,
+    "scene_timeout_s": 900.0,
+    "jobs": [
+      {
+        "job_id": 61233334,
+        "profile": "hard1-hard1",
+        "stage": "k1",
+        "array": "0",
+        "state": "COMPLETED"
+      },
+      {
+        "job_id": 61233357,
+        "profile": "hard1-hard1",
+        "stage": "k1",
+        "array": "1-49",
+        "state": "COMPLETED"
+      },
+      {
+        "job_id": 61233335,
+        "profile": "med2-med2",
+        "stage": "k1",
+        "array": "0",
+        "state": "COMPLETED"
+      },
+      {
+        "job_id": 61233408,
+        "profile": "med2-med2",
+        "stage": "k1",
+        "array": "1-49",
+        "state": "COMPLETED"
+      },
+      {
+        "job_id": 61233471,
+        "profile": "hard1-hard1",
+        "stage": "k2",
+        "array": "0",
+        "state": "COMPLETED"
+      },
+      {
+        "job_id": 61233480,
+        "profile": "hard1-hard1",
+        "stage": "k2",
+        "array": "1-40",
+        "state": "COMPLETED"
+      },
+      {
+        "job_id": 61233626,
+        "profile": "med2-med2",
+        "stage": "k2",
+        "array": "0-46",
+        "state": "COMPLETED"
+      },
+      {
+        "job_id": 61233925,
+        "purpose": "render four navigation-resistant two-push/two-push alternatives",
+        "state": "COMPLETED"
+      }
+    ]
+  },
+  "code": {
+    "python_worktree": "/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1",
+    "python_worktree_commit": "0238730a56fb03cfe497a04b15299d764bffbbf1",
+    "compiled_binding_path": "/cache/home/tdn39/projects/namo/namo_cpp_twohop_339a0dc/build_python",
+    "compiled_binding_commit": "0b9ac568985191dab454e13ec6bf801d49c72bb3",
+    "compiled_extension_sha256": "8827080ee877179aae170e676d44a1c11e999755cf31d09dc304346c22ef8968"
+  },
+  "source_paths": {
+    "hard_build_sheets_json": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/build_sheets.json",
+    "med_build_sheets_json": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/med2-med2/build_sheets.json",
+    "navigation_csv": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/navigation_realstack.csv",
+    "amarel_result_root": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_labels_v2_100_margin_0p1cm_v1",
+    "dhruv_result_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/twohop_candidates/v3_multiobject_topology_r1_distinct_100/exact_sequential_all100_margin_0p1cm_v1"
+  },
+  "input_sha256": {
+    "hard_build_sheets_json": "77ae3ccea7a131867edd88b9e743be55eba9b702af2c2e80e4dc81c38a6cd0e3",
+    "med_build_sheets_json": "35d5aadb113330693cf71750f53b1c394267ad52312361d21e9e7616642eb9cf",
+    "hard_promotion_manifest": "20dfaa4457c666b4bbc7e4329f9ba85e84d2346c2d79c129879659bfdbf2ee61",
+    "med_promotion_manifest": "f0aacb2be86a474b6ff922844baa827b4df92194cb38a914134264ce12dec7a5",
+    "navigation_csv": "31affe6bc1ab701a453c709ae5a164575c07df64480b83f1f82883bbf4d42248"
+  },
+  "configuration_sha256": {
+    "wavefront_inflation_yaml": "52cf0e84e85d8675f4401c762ce9a412679498dddd5c5825aa5c474a055b1592",
+    "namo_config_yaml": "bdc902d98e102322c4273c47cc88b6f47ec59632d4070d0882cc3b136d90d933",
+    "twohop_protocol_yaml": "7aef03aacf3f52a4541036e46c93cdbe6445b4986334235ea6e57a4891c0ac80",
+    "label_algorithm_yaml": "29778a4345ddbe6c7b0baa35a7fdce8ff19e3c626e423ede617346783fb3a5ab",
+    "run_environment": "54ab8c27c938580621bc634b71e9ab1d0d8edf602ed6a00649c951912eea3612"
+  },
+  "pipeline_sha256": {
+    "slurm_entrypoint": "dec2520e740aded933ac6895869354e7113671e2c1aac5a36cb6d832b46dfb5a",
+    "materializer": "e4b6299933198bd6b2a0521b919ae5243a26a2cc4989b98a769403ae631c0713",
+    "selector": "adea93a548a051f076ec7e755d5d8f27e58953790f23ac92ab62347b1a7371",
+    "audited_reducer": "a2afae2333089d441d4a9764a1b262a26fcfcf3f0d2f1ed7d5db6a9d6f1b8ac9",
+    "inventory_builder": "172f5a2e0162786d61c71150fe0949d1a7afc06e96b146ff99fce114c4f572ab"
+  },
+  "primary_output_sha256": {
+    "all100_exact_navigation_inventory.csv": "9c08d994a9114057cffd422a144b8bf5007e7b9bfd5e32a899854fc5aa2f5b6e",
+    "all100_exact_navigation_summary.json": "bca225026ffee705033940154387b28f12c72f52a4d0e0d3ab917670f5c59456"
+  }
+}

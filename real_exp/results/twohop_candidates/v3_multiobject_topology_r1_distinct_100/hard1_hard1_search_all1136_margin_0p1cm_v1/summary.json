@@ -1,0 +1,37 @@
+{
+  "input_rows": 1136,
+  "k1_status_counts": {
+    "no_kh1_opener": 470,
+    "no_opener_decrements_hop": 182,
+    "no_region_path": 54,
+    "ok": 430
+  },
+  "k1_semantic_reject_counts": {
+    "status_not_ok": 706,
+    "wrong_hop_transition": 1,
+    "wrong_opened_boundary": 23,
+    "wrong_output_next_boundary": 6
+  },
+  "valid_k1_transitions": 400,
+  "exact_hard_k1_scenes": [
+    "twohop_multi_00013",
+    "twohop_multi_00022",
+    "twohop_multi_00581",
+    "twohop_multi_00605"
+  ],
+  "exact_hard_k1_count": 4,
+  "k2_results_for_exact_hard_k1": {
+    "easy": 1,
+    "no_kh1_opener": 3
+  },
+  "exact_hard1_hard1_count": 0,
+  "selector": {
+    "eligible": 0,
+    "rejects": {
+      "invalid_k1_materialization": 736,
+      "invalid_k2_materialization": 399,
+      "profile_mismatch": 1
+    }
+  },
+  "hard_k1_pairwise_distinct": true
+}

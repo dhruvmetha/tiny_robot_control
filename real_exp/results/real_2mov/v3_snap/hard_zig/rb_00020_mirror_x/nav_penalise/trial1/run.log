@@ -1,0 +1,76 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/nav_penalise/trial1
+Goal given: (25.7, 68.8) cm
+
+Pure navigation baseline, mode 'penalise'. No pushes will be planned.
+Press ESCAPE to quit
+============================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/nav_penalise/trial1/recordings/session_2026-09-03_18-15-30/full_run.mp4
+[Runtime] Full-run video + per-subgoal meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/nav_penalise/trial1/recordings/session_2026-09-03_18-15-30
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! ROBOT 1 OFFLINE at startup !!
+!!   ap_connected=True, alive_ids=[], last_status=0.5s ago [fresh]
+!!   Planning will run (sim-only), but the robot CANNOT execute.
+!!   Restart the robot or check the camera_service serial link.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Diagnostics] ⚠️ scene_before.xml capture failed: no xml source path provided
+
+==================================================
+[Subgoal] --> DISPATCH NAVIGATE: target=(25.7,68.8), robot at (19.2,6.7,θ=84.7°)
+[DIAG] subgoal #1 start recorded
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed (autonomous): nav=0.40, push=0.40
+==================================================[NAV] navigate_to: goal=(25.7,68.8) θ=any, from=(19.2,6.7), obstacles=4
+
+[NAV] state - -> PRE_ROTATING pose=(19.2,6.7,θ=84.7°) pre_target_θ=134.5° heading_err=+49.8°
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(19.3,6.6,θ=91.4°) path_waypoints=83 final_wp=(25.8,68.8)
+[Subgoal] <-- DONE (SUCCESS) after 17.1s, robot now at (25.7,67.4,θ=87.6°)
+[DIAG] subgoal #1 end recorded (outcome=success)
+[Runtime] Plan complete - stopping robot
+[Runtime] Shutting down
+[Diagnostics] ⚠️ scene_after.xml capture failed: no xml source path provided
+[Diagnostics] Wrote summary.json (outcome=success)
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/nav_penalise/trial1/recordings/session_2026-09-03_18-15-30/full_run.mp4
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete
+
+============================================================
+  arm                : nav_baseline_penalise
+  reached            : True
+  stopped at         : (25.74, 67.38) cm
+  distance to goal   : 1.42 cm
+  route waypoints    : 139
+  route crossed      : obj_4
+  objects shoved     : obj_4
+  elapsed            : 17.2 s
+  failure            : none
+============================================================
+
+  Driving alone reached the goal. This scene did NOT need NAMO.
+
+wrote /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/nav_penalise/trial1/nav_baseline_penalise_1788473748.json
+
+real_exp/results/real_2mov/v3_snap/hard_zig/rb_00020_mirror_x/nav_verdict.json already holds a verdict; left alone.

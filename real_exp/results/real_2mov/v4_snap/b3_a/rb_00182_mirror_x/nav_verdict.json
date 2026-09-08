@@ -1,0 +1,18 @@
+{
+  "qualifies": false,
+  "reason": "Penalised navigation reached the goal in trial 1; the operator counted the environment as navigation-solvable and ended further navigation testing (2026-09-03).",
+  "_evidence": {
+    "reached": true,
+    "distance_to_goal_cm": 1.38,
+    "objects_moved": "obj_1",
+    "objects_moved_cm": {
+      "obj_1": 7.58
+    },
+    "stuck_retries": 2,
+    "stuck_causes": "blocked,blocked",
+    "route_crosses": "",
+    "failure_cause": ""
+  },
+  "_row": "nav_penalise/trial1/nav_baseline_penalise_1788474586.json",
+  "_note": "The successful drive shoved obj_1 by 7.58 cm; the operator accepted this as navigation success."
+}

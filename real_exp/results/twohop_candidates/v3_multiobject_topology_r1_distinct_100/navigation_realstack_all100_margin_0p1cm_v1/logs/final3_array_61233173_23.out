@@ -1,0 +1,22 @@
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(24.5,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(24.5,9.0,θ=0.0°) pre_target_θ=129.3° heading_err=+129.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(24.5,9.2,θ=91.0°) path_waypoints=84 final_wp=(24.8,64.2)
+[NAV] !! NO PROGRESS (under_commanded): robot at (11.0,26.3,θ=160.6°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (14.8, 23.2)
+[NAV] state FOLLOWING -> RETREATING pose=(11.0,26.3,θ=161.4°)
+[NAV] Retreat done after 12 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(12.4,25.5), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(12.4,25.5,θ=146.1°) pre_target_θ=124.1° heading_err=-22.0°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(12.4,25.6,θ=143.8°) path_waypoints=55 final_wp=(24.8,64.2)
+[NAV] !! NO PROGRESS (under_commanded): robot at (11.0,28.7,θ=162.1°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (15.0, 25.7)
+[NAV] state FOLLOWING -> RETREATING pose=(11.1,28.7,θ=162.5°)
+[NAV] Retreat done after 11 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(12.6,28.0), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(12.6,28.0,θ=148.3°) pre_target_θ=125.6° heading_err=-22.7°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(12.4,28.1,θ=142.5°) path_waypoints=53 final_wp=(24.8,64.2)
+nav_baseline_ignore: status=success reached=True distance_to_goal_cm=1.48 sim_time_s=84.433 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00566/nav_baseline_ignore
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(24.5,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(24.5,9.0,θ=0.0°) pre_target_θ=129.3° heading_err=+129.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(24.5,9.2,θ=91.0°) path_waypoints=85 final_wp=(24.8,64.2)
+nav_baseline_penalise: status=failure reached=False distance_to_goal_cm=37.53 sim_time_s=120.000 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00566/nav_baseline_penalise

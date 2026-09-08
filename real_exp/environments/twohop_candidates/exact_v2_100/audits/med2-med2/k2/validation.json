@@ -1,0 +1,14 @@
+{
+  "manifest_rows": 48,
+  "merged_rows": 48,
+  "profile": "med2-med2",
+  "status_counts": {
+    "no_kh1_opener": 7,
+    "no_opener_decrements_hop": 1,
+    "ok": 22,
+    "scene_timeout": 18
+  },
+  "unique_inputs": 48,
+  "unreferenced_xml_artifacts": [],
+  "validated_post_k2": 22
+}

@@ -1,0 +1,67 @@
+{
+  "all_pairs_distinct": true,
+  "pairs": [
+    {
+      "best_difference": {
+        "auxiliary_position_cm": 18.629009635512027,
+        "auxiliary_yaw_deg": 40.70000000000002,
+        "categorical_mismatch": 1.0,
+        "dimension_cm": 3.0,
+        "wall_position_cm": 53.789404161042725,
+        "wall_yaw_deg": 78.4
+      },
+      "distinct": true,
+      "left": "twohop_multi_00037",
+      "left_mirror_family_id": "53bf111bef43244481167d586c3f60069caa72ad6ab02bca9c6f735b7b312912",
+      "right": "twohop_multi_00143",
+      "right_mirror_family_id": "be28e7616dc7f04f2f64b3cff4220fa9f550527d0afdf786faec2fb2f97ae8a5"
+    },
+    {
+      "best_difference": {
+        "auxiliary_position_cm": 0.0,
+        "auxiliary_yaw_deg": 0.0,
+        "categorical_mismatch": 0.0,
+        "dimension_cm": 0.0,
+        "wall_position_cm": 30.641475160311717,
+        "wall_yaw_deg": 68.0
+      },
+      "distinct": true,
+      "left": "twohop_multi_00037",
+      "left_mirror_family_id": "53bf111bef43244481167d586c3f60069caa72ad6ab02bca9c6f735b7b312912",
+      "right": "twohop_multi_00710",
+      "right_mirror_family_id": "1e99d1b651d81da8b22379ebe32b3626f2b55e7d58f7d9ad6392ede2d25b34dc"
+    },
+    {
+      "best_difference": {
+        "auxiliary_position_cm": 28.736040089058896,
+        "auxiliary_yaw_deg": 49.89999999999998,
+        "categorical_mismatch": 1.0,
+        "dimension_cm": 3.0,
+        "wall_position_cm": 41.58196724542984,
+        "wall_yaw_deg": 63.3
+      },
+      "distinct": true,
+      "left": "twohop_multi_00143",
+      "left_mirror_family_id": "be28e7616dc7f04f2f64b3cff4220fa9f550527d0afdf786faec2fb2f97ae8a5",
+      "right": "twohop_multi_00710",
+      "right_mirror_family_id": "1e99d1b651d81da8b22379ebe32b3626f2b55e7d58f7d9ad6392ede2d25b34dc"
+    }
+  ],
+  "policy": {
+    "categorical_topology_changes_are_distinct": true,
+    "donor_ids": "soft_coverage_only",
+    "gate_separation": "recorded_not_scored",
+    "geometry_scope": "local_gate_geometry_only",
+    "reflection": "one_global_left_right",
+    "task_anchors": "recorded_not_scored",
+    "thresholds": {
+      "auxiliary_position_m": 0.05,
+      "auxiliary_yaw_deg": 20.0,
+      "dimension_tolerance_cm": 0.5,
+      "mirrors_share_family": true,
+      "wall_position_m": 0.05,
+      "wall_yaw_deg": 15.0
+    },
+    "wall_assignment": "best_permutation_within_gate"
+  }
+}

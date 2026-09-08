@@ -1,0 +1,9 @@
+git_sha=0b9ac568985191dab454e13ec6bf801d49c72bb3
+cpp_tree=7e6e8027b8bde4e10cc5de1927961c122fb98b66
+src_tree=c40a5eeff85624e0db401420ba738508e56fad8a
+dirty_cpp=0
+built_at=2026-08-28T12:09:15-04:00
+host=hal0244.amarel.rutgers.edu
+python=Python 3.11.15
+march=x86-64-v3
+mj_path=/scratch/tdn39/mujoco_pip

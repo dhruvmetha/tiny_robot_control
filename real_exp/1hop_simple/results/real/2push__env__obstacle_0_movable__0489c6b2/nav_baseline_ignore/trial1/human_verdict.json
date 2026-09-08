@@ -1,0 +1,8 @@
+{
+  "status": "failure",
+  "failure_cause": "stuck_retry_limit_reached",
+  "failure_detail": "The ignore baseline exhausted five blocked retries and stopped 39.82 cm from the goal. The experiment owner confirmed this run should be treated as a failure.",
+  "recorded_on": "2026-09-05",
+  "automated_result_preserved": "nav_baseline_ignore_1788651241.json",
+  "connectivity_note": "The robot was reported offline at startup and transitioned online during the first subgoal; the completed automated result was still a failure."
+}

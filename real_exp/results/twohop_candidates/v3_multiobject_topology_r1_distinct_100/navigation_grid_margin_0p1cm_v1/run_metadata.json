@@ -1,0 +1,43 @@
+{
+  "amarel_job_id": 61231395,
+  "array_tasks": 20,
+  "scenes_per_task": 5,
+  "scene_bundle": "twohop_candidates_topology_distinct_100",
+  "scene_bundle_source_revision": "a0e2111",
+  "navigation_source_revision": "fce48ef9df9db8379164fdda5fad6693da221a37",
+  "tier1_base_margin_m": 0.001,
+  "robot_radius_cm": 3.5,
+  "total_static_inflation_cm": 3.6,
+  "other_inflation_terms_changed": false,
+  "modes": [
+    "ignore",
+    "penalise"
+  ],
+  "movable_cost_sweep": [
+    1.0,
+    1.25,
+    1.5,
+    2.0,
+    3.0,
+    5.0,
+    10.0,
+    25.0,
+    100.0
+  ],
+  "rows": 100,
+  "unique_scenes": 100,
+  "input_by_profile": {
+    "hard1-hard1": 50,
+    "med2-med2": 50
+  },
+  "needs_push_by_profile": {
+    "hard1-hard1": 50,
+    "med2-med2": 50
+  },
+  "navigation_only_count": 0,
+  "skipped_count": 0,
+  "failure_count": 0,
+  "start_was_trapped_count": 0,
+  "aggregate_csv_sha256": "3e0dd2a55a5f232364eb8c6d852fa74bfcabfa1756526daaad45cad39bf76310",
+  "effective_config_sha256": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726"
+}

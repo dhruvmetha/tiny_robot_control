@@ -1,0 +1,25 @@
+# Centralized wavefront inflation settings for robot_control.
+# All values are in meters.
+#
+# Tier-1 rule for occupancy inflation:
+#   total_inflation = robot_radius + inflation_margin
+# The real_2mov study uses a 0.001m shared margin. Keep this identical to
+# namo_cpp/config/wavefront_inflation.yaml so planning and navigation agree
+# about which cells are blocked.
+tier1:
+  base_inflation_margin_m: 0.001
+
+# Per-context additive margins on top of tier1.base_inflation_margin_m.
+# These preserve current behavior knobs while making the base explicit.
+navigation:
+  additional_margin_m: 0.0
+
+push_approach:
+  # Match planner/sim exactly: no extra runtime-only push inflation.
+  additional_margin_m: 0.0
+
+xml_collision_resolution:
+  # Minimum separation used during XML collision resolution wavefront checks.
+  # This is still additive with xml_collision_resolution.additional_margin_m.
+  min_separation_m: 0.005
+  additional_margin_m: 0.08

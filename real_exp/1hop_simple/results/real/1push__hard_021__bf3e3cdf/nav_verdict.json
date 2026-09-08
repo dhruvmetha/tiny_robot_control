@@ -1,0 +1,18 @@
+{
+  "qualifies": true,
+  "reason": "Both fresh navigation variants wedged on obj_1 at the only doorway and failed after five blocked retries on 2026-09-03.",
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 30.82,
+    "objects_moved": "obj_1",
+    "objects_moved_cm": {
+      "obj_1": 2.16
+    },
+    "stuck_retries": 5,
+    "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+    "route_crosses": "obj_1",
+    "failure_cause": "stuck_retry_limit_reached"
+  },
+  "_row": "nav_ignore/trial1/nav_baseline_ignore_1788474977.json",
+  "_note": "Fresh penalised evidence is in nav_penalise/trial1/nav_baseline_penalise_1788474819.json."
+}

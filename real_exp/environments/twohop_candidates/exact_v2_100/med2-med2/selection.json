@@ -1,0 +1,173 @@
+{
+  "eligible": 5,
+  "limit": 100,
+  "profile": "med2-med2",
+  "rejects": {
+    "invalid_k1_materialization": 952,
+    "invalid_k2_materialization": 26,
+    "profile_mismatch": 17
+  },
+  "scenes": [
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 17,
+          "n_tried_1push": 67,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 17,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.2537313432835821,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 11,
+          "n_tried_1push": 47,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 11,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.23404255319148937,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00001",
+      "xml": "med2-med2/twohop_multi_00001/env.xml"
+    },
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 18,
+          "n_tried_1push": 67,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 18,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.26865671641791045,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 4,
+          "n_tried_1push": 60,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 4,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.06666666666666667,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00087",
+      "xml": "med2-med2/twohop_multi_00087/env.xml"
+    },
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 11,
+          "n_tried_1push": 52,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 11,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.21153846153846154,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 6,
+          "n_tried_1push": 33,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 6,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.18181818181818182,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00385",
+      "xml": "med2-med2/twohop_multi_00385/env.xml"
+    },
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 11,
+          "n_tried_1push": 52,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 11,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.21153846153846154,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 4,
+          "n_tried_1push": 58,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 4,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.06896551724137931,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00933",
+      "xml": "med2-med2/twohop_multi_00933/env.xml"
+    },
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 11,
+          "n_tried_1push": 52,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 11,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.21153846153846154,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 8,
+          "n_tried_1push": 96,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 8,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.08333333333333333,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00972",
+      "xml": "med2-med2/twohop_multi_00972/env.xml"
+    }
+  ],
+  "selected": 5
+}

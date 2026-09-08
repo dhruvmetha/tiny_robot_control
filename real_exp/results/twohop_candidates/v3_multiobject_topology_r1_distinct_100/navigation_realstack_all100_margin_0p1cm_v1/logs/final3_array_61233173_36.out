@@ -1,0 +1,12 @@
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(16.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(16.0,9.0,θ=0.0°) pre_target_θ=129.3° heading_err=+129.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(16.0,9.2,θ=91.0°) path_waypoints=74 final_wp=(24.8,63.8)
+[NAV] !! NO PROGRESS (under_commanded): robot at (27.0,62.1,θ=84.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (24.8, 57.6)
+[NAV] state FOLLOWING -> RETREATING pose=(27.0,62.0,θ=86.5°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (under_commanded).
+nav_baseline_ignore: status=success reached=True distance_to_goal_cm=3.7 sim_time_s=55.133 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00746/nav_baseline_ignore
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(16.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(16.0,9.0,θ=0.0°) pre_target_θ=118.3° heading_err=+118.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(16.0,9.2,θ=78.5°) path_waypoints=82 final_wp=(24.8,63.8)
+nav_baseline_penalise: status=failure reached=False distance_to_goal_cm=13.1 sim_time_s=120.000 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00746/nav_baseline_penalise

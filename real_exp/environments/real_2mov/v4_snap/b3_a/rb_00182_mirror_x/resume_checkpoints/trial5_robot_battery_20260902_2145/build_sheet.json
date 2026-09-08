@@ -1,0 +1,77 @@
+{
+  "scene_id": "rb_00182_mirror_x_trial5_resume_battery",
+  "source_scene": "v4_snap/b3_a/rb_00182",
+  "source_trial": "model_pure_policy/trial5",
+  "checkpoint_reason": "robot battery failure",
+  "captured_at_epoch": 1788399936.0235054,
+  "requested_profile": "2push",
+  "n_bricks": 3,
+  "robot_start_cm": [
+    37.92544700281369,
+    10.750410362985939
+  ],
+  "robot_start_bearing_deg": 66.0130120741436,
+  "goal_cm": [
+    18.8652,
+    66.1089
+  ],
+  "bricks": [
+    {
+      "sim_name": "wall_inner_1",
+      "marker_hint": "wall_10",
+      "center_cm": [
+        27.049271018049396,
+        47.8001516842635
+      ],
+      "long_axis_bearing_deg": 5.1065515778339,
+      "long_cm": 19.5,
+      "short_cm": 5.5
+    },
+    {
+      "sim_name": "wall_inner_2",
+      "marker_hint": "wall_11",
+      "center_cm": [
+        26.625246168213877,
+        28.043729093525705
+      ],
+      "long_axis_bearing_deg": 127.65725782302121,
+      "long_cm": 19.5,
+      "short_cm": 5.5
+    },
+    {
+      "sim_name": "wall_inner_3",
+      "marker_hint": "wall_9",
+      "center_cm": [
+        37.50838841798609,
+        28.565553499281233
+      ],
+      "long_axis_bearing_deg": 136.5940083359692,
+      "long_cm": 19.0,
+      "short_cm": 5.5
+    }
+  ],
+  "blockers": [
+    {
+      "sim_name": "obstacle_0_movable",
+      "object": "obj_4",
+      "center_cm": [
+        14.56417846996558,
+        28.805259072260856
+      ],
+      "long_axis_bearing_deg": 110.4508668495079,
+      "long_cm": 12.0,
+      "short_cm": 7.5
+    },
+    {
+      "sim_name": "obstacle_1_movable",
+      "object": "obj_1",
+      "center_cm": [
+        10.363626307027861,
+        47.81420281942918
+      ],
+      "long_axis_bearing_deg": 127.49256921540274,
+      "long_cm": 15.0,
+      "short_cm": 7.0
+    }
+  ]
+}

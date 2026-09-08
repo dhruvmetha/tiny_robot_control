@@ -1,0 +1,47 @@
+{
+  "outcome": "success",
+  "start_xml": "sim_replay_start.xml",
+  "chain": [
+    {
+      "object_id": "obj_4",
+      "edge_idx": 39,
+      "push_steps": 5,
+      "depth": 4
+    },
+    {
+      "object_id": "obj_4",
+      "edge_idx": 35,
+      "push_steps": 2,
+      "depth": 1
+    },
+    {
+      "object_id": "obj_4",
+      "edge_idx": 47,
+      "push_steps": 2,
+      "depth": 1
+    },
+    {
+      "object_id": "obj_4",
+      "edge_idx": 47,
+      "push_steps": 1,
+      "depth": 0
+    },
+    {
+      "object_id": "obj_4",
+      "edge_idx": 49,
+      "push_steps": 5,
+      "depth": 4
+    },
+    {
+      "object_id": "obj_4",
+      "edge_idx": 41,
+      "push_steps": 5,
+      "depth": 4
+    }
+  ],
+  "starting_robot_pose_sim": [
+    0.3684007846565783,
+    0.07845054540203286,
+    1.44605324299077
+  ]
+}

@@ -1,0 +1,3 @@
+✓ NAMO env active on hal0323.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1
+1/1 3s no_kh1_opener
+done 1 rows -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_hard_search_all1136_margin_0p1cm_v1/hard1-hard1/k1/shards/task_0181/rows.jsonl in 3s

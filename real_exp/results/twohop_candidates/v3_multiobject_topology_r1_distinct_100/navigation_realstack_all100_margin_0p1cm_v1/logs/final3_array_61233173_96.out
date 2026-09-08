@@ -1,0 +1,68 @@
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(41.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(41.0,9.0,θ=0.0°) pre_target_θ=129.3° heading_err=+129.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(41.0,9.2,θ=91.0°) path_waypoints=89 final_wp=(8.2,64.2)
+[NAV] !! NO PROGRESS (under_commanded): robot at (28.3,23.3,θ=88.1°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (32.6, 10.0)
+[NAV] state FOLLOWING -> RETREATING pose=(28.3,23.1,θ=89.5°)
+[NAV] Retreat done after 83 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(30.9,12.9), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(30.9,12.9,θ=107.9°) pre_target_θ=137.9° heading_err=+29.9°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(30.9,13.0,θ=107.3°) path_waypoints=73 final_wp=(8.2,63.8)
+[NAV] !! NO PROGRESS (under_commanded): robot at (22.5,25.8,θ=57.5°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] No free cell behind the robot; backing out blind.
+[NAV] state FOLLOWING -> RETREATING pose=(22.4,25.7,θ=56.0°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(21.7,24.2), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(21.7,24.2,θ=50.2°) pre_target_θ=112.4° heading_err=+62.2°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(21.9,24.6,θ=75.1°) path_waypoints=56 final_wp=(8.2,63.8)
+[NAV] !! NO PROGRESS (blocked): robot at (5.7,49.9,θ=32.4°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] No free cell behind the robot; backing out blind.
+[NAV] state FOLLOWING -> RETREATING pose=(5.6,49.8,θ=32.1°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (blocked).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(3.7,47.4), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(3.7,47.4,θ=1.8°) pre_target_θ=21.0° heading_err=+19.2°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(4.0,47.4,θ=5.0°) path_waypoints=22 final_wp=(8.2,63.8)
+[NAV] !! NO PROGRESS (blocked): robot at (8.0,47.2,θ=48.1°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (4.0, 44.1)
+[NAV] state FOLLOWING -> RETREATING pose=(7.9,47.1,θ=48.1°)
+[NAV] Retreat done after 10 ticks (reached the cell); drive FAILED (blocked).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(6.8,46.0), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(6.8,46.0,θ=44.1°) pre_target_θ=66.0° heading_err=+22.0°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(6.9,46.1,θ=43.3°) path_waypoints=21 final_wp=(8.2,64.2)
+[NAV] !! NO PROGRESS (blocked): robot at (7.9,47.2,θ=48.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (4.3, 43.8)
+[NAV] state FOLLOWING -> RETREATING pose=(7.8,47.2,θ=48.7°)
+[NAV] Retreat done after 10 ticks (reached the cell); drive FAILED (blocked).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(6.6,46.0), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(6.6,46.0,θ=45.9°) pre_target_θ=63.8° heading_err=+17.8°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(6.6,46.0,θ=47.5°) path_waypoints=21 final_wp=(8.2,64.2)
+[NAV] !! NO PROGRESS (blocked): robot at (7.5,47.5,θ=49.5°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (4.3, 43.7)
+[NAV] state FOLLOWING -> RETREATING pose=(7.4,47.4,θ=51.0°)
+[NAV] Retreat done after 9 ticks (reached the cell); drive FAILED (blocked).
+nav_baseline_ignore: status=failure reached=False distance_to_goal_cm=17.94 sim_time_s=78.467 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/med2-med2/twohop_multi_00902/nav_baseline_ignore
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(41.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(41.0,9.0,θ=0.0°) pre_target_θ=100.0° heading_err=+100.0°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(41.1,9.1,θ=60.0°) path_waypoints=88 final_wp=(8.2,64.2)
+[NAV] !! NO PROGRESS (blocked): robot at (10.9,41.3,θ=179.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (15.6, 39.6)
+[NAV] state FOLLOWING -> RETREATING pose=(11.0,41.3,θ=180.0°)
+[NAV] Retreat done after 13 ticks (reached the cell); drive FAILED (blocked).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(12.5,40.9), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(12.5,40.9,θ=166.9°) pre_target_θ=111.4° heading_err=-55.5°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(12.3,41.1,θ=149.9°) path_waypoints=28 final_wp=(8.2,63.8)
+[NAV] !! NO PROGRESS (blocked): robot at (12.0,44.4,θ=155.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (15.6, 40.9)
+[NAV] state FOLLOWING -> RETREATING pose=(12.1,44.3,θ=156.0°)
+[NAV] Retreat done after 14 ticks (reached the cell); drive FAILED (blocked).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(13.2,43.2), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(13.2,43.2,θ=144.9°) pre_target_θ=123.4° heading_err=-21.5°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(13.2,43.3,θ=146.7°) path_waypoints=26 final_wp=(8.2,64.2)
+[NAV] !! NO PROGRESS (blocked): robot at (12.2,44.2,θ=150.4°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (15.4, 40.4)
+[NAV] state FOLLOWING -> RETREATING pose=(12.3,44.1,θ=150.2°)
+[NAV] Retreat done after 9 ticks (reached the cell); drive FAILED (blocked).
+[NAV] navigate_to: goal=(8.0,64.0) θ=any, from=(13.6,43.1), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(13.6,43.1,θ=141.7°) pre_target_θ=132.0° heading_err=-9.6°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(13.5,43.1,θ=144.4°) path_waypoints=27 final_wp=(8.2,64.2)
+nav_baseline_penalise: status=failure reached=False distance_to_goal_cm=14.04 sim_time_s=120.000 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/med2-med2/twohop_multi_00902/nav_baseline_penalise

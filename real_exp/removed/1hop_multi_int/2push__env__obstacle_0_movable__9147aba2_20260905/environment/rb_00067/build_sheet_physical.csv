@@ -1,0 +1,7 @@
+build_id,tier,axis,item,marker_hint,centre_x_cm,centre_y_cm,long_axis_bearing_deg,long_cm,short_cm,height_cm,n_bricks,robot_start_x_cm,robot_start_y_cm,robot_start_bearing_deg,goal_x_cm,goal_y_cm,push_kind
+rb_00067,hard,2push,brick,wall_9,24.5400,28.0458,133.191503,19.5,5.5,10.0,4,25.7214,7.1626,0.0,6.0502,71.8623,needs_2_chain
+rb_00067,hard,2push,brick,wall_10,25.6113,59.1465,175.169942,19.5,5.5,10.0,4,25.7214,7.1626,0.0,6.0502,71.8623,needs_2_chain
+rb_00067,hard,2push,brick,wall_11,37.4807,30.4930,140.813692,19.5,5.5,10.0,4,25.7214,7.1626,0.0,6.0502,71.8623,needs_2_chain
+rb_00067,hard,2push,brick,wall_12,37.6947,50.3028,1.352911,19.5,5.5,10.0,4,25.7214,7.1626,0.0,6.0502,71.8623,needs_2_chain
+rb_00067,hard,2push,block,obj_1,10.1536,32.4695,69.008073,15.0,7.0,4.0,4,25.7214,7.1626,0.0,6.0502,71.8623,needs_2_chain
+rb_00067,hard,2push,block,obj_4,15.4670,46.3171,11.289826,12.0,7.5,5.0,4,25.7214,7.1626,0.0,6.0502,71.8623,needs_2_chain

@@ -1,0 +1,11 @@
+{
+  "manifest_rows": 50,
+  "merged_rows": 50,
+  "profile": "hard1-hard1",
+  "status_counts": {
+    "no_opener_decrements_hop": 9,
+    "ok": 41
+  },
+  "unique_inputs": 50,
+  "validated_post_k1": 41
+}

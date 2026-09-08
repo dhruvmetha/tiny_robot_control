@@ -1,0 +1,8 @@
+lto-wrapper: warning: using serial compilation of 13 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+lto-wrapper: warning: using serial compilation of 2 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+lto-wrapper: warning: using serial compilation of 2 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+[ConfigManager] wavefront_inflation.yaml not found near /tmp/namo_config_manager_schema_test — using defaults (tier1_inflation_margin=0.001)
+[ConfigManager] wavefront_inflation.yaml not found near /tmp/namo_config_manager_schema_test/missing_sidecar — using defaults (tier1_inflation_margin=0.001)

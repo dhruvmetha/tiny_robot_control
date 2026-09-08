@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-09-05",
+  "scene_uid": "v3_snap__hard_loose__rb_00022",
+  "physical_marker": "wall_11",
+  "simulator_object": "wall_inner_2",
+  "change": "position_and_orientation",
+  "previous_position_target_m": [0.141519, 0.521184],
+  "previous_yaw_deg": 70.438294,
+  "camera_sample": {
+    "sample_count": 20,
+    "median_x_cm": 15.464805,
+    "median_y_cm": 51.323587,
+    "median_marker_theta_deg": 157.131053,
+    "marker_to_long_axis_offset_deg": 90.0
+  },
+  "new_position_target_m": [0.15464805, 0.51323587],
+  "new_long_axis_bearing_deg_mod_180": 67.131053,
+  "new_simulator_yaw_deg": 67.131053,
+  "note": "The experiment owner designated the current wall_11 pose as canonical. Both its live center and orientation were adopted so the reset checker and planning scene describe the same physical layout."
+}

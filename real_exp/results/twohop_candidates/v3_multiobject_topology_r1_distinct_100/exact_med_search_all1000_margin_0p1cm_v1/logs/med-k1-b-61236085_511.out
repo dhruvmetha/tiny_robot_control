@@ -1,0 +1,20 @@
+✓ NAMO env active on halk0099.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1
+  [Progress] 26 primitives tried (13.0/sec) — current: obj=obstacle_0_movable edge=28 depth=2 neighbour='region_4'
+  [Progress] 37 primitives tried (5.0/sec) — current: obj=obstacle_0_movable edge=14 depth=4 neighbour='region_4'
+  [Progress] 45 primitives tried (3.7/sec) — current: obj=obstacle_0_movable edge=12 depth=5 neighbour='region_4'
+  [Progress] 51 primitives tried (2.9/sec) — current: obj=obstacle_0_movable edge=24 depth=5 neighbour='region_4'
+  [Progress] 54 primitives tried (0.7/sec) — current: obj=obstacle_0_movable edge=0 depth=1 neighbour='region_4'
+  [Progress] 85 primitives tried (15.2/sec) — current: obj=obstacle_0_movable edge=14 depth=1 neighbour='region_4'
+  [Progress] 112 primitives tried (13.3/sec) — current: obj=obstacle_0_movable edge=20 depth=1 neighbour='region_4'
+  [Progress] 139 primitives tried (13.5/sec) — current: obj=obstacle_0_movable edge=26 depth=1 neighbour='region_4'
+  [Progress] 166 primitives tried (13.1/sec) — current: obj=obstacle_0_movable edge=14 depth=2 neighbour='region_4'
+  [Progress] 192 primitives tried (12.5/sec) — current: obj=obstacle_0_movable edge=16 depth=2 neighbour='region_4'
+  [Progress] 218 primitives tried (12.5/sec) — current: obj=obstacle_0_movable edge=20 depth=2 neighbour='region_4'
+  [Progress] 244 primitives tried (12.3/sec) — current: obj=obstacle_0_movable edge=24 depth=2 neighbour='region_4'
+  [Progress] 270 primitives tried (12.5/sec) — current: obj=obstacle_0_movable edge=26 depth=2 neighbour='region_4'
+  [Progress] 296 primitives tried (12.4/sec) — current: obj=obstacle_0_movable edge=28 depth=2 neighbour='region_4'
+  [Progress] 323 primitives tried (13.2/sec) — current: obj=obstacle_0_movable edge=14 depth=1 neighbour='region_4'
+  [Progress] 357 primitives tried (16.8/sec) — current: obj=obstacle_0_movable edge=22 depth=1 neighbour='region_4'
+  [Progress] 390 primitives tried (16.2/sec) — current: obj=obstacle_0_movable edge=14 depth=1 neighbour='region_4'
+1/1 39s ok
+done 1 rows -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/k1/shards/task_0511/rows.jsonl in 39s

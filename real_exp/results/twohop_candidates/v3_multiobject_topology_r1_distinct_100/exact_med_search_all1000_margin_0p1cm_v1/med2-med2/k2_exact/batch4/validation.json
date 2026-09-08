@@ -1,0 +1,17 @@
+{
+  "manifest": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/manifests/exact_med_k1_batch4_post.xmls.txt",
+  "manifest_rows": 5,
+  "merged_rows": 5,
+  "nodecrement_xml_artifacts": 0,
+  "profile": "med2-med2",
+  "semantic_reject_counts": {
+    "status_not_ok": 5
+  },
+  "stage": "k2",
+  "status_counts": {
+    "no_kh1_opener": 5
+  },
+  "unique_inputs": 5,
+  "unreferenced_xml_artifacts": [],
+  "validated_post_k2": 0
+}

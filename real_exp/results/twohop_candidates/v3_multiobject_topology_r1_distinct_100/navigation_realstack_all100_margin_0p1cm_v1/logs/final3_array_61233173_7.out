@@ -1,0 +1,15 @@
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(16.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(16.0,9.0,θ=0.0°) pre_target_θ=129.3° heading_err=+129.3°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(16.0,9.2,θ=91.0°) path_waypoints=75 final_wp=(24.8,63.8)
+[NAV] !! NO PROGRESS (under_commanded): robot at (27.7,60.5,θ=63.1°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (24.0, 57.1)
+[NAV] state FOLLOWING -> RETREATING pose=(27.7,60.4,θ=62.3°)
+[NAV] Retreat done after 12 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(26.7,59.1), obstacles=11
+[NAV] state RETREATING -> PRE_ROTATING pose=(26.7,59.1,θ=48.1°) pre_target_θ=121.4° heading_err=+73.3°
+[NAV] !! STALL: stuck in PRE_ROTATING for 150 ticks, target_θ=121.4°, current_θ=63.0°, heading_err=+58.4°. Likely cause: rotation tolerance / stable-hold not converging.
+nav_baseline_ignore: status=failure reached=False distance_to_goal_cm=4.74 sim_time_s=120.000 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00289/nav_baseline_ignore
+[NAV] navigate_to: goal=(24.5,64.0) θ=any, from=(16.0,9.0), obstacles=11
+[NAV] state - -> PRE_ROTATING pose=(16.0,9.0,θ=0.0°) pre_target_θ=100.0° heading_err=+100.0°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(16.1,9.1,θ=60.0°) path_waypoints=73 final_wp=(24.8,63.8)
+nav_baseline_penalise: status=success reached=True distance_to_goal_cm=1.12 sim_time_s=23.967 -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scenes/hard1-hard1/twohop_multi_00289/nav_baseline_penalise

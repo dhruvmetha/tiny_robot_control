@@ -1,0 +1,222 @@
+{
+  "schema_version": 2,
+  "catalog": "1hop_multi_int",
+  "updated_on": "2026-09-07",
+  "environment_count": 2,
+  "scope": "One-hop scenes that require coupled interaction with multiple movable blockers.",
+  "identity_rule": "Use the full uid; build IDs are reused across source pools.",
+  "environments": [
+    {
+      "uid": "2push__env__obstacle_0_movable__febcb94c",
+      "scene_uid": "v2__zig_solo0__rb_00034",
+      "scene": "v2/zig_solo0/rb_00034",
+      "family": "zig_solo0",
+      "tier": "hard",
+      "gallery_file": "2push__env__obstacle_0_movable__febcb94c.json",
+      "gallery_card": "cards/2push__env__obstacle_0_movable__febcb94c.json",
+      "source_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/real_2mov/v2/zig_solo0/rb_00034",
+      "environment_dir": "environments/2push__env__obstacle_0_movable__febcb94c/rb_00034",
+      "active_variant": "original",
+      "source_hashes": {
+        "env_xml": "c534a7e80c3933db53a4a0dfa0a789c46967703a58d5eb630ff77cef15634348",
+        "build_sheet_derived": "2520c678f6a2c2036ddb591bc836a5b7de9cc41add3338b9e4fccc0c7ed27eee",
+        "sweep_record": "1d0036d09dbcb276b640eff87ff43a1fc5d44e91aaaa8f32f46ee112130f342b"
+      },
+      "variants": {
+        "original": {
+          "environment_dir": "environments/2push__env__obstacle_0_movable__febcb94c/variants/original/rb_00034",
+          "env_xml_hash": "c534a7e80c3933db53a4a0dfa0a789c46967703a58d5eb630ff77cef15634348",
+          "build_sheet_hash": "2520c678f6a2c2036ddb591bc836a5b7de9cc41add3338b9e4fccc0c7ed27eee",
+          "navigation_runs": {
+            "ignore_trial1": "operator_confirmed_failure",
+            "penalise_trial1": "reached_goal",
+            "penalise_trial2": "operator_confirmed_failure",
+            "penalise_trial3": "operator_confirmed_failure",
+            "penalise_trial4": "reached_goal",
+            "penalise_trial5": "operator_confirmed_failure"
+          }
+        },
+        "rebased_wall10_obj4": {
+          "date": "2026-09-05",
+          "environment_dir": "environments/2push__env__obstacle_0_movable__febcb94c/variants/rebased_wall10_obj4/rb_00034",
+          "result_root": "results/real/2push__env__obstacle_0_movable__febcb94c/variants/rebased_wall10_obj4",
+          "changed_items": [
+            "wall_inner_1",
+            "obstacle_1_movable"
+          ],
+          "env_xml_hash": "b50b05e16fc3c96b3f7386eb5a2f6adf9924ffa789bec7d31de71927213ad423",
+          "build_sheet_hash": "c4a6c0eae8a1fa3cbe1e510e43474d35ad38ba62a6d2a0f2cc1280bfe2ae1eab",
+          "navigation_runs": {
+            "penalise_trial1": "runtime_failure",
+            "ignore_trial1": "operator_confirmed_failure"
+          }
+        }
+      },
+      "task": {
+        "horizon": "2push",
+        "initial_object_id": "obstacle_0_movable",
+        "movable_object_ids": [
+          "obstacle_0_movable",
+          "obstacle_1_movable"
+        ],
+        "movable_object_count": 2,
+        "hop_count": 1,
+        "requires_coupled_multi_object_interaction": true,
+        "needs_both_blocks": true,
+        "has_route_around": false,
+        "region": "goal",
+        "density_pct": 3.333,
+        "n_green": 4,
+        "n_tried": 120,
+        "n_green_contact": 4,
+        "contact_pct": 100
+      },
+      "build": {
+        "robot_start_cm": [
+          7.5241,
+          11.2083,
+          0.0
+        ],
+        "goal_cm": [
+          38.4845,
+          65.4918
+        ],
+        "movables": {
+          "obstacle_0_movable": [
+            29.7494,
+            29.3736,
+            123.7316
+          ],
+          "obstacle_1_movable": [
+            23.6519,
+            38.5056,
+            16.548454
+          ]
+        },
+        "statics": {
+          "wall_inner_1": [
+            9.8486,
+            24.3133,
+            2.205704
+          ],
+          "wall_inner_2": [
+            38.911,
+            43.7507,
+            10.570458
+          ]
+        }
+      },
+      "collected": {
+        "real_navigation": {
+          "active_variant": "original",
+          "status": "penalise_2_of_5_reached_majority_fail",
+          "qualifies": true,
+          "rule": "majority_of_five",
+          "verdict": "results/real/2push__env__obstacle_0_movable__febcb94c/nav_verdict.json",
+          "result_root": "results/real/2push__env__obstacle_0_movable__febcb94c/variants/original"
+        },
+        "real_namo": {
+          "status": "complete",
+          "planner": "namo_cpp feat/horizon-q-redesign at 6a2f9001 or later: every mode ranks every blocker on the chosen boundary.",
+          "model_pure_policy": {
+            "successes": 5,
+            "trials": 5
+          },
+          "model_search": {
+            "successes": 5,
+            "trials": 5
+          },
+          "uniform_search": {
+            "successes": 1,
+            "trials": 5
+          },
+          "next_arm": null,
+          "next_trial": null,
+          "result_root": "results/real/2push__env__obstacle_0_movable__febcb94c/variants/original",
+          "archived": "model_policy trials 1-5 of 2026-09-05/07 under variants/original/invalid/model_policy: trial 1 ran on a1cba758 before the hop-aware route choice, trials 2-5 on an uncommitted planner that pinned the policy to one blocker.",
+          "provenance_note": "namo_cpp stamps dirty=true on these trials only because of the untracked HIGH_LEVEL_PLANNER_README.md in that checkout; git diff was empty."
+        }
+      }
+    },
+    {
+      "uid": "2push__env__obstacle_0_movable__fbdce248",
+      "scene_uid": "v2__dense_solo0__rb_00121",
+      "scene": "v2/dense_solo0/rb_00121",
+      "family": "dense_solo0",
+      "tier": "medium",
+      "gallery_file": "2push__env__obstacle_0_movable__fbdce248.json",
+      "gallery_card": "cards/2push__env__obstacle_0_movable__fbdce248.json",
+      "source_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/real_2mov/v2/dense_solo0/rb_00121",
+      "environment_dir": "environments/2push__env__obstacle_0_movable__fbdce248/rb_00121",
+      "source_hashes": {
+        "env_xml": "7e3afb7111dc7d14648d117e8638333e9b6ca4ec6908ee179e08dcce1264c45d",
+        "build_sheet_derived": "10c65258742c2c9e2e868483a4cde2f1ad7537b22cffbe8abad72205dba50606",
+        "sweep_record": "0392e9a5896b9281cbad4795b18b3cd333649332be82edabd5dc69ea3da47de9"
+      },
+      "task": {
+        "horizon": "2push",
+        "initial_object_id": "obstacle_0_movable",
+        "movable_object_ids": [
+          "obstacle_0_movable",
+          "obstacle_1_movable"
+        ],
+        "movable_object_count": 2,
+        "hop_count": 1,
+        "requires_coupled_multi_object_interaction": true,
+        "needs_both_blocks": true,
+        "has_route_around": false,
+        "region": "goal",
+        "density_pct": 5.455,
+        "n_green": 3,
+        "n_tried": 55,
+        "n_green_contact": 3,
+        "contact_pct": 100
+      },
+      "build": {
+        "robot_start_cm": [
+          39.1479,
+          7.2248,
+          0.0
+        ],
+        "goal_cm": [
+          20.0793,
+          58.6272
+        ],
+        "physical_mapping": {
+          "wall_inner_1": "wall_10",
+          "wall_inner_2": "wall_11",
+          "wall_inner_3": "wall_12",
+          "obstacle_0_movable": "obj_4",
+          "obstacle_1_movable": "obj_1"
+        }
+      },
+      "collected": {
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true,
+          "result_root": "results/real/2push__env__obstacle_0_movable__fbdce248"
+        },
+        "real_namo": {
+          "status": "complete",
+          "planner": "namo_cpp feat/horizon-q-redesign at 6a2f9001: every mode ranks every blocker on the boundary.",
+          "model_pure_policy": {
+            "successes": 5,
+            "trials": 5
+          },
+          "model_search": {
+            "successes": 5,
+            "trials": 5
+          },
+          "uniform_search": {
+            "successes": 3,
+            "trials": 5
+          },
+          "next_arm": null,
+          "next_trial": null,
+          "controller_changes_mid_collection": "rotation_tolerance_deg 2.5 -> 4.0 before model_search trial 4; goal_tolerance_ratio 0.2 -> 0.15 (1.4 cm -> 1.05 cm) before uniform_search trial 3. Both were made to damp a post-rotation wobble measured at 1.0-2.5 deg heading error.",
+          "result_root": "results/real/2push__env__obstacle_0_movable__fbdce248"
+        }
+      }
+    }
+  ]
+}

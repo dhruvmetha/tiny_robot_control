@@ -1,0 +1,3969 @@
+[
+  {
+    "auxiliary": {
+      "cx": 0.451252,
+      "cy": 0.514336,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 3.131522941563827
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc1/rb_00001/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "4387cafc48dda130b74799d43cf4d526454f866b9f17a3b8293db2697bc2631d",
+    "goal": [
+      0.206996,
+      0.658631
+    ],
+    "robot_start": [
+      0.27782744967307876,
+      0.11313073405301574
+    ],
+    "solve_rate": 0.0583,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_hc1",
+    "source_hint_profiles": [
+      "med2-med2"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc1/rb_00001/env.xml",
+    "source_scene_id": "rb_00001",
+    "target": {
+      "cx": 0.370179,
+      "cy": 0.375669,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.612525552005486
+    },
+    "walls": [
+      {
+        "cx": 0.195999,
+        "cy": 0.387455,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.23376454799679997
+      },
+      {
+        "cx": 0.1136,
+        "cy": 0.517796,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.22609991713337432
+      }
+    ],
+    "xml_sha256": "5c72a4109f2c2d3a9245e0da48d5a5779f049d26839380140939edcd1c2425e5"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.338061,
+      "cy": 0.407566,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.3351166988230532
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc1/rb_00002/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "638123e6d8e29678cfc3a226ae5ac093e32fabfc5798d972d092c064592d6281",
+    "goal": [
+      0.377786,
+      0.673213
+    ],
+    "robot_start": [
+      0.19086008303301596,
+      0.22475148051094224
+    ],
+    "solve_rate": 0.1769,
+    "solve_rate_1push": 0.0231,
+    "source_family": "hard_hc1",
+    "source_hint_profiles": [
+      "hard1-hard1"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc1/rb_00002/env.xml",
+    "source_scene_id": "rb_00002",
+    "target": {
+      "cx": 0.195707,
+      "cy": 0.42966,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.4168235547168821
+    },
+    "walls": [
+      {
+        "cx": 0.38939,
+        "cy": 0.477458,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.15775411516892288
+      },
+      {
+        "cx": 0.132654,
+        "cy": 0.595807,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.4203183321979054
+      }
+    ],
+    "xml_sha256": "2e40ac9edae9635139b41f476e93dad0ad46524defa26a72ddeef70c5d851280"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.102311,
+      "cy": 0.464358,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.4535706767194594
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc1/rb_00003/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "53ba7152d030463a0e68363a6adc50cc350ccf2565661eb668fa19d133fbf6c1",
+    "goal": [
+      0.380872,
+      0.650364
+    ],
+    "robot_start": [
+      0.09291071815896526,
+      0.16113645717435
+    ],
+    "solve_rate": 0.4417,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_hc1",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc1/rb_00003/env.xml",
+    "source_scene_id": "rb_00003",
+    "target": {
+      "cx": 0.212551,
+      "cy": 0.433478,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.868472903182576
+    },
+    "walls": [
+      {
+        "cx": 0.390471,
+        "cy": 0.478159,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.08744010540699738
+      },
+      {
+        "cx": 0.1347,
+        "cy": 0.606955,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.4512865992339594
+      }
+    ],
+    "xml_sha256": "1fb19fe134703b29c9d566bed8cdb91e61e3b65b11297f4142d3a0feca18f834"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.040305,
+      "cy": 0.494575,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.06376796041610303
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc2/rb_00000/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "defce93515e616b4fb5f84b52e5bf8f1416cd40a984adf09a439c5ff3a82a3ad",
+    "goal": [
+      0.28783,
+      0.696435
+    ],
+    "robot_start": [
+      0.11608046827566022,
+      0.1622926209186106
+    ],
+    "solve_rate": 0.4214,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_hc2",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc2/rb_00000/env.xml",
+    "source_scene_id": "rb_00000",
+    "target": {
+      "cx": 0.134269,
+      "cy": 0.375121,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.6665252366673936
+    },
+    "walls": [
+      {
+        "cx": 0.383101,
+        "cy": 0.525808,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.06798533911403708
+      },
+      {
+        "cx": 0.322551,
+        "cy": 0.40776,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.2942594052001754
+      }
+    ],
+    "xml_sha256": "9ea10558caaff83c177649c2d99cd94c588c114834fec54332ee140dbd22af7b"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.045716,
+      "cy": 0.428626,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.0015951785764452575
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc2/rb_00002/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "deeca18f918883f86737d2dc6c6c01c735e2680c4d070df82524d5a79fd653a0",
+    "goal": [
+      0.110585,
+      0.62947
+    ],
+    "robot_start": [
+      0.33582245363030444,
+      0.1928510634994366
+    ],
+    "solve_rate": 0.3333,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_hc2",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_hc2/rb_00002/env.xml",
+    "source_scene_id": "rb_00002",
+    "target": {
+      "cx": 0.145138,
+      "cy": 0.320546,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.7437001008123238
+    },
+    "walls": [
+      {
+        "cx": 0.31338,
+        "cy": 0.361773,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.16439861853785032
+      },
+      {
+        "cx": 0.381442,
+        "cy": 0.47166,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.12328016234402063
+      }
+    ],
+    "xml_sha256": "12ebcbed000eeaa76f97890c688b672777b98fb235121fcbd4606d6cb6ede703"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.368631,
+      "cy": 0.50785,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.406861433284325
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00064/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "67b4eda64f9b29c26d1bc1a68bac0feca79590c5aaecaf95b1822508a8f73eff",
+    "goal": [
+      0.236034,
+      0.582339
+    ],
+    "robot_start": [
+      0.33018573662784684,
+      0.1750540062803042
+    ],
+    "solve_rate": 0.5333,
+    "solve_rate_1push": 0.08,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00064/env.xml",
+    "source_scene_id": "rb_00064",
+    "target": {
+      "cx": 0.281365,
+      "cy": 0.394033,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.487474386616174
+    },
+    "walls": [
+      {
+        "cx": 0.112821,
+        "cy": 0.35109,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.8926451378207033
+      },
+      {
+        "cx": 0.385439,
+        "cy": 0.357752,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.5827807088718616
+      }
+    ],
+    "xml_sha256": "ab425f6d75bdaef90e2887a4520cdc2bb163a5deae9c26f07f7e0b3c9662000b"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.245929,
+      "cy": 0.357186,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.2462344538067422
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00074/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "ff009efd7e60a2ff0e3b00dfeb2a47799fb75de404ba2d8b54c8fd31daf9922d",
+    "goal": [
+      0.190894,
+      0.691025
+    ],
+    "robot_start": [
+      0.28031773562420526,
+      0.1186472255232694
+    ],
+    "solve_rate": 0.85,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00074/env.xml",
+    "source_scene_id": "rb_00074",
+    "target": {
+      "cx": 0.395567,
+      "cy": 0.397312,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.8327887131027316
+    },
+    "walls": [
+      {
+        "cx": 0.173731,
+        "cy": 0.489948,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.518360274568193
+      },
+      {
+        "cx": 0.191252,
+        "cy": 0.422374,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.4556598622423648
+      }
+    ],
+    "xml_sha256": "02bcf4c0f81a4c1ed603e445506bf1f1b7a83f28a96f10163684863d12defd64"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.240692,
+      "cy": 0.246528,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.3933749076350224
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00076/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "27102bef7eaace213250699601942e73e68adf38b74ca8c6d7be21ff45fbc078",
+    "goal": [
+      0.280151,
+      0.661002
+    ],
+    "robot_start": [
+      0.3267072230992656,
+      0.16406562347348203
+    ],
+    "solve_rate": 0.7676,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00076/env.xml",
+    "source_scene_id": "rb_00076",
+    "target": {
+      "cx": 0.101856,
+      "cy": 0.284886,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.3012422491429187
+    },
+    "walls": [
+      {
+        "cx": 0.327516,
+        "cy": 0.300806,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.8186621318118203
+      },
+      {
+        "cx": 0.38214,
+        "cy": 0.449431,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.7330360692694684
+      }
+    ],
+    "xml_sha256": "c526adecfc0c4ed55d6384c51747b0d7497c8a421552adf45abbed89f5147d16"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.222132,
+      "cy": 0.263765,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.32792085489839673
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00079/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "d33531f1492491865a20b163562fb77e26587f1158dded559752820af02f6321",
+    "goal": [
+      0.086477,
+      0.673171
+    ],
+    "robot_start": [
+      0.41671278892582847,
+      0.0892938661065484
+    ],
+    "solve_rate": 0.1111,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [
+      "med2-med2"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00079/env.xml",
+    "source_scene_id": "rb_00079",
+    "target": {
+      "cx": 0.086031,
+      "cy": 0.32988,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.1185901744362556
+    },
+    "walls": [
+      {
+        "cx": 0.268119,
+        "cy": 0.451316,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.6772505292669941
+      },
+      {
+        "cx": 0.390655,
+        "cy": 0.368779,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.9255460777506607
+      }
+    ],
+    "xml_sha256": "a2f30adff694d7f413563c519ed4c755d1fd8268cd741bda27b70bd1341b439c"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.069184,
+      "cy": 0.299301,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.9346483533155876
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00085/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "ba5bde299f564293241088faf155db5d01ae26059d97b9326cd9716f86afbea4",
+    "goal": [
+      0.429744,
+      0.685304
+    ],
+    "robot_start": [
+      0.18481276089682114,
+      0.08024945871974049
+    ],
+    "solve_rate": 0.9231,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00085/env.xml",
+    "source_scene_id": "rb_00085",
+    "target": {
+      "cx": 0.201174,
+      "cy": 0.370043,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.062807993964262
+    },
+    "walls": [
+      {
+        "cx": 0.16908,
+        "cy": 0.534521,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.8152297498515558
+      },
+      {
+        "cx": 0.35787,
+        "cy": 0.389652,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.6421683117444793
+      }
+    ],
+    "xml_sha256": "d2b1e26098bf890f048051c55a99e97816c3a346bfaf67c84d346e99efd20a77"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.250877,
+      "cy": 0.344696,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.2332223784613014
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00087/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "594e4d77a457403cc05662faf7e95a0722546ebb2be30c4a5454af186b1bd500",
+    "goal": [
+      0.349996,
+      0.689166
+    ],
+    "robot_start": [
+      0.30210465449156326,
+      0.06024161133217595
+    ],
+    "solve_rate": 0.0692,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00087/env.xml",
+    "source_scene_id": "rb_00087",
+    "target": {
+      "cx": 0.203938,
+      "cy": 0.417029,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.146421604612602
+    },
+    "walls": [
+      {
+        "cx": 0.389841,
+        "cy": 0.449103,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.12439996559210019
+      },
+      {
+        "cx": 0.134502,
+        "cy": 0.571878,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.2575373197173885
+      }
+    ],
+    "xml_sha256": "9ef113a6a524e9a9219ba560da13eee9b3f7d30c558731a5b5d4f33d293ab112"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.320407,
+      "cy": 0.414798,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.13999004932236947
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00094/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "029e61c54db10286b9a8d4b897079f21f88a7b4b856cc4d7b749c34607a5c9fb",
+    "goal": [
+      0.322518,
+      0.6106
+    ],
+    "robot_start": [
+      0.3745782118711426,
+      0.10782657742841788
+    ],
+    "solve_rate": 0.4833,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00094/env.xml",
+    "source_scene_id": "rb_00094",
+    "target": {
+      "cx": 0.401815,
+      "cy": 0.32928,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.331581961800476
+    },
+    "walls": [
+      {
+        "cx": 0.191549,
+        "cy": 0.281552,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.5431311217765104
+      },
+      {
+        "cx": 0.176347,
+        "cy": 0.406821,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.3216736757336858
+      }
+    ],
+    "xml_sha256": "1a8ab64ba5c041ce6243e59ce11c03a940b46cca5b97c8200e809cd199da4d02"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.451262,
+      "cy": 0.346382,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.022821279527254615
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00096/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "6c79d0c15763105b7e099d4be5583f3b48b7a6fd9d8f71048e74940909fbd6bf",
+    "goal": [
+      0.29583,
+      0.686884
+    ],
+    "robot_start": [
+      0.07103082033606008,
+      0.13411948856280498
+    ],
+    "solve_rate": 0.4571,
+    "solve_rate_1push": 0.0286,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00096/env.xml",
+    "source_scene_id": "rb_00096",
+    "target": {
+      "cx": 0.355246,
+      "cy": 0.366518,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.9348656119008756
+    },
+    "walls": [
+      {
+        "cx": 0.130406,
+        "cy": 0.318984,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.07371452201004863
+      },
+      {
+        "cx": 0.183492,
+        "cy": 0.388451,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.00919072930807694
+      }
+    ],
+    "xml_sha256": "7b458aa860e7980240230fa669704a182acf5e88964be8b8174cd8d089465630"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.201971,
+      "cy": 0.269221,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.27559513343202835
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00100/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "260f9e09c212620d76e7a288263c39c9a90fc5e45c482a945450a132f5ecce8c",
+    "goal": [
+      0.410134,
+      0.663223
+    ],
+    "robot_start": [
+      0.3761236458687754,
+      0.10977528502212683
+    ],
+    "solve_rate": 0.0053,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00100/env.xml",
+    "source_scene_id": "rb_00100",
+    "target": {
+      "cx": 0.268166,
+      "cy": 0.401538,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.6777276145613675
+    },
+    "walls": [
+      {
+        "cx": 0.099046,
+        "cy": 0.421954,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.06339713030993178
+      },
+      {
+        "cx": 0.356502,
+        "cy": 0.485148,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.7717302192707172
+      }
+    ],
+    "xml_sha256": "13160443e0fbc3f0d3c11c923eec013b4ab982eca97db693932bd0dadae5c332"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.335075,
+      "cy": 0.375677,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.7195724333849756
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00111/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "e38378f4d5a9ddc414a9904c9d913b228cbee3f2686931e4f7a144680f7d8b98",
+    "goal": [
+      0.323704,
+      0.684872
+    ],
+    "robot_start": [
+      0.11712001631473118,
+      0.1827641320149239
+    ],
+    "solve_rate": 0.2083,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00111/env.xml",
+    "source_scene_id": "rb_00111",
+    "target": {
+      "cx": 0.210908,
+      "cy": 0.463242,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.9565823428143723
+    },
+    "walls": [
+      {
+        "cx": 0.389264,
+        "cy": 0.47131,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.16895267124849409
+      },
+      {
+        "cx": 0.130531,
+        "cy": 0.594575,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.377692696928516
+      }
+    ],
+    "xml_sha256": "60e59c8c593da88034368002ce6be2a07aa221d0aa81433b3bfb7854063ae144"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.052143,
+      "cy": 0.246652,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.9781042940700284
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00112/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "9551e7a87b66e642d76d54e98005786ab72420a37274a031896838879588123c",
+    "goal": [
+      0.277196,
+      0.603007
+    ],
+    "robot_start": [
+      0.21666426657444024,
+      0.157997928504222
+    ],
+    "solve_rate": 0.8,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00112/env.xml",
+    "source_scene_id": "rb_00112",
+    "target": {
+      "cx": 0.087363,
+      "cy": 0.389843,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.9004207711678966
+    },
+    "walls": [
+      {
+        "cx": 0.268367,
+        "cy": 0.359983,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.736285069485226
+      },
+      {
+        "cx": 0.371868,
+        "cy": 0.42443,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.16380538112509746
+      }
+    ],
+    "xml_sha256": "016b9d3e04330574ac60f5e9b7ae5321d974d9e69731fae0eb960a8ed11e554b"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.328981,
+      "cy": 0.224867,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.1556338278787468
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00122/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "bf5baa52c8004fdb47974e8d4bfd55f62887f24af9fe9234c4d41d467f35b1fc",
+    "goal": [
+      0.113837,
+      0.569217
+    ],
+    "robot_start": [
+      0.1780120443349597,
+      0.07834685654749948
+    ],
+    "solve_rate": 0.096,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00122/env.xml",
+    "source_scene_id": "rb_00122",
+    "target": {
+      "cx": 0.220405,
+      "cy": 0.29149,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.5912213824772348
+    },
+    "walls": [
+      {
+        "cx": 0.390375,
+        "cy": 0.325034,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.09261088766212587
+      },
+      {
+        "cx": 0.137388,
+        "cy": 0.391338,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.3086795334179795
+      }
+    ],
+    "xml_sha256": "4ab687ffd33c6c6d096c21cf408a5c1c0b04e02f175c9257f3e7a38c5d8f6115"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.407723,
+      "cy": 0.27805,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.9166414947167887
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00126/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "be4788ccdb205704b987de2b33c005982e844a7fde9166a4deeeb57ca58e4eda",
+    "goal": [
+      0.381593,
+      0.657739
+    ],
+    "robot_start": [
+      0.2054350892251603,
+      0.08109994366655794
+    ],
+    "solve_rate": 0.2,
+    "solve_rate_1push": 0.181,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00126/env.xml",
+    "source_scene_id": "rb_00126",
+    "target": {
+      "cx": 0.303241,
+      "cy": 0.242672,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.3264944845672043
+    },
+    "walls": [
+      {
+        "cx": 0.117682,
+        "cy": 0.280719,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.6185423481655927
+      },
+      {
+        "cx": 0.315069,
+        "cy": 0.426751,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.1601669106867574
+      }
+    ],
+    "xml_sha256": "5c8d3765d01b673ab144af80d0ac2b360001ba2c34bdd2fe38879571a6484568"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.0768,
+      "cy": 0.484957,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.4702268858683336
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00134/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "1bcace812c9f1816335f9040c5dbc8be5ac435985120693355ab3efdd835cd22",
+    "goal": [
+      0.148496,
+      0.595123
+    ],
+    "robot_start": [
+      0.4203543188015952,
+      0.0888641469465217
+    ],
+    "solve_rate": 0.6,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00134/env.xml",
+    "source_scene_id": "rb_00134",
+    "target": {
+      "cx": 0.137017,
+      "cy": 0.353169,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.4285935929084096
+    },
+    "walls": [
+      {
+        "cx": 0.307452,
+        "cy": 0.314476,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.05238740140213384
+      },
+      {
+        "cx": 0.369012,
+        "cy": 0.399503,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.13099628042038008
+      }
+    ],
+    "xml_sha256": "6b4126768595c13245811a8595062bc352d9468d805e712267a752aa0888dbe5"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.39591,
+      "cy": 0.399382,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.9373697758617112
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00136/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "894eb99d7611c841e9b68f6456b5e6ff007b1cc166c53aea16aa26ff7e6743c9",
+    "goal": [
+      0.218178,
+      0.713298
+    ],
+    "robot_start": [
+      0.3568475619103616,
+      0.20202390152495026
+    ],
+    "solve_rate": 0.0133,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00136/env.xml",
+    "source_scene_id": "rb_00136",
+    "target": {
+      "cx": 0.280514,
+      "cy": 0.496899,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.8691770043660746
+    },
+    "walls": [
+      {
+        "cx": 0.099842,
+        "cy": 0.469603,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.10479269242910061
+      },
+      {
+        "cx": 0.345116,
+        "cy": 0.596406,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.86687007156569
+      }
+    ],
+    "xml_sha256": "a0f02b54b31dcfa05bad3e39fd48b447c830d2882a36d3f2fd2477eb1ce4722d"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.161705,
+      "cy": 0.204065,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.11225465565978465
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00138/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "95ec3fcedbb22a013d151b72d1adad35a723b79ca59990bf04cd3974cdf81ef0",
+    "goal": [
+      0.121926,
+      0.688096
+    ],
+    "robot_start": [
+      0.38561234567533464,
+      0.0883162309699291
+    ],
+    "solve_rate": 0.14,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00138/env.xml",
+    "source_scene_id": "rb_00138",
+    "target": {
+      "cx": 0.277042,
+      "cy": 0.284213,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.178090586436747
+    },
+    "walls": [
+      {
+        "cx": 0.099916,
+        "cy": 0.319404,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.10920593197569348
+      },
+      {
+        "cx": 0.348777,
+        "cy": 0.411893,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.8392231311895963
+      }
+    ],
+    "xml_sha256": "cb95749c224cf439df61bcf678b9d2f8b81f4afa9653321424b4798f9bfd2128"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.162824,
+      "cy": 0.254718,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.7848576957863
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00144/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "76204faac0d9751bf73e694d637adca6a9cf9e4047d5591ff9160abbe82189ad",
+    "goal": [
+      0.207801,
+      0.627456
+    ],
+    "robot_start": [
+      0.39138273496565723,
+      0.2581715333042589
+    ],
+    "solve_rate": 0.2231,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00144/env.xml",
+    "source_scene_id": "rb_00144",
+    "target": {
+      "cx": 0.292077,
+      "cy": 0.340042,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.1542598782833084
+    },
+    "walls": [
+      {
+        "cx": 0.10099,
+        "cy": 0.373462,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.19612599907876666
+      },
+      {
+        "cx": 0.357933,
+        "cy": 0.476898,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.8582149488984652
+      }
+    ],
+    "xml_sha256": "c92ca9d7a370691d92a9a71ce7fe6acb28ac3da499b8e430f5f1350ab7d4a359"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.2246,
+      "cy": 0.311282,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.9224183604646242
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00150/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "ddf57f67d78f222de5461b2f75ed24bf265942715b8281b6a9872080ecc1e239",
+    "goal": [
+      0.282929,
+      0.640987
+    ],
+    "robot_start": [
+      0.10042600625847485,
+      0.26402141907072096
+    ],
+    "solve_rate": 0.4,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00150/env.xml",
+    "source_scene_id": "rb_00150",
+    "target": {
+      "cx": 0.204491,
+      "cy": 0.436503,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.73002112620472
+    },
+    "walls": [
+      {
+        "cx": 0.388942,
+        "cy": 0.474349,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.20519076797472716
+      },
+      {
+        "cx": 0.16432,
+        "cy": 0.587931,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.380530340492871
+      }
+    ],
+    "xml_sha256": "a68d6632b3a31b5d52fac4fdc33dc8c9bd2b8d57e9dd5feda48893eeb968eb34"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.441783,
+      "cy": 0.262342,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.9940558005818003
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00153/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "8c03627927cebdcde93f0b77731d36085fe3f0b7d87d1caabf9d9fcf2b7d502b",
+    "goal": [
+      0.306886,
+      0.692007
+    ],
+    "robot_start": [
+      0.21511697590613976,
+      0.1848904624785446
+    ],
+    "solve_rate": 0.9,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00153/env.xml",
+    "source_scene_id": "rb_00153",
+    "target": {
+      "cx": 0.371083,
+      "cy": 0.398302,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.47952434251682896
+    },
+    "walls": [
+      {
+        "cx": 0.212622,
+        "cy": 0.495054,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.02556486729821962
+      },
+      {
+        "cx": 0.10754,
+        "cy": 0.425517,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.416537940539769
+      }
+    ],
+    "xml_sha256": "3d1ed53f95281731722fa4094c844d98541ad459c815bf8af319da6cccdf0046"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.387603,
+      "cy": 0.233817,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.9259638043971736
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00160/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "835f70bd56593fdf625d6a260c5bf2c687dce0fc0bcc4933a76a5900273ea988",
+    "goal": [
+      0.321579,
+      0.686951
+    ],
+    "robot_start": [
+      0.12071101698144535,
+      0.07371754006115254
+    ],
+    "solve_rate": 0.6875,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00160/env.xml",
+    "source_scene_id": "rb_00160",
+    "target": {
+      "cx": 0.375434,
+      "cy": 0.39079,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.07736623949741132
+    },
+    "walls": [
+      {
+        "cx": 0.159079,
+        "cy": 0.425526,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.00352420373221199
+      },
+      {
+        "cx": 0.235735,
+        "cy": 0.495351,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.07218374608300197
+      }
+    ],
+    "xml_sha256": "fe07311db26cb806d894253c7b1b38d10ac535589519daa3473e52d183a444cc"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.445062,
+      "cy": 0.312538,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 3.0153481018711377
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00163/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "ff617c696f31feaa1b881b436b91a5b71cdbeeeeb21b398eacb346dd1421db95",
+    "goal": [
+      0.165647,
+      0.653003
+    ],
+    "robot_start": [
+      0.1356560663967582,
+      0.1867654964941274
+    ],
+    "solve_rate": 0.7385,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00163/env.xml",
+    "source_scene_id": "rb_00163",
+    "target": {
+      "cx": 0.366609,
+      "cy": 0.390833,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.3572004281600245
+    },
+    "walls": [
+      {
+        "cx": 0.171687,
+        "cy": 0.383511,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.3239759046434065
+      },
+      {
+        "cx": 0.153904,
+        "cy": 0.515842,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.35534645261875253
+      }
+    ],
+    "xml_sha256": "9312dc9cf012c12db2d4384af966c343c130a14747554951bcc62ccebefa6152"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.04363,
+      "cy": 0.155035,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.07230195723323954
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00164/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "3628748493534167c516d43b61367f5ffa5178d9dd9b5ee2511da805829c98a7",
+    "goal": [
+      0.3833,
+      0.561247
+    ],
+    "robot_start": [
+      0.165449666601584,
+      0.1440867548804542
+    ],
+    "solve_rate": 0.2235,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00164/env.xml",
+    "source_scene_id": "rb_00164",
+    "target": {
+      "cx": 0.116103,
+      "cy": 0.287574,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.641206338163998
+    },
+    "walls": [
+      {
+        "cx": 0.302246,
+        "cy": 0.269109,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.2548963662614166
+      },
+      {
+        "cx": 0.364854,
+        "cy": 0.360051,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.14071003254540218
+      }
+    ],
+    "xml_sha256": "cda41cbcc064def8e9d2eb7d36a4199e1462e51cd70f495a0bb5c2f82a583df6"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.275388,
+      "cy": 0.370057,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.6841440732102297
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00168/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "d199e632af888ca292801659198d554d469f8573bbf4cfa2a03fbafa095b92f6",
+    "goal": [
+      0.376717,
+      0.625791
+    ],
+    "robot_start": [
+      0.4122599153492901,
+      0.36317853156850993
+    ],
+    "solve_rate": 0.4095,
+    "solve_rate_1push": 0.2286,
+    "source_family": "hard_loose",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_loose/rb_00168/env.xml",
+    "source_scene_id": "rb_00168",
+    "target": {
+      "cx": 0.196011,
+      "cy": 0.431105,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.4859860047366586
+    },
+    "walls": [
+      {
+        "cx": 0.389398,
+        "cy": 0.474313,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.15710113513587423
+      },
+      {
+        "cx": 0.150314,
+        "cy": 0.602798,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.2827705046445592
+      }
+    ],
+    "xml_sha256": "894c76120710a172cfde57a7173b2404261541b7711c094175f7f7aae856ac3b"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.366901,
+      "cy": 0.312179,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 3.025778538546906
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00097/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "7d7da0e9d68168478637fd1f833ab17a1d09a50bd9de66ac26e71bdf47059aae",
+    "goal": [
+      0.130739,
+      0.627507
+    ],
+    "robot_start": [
+      0.3104592389406368,
+      0.08911374966182584
+    ],
+    "solve_rate": 0.3308,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00097/env.xml",
+    "source_scene_id": "rb_00097",
+    "target": {
+      "cx": 0.269804,
+      "cy": 0.296011,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.16500426524158487
+    },
+    "walls": [
+      {
+        "cx": 0.098558,
+        "cy": 0.250001,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.0415586631377677
+      },
+      {
+        "cx": 0.390258,
+        "cy": 0.44015,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.09910150535090499
+      }
+    ],
+    "xml_sha256": "add2b0c0f17e99b9baa81e0c8ef56749ebe7d9a0553e84bacfa9167b81f33ee1"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.422598,
+      "cy": 0.26566,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.009066758571307783
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00108/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "9448e4fd5e158e22a614fefcfb2fc35947024091a3c68eb968d984e98cd65092",
+    "goal": [
+      0.364916,
+      0.629746
+    ],
+    "robot_start": [
+      0.3562921803129546,
+      0.06393982620021002
+    ],
+    "solve_rate": 0.2429,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00108/env.xml",
+    "source_scene_id": "rb_00108",
+    "target": {
+      "cx": 0.2974,
+      "cy": 0.318294,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.1728181128010802
+    },
+    "walls": [
+      {
+        "cx": 0.098255,
+        "cy": 0.284442,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.028957857177266677
+      },
+      {
+        "cx": 0.392155,
+        "cy": 0.478812,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.012843354366650673
+      }
+    ],
+    "xml_sha256": "a9ec6c549efc2387e7e902460faf9408dafa2dca1be7a6028bf54c01ec2eb96e"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.211477,
+      "cy": 0.216009,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.6863070073923483
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00112/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "e8d2388513e8692818921eef4c4898aa44cc4ef4f0083038bba09c0ae70a1a4b",
+    "goal": [
+      0.337444,
+      0.670922
+    ],
+    "robot_start": [
+      0.31443114991250903,
+      0.14726660930906577
+    ],
+    "solve_rate": 0.513,
+    "solve_rate_1push": 0.2261,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00112/env.xml",
+    "source_scene_id": "rb_00112",
+    "target": {
+      "cx": 0.139648,
+      "cy": 0.260705,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.5849727546892445
+    },
+    "walls": [
+      {
+        "cx": 0.391172,
+        "cy": 0.267931,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.053364227277890024
+      },
+      {
+        "cx": 0.100749,
+        "cy": 0.501334,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.17017127758552902
+      }
+    ],
+    "xml_sha256": "e5074bf53b56385c4b57370483ccb2c2e8d83ec5d2a309719333b9f6e6eded3e"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.386132,
+      "cy": 0.284799,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.6234468280834519
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00114/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "265f5f7ddce5758065ba382f947f5cbc01ef94898b661c70b2b0eb34888aad00",
+    "goal": [
+      0.282045,
+      0.626468
+    ],
+    "robot_start": [
+      0.3008377173328775,
+      0.09624830922894939
+    ],
+    "solve_rate": 0.8333,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00114/env.xml",
+    "source_scene_id": "rb_00114",
+    "target": {
+      "cx": 0.281304,
+      "cy": 0.25981,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.23401969768014902
+    },
+    "walls": [
+      {
+        "cx": 0.097808,
+        "cy": 0.222884,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.01141616373070987
+      },
+      {
+        "cx": 0.392076,
+        "cy": 0.400015,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.01585783469081772
+      }
+    ],
+    "xml_sha256": "f8f94ecfd669c1a0e43282c652edfd8713d8fe7301d9d2a4db122c544df15a1f"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.411304,
+      "cy": 0.263879,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.575642739608542
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00138/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "e7afa9269b9ef02726a9dd9702185edc37b17c2dbbe35dc9aa1b7592fde01c3e",
+    "goal": [
+      0.397427,
+      0.648283
+    ],
+    "robot_start": [
+      0.07806877471869886,
+      0.12608320312517107
+    ],
+    "solve_rate": 0.3733,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00138/env.xml",
+    "source_scene_id": "rb_00138",
+    "target": {
+      "cx": 0.289201,
+      "cy": 0.298765,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.863293987693133
+    },
+    "walls": [
+      {
+        "cx": 0.101057,
+        "cy": 0.2571,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.20501993514754194
+      },
+      {
+        "cx": 0.390737,
+        "cy": 0.475795,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.07382325602244787
+      }
+    ],
+    "xml_sha256": "4e692d7d7e982061402ac8d5d0f28b12ccae4c30000d580e4820a994ea70f69b"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.09252,
+      "cy": 0.2743,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.574955926139614
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00149/gallery_card.json",
+    "card_sha256": "35261806badc3366afc391d947cc6d4bbc98f550187876a569afa90db0568b84",
+    "goal": [
+      0.179799,
+      0.712253
+    ],
+    "robot_start": [
+      0.2528791425179838,
+      0.10555015703509144
+    ],
+    "solve_rate": 0.05,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00149/env.xml",
+    "source_scene_id": "rb_00149",
+    "target": {
+      "cx": 0.213238,
+      "cy": 0.315641,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.32993807154126675
+    },
+    "walls": [
+      {
+        "cx": 0.390875,
+        "cy": 0.280907,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.06710480305311342
+      },
+      {
+        "cx": 0.099051,
+        "cy": 0.466017,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.06361501721375076
+      }
+    ],
+    "xml_sha256": "e96a265cda857c7834d627f02c35cf6b1b93daded701ff71ecf642a3baf762cd"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.376226,
+      "cy": 0.183406,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.84889058822788
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00151/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "6dfb7ed0d07b88557e52246b4536b9ce8432aaf08ac63c056fc1e8de8deb585c",
+    "goal": [
+      0.07374,
+      0.613882
+    ],
+    "robot_start": [
+      0.15380720907979528,
+      0.06877369097242307
+    ],
+    "solve_rate": 0.04,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00151/env.xml",
+    "source_scene_id": "rb_00151",
+    "target": {
+      "cx": 0.292027,
+      "cy": 0.224528,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.6872695390215307
+    },
+    "walls": [
+      {
+        "cx": 0.101011,
+        "cy": 0.200871,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.19887473557102503
+      },
+      {
+        "cx": 0.390536,
+        "cy": 0.376064,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.0840205690700275
+      }
+    ],
+    "xml_sha256": "788a31e335b553b0cbd46aaa301aad6b7546b4f37e4ec9bd38c33c5a42fcf4d9"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.250494,
+      "cy": 0.226573,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.5759323161397162
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00160/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "8504420ce360f811668123e44cd9d5e28ef10bfd1ac6e9b9481f6f74dca085a6",
+    "goal": [
+      0.155981,
+      0.676088
+    ],
+    "robot_start": [
+      0.17682721647749344,
+      0.10659740943716148
+    ],
+    "solve_rate": 0.0385,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00160/env.xml",
+    "source_scene_id": "rb_00160",
+    "target": {
+      "cx": 0.130476,
+      "cy": 0.326947,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.8742899464097921
+    },
+    "walls": [
+      {
+        "cx": 0.390097,
+        "cy": 0.283214,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.10843446153972695
+      },
+      {
+        "cx": 0.100841,
+        "cy": 0.477698,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.17930601673120203
+      }
+    ],
+    "xml_sha256": "bd2d7c9cef64cae9ceb4f5b711ae73f36445daf65423b903796682fbdd7da0d0"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.260035,
+      "cy": 0.163762,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.263720270765626
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00164/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "6444494979c07de2cd0166ced4f1e74efc2654d01a499b9ed0a55198a090e7ce",
+    "goal": [
+      0.08393,
+      0.602099
+    ],
+    "robot_start": [
+      0.13387914287725416,
+      0.09245452459739636
+    ],
+    "solve_rate": 0.2933,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [
+      "med2-med2"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00164/env.xml",
+    "source_scene_id": "rb_00164",
+    "target": {
+      "cx": 0.14052,
+      "cy": 0.260872,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.8884596637414958
+    },
+    "walls": [
+      {
+        "cx": 0.389365,
+        "cy": 0.21447,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.15988175879356656
+      },
+      {
+        "cx": 0.100574,
+        "cy": 0.424213,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.15478567663042342
+      }
+    ],
+    "xml_sha256": "4c31ef0c5c1c8d9f8b7e30d497d49e1e4cc2f2a0bc178b705142b8cceb4f69f9"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.361221,
+      "cy": 0.283498,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.08213578801079882
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00173/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "b946d2daf919abcea27095781f86b23b15ccfc9d7d8399808f511c89a58e1cb6",
+    "goal": [
+      0.349121,
+      0.620026
+    ],
+    "robot_start": [
+      0.4297749083057709,
+      0.08916600789628547
+    ],
+    "solve_rate": 0.6,
+    "solve_rate_1push": 0.0588,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00173/env.xml",
+    "source_scene_id": "rb_00173",
+    "target": {
+      "cx": 0.275639,
+      "cy": 0.226147,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.5903992630430345
+    },
+    "walls": [
+      {
+        "cx": 0.099306,
+        "cy": 0.193781,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.0759922464970713
+      },
+      {
+        "cx": 0.391679,
+        "cy": 0.37842,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.03162753025440972
+      }
+    ],
+    "xml_sha256": "50ca566d1c2247547fd01da01b2568b1f95f9462bf6dcba9e2ae93560313552f"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.382295,
+      "cy": 0.180327,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.29532536504083096
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00185/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "69d07508bf3e032d77739c48be4f5f333d5ace3056a38db58e042ea082b251ec",
+    "goal": [
+      0.289785,
+      0.632963
+    ],
+    "robot_start": [
+      0.3229109417901922,
+      0.0682929735802337
+    ],
+    "solve_rate": 0.2,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00185/env.xml",
+    "source_scene_id": "rb_00185",
+    "target": {
+      "cx": 0.258141,
+      "cy": 0.260011,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.0002004246563232
+    },
+    "walls": [
+      {
+        "cx": 0.100406,
+        "cy": 0.206182,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.14169602139973134
+      },
+      {
+        "cx": 0.391103,
+        "cy": 0.406031,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.05646951708303834
+      }
+    ],
+    "xml_sha256": "fa442ce8ef1e5199a95eeece7f53e92bb5cd72a709bd068dca5d8bdcd7b33753"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.399293,
+      "cy": 0.240931,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.2372890658882773
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00190/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "f1202a49f7436bc10cb656515a8da41e04f1c8e99626dfca78af4e7404a31fd3",
+    "goal": [
+      0.143744,
+      0.632928
+    ],
+    "robot_start": [
+      0.4237874230849661,
+      0.11792987778342737
+    ],
+    "solve_rate": 0.7111,
+    "solve_rate_1push": 0.0,
+    "source_family": "hard_zig",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/hard_zig/rb_00190/env.xml",
+    "source_scene_id": "rb_00190",
+    "target": {
+      "cx": 0.272873,
+      "cy": 0.3228,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.9961136838529009
+    },
+    "walls": [
+      {
+        "cx": 0.099879,
+        "cy": 0.263742,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.10697253885167146
+      },
+      {
+        "cx": 0.392467,
+        "cy": 0.462198,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.0011876441961045814
+      }
+    ],
+    "xml_sha256": "0a2ae2a89d85cccdad4049857db86d1dc8623f8e1cac7f9ef138c951776362b1"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.313013,
+      "cy": 0.42246,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.588822663268147
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00107/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "05b808dbf270207b3b310e8fbc0b6236ed12793307142224038a7afe0966a934",
+    "goal": [
+      0.093158,
+      0.628078
+    ],
+    "robot_start": [
+      0.3007544448223279,
+      0.21084912924275584
+    ],
+    "solve_rate": 0.8526,
+    "solve_rate_1push": 0.0421,
+    "source_family": "med",
+    "source_hint_profiles": [
+      "hard1-hard1"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00107/env.xml",
+    "source_scene_id": "rb_00107",
+    "target": {
+      "cx": 0.35904,
+      "cy": 0.331935,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.041180275299276
+    },
+    "walls": [
+      {
+        "cx": 0.184717,
+        "cy": 0.394894,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.8138320552799738
+      },
+      {
+        "cx": 0.113388,
+        "cy": 0.355221,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.9263019973029919
+      }
+    ],
+    "xml_sha256": "8970570325b8b5d25590095844d061cdc102048f7b60a66e7b33e9b15f7796c9"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.157244,
+      "cy": 0.245808,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.5170751886399496
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00110/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "1eb17fe13fadf61cbfc51ec5f4ff828b759d6a9353ddff140c28c5ce501d9293",
+    "goal": [
+      0.073629,
+      0.697165
+    ],
+    "robot_start": [
+      0.3588903445033615,
+      0.24894795046195892
+    ],
+    "solve_rate": 0.2111,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00110/env.xml",
+    "source_scene_id": "rb_00110",
+    "target": {
+      "cx": 0.196173,
+      "cy": 0.366319,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.2583453198945993
+    },
+    "walls": [
+      {
+        "cx": 0.388975,
+        "cy": 0.385177,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.2006320726882731
+      },
+      {
+        "cx": 0.135922,
+        "cy": 0.503774,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.3070245249547758
+      }
+    ],
+    "xml_sha256": "408d5680376b044b7fd2d2c77de46821d3928d7fd9aec8491f58fa4c943a8e59"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.297179,
+      "cy": 0.198834,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.875751519575338
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00111/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "6ce6ca8d190b96f7dcf694106952aa6509fb9c7aaf521363201ddf843dd2b962",
+    "goal": [
+      0.104977,
+      0.678825
+    ],
+    "robot_start": [
+      0.1951634345874794,
+      0.08907415445875635
+    ],
+    "solve_rate": 0.6686,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00111/env.xml",
+    "source_scene_id": "rb_00111",
+    "target": {
+      "cx": 0.372962,
+      "cy": 0.282365,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.8339927548954882
+    },
+    "walls": [
+      {
+        "cx": 0.184289,
+        "cy": 0.312119,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.59299006469128
+      },
+      {
+        "cx": 0.127751,
+        "cy": 0.397836,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.11250415047635724
+      }
+    ],
+    "xml_sha256": "798e22a795b42d2e08d221d77407db64ec962c922f1dc62ed0de64809534d1de"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.285858,
+      "cy": 0.303665,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.7970979690832163
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00112/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "f7dd76f77e7f975787d92966999fa1f6a218033f12cd07f7cf3f1caddf830139",
+    "goal": [
+      0.419771,
+      0.628724
+    ],
+    "robot_start": [
+      0.2929243595206485,
+      0.21124130388574391
+    ],
+    "solve_rate": 0.1481,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00112/env.xml",
+    "source_scene_id": "rb_00112",
+    "target": {
+      "cx": 0.378532,
+      "cy": 0.390094,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.7505400810574746
+    },
+    "walls": [
+      {
+        "cx": 0.15863,
+        "cy": 0.367578,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.4554369313370076
+      },
+      {
+        "cx": 0.114368,
+        "cy": 0.432478,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.28259446223788626
+      }
+    ],
+    "xml_sha256": "6d50a6f9743f45b765cf8af4dd79f146f565b450e80ef39a5bdca90ad5957237"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.389726,
+      "cy": 0.105684,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.213916418940366
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00118/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "2f4a1d8949ce5c369f018caaac1cbc153fe94d912fef9e1e065efe4d51b6011a",
+    "goal": [
+      0.195659,
+      0.650597
+    ],
+    "robot_start": [
+      0.1091500731864331,
+      0.06910568244016536
+    ],
+    "solve_rate": 0.7778,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00118/env.xml",
+    "source_scene_id": "rb_00118",
+    "target": {
+      "cx": 0.350889,
+      "cy": 0.224705,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.31541534391505455
+    },
+    "walls": [
+      {
+        "cx": 0.223226,
+        "cy": 0.368982,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.3645276698824061
+      },
+      {
+        "cx": 0.134314,
+        "cy": 0.262157,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.09186777882650425
+      }
+    ],
+    "xml_sha256": "cc74a48a937e369470afb2ff844fd98ae0250520630f367a6da069aae1b009e6"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.229798,
+      "cy": 0.40185,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.6736382213141414
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00124/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "cdd187350dc564e3f161f79b51ce5165419171456884a4e8e711c9fdf861625f",
+    "goal": [
+      0.121295,
+      0.687523
+    ],
+    "robot_start": [
+      0.21400249855731515,
+      0.16728742791106138
+    ],
+    "solve_rate": 0.7048,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00124/env.xml",
+    "source_scene_id": "rb_00124",
+    "target": {
+      "cx": 0.108595,
+      "cy": 0.456238,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.719790328787111
+    },
+    "walls": [
+      {
+        "cx": 0.276262,
+        "cy": 0.46318,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.790230927736343
+      },
+      {
+        "cx": 0.315867,
+        "cy": 0.520118,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.8000998919917449
+      }
+    ],
+    "xml_sha256": "40ffe1440ca9a8f33a1bf9224a7ba638e7f91c1163513abb30a5dbb6b5cf1d89"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.285957,
+      "cy": 0.266376,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.6362212240346974
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00125/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "2a20ca4cc5fbde73ddb85dc0de097936695c9ff358625f443d39c680d64aca6b",
+    "goal": [
+      0.415379,
+      0.622115
+    ],
+    "robot_start": [
+      0.2802660510182651,
+      0.07232202657484946
+    ],
+    "solve_rate": 0.0341,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00125/env.xml",
+    "source_scene_id": "rb_00125",
+    "target": {
+      "cx": 0.383943,
+      "cy": 0.378538,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.423547688504602
+    },
+    "walls": [
+      {
+        "cx": 0.102761,
+        "cy": 0.418516,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.17679701866499756
+      },
+      {
+        "cx": 0.233444,
+        "cy": 0.46745,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.15579384861954543
+      }
+    ],
+    "xml_sha256": "881c4ebea609940b00047e659a54520731949831ffbefa508f566b6dd3addf29"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.342039,
+      "cy": 0.2999,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.156962974415627
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00139/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "eb54fd668ba5bd0a8fc5514bbcc3a91ab25228777634aa23fd1122cda29ff697",
+    "goal": [
+      0.346802,
+      0.668808
+    ],
+    "robot_start": [
+      0.29351823718329806,
+      0.148759618516738
+    ],
+    "solve_rate": 0.3667,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00139/env.xml",
+    "source_scene_id": "rb_00139",
+    "target": {
+      "cx": 0.340117,
+      "cy": 0.411128,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.5880701645611497
+    },
+    "walls": [
+      {
+        "cx": 0.189558,
+        "cy": 0.433458,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.7408209882249414
+      },
+      {
+        "cx": 0.106884,
+        "cy": 0.521674,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.9510832990335287
+      }
+    ],
+    "xml_sha256": "6817562958018d4f24586991793ea997d23ec81fe62fface1d9a4961eda07c73"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.41051,
+      "cy": 0.248582,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.2921002753791666
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00147/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "1b9a7b688c7c062deadefe4e83187514e1677bf02eccddabf041877580246171",
+    "goal": [
+      0.236123,
+      0.647524
+    ],
+    "robot_start": [
+      0.15260560907669918,
+      0.1537989254192741
+    ],
+    "solve_rate": 0.88,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00147/env.xml",
+    "source_scene_id": "rb_00147",
+    "target": {
+      "cx": 0.349323,
+      "cy": 0.350758,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.5395685557073395
+    },
+    "walls": [
+      {
+        "cx": 0.124435,
+        "cy": 0.37915,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.5320371632790112
+      },
+      {
+        "cx": 0.221052,
+        "cy": 0.498977,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.891707110614219
+      }
+    ],
+    "xml_sha256": "a2220a840d35487e730809cbe3f97343d4ada6532a40af56657aad1fe4d7a62d"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.147586,
+      "cy": 0.220027,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.2100385591418226
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00152/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "9c04fa367ce551dc39bb2b3c06ee0a36ca0b16ee9bd790ae23dbe11188cc1421",
+    "goal": [
+      0.28464,
+      0.695649
+    ],
+    "robot_start": [
+      0.23233434458343238,
+      0.11917008576313595
+    ],
+    "solve_rate": 0.2333,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [
+      "med2-med2"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00152/env.xml",
+    "source_scene_id": "rb_00152",
+    "target": {
+      "cx": 0.185169,
+      "cy": 0.370268,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.8964746166357225
+    },
+    "walls": [
+      {
+        "cx": 0.39153,
+        "cy": 0.410473,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.037836835774352394
+      },
+      {
+        "cx": 0.141985,
+        "cy": 0.518098,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.2855235695533624
+      }
+    ],
+    "xml_sha256": "bc998101497e72b176ea3e2a472e97445b518cfa79f644f74c69a07f65ee32f6"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.087593,
+      "cy": 0.233832,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.553446157282137
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00154/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "b6d61d20ff4c185ea279cdcc621e9dcbc7193bcfc71c973c013dfa77dace633d",
+    "goal": [
+      0.137115,
+      0.688304
+    ],
+    "robot_start": [
+      0.33251399134672804,
+      0.1351386619478184
+    ],
+    "solve_rate": 0.5879,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00154/env.xml",
+    "source_scene_id": "rb_00154",
+    "target": {
+      "cx": 0.075,
+      "cy": 0.390679,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.08011862372780638
+    },
+    "walls": [
+      {
+        "cx": 0.34577,
+        "cy": 0.343888,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.14936527738567473
+      },
+      {
+        "cx": 0.274038,
+        "cy": 0.437522,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.48624977680317144
+      }
+    ],
+    "xml_sha256": "2d77fb31679075b505a3ec9b3a846f0fac28aee0c43cdea34386a952f84d9ba9"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.255151,
+      "cy": 0.229916,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.8481561362253482
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00158/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "06fb88d7507ab19b86f04c6a5f12692c363740f65b01752c11187670f2552d47",
+    "goal": [
+      0.107957,
+      0.71185
+    ],
+    "robot_start": [
+      0.39099990440022253,
+      0.18498014750326996
+    ],
+    "solve_rate": 0.0889,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00158/env.xml",
+    "source_scene_id": "rb_00158",
+    "target": {
+      "cx": 0.224964,
+      "cy": 0.382619,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.19516884306368043
+    },
+    "walls": [
+      {
+        "cx": 0.391717,
+        "cy": 0.401892,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.030093822174219707
+      },
+      {
+        "cx": 0.142062,
+        "cy": 0.522662,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.2605866193601327
+      }
+    ],
+    "xml_sha256": "aa99eb2da62596748848a61764d4abd8d3e7e4028eca825a5b9144f0a37b784b"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.19535,
+      "cy": 0.290818,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.03587567910705644
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00173/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "d7d97d07fa95a6e5bf2af8180ee9b2d3d87050cfaaa814d9d4d728ccf31b698a",
+    "goal": [
+      0.377333,
+      0.66452
+    ],
+    "robot_start": [
+      0.09920246137698355,
+      0.15072777368097967
+    ],
+    "solve_rate": 0.6,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00173/env.xml",
+    "source_scene_id": "rb_00173",
+    "target": {
+      "cx": 0.102863,
+      "cy": 0.315784,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.8779297777482893
+    },
+    "walls": [
+      {
+        "cx": 0.339337,
+        "cy": 0.318451,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.2190780735801657
+      },
+      {
+        "cx": 0.320465,
+        "cy": 0.452974,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.09552879891878008
+      }
+    ],
+    "xml_sha256": "bbe1e4d5246647b401113b9a682b36158eae3e3999af6c0b4086f5ba7cf27484"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.046625,
+      "cy": 0.229112,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.06382580062751411
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00175/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "39f1a9996c14cc5f5436d3a78d44f93ee8cec775d9315a48f0a0e531c93f73b4",
+    "goal": [
+      0.08464,
+      0.632874
+    ],
+    "robot_start": [
+      0.20917831153906719,
+      0.20618517625259256
+    ],
+    "solve_rate": 0.5474,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00175/env.xml",
+    "source_scene_id": "rb_00175",
+    "target": {
+      "cx": 0.075,
+      "cy": 0.37968,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.9553251118843313
+    },
+    "walls": [
+      {
+        "cx": 0.273309,
+        "cy": 0.443613,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.16675757064826083
+      },
+      {
+        "cx": 0.389595,
+        "cy": 0.3852,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.5232691352624748
+      }
+    ],
+    "xml_sha256": "fefb3a4fee29f6dbc6b691e682d7a614fdd40be896f016a33e05eaa07abe6d65"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.33028,
+      "cy": 0.240793,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.9698041454210495
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00196/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "e6832c035c9ddc2073da53bf1f365aa64a5506f945f12a842a0b10830e9bf35d",
+    "goal": [
+      0.352594,
+      0.504995
+    ],
+    "robot_start": [
+      0.29100659235155757,
+      0.06271353278299008
+    ],
+    "solve_rate": 0.6316,
+    "solve_rate_1push": 0.0316,
+    "source_family": "med",
+    "source_hint_profiles": [
+      "hard1-hard1"
+    ],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00196/env.xml",
+    "source_scene_id": "rb_00196",
+    "target": {
+      "cx": 0.214969,
+      "cy": 0.292149,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.7225970974769984
+    },
+    "walls": [
+      {
+        "cx": 0.389214,
+        "cy": 0.336722,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.1737337912948223
+      },
+      {
+        "cx": 0.132042,
+        "cy": 0.441821,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.3016294678907663
+      }
+    ],
+    "xml_sha256": "8e6af04c2971f2948f287c7fe3428fee97e1e18bf5ff6940fe7584a3633466ba"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.292558,
+      "cy": 0.259752,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.2303480919376302
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00197/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "0989f6bee6649ec218b2cf53f63ec64794a749f7e61efb878350632e96c3b6b2",
+    "goal": [
+      0.243424,
+      0.579921
+    ],
+    "robot_start": [
+      0.08865206974167503,
+      0.19277500243344137
+    ],
+    "solve_rate": 0.225,
+    "solve_rate_1push": 0.255,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00197/env.xml",
+    "source_scene_id": "rb_00197",
+    "target": {
+      "cx": 0.202431,
+      "cy": 0.385935,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.6202309193103122
+    },
+    "walls": [
+      {
+        "cx": 0.391924,
+        "cy": 0.435419,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.021793682023557914
+      },
+      {
+        "cx": 0.143378,
+        "cy": 0.564057,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.295276137800949
+      }
+    ],
+    "xml_sha256": "58fae66db75a728608e512ccc6fcae7414e1d18de9af988196f1e4ec19fbb1e4"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.040203,
+      "cy": 0.180477,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.021257534330637776
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00201/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "7a1f01e2815b11cdfc995c0f3d8f96f60fdc54225813a1460dc4206fce20c31a",
+    "goal": [
+      0.203091,
+      0.694162
+    ],
+    "robot_start": [
+      0.22806573637352667,
+      0.12483225987418482
+    ],
+    "solve_rate": 0.7231,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00201/env.xml",
+    "source_scene_id": "rb_00201",
+    "target": {
+      "cx": 0.139701,
+      "cy": 0.298027,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.4391739878168504
+    },
+    "walls": [
+      {
+        "cx": 0.137222,
+        "cy": 0.426428,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.38441595850826926
+      },
+      {
+        "cx": 0.354137,
+        "cy": 0.266192,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.3155483903639341
+      }
+    ],
+    "xml_sha256": "932da3ef014dc4fdac1129633af039bcb19f5ea48263af56f5577064b6558638"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.077139,
+      "cy": 0.299063,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.21593466578415385
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00206/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "b283c8f16a177c565da1e48fedb59904c8bbea44508d7e940efc11de596c6f95",
+    "goal": [
+      0.408636,
+      0.644909
+    ],
+    "robot_start": [
+      0.4299994055463908,
+      0.3095491431909472
+    ],
+    "solve_rate": 0.4133,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00206/env.xml",
+    "source_scene_id": "rb_00206",
+    "target": {
+      "cx": 0.163842,
+      "cy": 0.381421,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.7597001274773015
+    },
+    "walls": [
+      {
+        "cx": 0.299172,
+        "cy": 0.423977,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.9166616362730162
+      },
+      {
+        "cx": 0.384918,
+        "cy": 0.497686,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.3507336695787792
+      }
+    ],
+    "xml_sha256": "fe28d734cf6eb2da515271dba10354d35aa5b6a0829b045d58c047f46856ebe5"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.440546,
+      "cy": 0.221766,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.990704838231141
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00217/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "dd3462b69b38435f2fd0e7661055cc31ce02842f8d1b3a46bd0a1bb5798f73f4",
+    "goal": [
+      0.149648,
+      0.606083
+    ],
+    "robot_start": [
+      0.2567002771677909,
+      0.1632848274526289
+    ],
+    "solve_rate": 0.5714,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00217/env.xml",
+    "source_scene_id": "rb_00217",
+    "target": {
+      "cx": 0.346005,
+      "cy": 0.32708,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.7315463609397211
+    },
+    "walls": [
+      {
+        "cx": 0.132334,
+        "cy": 0.464052,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.6736297913738544
+      },
+      {
+        "cx": 0.163333,
+        "cy": 0.308891,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.5963290715365628
+      }
+    ],
+    "xml_sha256": "0f002b135192393db79236e8e2d426bdd022f997b8b7c61f65966a8193486f01"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.13738,
+      "cy": 0.304513,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.45910262891167875
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00218/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "c930ebec52371e4107d0683cf63c1d5a7a41da5c85b644f7a93203c8e41fea72",
+    "goal": [
+      0.396583,
+      0.710829
+    ],
+    "robot_start": [
+      0.28461996939670253,
+      0.16626237272705197
+    ],
+    "solve_rate": 0.6114,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00218/env.xml",
+    "source_scene_id": "rb_00218",
+    "target": {
+      "cx": 0.179766,
+      "cy": 0.425546,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.2339430687710107
+    },
+    "walls": [
+      {
+        "cx": 0.389853,
+        "cy": 0.454892,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.12360365912087777
+      },
+      {
+        "cx": 0.165224,
+        "cy": 0.58441,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.223771673862823
+      }
+    ],
+    "xml_sha256": "2778d185c5990b0d9ad57d2db6e3e955fac7b9e727d6a2f584c8bc782427ef4e"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.362485,
+      "cy": 0.21628,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.963837431712158
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00220/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "045cbd9ebb118211f51f8a2c177f2303fc18fa6dd5f611163b18ee96d62244e1",
+    "goal": [
+      0.208509,
+      0.61538
+    ],
+    "robot_start": [
+      0.06790800564768103,
+      0.19246986878193784
+    ],
+    "solve_rate": 0.3333,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00220/env.xml",
+    "source_scene_id": "rb_00220",
+    "target": {
+      "cx": 0.306865,
+      "cy": 0.364547,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.35888994223919907
+    },
+    "walls": [
+      {
+        "cx": 0.100559,
+        "cy": 0.357502,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.15354759241893623
+      },
+      {
+        "cx": 0.346975,
+        "cy": 0.486045,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 1.8404660325098192
+      }
+    ],
+    "xml_sha256": "32406eb75bf88fdaa086bd191c9bbb116ac74342762cd3667f7431de2c9c2405"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.218817,
+      "cy": 0.450094,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 2.4819286203712547
+    },
+    "card_object_id": "obstacle_0_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00224/gallery_card__obstacle_0_movable.json",
+    "card_sha256": "cffcf071b6d04a30a7271f937ee9d79479103de298c8074e7628225e79fea773",
+    "goal": [
+      0.195367,
+      0.621527
+    ],
+    "robot_start": [
+      0.28182392297204506,
+      0.15089692376511132
+    ],
+    "solve_rate": 0.1556,
+    "solve_rate_1push": 0.2,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": true,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00224/env.xml",
+    "source_scene_id": "rb_00224",
+    "target": {
+      "cx": 0.124559,
+      "cy": 0.333202,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.462985724241319
+    },
+    "walls": [
+      {
+        "cx": 0.357146,
+        "cy": 0.420843,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.3726924946561608
+      },
+      {
+        "cx": 0.251814,
+        "cy": 0.300051,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.41657272495176123
+      }
+    ],
+    "xml_sha256": "e224e4ae6e32eaf4b46d0bf919accd23ebc86faf9a29d6979e0a9a2db04fd790"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.280767,
+      "cy": 0.371673,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.0474457195629387
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00227/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "08dee959cfa81589aaca767a2c754f3b9ba121b441497b4f6484c846507766f4",
+    "goal": [
+      0.211365,
+      0.687453
+    ],
+    "robot_start": [
+      0.32983433355179675,
+      0.199035450646804
+    ],
+    "solve_rate": 0.9882,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00227/env.xml",
+    "source_scene_id": "rb_00227",
+    "target": {
+      "cx": 0.131681,
+      "cy": 0.403827,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 1.3583805240354436
+    },
+    "walls": [
+      {
+        "cx": 0.331199,
+        "cy": 0.535217,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.5706540216026648
+      },
+      {
+        "cx": 0.303985,
+        "cy": 0.450902,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.6545817740630713
+      }
+    ],
+    "xml_sha256": "c828f8958af33cc2fcd08c5fb8a30d23ec96827613eb024f47d81a2b2d6cafb9"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.231503,
+      "cy": 0.228917,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.5526943826584496
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00228/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "5a684efe1c281c2d191e0d4be4c1a3501be95ef0e62dafce624b63b045a26e67",
+    "goal": [
+      0.183741,
+      0.60666
+    ],
+    "robot_start": [
+      0.36312904933007034,
+      0.12855426058709885
+    ],
+    "solve_rate": 0.1067,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00228/env.xml",
+    "source_scene_id": "rb_00228",
+    "target": {
+      "cx": 0.11527,
+      "cy": 0.28271,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.708144287740621
+    },
+    "walls": [
+      {
+        "cx": 0.255217,
+        "cy": 0.403877,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": 0.6943627844510977
+      },
+      {
+        "cx": 0.384302,
+        "cy": 0.322284,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.5702389473999556
+      }
+    ],
+    "xml_sha256": "3e89f89c6e1947cd0263fc8eccfb90e6f57607329bc9631d2761c9c0e14b2515"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.406766,
+      "cy": 0.123084,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 1.4386590722826103
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00234/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "d62b92d102130e435575e35468dfdfe23e3ae760efc28a9cbe7625e59bcc0dae",
+    "goal": [
+      0.291451,
+      0.61005
+    ],
+    "robot_start": [
+      0.246280295390202,
+      0.14568355578153885
+    ],
+    "solve_rate": 0.75,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00234/env.xml",
+    "source_scene_id": "rb_00234",
+    "target": {
+      "cx": 0.353483,
+      "cy": 0.249413,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 0.3991436052419581
+    },
+    "walls": [
+      {
+        "cx": 0.22184,
+        "cy": 0.405677,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.5772498302854616
+      },
+      {
+        "cx": 0.118093,
+        "cy": 0.278572,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": 0.6090554190301598
+      }
+    ],
+    "xml_sha256": "a442214c6665f7e9ae4e1a31db0b4f25933ba5096569b259dbcfe732b5ef6ceb"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.242425,
+      "cy": 0.401977,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.7267251157738895
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00245/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "9e0f7d70e74ea3117724b75b11bc47739fd81b5cc4d13fc02f0c3f98c35456e9",
+    "goal": [
+      0.328045,
+      0.65285
+    ],
+    "robot_start": [
+      0.12650643210328127,
+      0.2284144394539263
+    ],
+    "solve_rate": 0.1586,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00245/env.xml",
+    "source_scene_id": "rb_00245",
+    "target": {
+      "cx": 0.125327,
+      "cy": 0.451955,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.73819592530682
+    },
+    "walls": [
+      {
+        "cx": 0.372899,
+        "cy": 0.52025,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.5164185259621793
+      },
+      {
+        "cx": 0.250287,
+        "cy": 0.495391,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.8327194673929883
+      }
+    ],
+    "xml_sha256": "c03ef8046b7870845cd7fa053fa731d85330bf19792f00075cd7692cb6e9d9f3"
+  },
+  {
+    "auxiliary": {
+      "cx": 0.054388,
+      "cy": 0.181084,
+      "hx": 0.035,
+      "hy": 0.075,
+      "hz": 0.02,
+      "physical_shape": "obj_1",
+      "sim_id": "obstacle_1_movable",
+      "yaw": 0.23235777771310748
+    },
+    "card_object_id": "obstacle_1_movable",
+    "card_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00248/gallery_card__obstacle_1_movable.json",
+    "card_sha256": "fd6e89b7c3c56caa924d1bf3d555d5277da29277cc75804e0aa457902f3db8bd",
+    "goal": [
+      0.16418,
+      0.633222
+    ],
+    "robot_start": [
+      0.2029937508886804,
+      0.08356827938061039
+    ],
+    "solve_rate": 0.0947,
+    "solve_rate_1push": 0.0,
+    "source_family": "med",
+    "source_hint_profiles": [],
+    "source_hint_target_aligned": false,
+    "source_host_path": "/scratch/tdn39/real_exp/sources/v3_b2_multiobject/med/rb_00248/env.xml",
+    "source_scene_id": "rb_00248",
+    "target": {
+      "cx": 0.151304,
+      "cy": 0.281326,
+      "hx": 0.0375,
+      "hy": 0.06,
+      "hz": 0.025,
+      "physical_shape": "obj_4",
+      "sim_id": "obstacle_0_movable",
+      "yaw": 2.373064511129564
+    },
+    "walls": [
+      {
+        "cx": 0.375329,
+        "cy": 0.254489,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_1",
+        "yaw": -0.37353686749498316
+      },
+      {
+        "cx": 0.26805,
+        "cy": 0.408175,
+        "hx": 0.0975,
+        "hy": 0.0275,
+        "name": "wall_inner_2",
+        "yaw": -0.03598029414242099
+      }
+    ],
+    "xml_sha256": "55b8b8ab7762269d0c9f90d7de619bb38c8e276e8571693cec617e4de2b564a6"
+  }
+]

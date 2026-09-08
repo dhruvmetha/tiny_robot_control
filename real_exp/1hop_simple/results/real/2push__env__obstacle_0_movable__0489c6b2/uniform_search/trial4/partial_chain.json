@@ -1,0 +1,10 @@
+{
+  "outcome": "failure",
+  "start_xml": "sim_replay_start.xml",
+  "chain": [],
+  "starting_robot_pose_sim": [
+    0.25604876680140587,
+    0.13298655674094073,
+    1.4280803045156951
+  ]
+}

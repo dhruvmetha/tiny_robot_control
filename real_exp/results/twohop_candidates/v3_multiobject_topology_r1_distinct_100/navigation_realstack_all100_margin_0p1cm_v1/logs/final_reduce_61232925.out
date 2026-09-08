@@ -1,0 +1,40 @@
+{
+  "arm_count": 200,
+  "both_failed_csv": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/both_navigation_baselines_failed.csv",
+  "both_failed_csv_sha256": "a22d05dd79af04d1bf174f0ca25636ee907cbc3f6819d931d42f041a4a1c951a",
+  "by_profile": {
+    "hard1-hard1": {
+      "both_failed": 14,
+      "both_succeeded": 18,
+      "ignore_only_succeeded": 15,
+      "penalise_only_succeeded": 3
+    },
+    "med2-med2": {
+      "both_failed": 33,
+      "both_succeeded": 9,
+      "ignore_only_succeeded": 4,
+      "penalise_only_succeeded": 4
+    }
+  },
+  "command_audit": {
+    "navigation_state_limit": 0.4,
+    "note": "The real controller uses the configured 0.4 navigation cap; its shared reverse-toward retreat helper independently clamps steering commands to the normalized [-1, 1] actuator range.",
+    "retreat_state_limit": 1.0
+  },
+  "controller_stack_audit_passed": true,
+  "csv": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/navigation_realstack.csv",
+  "csv_sha256": "15cf82e7ae8a773a9b6069017ffe45b7534b16beb7806e7be6d84501294e5f22",
+  "expected_control_hz": 30.0,
+  "expected_nav_speed": 0.4,
+  "manifest": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/scene_manifest.txt",
+  "manifest_sha256": "295d9c0a59b3212233df71b32226e5982324231ea0933633949b423515d84002",
+  "overall": {
+    "both_failed": 47,
+    "both_succeeded": 27,
+    "ignore_only_succeeded": 19,
+    "penalise_only_succeeded": 7
+  },
+  "scene_count": 100,
+  "schema_version": 1,
+  "trajectory_audit_passed": true
+}

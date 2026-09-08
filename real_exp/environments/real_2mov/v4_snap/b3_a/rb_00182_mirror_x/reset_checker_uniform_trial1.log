@@ -1,0 +1,1166 @@
+[RemoteObserver] Connected to tcp://localhost:5556
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:37
+----------------------------------------------------------------
+  wall_10    brick  MISSING (camera does not see it)
+  wall_11    brick  MISSING (camera does not see it)
+  wall_9     brick  MISSING (camera does not see it)
+  obj_4      block  MISSING (camera does not see it)
+  obj_1      block  MISSING (camera does not see it)
+  robot      start  MISSING (camera does not see it)
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+QFontDatabase: Cannot find font directory /home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/cv2/qt/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QFontDatabase: Cannot find font directory /home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/cv2/qt/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QFontDatabase: Cannot find font directory /home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/cv2/qt/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QFontDatabase: Cannot find font directory /home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/cv2/qt/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QFontDatabase: Cannot find font directory /home/dhruv/miniconda3/envs/namo312/lib/python3.12/site-packages/cv2/qt/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:38
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.23cm dy= -4.27cm dtheta=  +1.0deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.63cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:38
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.27cm dy= -0.13cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.29cm dy= -4.42cm dtheta=  +1.2deg  ..
+  obj_1      block  dx= -1.68cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:39
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.2deg  OK
+  obj_4      block  dx= +2.31cm dy= -4.44cm dtheta=  +3.1deg  ..
+  obj_1      block  dx= -1.69cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:39
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.23cm dy= -0.11cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.16cm dtheta=  +1.2deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.3deg  ..
+  robot      start  dx= -6.01cm dy= +0.65cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:40
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.21cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.10cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.17cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:40
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.15cm dtheta=  +1.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:41
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.16cm dy= -0.07cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.20cm dy= -4.10cm dtheta=  +1.0deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.63cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:41
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.33cm dy= -4.45cm dtheta=  +2.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:42
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.24cm dy= -0.11cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.26cm dy= -4.19cm dtheta=  +0.6deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:42
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.24cm dy= -0.11cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.17cm dtheta=  +0.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:43
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.30cm dy= -4.36cm dtheta=  +2.3deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:43
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.14cm dy= -0.06cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.29cm dy= -4.41cm dtheta=  +1.5deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:44
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.24cm dy= -0.11cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.26cm dy= -4.21cm dtheta=  +0.6deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:44
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.18cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.19cm dtheta=  +1.2deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:45
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.31cm dy= -4.41cm dtheta=  +2.1deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.3deg  ..
+  robot      start  dx= -5.99cm dy= +0.59cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:45
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.20cm dy= -4.03cm dtheta=  +0.0deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:46
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.08cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +2.20cm dy= -4.14cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.63cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:46
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.15cm dtheta=  +1.0deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:47
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.19cm dy= -4.05cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:47
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.26cm dy= -4.23cm dtheta=  +1.5deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+  no checksum columns on this sheet, cannot verify the build.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:48
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.23cm dy= -0.11cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.22cm dy= -4.24cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.68cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:48
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.34cm dy= -0.21cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.18cm dy= -3.94cm dtheta=  +0.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.01cm dy= +0.66cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:49
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.11cm dy= -0.05cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +2.23cm dy= -4.28cm dtheta=  +1.0deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:49
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.21cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.11cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.20cm dy= -4.12cm dtheta=  +1.0deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:50
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.6deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.18cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.13cm dtheta=  +1.2deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:50
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.13cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.06cm dtheta=  +0.8deg  OK
+  obj_4      block  dx= +2.29cm dy= -4.36cm dtheta=  +1.4deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:51
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.13cm dy= +0.10cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.32cm dy= -4.44cm dtheta=  +2.8deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:51
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.10cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.30cm dy= -4.30cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.1deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:52
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.07cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.22cm dy= -4.22cm dtheta=  +1.0deg  ..
+  obj_1      block  dx= -1.68cm dy= -5.69cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.61cm dtheta= -77.1deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:52
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.34cm dy= -0.21cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.25cm dy= -0.12cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.28cm dy= -4.25cm dtheta=  +0.8deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.63cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:53
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.07cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.28cm dy= -4.37cm dtheta=  +1.5deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.63cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:53
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.23cm dy= -0.11cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.16cm dtheta=  +1.2deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.67cm dtheta= -29.3deg  ..
+  robot      start  dx= -5.99cm dy= +0.59cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:54
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.14cm dtheta=  +1.2deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:54
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.30cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.27cm dy= -4.28cm dtheta=  +1.5deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:55
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.07cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.20cm dy= -4.08cm dtheta=  +1.3deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.65cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:55
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.32cm dy= -4.44cm dtheta=  +2.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:56
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.18cm dy= -3.93cm dtheta=  +0.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:56
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.22cm dy= -4.23cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.68cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.62cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:57
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.26cm dy= -0.12cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.31cm dy= -4.43cm dtheta=  +1.7deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.63cm dtheta= -77.1deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:57
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +2.30cm dy= -4.44cm dtheta=  +1.8deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+  no checksum columns on this sheet, cannot verify the build.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:58
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.14cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.66cm dy= -5.67cm dtheta= -29.4deg  ..
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:58
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.10cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.31cm dy= -4.36cm dtheta=  +2.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:59
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.13cm dy= -0.05cm dtheta=  +0.7deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.15cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.59cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:20:59
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.29cm dy= -4.37cm dtheta=  +1.3deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:00
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.19cm dy= -4.02cm dtheta=  +0.0deg  ..
+  obj_1      block  dx= -1.68cm dy= -5.69cm dtheta= -29.2deg  ..
+  robot      start  dx= -6.00cm dy= +0.64cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:00
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.35cm dy= -0.21cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.31cm dy= -4.32cm dtheta=  +1.1deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.0deg  ..
+  robot      start  dx= -6.00cm dy= +0.63cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:01
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.6deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.26cm dy= -0.11cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.30cm dy= -4.30cm dtheta=  +1.0deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.2deg  ..
+  robot      start  dx= -5.98cm dy= +0.59cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:01
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.08cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.10cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +2.29cm dy= -4.40cm dtheta=  +1.4deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.68cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.00cm dy= +0.64cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:02
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +2.21cm dy= -4.17cm dtheta=  +0.9deg  ..
+  obj_1      block  dx= -1.67cm dy= -5.69cm dtheta= -29.0deg  ..
+  robot      start  dx= -5.99cm dy= +0.61cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:02
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.08cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.29cm dy= -0.18cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.09cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +2.26cm dy= -4.32cm dtheta=  +1.8deg  ..
+  obj_1      block  dx= -1.68cm dy= -5.67cm dtheta= -29.1deg  ..
+  robot      start  dx= -6.04cm dy= +0.72cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:03
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.28cm dy= -0.17cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.10cm dy= -0.05cm dtheta=  +0.3deg  OK
+  obj_4      block  MISSING (camera does not see it)
+  obj_1      block  dx= -1.67cm dy= -5.66cm dtheta= -29.4deg  ..
+  robot      start  dx= -6.05cm dy= +0.76cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:03
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.08cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.30cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.14cm dy= -0.07cm dtheta=  +0.3deg  OK
+  obj_4      block  MISSING (camera does not see it)
+  obj_1      block  MISSING (camera does not see it)
+  robot      start  dx= -6.04cm dy= +0.72cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:04
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  MISSING (camera does not see it)
+  wall_9     brick  dx= +0.18cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +2.27cm dy= -4.38cm dtheta=  +1.1deg  ..
+  obj_1      block  MISSING (camera does not see it)
+  robot      start  dx= -6.03cm dy= +0.69cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:04
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.29cm dy= -0.17cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.09cm dtheta=  +0.2deg  OK
+  obj_4      block  dx= +2.20cm dy= -4.16cm dtheta=  +0.9deg  ..
+  obj_1      block  dx= +0.40cm dy= -2.14cm dtheta=  -5.7deg  ..
+  robot      start  dx= -6.03cm dy= +0.68cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:05
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.10cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.77cm dy= -0.52cm dtheta=  +4.6deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.09cm dtheta=  +0.3deg  OK
+  obj_4      block  MISSING (camera does not see it)
+  obj_1      block  dx= +0.39cm dy= -2.15cm dtheta=  -5.9deg  ..
+  robot      start  dx= -6.03cm dy= +0.70cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:05
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.10cm dtheta=  -1.4deg  OK
+  wall_11    brick  MISSING (camera does not see it)
+  wall_9     brick  dx= +0.17cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  MISSING (camera does not see it)
+  obj_1      block  dx= +0.40cm dy= -2.14cm dtheta=  -5.7deg  ..
+  robot      start  dx= -6.03cm dy= +0.68cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:06
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  MISSING (camera does not see it)
+  wall_9     brick  dx= +0.16cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.47cm dy= -0.97cm dtheta=  -0.7deg  OK
+  obj_1      block  dx= +0.42cm dy= -2.15cm dtheta=  -5.8deg  ..
+  robot      start  dx= -6.02cm dy= +0.65cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:06
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  MISSING (camera does not see it)
+  wall_9     brick  dx= +0.14cm dy= -0.07cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.47cm dy= -0.99cm dtheta=  -0.8deg  OK
+  obj_1      block  dx= -0.26cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.03cm dy= +0.70cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:07
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.3deg  OK
+  wall_11    brick  MISSING (camera does not see it)
+  wall_9     brick  dx= +0.17cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  MISSING (camera does not see it)
+  obj_1      block  dx= -0.26cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.03cm dy= +0.72cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:07
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  MISSING (camera does not see it)
+  wall_9     brick  dx= +0.19cm dy= -0.10cm dtheta=  +0.3deg  OK
+  obj_4      block  MISSING (camera does not see it)
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.03cm dy= +0.71cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:08
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.29cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.06cm dy= -0.44cm dtheta=  +0.7deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.04cm dy= +0.75cm dtheta= -77.4deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+  no checksum columns on this sheet, cannot verify the build.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:08
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.29cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.06cm dy= -0.44cm dtheta=  +0.7deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.04cm dy= +0.75cm dtheta= -77.4deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:09
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.29cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.06cm dy= -0.44cm dtheta=  +0.7deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.04cm dy= +0.75cm dtheta= -77.4deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:09
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.10cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.28cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.08cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +0.01cm dy= -0.40cm dtheta=  -1.8deg  OK
+  obj_1      block  dx= -0.27cm dy= -0.19cm dtheta=  -0.5deg  OK
+  robot      start  dx= -6.02cm dy= +0.60cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:10
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.49cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.26cm dy= -0.20cm dtheta=  -0.6deg  OK
+  robot      start  dx= -5.99cm dy= +0.60cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:10
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.16cm dy= -0.07cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.22cm dtheta=  -1.6deg  OK
+  robot      start  dx= -5.99cm dy= +0.59cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:11
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.21cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.48cm dtheta=  -0.7deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.7deg  OK
+  robot      start  dx= -5.99cm dy= +0.59cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:11
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.09cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  -0.9deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.6deg  OK
+  robot      start  dx= -5.99cm dy= +0.59cm dtheta= -77.2deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:12
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.23cm dy= -0.11cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +0.07cm dy= -0.45cm dtheta=  -1.6deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.02cm dy= +0.69cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:12
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.23cm dy= -0.11cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +0.07cm dy= -0.45cm dtheta=  -1.6deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -6.02cm dy= +0.69cm dtheta= -77.3deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:13
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.09cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.23cm dtheta=  -1.6deg  OK
+  robot      start  dx= -0.65cm dy= -0.03cm dtheta= -74.9deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:13
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.10cm dy= -0.04cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  -0.0deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.64cm dy= -0.06cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:14
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.16cm dy= -0.07cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.49cm dtheta=  -0.6deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.61cm dy= -0.13cm dtheta= -74.9deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:14
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.13cm dy= -0.06cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.65cm dy= -0.03cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:15
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.30cm dy= -0.18cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.47cm dtheta=  -1.2deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.08cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:15
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.10cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.3deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.63cm dy= -0.09cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:16
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.16cm dy= -0.07cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.49cm dtheta=  +0.1deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.10cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:16
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.34cm dy= -0.21cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.49cm dtheta=  -0.1deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.22cm dtheta=  -1.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.08cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:17
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.39cm dtheta=  -0.8deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:17
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.15cm dy= -0.06cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.38cm dtheta=  -0.7deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.08cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:18
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.21cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  -0.1deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.06cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+  no checksum columns on this sheet, cannot verify the build.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:18
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  -1.5deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:19
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.13cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.13cm dy= -0.06cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  -0.3deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.63cm dy= -0.08cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:19
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  -0.7deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.63cm dy= -0.08cm dtheta= -74.9deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:20
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.09cm dy= -0.04cm dtheta=  +0.7deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.46cm dtheta=  +0.4deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.08cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:20
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.12cm dy= -0.05cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.0deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.65cm dy= -0.05cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:21
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:21
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.07cm dy= -0.45cm dtheta=  -1.7deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.65cm dy= -0.04cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:22
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.49cm dtheta=  +0.3deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:22
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.22cm dtheta=  -1.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.05cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:23
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.3deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  +0.5deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.65cm dy= -0.03cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:23
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.22cm dy= -0.11cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.4deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.66cm dy= -0.02cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:24
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.31cm dy= -0.19cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.49cm dtheta=  -0.8deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.66cm dy= -0.03cm dtheta= -74.6deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:24
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.13cm dy= -0.05cm dtheta=  +0.7deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.3deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:25
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.1deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.07cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:25
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.08cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.39cm dtheta=  -0.8deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:26
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  -1.0deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.06cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:26
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.09cm dy= -0.04cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.09cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:27
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.34cm dy= -0.21cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.3deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.62cm dy= -0.12cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:27
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.12cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.34cm dy= -0.21cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.48cm dtheta=  -0.8deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.62cm dy= -0.10cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:28
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  -0.9deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.09cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+  no checksum columns on this sheet, cannot verify the build.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:28
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.47cm dtheta=  -0.3deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.63cm dy= -0.08cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:29
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.3deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.18cm dy= -0.08cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  +0.1deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.65cm dy= -0.05cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:29
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.17cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  -0.6deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.9deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:30
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.16cm dy= -0.08cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  -0.4deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.65cm dy= -0.04cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:30
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.09cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.2deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.64cm dy= -0.07cm dtheta= -74.9deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:31
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.13cm dy= +0.10cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.40cm dtheta=  -0.7deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.08cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:31
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.13cm dy= +0.10cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.13cm dy= -0.06cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.47cm dtheta=  -1.1deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.65cm dy= -0.05cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:32
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.09cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.16cm dy= -0.07cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.07cm dy= -0.46cm dtheta=  -1.9deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.22cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.63cm dy= -0.08cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:32
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.10cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.20cm dy= -0.09cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.46cm dtheta=  -1.6deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.64cm dy= -0.06cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:33
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.10cm dy= -0.04cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.3deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.67cm dy= -0.01cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:33
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.11cm dy= +0.08cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.34cm dy= -0.21cm dtheta=  +1.7deg  OK
+  wall_9     brick  dx= +0.19cm dy= -0.08cm dtheta=  +0.6deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.48cm dtheta=  +0.0deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.22cm dtheta=  -1.6deg  OK
+  robot      start  dx= -0.63cm dy= -0.09cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:34
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.07cm dtheta=  -1.4deg  OK
+  wall_11    brick  dx= +0.33cm dy= -0.20cm dtheta=  +1.8deg  OK
+  wall_9     brick  dx= +0.16cm dy= -0.07cm dtheta=  +0.5deg  OK
+  obj_4      block  dx= +0.09cm dy= -0.49cm dtheta=  +0.1deg  OK
+  obj_1      block  dx= -0.24cm dy= -0.21cm dtheta=  -0.7deg  OK
+  robot      start  dx= -0.64cm dy= -0.06cm dtheta= -74.7deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.
+[2J[Hcheck_build  rb_00182_mirror_x   22:21:34
+----------------------------------------------------------------
+  wall_10    brick  dx= +0.09cm dy= +0.08cm dtheta=  -1.5deg  OK
+  wall_11    brick  dx= +0.32cm dy= -0.19cm dtheta=  +1.9deg  OK
+  wall_9     brick  dx= +0.21cm dy= -0.10cm dtheta=  +0.4deg  OK
+  obj_4      block  dx= +0.08cm dy= -0.47cm dtheta=  -1.4deg  OK
+  obj_1      block  dx= -0.25cm dy= -0.21cm dtheta=  -0.6deg  OK
+  robot      start  dx= -0.66cm dy= -0.03cm dtheta= -74.8deg  ..
+----------------------------------------------------------------
+OK band: +/-2.0cm, +/-10deg (display only). Enter = run checksum. Ctrl+C = quit.

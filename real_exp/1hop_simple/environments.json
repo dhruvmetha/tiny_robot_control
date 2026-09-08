@@ -1,0 +1,375 @@
+{
+  "schema_version": 2,
+  "catalog": "1hop_simple",
+  "updated_on": "2026-09-05",
+  "environment_count": 3,
+  "scope": "One-hop scenes that do not require coupled interaction between multiple movable blockers.",
+  "identity_rule": "Use the full uid; build IDs are reused across source pools.",
+  "taxonomy_rule": {
+    "hop_count": 1,
+    "simple": "No required coupled multi-movable interaction. This category may contain one or two movable objects.",
+    "multi_int": "Requires interaction with multiple movable blockers to open the route."
+  },
+  "environments": [
+    {
+      "uid": "hmax2__easy_020__5f0639e3",
+      "scene": "hmax2/easy_020",
+      "tier": "easy",
+      "gallery_file": "hmax2__easy_020__5f0639e3.json",
+      "gallery_card": "cards/hmax2__easy_020__5f0639e3.json",
+      "source_xml": "/common/users/dm1487/scratch_namo/real_buildable/pool1/med/rb_00217/env.xml",
+      "environment_dir": "environments/hmax2__easy_020__5f0639e3",
+      "build_sheet": "environments/hmax2__easy_020__5f0639e3/build_sheet.csv",
+      "build_sheet_sha256": "cee1ff92ee29f794ebd633c6bdc417995f54296333a54a18172999861872948e",
+      "task": {
+        "horizon": "2push",
+        "initial_object_id": "obstacle_0_movable",
+        "movable_object_count": 1,
+        "hop_count": 1,
+        "density_pct": 31.2,
+        "n_green": 39,
+        "n_tried": 125
+      },
+      "build": {
+        "robot_start_cm": [
+          26.5,
+          20.0,
+          0.0
+        ],
+        "goal_cm": [
+          29.7,
+          71.0
+        ]
+      },
+      "collected": {
+        "result_root": "results/real/hmax2__easy_020__5f0639e3",
+        "invalid_result_root": "results/invalid/hmax2__easy_020__5f0639e3",
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true
+        },
+        "real_namo": {
+          "model_pure_policy": {
+            "successes": 5,
+            "trials": 5
+          },
+          "model_search": {
+            "successes": 5,
+            "trials": 5
+          },
+          "uniform_search": {
+            "successes": 5,
+            "trials": 5
+          }
+        }
+      }
+    },
+    {
+      "uid": "1push__hard_021__bf3e3cdf",
+      "scene": "1push/hard_021",
+      "tier": "hard",
+      "gallery_file": "1push__hard_021__bf3e3cdf.json",
+      "gallery_card": "cards/1push__hard_021__bf3e3cdf.json",
+      "source_xml": "/common/users/dm1487/scratch_namo/real_buildable/pool2/med_304/rb_00042/env.xml",
+      "environment_dir": "environments/1push__hard_021__bf3e3cdf",
+      "build_sheet": "environments/1push__hard_021__bf3e3cdf/build_sheet.csv",
+      "build_sheet_sha256": "7203736cfdeae6542ae0a4a41c49dd54f9fc91855235678b0163ef071d19917d",
+      "task": {
+        "horizon": "1push",
+        "initial_object_id": "obstacle_0_movable",
+        "movable_object_count": 1,
+        "hop_count": 1,
+        "density_pct": 0.714,
+        "n_green": 1,
+        "n_tried": 140
+      },
+      "build": {
+        "robot_start_cm": [
+          27.8,
+          7.4,
+          0.0
+        ],
+        "goal_cm": [
+          42.3,
+          57.7
+        ]
+      },
+      "collected": {
+        "result_root": "results/real/1push__hard_021__bf3e3cdf",
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true
+        },
+        "real_namo": {
+          "model_prior_best_first_search": {
+            "successes": 5,
+            "trials": 5
+          },
+          "uniform_prior_best_first_search": {
+            "successes": 5,
+            "trials": 5
+          },
+          "model_pure_policy": {
+            "status": "not_collected"
+          }
+        }
+      }
+    },
+    {
+      "uid": "2push__env__obstacle_0_movable__0489c6b2",
+      "scene": "v3/hard_loose/rb_00180",
+      "family": "hard_loose",
+      "tier": "hard",
+      "gallery_file": "2push__env__obstacle_0_movable__0489c6b2.json",
+      "gallery_card": "cards/2push__env__obstacle_0_movable__0489c6b2.json",
+      "source_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/real_2mov/v3/hard_loose/rb_00180",
+      "environment_dir": "environments/2push__env__obstacle_0_movable__0489c6b2/rb_00180",
+      "source_hashes": {
+        "env_xml": "d166f845a6c717fc37615f94b73b1531d106c03f7617c3d9e8ef776861c1e84e",
+        "build_sheet_derived": "82ac70ed807d71b4551bb9ab2b4704914fed8e4f5c326847ecca1047c446608f",
+        "sweep_record": "23c70889afa163f1463458617304ced783160e1f8be857e395aa721b1b1b8d0e"
+      },
+      "task": {
+        "horizon": "2push",
+        "initial_object_id": "obstacle_0_movable",
+        "movable_object_ids": [
+          "obstacle_0_movable",
+          "obstacle_1_movable"
+        ],
+        "movable_object_count": 2,
+        "hop_count": 1,
+        "requires_coupled_multi_object_interaction": false,
+        "density_pct": 1.333,
+        "n_green": 1,
+        "n_tried": 75
+      },
+      "build": {
+        "robot_start_cm": [
+          41.1561,
+          7.8505,
+          0.0
+        ],
+        "goal_cm": [
+          35.6066,
+          68.2536
+        ]
+      },
+      "collected": {
+        "result_root": "results/real/2push__env__obstacle_0_movable__0489c6b2",
+        "invalid_result_root": "results/invalid/2push__env__obstacle_0_movable__0489c6b2",
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true
+        },
+        "real_namo": {
+          "status": "complete",
+          "next_trial": null,
+          "next_shuffle_seed": null,
+          "model_pure_policy": {
+            "successes": 5,
+            "trials_run": 5,
+            "trials_planned": 5,
+            "trials": [
+              {
+                "trial": 1,
+                "shuffle_seed": 0,
+                "outcome": "success",
+                "pushes_succeeded": 1,
+                "pushes_stuck": 0,
+                "duration_sec": 30.0,
+                "planning_wall_time_ms": 161.4,
+                "simulations_used": 0,
+                "final_distance_to_goal_cm": 0.56,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_pure_policy/trial1/summary.json"
+              },
+              {
+                "trial": 2,
+                "shuffle_seed": 1,
+                "outcome": "success",
+                "pushes_succeeded": 1,
+                "pushes_stuck": 0,
+                "duration_sec": 30.7,
+                "planning_wall_time_ms": 160.7,
+                "simulations_used": 0,
+                "final_distance_to_goal_cm": 0.6,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_pure_policy/trial2/summary.json"
+              },
+              {
+                "trial": 3,
+                "shuffle_seed": 2,
+                "outcome": "success",
+                "pushes_succeeded": 1,
+                "pushes_stuck": 0,
+                "duration_sec": 29.3,
+                "planning_wall_time_ms": 160.8,
+                "simulations_used": 0,
+                "final_distance_to_goal_cm": 0.46,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_pure_policy/trial3/summary.json"
+              },
+              {
+                "trial": 4,
+                "shuffle_seed": 3,
+                "outcome": "success",
+                "pushes_succeeded": 1,
+                "pushes_stuck": 0,
+                "duration_sec": 30.9,
+                "planning_wall_time_ms": 159.6,
+                "simulations_used": 0,
+                "final_distance_to_goal_cm": 0.64,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_pure_policy/trial4/summary.json"
+              },
+              {
+                "trial": 5,
+                "shuffle_seed": 4,
+                "outcome": "success",
+                "pushes_succeeded": 1,
+                "pushes_stuck": 0,
+                "duration_sec": 30.5,
+                "planning_wall_time_ms": 158.7,
+                "simulations_used": 0,
+                "final_distance_to_goal_cm": 0.47,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_pure_policy/trial5/summary.json"
+              }
+            ]
+          },
+          "next_arm": null,
+          "planner": "namo_cpp feat/horizon-q-redesign at 6a2f9001: every mode ranks every blocker on the boundary.",
+          "model_search": {
+            "successes": 0,
+            "trials_run": 5,
+            "trials_planned": 5,
+            "trials": [
+              {
+                "trial": 1,
+                "shuffle_seed": 0,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 206.2,
+                "planning_wall_time_ms": 202342.2,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.91,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_search/trial1/summary.json"
+              },
+              {
+                "trial": 2,
+                "shuffle_seed": 1,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 215.6,
+                "planning_wall_time_ms": 211605.5,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.89,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_search/trial2/summary.json"
+              },
+              {
+                "trial": 3,
+                "shuffle_seed": 2,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 214.6,
+                "planning_wall_time_ms": 210631.3,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.89,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_search/trial3/summary.json"
+              },
+              {
+                "trial": 4,
+                "shuffle_seed": 3,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 193.8,
+                "planning_wall_time_ms": 189903.4,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.92,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_search/trial4/summary.json"
+              },
+              {
+                "trial": 5,
+                "shuffle_seed": 4,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 196.1,
+                "planning_wall_time_ms": 192161.1,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.88,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/model_search/trial5/summary.json"
+              }
+            ]
+          },
+          "uniform_search": {
+            "successes": 0,
+            "trials_run": 5,
+            "trials_planned": 5,
+            "trials": [
+              {
+                "trial": 1,
+                "shuffle_seed": 0,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 150.4,
+                "planning_wall_time_ms": 150333.4,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.88,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/uniform_search/trial1/summary.json"
+              },
+              {
+                "trial": 2,
+                "shuffle_seed": 1,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 150.0,
+                "planning_wall_time_ms": 149942.8,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.85,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/uniform_search/trial2/summary.json"
+              },
+              {
+                "trial": 3,
+                "shuffle_seed": 2,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 156.0,
+                "planning_wall_time_ms": 155937.3,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.87,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/uniform_search/trial3/summary.json"
+              },
+              {
+                "trial": 4,
+                "shuffle_seed": 3,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 150.6,
+                "planning_wall_time_ms": 150541.5,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.87,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/uniform_search/trial4/summary.json"
+              },
+              {
+                "trial": 5,
+                "shuffle_seed": 4,
+                "outcome": "failure",
+                "pushes_succeeded": 0,
+                "pushes_stuck": 0,
+                "duration_sec": 147.5,
+                "planning_wall_time_ms": 147422.1,
+                "simulations_used": 900,
+                "final_distance_to_goal_cm": 55.88,
+                "summary": "results/real/2push__env__obstacle_0_movable__0489c6b2/uniform_search/trial5/summary.json"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

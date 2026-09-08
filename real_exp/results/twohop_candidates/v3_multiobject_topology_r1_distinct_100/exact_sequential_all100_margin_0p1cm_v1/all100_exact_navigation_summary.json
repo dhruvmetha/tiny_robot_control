@@ -1,0 +1,81 @@
+{
+  "build_sheet_rows": {
+    "hard1-hard1": 1136,
+    "med2-med2": 1000
+  },
+  "exact_joint_label_counts": {
+    "incomplete": 42,
+    "other": 58
+  },
+  "inputs": {
+    "build_sheets": {
+      "hard1-hard1": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/build_sheets.json",
+      "med2-med2": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/med2-med2/build_sheets.json"
+    },
+    "exact_root": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_labels_v2_100_margin_0p1cm_v1",
+    "navigation_csv": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/navigation_realstack_all100_margin_0p1cm_v1/navigation_realstack.csv",
+    "selector_module": "scripts/pipeline/select_real_twohop_profiles.py",
+    "selector_repo": "/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1"
+  },
+  "mechanical_independence_status_counts": {
+    "not_computed": 42,
+    "passed": 58
+  },
+  "navigation_category_counts": {
+    "both_failed": 47,
+    "both_succeeded": 27,
+    "ignore_only_succeeded": 19,
+    "penalise_only_succeeded": 7
+  },
+  "navigation_resistant_2push2push_candidates": [
+    {
+      "discovery_profile": "med2-med2",
+      "k1_solve_rate": 0.7708333333333334,
+      "k1_tier": "easy",
+      "k2_solve_rate": 0.20833333333333334,
+      "k2_tier": "med",
+      "scene_id": "twohop_multi_00284"
+    },
+    {
+      "discovery_profile": "med2-med2",
+      "k1_solve_rate": 0.38461538461538464,
+      "k1_tier": "easy",
+      "k2_solve_rate": 0.30303030303030304,
+      "k2_tier": "easy",
+      "scene_id": "twohop_multi_00385"
+    },
+    {
+      "discovery_profile": "med2-med2",
+      "k1_solve_rate": 0.38461538461538464,
+      "k1_tier": "easy",
+      "k2_solve_rate": 0.22807017543859648,
+      "k2_tier": "med",
+      "scene_id": "twohop_multi_00933"
+    },
+    {
+      "discovery_profile": "med2-med2",
+      "k1_solve_rate": 0.6379310344827587,
+      "k1_tier": "easy",
+      "k2_solve_rate": 0.13157894736842105,
+      "k2_tier": "med",
+      "scene_id": "twohop_multi_00711"
+    }
+  ],
+  "outputs": {
+    "csv": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_labels_v2_100_margin_0p1cm_v1/all100_exact_navigation_inventory.csv",
+    "json": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_labels_v2_100_margin_0p1cm_v1/all100_exact_navigation_summary.json"
+  },
+  "profile_counts": {
+    "hard1-hard1": 50,
+    "med2-med2": 50
+  },
+  "requested_exact_candidates": {
+    "hard1-hard1": [],
+    "med2-med2": []
+  },
+  "rows": 100,
+  "sequential_transition_status_counts": {
+    "incomplete": 42,
+    "valid": 58
+  }
+}

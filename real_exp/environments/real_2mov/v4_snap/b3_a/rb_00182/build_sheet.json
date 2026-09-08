@@ -1,0 +1,75 @@
+{
+  "scene_id": "rb_00182",
+  "source_scene": "v4_snap/b3_a/rb_00182",
+  "source_card": "2push__env__obstacle_0_movable__8a97d703.json",
+  "requested_profile": "2push",
+  "n_bricks": 3,
+  "robot_start_cm": [
+    23.819566009520327,
+    12.533977607761043
+  ],
+  "robot_start_bearing_deg": 0.0,
+  "goal_cm": [
+    37.1348,
+    66.1089
+  ],
+  "bricks": [
+    {
+      "sim_name": "wall_inner_1",
+      "marker_hint": "wall_10",
+      "center_cm": [
+        21.6914,
+        47.8622
+      ],
+      "long_axis_bearing_deg": 174.557565,
+      "long_cm": 19.5,
+      "short_cm": 5.5
+    },
+    {
+      "sim_name": "wall_inner_2",
+      "marker_hint": "wall_11",
+      "center_cm": [
+        21.9472,
+        27.9919
+      ],
+      "long_axis_bearing_deg": 51.836676,
+      "long_cm": 19.5,
+      "short_cm": 5.5
+    },
+    {
+      "sim_name": "wall_inner_3",
+      "marker_hint": "wall_9",
+      "center_cm": [
+        11.323,
+        28.6354
+      ],
+      "long_axis_bearing_deg": 42.227214,
+      "long_cm": 19.5,
+      "short_cm": 5.5
+    }
+  ],
+  "blockers": [
+    {
+      "sim_name": "obstacle_0_movable",
+      "object": "obj_4",
+      "center_cm": [
+        34.7013,
+        29.1298
+      ],
+      "long_axis_bearing_deg": 67.835741,
+      "long_cm": 12.0,
+      "short_cm": 7.5
+    },
+    {
+      "sim_name": "obstacle_1_movable",
+      "object": "obj_1",
+      "center_cm": [
+        40.4896,
+        43.3388
+      ],
+      "long_axis_bearing_deg": 48.621443,
+      "long_cm": 15.0,
+      "short_cm": 7.0
+    }
+  ]
+}

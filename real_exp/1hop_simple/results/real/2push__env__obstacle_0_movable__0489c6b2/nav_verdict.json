@@ -1,0 +1,74 @@
+{
+  "qualifies": true,
+  "rule": "majority_of_five",
+  "reason": "Penalised navigation failed 4 of 4 scored trials on 2026-09-08, every one at the stuck-retry limit, 36 to 39 cm from the goal. It never reached the goal once.",
+  "start_pose_design": "The robot start was deliberately varied across trials rather than reset to the sheet pose, to show the failure does not depend on one unlucky start. Offsets from the sheet start (41.16, 7.85) cm ranged 1.3 to 34.0 cm across the scored trials, spanning about 35 cm in x. The four bricks stayed within a few mm of the sheet throughout, so the start pose is the only quantity that varied.",
+  "penalise_trials": [
+    {
+      "trial": 1,
+      "note": "no result json on disk (2026-09-05 run)"
+    },
+    {
+      "trial": 2,
+      "reached": false,
+      "distance_to_goal_cm": 39.32,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_4": 2.65
+      },
+      "robot_start_cm": [
+        42.0,
+        8.9,
+        85.8
+      ],
+      "start_offset_from_sheet_cm": 1.3
+    },
+    {
+      "trial": 3,
+      "reached": false,
+      "distance_to_goal_cm": 35.77,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_4": 5.62
+      },
+      "robot_start_cm": [
+        28.8,
+        18.7,
+        82.5
+      ],
+      "start_offset_from_sheet_cm": 16.4
+    },
+    {
+      "trial": 4,
+      "reached": false,
+      "distance_to_goal_cm": 38.3,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_4": 3.53
+      },
+      "robot_start_cm": [
+        7.4,
+        11.9,
+        92.5
+      ],
+      "start_offset_from_sheet_cm": 34.0
+    },
+    {
+      "trial": 5,
+      "reached": false,
+      "distance_to_goal_cm": 36.9,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_4": 4.77
+      },
+      "robot_start_cm": [
+        43.5,
+        16.1,
+        94.1
+      ],
+      "start_offset_from_sheet_cm": 8.5
+    }
+  ],
+  "ignore_trials": "nav_baseline_ignore/trial1 failed (2026-09-05)",
+  "_note": "qualifies is the operator's call after watching the drive."
+}

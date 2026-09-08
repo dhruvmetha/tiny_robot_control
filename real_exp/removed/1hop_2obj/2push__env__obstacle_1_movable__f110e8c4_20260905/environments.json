@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "catalog": "1hop_2obj",
+  "updated_on": "2026-09-05",
+  "environment_count": 1,
+  "identity_rule": "Use the full uid, not rb_00022 alone; build IDs are reused across pools.",
+  "classification_rule": {
+    "hop_count": 1,
+    "movable_object_count": 2,
+    "hop_evidence": "Selected by the experiment owner for the 1hop_2obj stratum.",
+    "object_evidence": "The staged XML and derived build record each contain obstacle_0_movable and obstacle_1_movable."
+  },
+  "environments": [
+    {
+      "uid": "2push__env__obstacle_1_movable__f110e8c4",
+      "scene_uid": "v3_snap__hard_loose__rb_00022",
+      "scene": "v3_snap/hard_loose/rb_00022",
+      "family": "hard_loose",
+      "tier": "hard",
+      "gallery_file": "2push__env__obstacle_1_movable__f110e8c4.json",
+      "selection_record": "environment/selection.json",
+      "original_gallery_card_present": false,
+      "source": {
+        "original_xml": "/scratch/dm1487/real_buildable_2mov/v3_snap/hard_loose/rb_00022/env.xml",
+        "dhruv_linux_staged_root": "/home/dhruv/projects_dhruv/namo/robot_control/real_exp/environments/real_2mov/v3_snap/hard_loose/rb_00022",
+        "catalog_xml": "environment/rb_00022/env.xml",
+        "catalog_build_sheet": "environment/rb_00022/build_sheet_derived.json",
+        "catalog_sweep_record": "environment/rb_00022/sweep_record.json",
+        "original_env_xml_sha256": "a988521735bf9ca924ca2c778757153293543f67bb1803f0f2095247b6292ac3",
+        "original_build_sheet_derived_sha256": "6b971c13962ffc078365e264515a018c26a8cee5e9167841fa93360587595c99",
+        "env_xml_sha256": "2883af39159ab80ec6da33a8357261ac8158ea7bc45b88b35d1184e28e36ae00",
+        "build_sheet_derived_sha256": "d5ce8c4ae80bde59ff787cd2a83b551d6273c92bd54da5d15d245d6038b205bf",
+        "physical_adjustment": "environment/rb_00022/wall_11_orientation_adjustment.json",
+        "sweep_record_sha256": "fe0265bcc613066994ccbe4ba10928f85e3bd1938c351a65d862e7262709e46e"
+      },
+      "task": {
+        "horizon": "2push",
+        "initial_object_id": "obstacle_1_movable",
+        "movable_object_ids": [
+          "obstacle_0_movable",
+          "obstacle_1_movable"
+        ],
+        "movable_object_count": 2,
+        "region": "goal",
+        "hop_count": 1,
+        "density_pct": 4,
+        "n_green": 5,
+        "n_tried": 125,
+        "n_green_contact": 2,
+        "contact_pct": 40
+      },
+      "build": {
+        "robot_start_cm": [35.3055, 14.8636, 0.0],
+        "goal_cm": [24.4197, 67.0011],
+        "movables": {
+          "obstacle_0_movable": [23.89, 44.5333, 9.449164],
+          "obstacle_1_movable": [26.3207, 29.9289, 130.012775]
+        },
+        "statics": {
+          "wall_inner_1": [39.083, 40.9408, -3.970558],
+          "wall_inner_2": [15.464805, 51.323587, 67.131053]
+        }
+      },
+      "collected": {
+        "real_namo": {
+          "status": "ready_model_policy",
+          "next_arm": "model_pure_policy",
+          "next_trial": 1,
+          "shuffle_seed": 0,
+          "result_root": "results/real/2push__env__obstacle_1_movable__f110e8c4/model_pure_policy"
+        },
+        "real_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true,
+          "penalise": {
+            "human_verdict": "failure",
+            "failure_cause": "autonomous_navigation_failed",
+            "failure_detail": "trial1 ended without reaching the goal and the robot fell over; trial2 only reached after manual robot repositioning and is a human-judged failure",
+            "trials": [
+              {
+                "trial": 1,
+                "automated_reached": false,
+                "automated_reason": "stuck_retry_limit_reached",
+                "distance_to_goal_cm": 22.68,
+                "human_failure_detail": "robot_fell_over",
+                "result": "results/real/2push__env__obstacle_1_movable__f110e8c4/nav_baseline_penalise/trial1/nav_baseline_penalise_1788647615.json"
+              },
+              {
+                "trial": 2,
+                "automated_reached": true,
+                "distance_to_goal_cm": 1.02,
+                "human_failure_detail": "manual_robot_repositioning_required",
+                "result": "results/real/2push__env__obstacle_1_movable__f110e8c4/nav_baseline_penalise/trial2/nav_baseline_penalise_1788648260.json"
+              }
+            ],
+            "verdict": "results/real/2push__env__obstacle_1_movable__f110e8c4/nav_verdict.json"
+          },
+          "ignore": {
+            "human_verdict": "failure",
+            "failure_cause": "stuck_retry_limit_reached",
+            "failure_detail": "both recorded trials exhausted five blocked retries without reaching the goal",
+            "trials": [
+              {
+                "trial": 1,
+                "automated_reached": false,
+                "distance_to_goal_cm": 20.25,
+                "result": "results/real/2push__env__obstacle_1_movable__f110e8c4/nav_baseline_ignore/trial1/nav_baseline_ignore_1788647848.json"
+              },
+              {
+                "trial": 2,
+                "automated_reached": false,
+                "distance_to_goal_cm": 35.0,
+                "result": "results/real/2push__env__obstacle_1_movable__f110e8c4/nav_baseline_ignore/trial2/nav_baseline_ignore_1788648087.json"
+              }
+            ],
+            "verdict": "results/real/2push__env__obstacle_1_movable__f110e8c4/nav_verdict.json"
+          }
+        },
+        "dynamic_simulation_navigation": {
+          "status": "failed_both_variants",
+          "qualifies": true,
+          "ignore": {
+            "reached": false,
+            "reason": "stuck_retry_limit_reached",
+            "distance_to_goal_cm": 17.09,
+            "stuck_retries": 5,
+            "result": "results/navigation_sim/nav_baseline_ignore/result.json",
+            "result_sha256": "fe64cc54eaa90de45f7afbcaa7ce223eeb82b4d1a0d71056a27606d87ea1f032"
+          },
+          "penalise": {
+            "reached": false,
+            "reason": "stuck_retry_limit_reached",
+            "distance_to_goal_cm": 27.36,
+            "stuck_retries": 5,
+            "result": "results/navigation_sim/nav_baseline_penalise/result.json",
+            "result_sha256": "f8ae517e35fc11674b1ae3e8d7c1219ae13f7e9ae3ead75b47808287ef63c610"
+          }
+        }
+      }
+    }
+  ]
+}

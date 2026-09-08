@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "run_name": "exact_med_search_all1000_margin_0p1cm_v1",
+  "completed_at": "2026-09-04T15:42:35-04:00",
+  "scope": "K1 on all 1,000 generated medium-profile scenes; K2 on every exact-medium K1 hit; exact selection, diversity audit, rendering, and both real-stack navigation baselines on every selected scene",
+  "result": {
+    "inputs": 1000,
+    "valid_k1_transitions": 655,
+    "exact_medium_k1": 70,
+    "valid_k2_transitions": 4,
+    "exact_med2_med2": 3,
+    "recommended_after_navigation": 2
+  },
+  "jobs": [
+    {"job_id": 61235652, "purpose": "K1", "array": "0-399", "state": "COMPLETED"},
+    {"job_id": 61236085, "purpose": "K1", "array": "400-599", "state": "COMPLETED except task 485 preempted and replaced"},
+    {"job_id": 61236197, "purpose": "K1", "array": "600-699", "state": "COMPLETED"},
+    {"job_id": 61236435, "purpose": "K1", "array": "700-849", "state": "COMPLETED"},
+    {"job_id": 61236620, "purpose": "K1", "array": "850-999", "state": "COMPLETED"},
+    {"job_id": 61236816, "purpose": "isolated K1 replacement", "array": "485", "state": "COMPLETED"},
+    {"job_id": 61235859, "purpose": "K2 batch 1", "tasks": 1, "state": "COMPLETED"},
+    {"job_id": 61235970, "purpose": "K2 batch 2", "tasks": 1, "state": "COMPLETED"},
+    {"job_id": 61236135, "purpose": "K2 batch 3", "tasks": 5, "state": "COMPLETED"},
+    {"job_id": 61236331, "purpose": "K2 batch 4", "tasks": 5, "state": "COMPLETED"},
+    {"job_id": 61236592, "purpose": "K2 batch 5", "tasks": 9, "state": "COMPLETED"},
+    {"job_id": 61236784, "purpose": "K2 batch 6", "tasks": 20, "state": "COMPLETED"},
+    {"job_id": 61236819, "purpose": "K2 batch 7", "tasks": 13, "state": "COMPLETED"},
+    {"job_id": 61236845, "purpose": "K2 batch 8", "tasks": 8, "state": "COMPLETED"},
+    {"job_id": 61236877, "purpose": "K2 batch 9", "tasks": 4, "state": "COMPLETED"},
+    {"job_id": 61236909, "purpose": "K2 batch 10", "tasks": 1, "state": "COMPLETED"},
+    {"job_id": 61236920, "purpose": "K2 batch 11", "tasks": 3, "state": "COMPLETED"},
+    {"job_id": 61236951, "purpose": "both real-stack navigation baselines on three selected scenes", "array": "0-2", "state": "COMPLETED"},
+    {"job_id": 61236959, "purpose": "initial selected-scene render", "state": "FAILED: wrapper omitted compatible binding path"},
+    {"job_id": 61236965, "purpose": "selected-scene render after binding-path correction", "state": "COMPLETED"}
+  ],
+  "scheduler_note": "All 1,000 K1 inputs and all 70 K2 inputs have one nonempty row. The original task 485 preemption and initial renderer import failure are retained in scheduler_accounting.txt and logs; both were replaced successfully and neither changes a scientific result.",
+  "resources_per_label_task": {
+    "cpus": 1,
+    "memory_gib": 8,
+    "walltime_minutes": 30
+  },
+  "labeling": {
+    "profile": "med2-med2",
+    "algorithm_config": "provenance/config/region_opening_exhaustive_2push_multihop_car.yaml",
+    "algorithm_config_sha256": "29778a4345ddbe6c7b0baa35a7fdce8ff19e3c626e423ede617346783fb3a5ab",
+    "chain_depth": 2,
+    "seed": 42,
+    "neighbor_timeout_s": 600.0,
+    "scene_timeout_s": 900.0,
+    "exact_medium_definition": "complete and uncensored; valid_1push == 0; valid_first_push > 0; 0.05 <= valid_first_push / tried < 0.30",
+    "k1_protected_objects": ["obstacle_1_movable"],
+    "k2_protected_objects": ["obstacle_0_movable", "obstacle_2_movable"]
+  },
+  "effective_labeling_margins_m": {
+    "tier1_base": 0.001,
+    "navigation_contribution": 0.0,
+    "push_approach": 0.003,
+    "xml_minimum_collision": 0.005,
+    "table_inflation": 0.08
+  },
+  "effective_navigation_margins_m": {
+    "config": "provenance/navigation/effective_wavefront_inflation.yaml",
+    "config_sha256": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726",
+    "tier1_base": 0.001,
+    "navigation_contribution": 0.0,
+    "push_approach": 0.0,
+    "push_approach_used_by_pure_navigation": false,
+    "xml_minimum_collision": 0.005,
+    "table_inflation": 0.08
+  },
+  "code": {
+    "labeling_worktree_commit": "0238730a56fb03cfe497a04b15299d764bffbbf1",
+    "compiled_binding_commit": "0b9ac568985191dab454e13ec6bf801d49c72bb3",
+    "compiled_extension_sha256": "8827080ee877179aae170e676d44a1c11e999755cf31d09dc304346c22ef8968",
+    "navigation_namo_commit": "3e3fbec172b028b90bb877a6e3f49c957cf62bb3",
+    "navigation_robot_control_source_commit": "d869420c3a6e488db93a0822c8214f3066f4e875",
+    "navigation_compiled_extension_path": "/scratch/tdn39/real_exp/code/namo_cpp_nav_realstack_v1/build_python/namo_rl.cpython-311-x86_64-linux-gnu.so",
+    "navigation_compiled_extension_sha256": "d82e614ddaf75884bd0680df0d8444ebdbbfa355cf345c8d0b365996f0358a37",
+    "generator_sha256": "715b361d6afb71c11a11ff7227c1584e68627668ea98f48ff9db605d92ac1863",
+    "packaged_script_dependency_sha256": {
+      "eval_common.py": "5091af6b661a6984d151b80a0f921579397238f2bf5c70f1eb6e3b1fcd91253b",
+      "gen_real_buildable_scenes.py": "e82dbf519ae0a22ae1d795cb8f2b5d480acf851b0ac194e65dfeb65e75d0a6cd",
+      "gen_real_buildable_twohop.py": "2b61da76df2b081a26672c8f1f0839688b8a3e7538f6ca4df32d72d246b53bda",
+      "real_twohop_multiobject.py": "ad5a8a82315ebd3d719919adebb608b770d2e69e5b41a511c3ec7806840318ce"
+    },
+    "materializer_sha256": "e4b6299933198bd6b2a0521b919ae5243a26a2cc4989b98a769403ae631c0713",
+    "profile_selector_sha256": "adea93a548a051f076ec7e755d5d5d8f27e58953790f23ac92ab62347b1a7371",
+    "diversity_selector_sha256": "3608fc1cc3f1a838995085a904bb86ea1910c9fc78c0a37553b5a2ac23b1f982",
+    "reducer_sha256": "a2afae2333089d441d4a9764a1b262a26fcfcf3f0d2f1ed7d5db6a9d6f1b8ac9"
+  },
+  "inputs": {
+    "manifest": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/med2-med2/manifest.txt",
+    "manifest_sha256": "9dd1a566d0d8300191a55d53cea508137209f1d572cd431de050f5ad6db23188",
+    "build_sheets_sha256": "35d5aadb113330693cf71750f53b1c394267ad52312361d21e9e7616642eb9cf",
+    "composed_source_xml_count": 1000,
+    "composed_source_xml_sha256_manifest": "provenance/inputs/source_env_xml_sha256.txt",
+    "composed_source_xml_sha256_manifest_sha256": "1e9a9112b18f8f1785ace69371c23baf2b408cbdb4680015339b4b9e477d164a",
+    "multiobject_medium_donor_manifest_sha256": "37aec3365bd36d80f5aadfb19aa597d62d1fc0a2b81349d1390f94c3a2de0bb4",
+    "hmax2_medium_donor_sheet_sha256": "3df3c790a940432afbfbc5755f13e8f9f9278ac3f7c7729d6352d7a8d17295c4",
+    "one_push_hard_donor_sheet_sha256": "7203736cfdeae6542ae0a4a41c49dd54f9fc91855235678b0163ef071d19917d"
+  },
+  "primary_output_sha256": {
+    "all1000_k1_rows.jsonl": "10f5808f1a7c3a44710762511683502cc670fd91b09daede082bf2d983d0a79e",
+    "k1_validation.json": "65c88c7c5ae6d46a137ef9d787309374f5d7be36973bb6300febadface180578",
+    "exact_med_k1_candidates.tsv": "eab12c3995075d1c722866507c328b95e0a24422cb80c7f7b10524ee3738fbb8",
+    "exact_med_k1_candidates_k2_rows.jsonl": "f2e181be30ba2ef972e30673d45d629dc37aa7ef4fa72242087b677874394efa",
+    "selection.json": "62482be02e60eb00cfbe12cb72a373ee9bb1a6b567e22426d87d072009c390ca",
+    "candidates.csv": "f746c4dda38f5e8f51bb610dd756a3efd9ea56729d2754b3d50969e580b95219",
+    "pairwise_distinctness.json": "b57636ca26b3fcb0ec2d384be663b7c4113aafc6ae197be1d1e36049c88b43f9",
+    "submitted_exact_med_k1_post.xmls.txt": "71e6461f46bbb84164aa1dd40d2e790c0e750b1e31ea6981c6972153f75aee6d",
+    "navigation_realstack.csv": "08ef1826909bfbd0ebd7c31c24673eaa27ad87aaea7c7a646cd0e8a3afb29fd4",
+    "navigation_summary.json": "e101359a43a964a0c2af94cec335b14f3c7420e167adf5cdfde8f852551c49cc",
+    "scheduler_accounting.txt": "87e90ad891ec648e2258c8d486cbd4140d9677a839dfcec19e8dedd47f7852b4"
+  },
+  "navigation_source_sha256": {
+    "run_navigation_baseline_sim.py": "cb587f4554663f7dca85bdc263292e97fe9fb4508054f083c1f395d2b83ee709",
+    "navigation_baseline_sim.py": "48de437396e2a1cdc17514b99194a2be5fe1c80c65a69fc255b2032601d50a96",
+    "navigation_baseline_planner.py": "2364339900cc2b6ef4125213a3a368194ee8540b84a48e84a5d7e6bb8cf3e159",
+    "effective_wavefront_inflation.yaml": "e4918a8ba61820d5fd69740b00e3ebd2799d432b16fd323a46d5451defa5e726",
+    "real.yaml": "4bf1e4f8acce6d0dfb68faed18439ed29a456c19659026cc36e6550c5f998272",
+    "controller.yaml": "68dcb34e9c892c955ec7a7bfc0e2a424ea871151eae3a29872faeccaae573e18",
+    "namo_config_complete_skill15_car_1x.yaml": "4965fde3247cdff48646bbcd3698219a8b4e52fdcb2765ad65e22acbfcd9800f"
+  },
+  "execution_environment_sha256": {
+    "run.env": "54ab8c27c938580621bc634b71e9ab1d0d8edf602ed6a00649c951912eea3612",
+    "activate.sh": "ffcdfc583a44d2345134671b0eef6eadc4eefa729ee9cfe4372f17f09451fff6",
+    "real_twohop_v3_multiobject_label.slurm": "bb91ba74cc361e1ff99947adfb42e2b3161758379b411336fd6adf14d6421e7d",
+    "submission_contracts.json": "74d6f44eaf989dd0db398c821a5608c87517899205eb06dc92b08230a31b4c13"
+  },
+  "render_sha256": {
+    "twohop_multi_00037": "01928f8824a07ae9d4b953d0fd97ea604718607a10b59efaab915e7116da0ed2",
+    "twohop_multi_00143": "f21135fccd9e1b6154d313e8250268711dc483f3f01e40562c0348fc6d19422a",
+    "twohop_multi_00710": "3367d99bd75c44145c3895f0b87bcb21630488bc59f4b6571fec22913cc61bae"
+  }
+}

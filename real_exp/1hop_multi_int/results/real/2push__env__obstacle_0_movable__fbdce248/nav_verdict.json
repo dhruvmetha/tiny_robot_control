@@ -1,0 +1,66 @@
+{
+  "qualifies": true,
+  "rule": "majority_of_five",
+  "reason": "Penalised navigation reached the goal in 2 of 5 trials on 2026-09-08. Trial 3 was ruled a failure by the operator after the robot fell off the table; its summary reads outcome=aborted because the run was interrupted to recover it. The two reaches bulldozed both blocks 30 to 41 cm. Ignore-mode trial 1 (2026-09-06) also failed. Same majority-of-five rule applied to rb_00034.",
+  "penalise_trials": [
+    {
+      "trial": 1,
+      "reached": false,
+      "distance_to_goal_cm": 40.39,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_1": 10.83,
+        "obj_4": 10.8
+      },
+      "row": "nav_baseline_penalise/trial1/nav_baseline_penalise_1788656683.json"
+    },
+    {
+      "trial": 2,
+      "reached": false,
+      "distance_to_goal_cm": 34.3,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_1": 7.73,
+        "obj_4": 9.18
+      },
+      "row": "nav_baseline_penalise/trial2/nav_baseline_penalise_1788844373.json"
+    },
+    {
+      "trial": 3,
+      "reached": false,
+      "distance_to_goal_cm": 23.29,
+      "stuck_retries": 2,
+      "objects_moved_cm": {
+        "obj_4": 22.61,
+        "obj_1": 24.67
+      },
+      "row": "nav_baseline_penalise/trial3/nav_baseline_penalise_1788844513.json",
+      "operator_verdict": "failure",
+      "operator_note": "robot fell off the table; operator ruled it a failure"
+    },
+    {
+      "trial": 4,
+      "reached": true,
+      "distance_to_goal_cm": 1.23,
+      "stuck_retries": 2,
+      "objects_moved_cm": {
+        "obj_1": 30.32,
+        "obj_4": 36.71
+      },
+      "row": "nav_baseline_penalise/trial4/nav_baseline_penalise_1788844718.json"
+    },
+    {
+      "trial": 5,
+      "reached": true,
+      "distance_to_goal_cm": 1.16,
+      "stuck_retries": 3,
+      "objects_moved_cm": {
+        "obj_1": 32.84,
+        "obj_4": 41.34
+      },
+      "row": "nav_baseline_penalise/trial5/nav_baseline_penalise_1788844801.json"
+    }
+  ],
+  "ignore_trials": "nav_baseline_ignore/trial1 failed (2026-09-06)",
+  "_note": "qualifies is the operator's call after watching the drive."
+}

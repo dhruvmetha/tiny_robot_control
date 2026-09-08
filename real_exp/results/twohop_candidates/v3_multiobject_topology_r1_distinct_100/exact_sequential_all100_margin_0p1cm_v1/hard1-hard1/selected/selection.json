@@ -1,0 +1,12 @@
+{
+  "eligible": 0,
+  "limit": 100,
+  "profile": "hard1-hard1",
+  "rejects": {
+    "invalid_k1_materialization": 1095,
+    "invalid_k2_materialization": 3,
+    "profile_mismatch": 38
+  },
+  "scenes": [],
+  "selected": 0
+}

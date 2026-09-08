@@ -1,0 +1,16 @@
+{
+  "file": "2push__env__obstacle_1_movable__f110e8c4.json",
+  "scene": "v3_snap/hard_loose/rb_00022",
+  "family": "hard_loose",
+  "horizon": "2push",
+  "object_id": "obstacle_1_movable",
+  "tier": "hard",
+  "density_pct": 4,
+  "n_green": 5,
+  "n_tried": 125,
+  "region": "goal",
+  "n_green_contact": 2,
+  "contact_pct": 40,
+  "gallery_id": "v3_snap/hard_loose/rb_00022",
+  "dataset": "../real_2mov/"
+}

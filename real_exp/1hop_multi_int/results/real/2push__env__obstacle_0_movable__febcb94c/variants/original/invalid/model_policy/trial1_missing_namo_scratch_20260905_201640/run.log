@@ -1,0 +1,103 @@
+[Diagnostics] Recording to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__febcb94c/variants/original/model_policy/trial1
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__febcb94c/variants/original/model_policy/trial1
+planner: full_namo  |  exec mode: greedy_policy  local search: best_first/model  ckpt=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt  hmax=canonical  budget=canonical  scope=inherited  device=cuda
+
+Starting NAMO execution...
+Press ESCAPE to quit
+==================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__febcb94c/variants/original/model_policy/trial1/recordings/session_2026-09-05_20-16-40/full_run.mp4
+[Runtime] Full-run video + per-subgoal meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__febcb94c/variants/original/model_policy/trial1/recordings/session_2026-09-05_20-16-40
+[SerialSender] ⚠️ Car 1 DISCONNECTED (alive now: [])
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! ROBOT 1 OFFLINE at startup !!
+!!   ap_connected=True, alive_ids=[], last_status=0.4s ago [fresh]
+!!   Planning will run (sim-only), but the robot CANNOT execute.
+!!   Restart the robot or check the camera_service serial link.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+[Trapped-start recovery] Robot at (25.2, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+[Trapped-start recovery] Robot at (25.2, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+Dry run: False
+Speed (autonomous): nav=0.40, push=0.40
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[NAMOPlanner] Goal BLOCKED - running NAMO planning...
+[NAMOBridge] Warming best-first scorer (checkpoint=/home/dhruv/projects_dhruv/namo/ranking/models/HY5U_s2.ckpt, device=cuda); excluded from planning time
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+Exception in thread Runtime-ControlLoop:
+Traceback (most recent call last):
+  File "/home/dhruv/miniconda3/envs/namo312/lib/python3.12/threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "/home/dhruv/miniconda3/envs/namo312/lib/python3.12/threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/dhruv/projects_dhruv/namo/robot_control/src/robot_control/runtime.py", line 1079, in _control_loop
+    action, drawings, status = self._autonomous_step(obs)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/robot_control/src/robot_control/runtime.py", line 1153, in _autonomous_step
+    subgoal = self._planner.plan(obs)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/robot_control/src/robot_control/planner/namo_planner.py", line 804, in plan
+    self._generate_plan(obs)
+  File "/home/dhruv/projects_dhruv/namo/robot_control/src/robot_control/planner/namo_planner.py", line 1511, in _generate_plan
+    model_warmup_ms = self._warmup_model_ranker_once()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/robot_control/src/robot_control/planner/namo_planner.py", line 1337, in _warmup_model_ranker_once
+    warmup_ms = self._bridge.warmup_best_first_scorer(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/robot_control/src/robot_control/planner/namo_bridge.py", line 421, in warmup_best_first_scorer
+    service.preload_best_first_scorer(
+  File "/home/dhruv/projects_dhruv/namo/namo_cpp/python/namo/services/planning_service.py", line 438, in preload_best_first_scorer
+    scorer = _get_scorer(
+             ^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/namo_cpp/python/namo/strategies/scorer_goal_strategy.py", line 52, in _get_scorer
+    from live_scorer import LiveScorer  # noqa: E402  (heavy: torch + visualizer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/namo_cpp/scripts/sandbox/live_scorer.py", line 44, in <module>
+    from eval_scorer import load_scorer, contact_px as contact_px_fn, match_episode  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/namo_cpp/scripts/eval_scorer.py", line 41, in <module>
+    from namo.paths import DATASETS, H5  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/namo_cpp/python/namo/paths.py", line 46, in <module>
+    SCRATCH = _require("NAMO_SCRATCH")
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dhruv/projects_dhruv/namo/namo_cpp/python/namo/paths.py", line 34, in _require
+    raise RuntimeError(f"${name} is not set. {_HINT}")
+RuntimeError: $NAMO_SCRATCH is not set. Run `source env.<machine>.sh` (env.amarel.sh / env.ilab.sh) first — see docs/PORTABILITY.md.
+
+[run_namo] signal 15, stopping and writing the summary
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/1hop_multi_int/results/real/2push__env__obstacle_0_movable__febcb94c/variants/original/model_policy/trial1/recordings/session_2026-09-05_20-16-40/full_run.mp4
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete
+
+[Trapped-start recovery] Robot at (25.2, 10.7) cm was in an inflated-obstacle cell; cleared local cells so the planner can BFS from here. Position unchanged.
+
+[Diagnostics] Wrote summary.json (outcome=aborted)

@@ -1,0 +1,16 @@
+{
+  "qualifies": null,
+  "reason": "",
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 69.72,
+    "objects_moved": "",
+    "objects_moved_cm": {},
+    "stuck_retries": 4,
+    "stuck_causes": "blocked,blocked,blocked,blocked",
+    "route_crosses": "",
+    "failure_cause": "no_route_around_static_geometry"
+  },
+  "_row": "nav_baseline_penalise_1788647464.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

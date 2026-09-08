@@ -1,0 +1,53 @@
+# Exhaustive depth-2 region-opening collection for CAR multi-hop keyhole labeling.
+#
+# Purpose: produce the primitive_trial_log (with chain_depth / parent_edge / parent_depth)
+# that scripts/pipeline/build_2push_validset.py consumes, so each keyhole gets canonical
+# solve_rate_1push and solve_rate_first_push labels on the SAME scale as namo_testset_v1.
+#
+# Derived from region_opening_exhaustive_2push_test_chain2.yaml (point robot, other corpus)
+# with the car robot/primitives, and from region_opening_beast_round2_REF_fullexhaust_car.yaml
+# for the car-specific fields. Differs from the latter in two ways that matter:
+#   - solutions/recorded caps are 9999, not 1, so recording is exhaustive rather than first-hit
+#   - goal_strategy is `primitive`, not `scorer` — labels must not depend on any model
+#
+# region_exhaustive_mode: true is the load-bearing key. Without it region_opening.py:1772
+# writes primitive_trial_log=None and the answer key cannot be built at all.
+#
+# NOT setting target_goal_region: in a multi-hop scene the XML goal is 2+ hops away, so
+# restricting to the region labeled "goal" would target a non-adjacent region. We want every
+# neighbour of the robot's region, then filter to the boundary on the shortest path afterwards.
+
+algorithm: region_opening
+episodes_per_env: 1
+workers: 32
+
+max_depth: 5
+max_goals_per_object: 5
+max_terminal_checks: 50000
+search_timeout: 1800.0            # depth-2 grid is ~60x the depth-1 grid
+region_timeout_per_neighbour_sec: 600.0
+
+points_per_face: 15
+region_max_chain_depth: 2
+region_max_solutions_per_neighbor: 9999
+region_max_recorded_solutions_per_neighbor: 9999
+region_frontier_beam_width: 10000
+region_chain_link_cost: 11
+region_ml_ignore_blacklist: false
+region_selection_strategy: cost_first
+
+region_label_mode: false
+region_exhaustive_mode: true
+region_sample_k: 0
+region_sample_restarts: 1
+
+goal_strategy: primitive
+
+primitive_prefix: "1x_car_d5_"
+config_file: config/namo_config_complete_skill15_car_1x.yaml
+
+verbose: false
+filter_minimum_length: false
+smooth_solutions: false
+refine_actions: false
+validate_refinement: false

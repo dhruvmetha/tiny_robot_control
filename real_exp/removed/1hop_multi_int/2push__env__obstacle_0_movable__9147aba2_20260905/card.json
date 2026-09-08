@@ -1,0 +1,16 @@
+{
+  "file": "2push__env__obstacle_0_movable__9147aba2.json",
+  "scene": "v4_rest/b4/rb_00067",
+  "family": "b4",
+  "horizon": "2push",
+  "object_id": "obstacle_0_movable",
+  "tier": "hard",
+  "density_pct": 3.75,
+  "n_green": 3,
+  "n_tried": 80,
+  "region": "goal",
+  "n_green_contact": 3,
+  "contact_pct": 100,
+  "gallery_id": "v4_rest/b4/rb_00067",
+  "dataset": "../real_2mov/"
+}

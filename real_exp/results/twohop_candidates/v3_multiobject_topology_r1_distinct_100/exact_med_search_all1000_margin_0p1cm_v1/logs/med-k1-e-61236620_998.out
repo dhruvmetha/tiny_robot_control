@@ -1,0 +1,12 @@
+✓ NAMO env active on hal0341.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1
+  [Progress] 27 primitives tried (12.7/sec) — current: obj=obstacle_0_movable edge=53 depth=2 neighbour='region_5'
+  [Progress] 38 primitives tried (5.4/sec) — current: obj=obstacle_0_movable edge=55 depth=3 neighbour='region_5'
+  [Progress] 46 primitives tried (3.8/sec) — current: obj=obstacle_0_movable edge=51 depth=4 neighbour='region_5'
+  [Progress] 53 primitives tried (3.4/sec) — current: obj=obstacle_0_movable edge=45 depth=5 neighbour='region_5'
+  [Progress] 59 primitives tried (0.8/sec) — current: obj=obstacle_0_movable edge=31 depth=1 neighbour='region_5'
+  [Progress] 100 primitives tried (20.2/sec) — current: obj=obstacle_0_movable edge=53 depth=1 neighbour='region_5'
+  [Progress] 142 primitives tried (20.8/sec) — current: obj=obstacle_0_movable edge=51 depth=1 neighbour='region_5'
+  [Progress] 181 primitives tried (19.3/sec) — current: obj=obstacle_0_movable edge=49 depth=1 neighbour='region_5'
+  [Progress] 218 primitives tried (18.4/sec) — current: obj=obstacle_0_movable edge=45 depth=1 neighbour='region_5'
+1/1 26s ok
+done 1 rows -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/k1/shards/task_0998/rows.jsonl in 26s

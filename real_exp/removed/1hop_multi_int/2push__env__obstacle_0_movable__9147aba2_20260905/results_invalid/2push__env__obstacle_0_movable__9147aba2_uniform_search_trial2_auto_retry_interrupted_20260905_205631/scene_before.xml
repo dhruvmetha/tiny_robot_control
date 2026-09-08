@@ -1,0 +1,45 @@
+<?xml version="1.0" ?>
+<mujoco model="generated_environment">
+  <option cone="elliptic" integrator="implicitfast" iterations="100" timestep="0.002"/>
+  <default>
+    <geom density="1"/>
+  </default>
+  <asset>
+    <texture builtin="gradient" height="3072" rgb1="0.3 0.5 0.7" rgb2="0 0 0" type="skybox" width="512"/>
+    <texture builtin="checker" height="300" mark="edge" markrgb="0.8 0.8 0.8" name="groundplane" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" type="2d" width="300"/>
+    <material name="groundplane" reflectance="0.2" texrepeat="5 5" texture="groundplane" texuniform="true"/>
+    <material name="robot" rgba="1.0 1.0 0.0 1.0"/>
+  </asset>
+  <include file="/home/dhruv/projects_dhruv/namo/namo_cpp/test_xml/little-car-modeling-package/assets/mjcf/little_car.xml"/>
+  <worldbody>
+    <light dir="0 0 -1" directional="true" pos="0 0 1.5"/>
+    <geom condim="4" friction="0.5 0.005 0.001" material="groundplane" name="floor" size="0 0 0.05" type="plane"/>
+    <body name="walls">
+      <geom name="wall_1" condim="4" pos="-0.01 0.3875 0.05" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.01 0.40750000000000003 0.05" type="box"/>
+      <geom name="wall_2" condim="4" pos="0.5 0.3875 0.05" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.01 0.40750000000000003 0.05" type="box"/>
+      <geom name="wall_3" condim="4" pos="0.245 -0.01 0.05" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.245 0.01 0.05" type="box"/>
+      <geom name="wall_4" condim="4" pos="0.245 0.785 0.05" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.245 0.01 0.05" type="box"/>
+    </body>
+    <body name="obstacle_1_movable">
+      <geom name="obstacle_1_movable" condim="4" pos="0.09786780091036305 0.3225756552726528 0.02" quat="-0.9852816053479602 0 0 0.17093904809301602" friction="1 0.005 0.0001" rgba="1 1 0 1" size="0.035 0.075 0.02" type="box" mass="0.1"/>
+      <joint type="free"/>
+    </body>
+    <body name="obstacle_2_movable">
+      <geom name="obstacle_2_movable" condim="4" pos="0.15126289662585993 0.46684687640267386 0.025" quat="0.6532705435232969 0 0 0.7571245584213844" friction="1 0.005 0.0001" rgba="1 1 0 1" size="0.0375 0.06 0.025" type="box" mass="0.1"/>
+      <joint type="free"/>
+    </body>
+    <body name="wall_5">
+      <geom name="wall_5" condim="4" pos="0.25831772438092265 0.5910177005330314 0.05" quat="0.7494486626867988 0 0 0.6620624607972944" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.0275 0.0975 0.05" type="box"/>
+    </body>
+    <body name="wall_6">
+      <geom name="wall_6" condim="4" pos="0.3717918028675386 0.3044082914267616 0.05" quat="-0.43759717812135135 0 0 0.8991711237023964" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.0275 0.0975 0.05" type="box"/>
+    </body>
+    <body name="wall_7">
+      <geom name="wall_7" condim="4" pos="0.3779805905340649 0.5013725335922655 0.05" quat="0.7035147672036307 0 0 0.7106806401798358" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.0275 0.0975 0.05" type="box"/>
+    </body>
+    <body name="wall_8">
+      <geom name="wall_8" condim="4" pos="0.24624115794645562 0.278845745336228 0.05" quat="0.39610496193164924 0 0 0.9182052380231376" friction="1 0.005 0.0001" rgba="0.800000011920929 0.800000011920929 0.800000011920929 1.0" size="0.095 0.0275 0.05" type="box"/>
+    </body>
+    <site name="goal" type="sphere" size="0.05 0.05 0.05" rgba="0 1 0 0.5" pos="0.060502 0.718623 0.0"/>
+  </worldbody>
+</mujoco>

@@ -1,0 +1,64 @@
+{
+  "qualifies": true,
+  "reason": "Penalised navigation on the original layout reached the goal in 2 of 5 trials (trials 1 and 4) and jammed obj_1 against obj_4 in the other 3 (trials 2, 3, 5, stuck_retry_limit_reached at about (24, 28) cm). The operator ruled on 2026-09-07 that the room qualifies by majority; the nav baseline is reported as 2/5 for this room. Ignore trial 1 (2026-09-05) failed. Note the rule differs from rb_00020 and rb_00182, which were disqualified on any reach.",
+  "rule": "majority_of_five",
+  "penalise_trials": [
+    {
+      "trial": 1,
+      "reached": true,
+      "distance_to_goal_cm": 0.86,
+      "stuck_retries": 0,
+      "objects_moved_cm": {
+        "obj_4": 16.83,
+        "obj_1": 11.65
+      },
+      "row": "variants/original/nav_baseline_penalise/trial1/nav_baseline_penalise_1788761373.json"
+    },
+    {
+      "trial": 2,
+      "reached": false,
+      "distance_to_goal_cm": 40.08,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_4": 9.11,
+        "obj_1": 8.0
+      },
+      "row": "variants/original/nav_baseline_penalise/trial2/nav_baseline_penalise_1788761669.json"
+    },
+    {
+      "trial": 3,
+      "reached": false,
+      "distance_to_goal_cm": 40.42,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_4": 8.27,
+        "obj_1": 8.72
+      },
+      "row": "variants/original/nav_baseline_penalise/trial3/nav_baseline_penalise_1788761808.json"
+    },
+    {
+      "trial": 4,
+      "reached": true,
+      "distance_to_goal_cm": 1.32,
+      "stuck_retries": 3,
+      "objects_moved_cm": {
+        "obj_4": 13.94,
+        "obj_1": 10.4
+      },
+      "row": "variants/original/nav_baseline_penalise/trial4/nav_baseline_penalise_1788761898.json"
+    },
+    {
+      "trial": 5,
+      "reached": false,
+      "distance_to_goal_cm": 40.29,
+      "stuck_retries": 5,
+      "objects_moved_cm": {
+        "obj_4": 8.73,
+        "obj_1": 7.98
+      },
+      "row": "variants/original/nav_baseline_penalise/trial5/nav_baseline_penalise_1788761996.json"
+    }
+  ],
+  "_row": "variants/original/nav_baseline_penalise/trial1/nav_baseline_penalise_1788761373.json",
+  "_note": "qualifies is the operator's call after watching the drive. Set it to true or false and give a one-line reason."
+}

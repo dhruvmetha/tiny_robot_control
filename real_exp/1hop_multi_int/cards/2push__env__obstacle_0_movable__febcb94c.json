@@ -1,0 +1,16 @@
+{
+  "file": "2push__env__obstacle_0_movable__febcb94c.json",
+  "scene": "v2/zig_solo0/rb_00034",
+  "family": "zig_solo0",
+  "horizon": "2push",
+  "object_id": "obstacle_0_movable",
+  "tier": "hard",
+  "density_pct": 3.333,
+  "n_green": 4,
+  "n_tried": 120,
+  "region": "goal",
+  "n_green_contact": 4,
+  "contact_pct": 100,
+  "gallery_id": "v2/zig_solo0/rb_00034",
+  "dataset": "../real_2mov/"
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "run_name": "hard1_hard1_search_all1136_margin_0p1cm_v1",
+  "completed_at": "2026-09-04T14:57:01-04:00",
+  "scope": "K1 on all 1,136 generated hard-profile scenes; K2 only on exact one-push-hard K1 hits",
+  "result": {
+    "inputs": 1136,
+    "valid_k1_transitions": 400,
+    "exact_hard_k1": 4,
+    "exact_hard1_hard1": 0
+  },
+  "jobs": [
+    {
+      "job_id": 61234348,
+      "purpose": "K1",
+      "array": "0-399",
+      "original_indices": "0-399",
+      "state": "COMPLETED"
+    },
+    {
+      "job_id": 61234801,
+      "purpose": "K1",
+      "array": "400-799",
+      "original_indices": "400-799",
+      "state": "COMPLETED"
+    },
+    {
+      "job_id": 61235218,
+      "purpose": "K1",
+      "array": "800-1000",
+      "original_indices": "800-1000",
+      "state": "COMPLETED"
+    },
+    {
+      "job_id": 61235219,
+      "purpose": "K1 tail",
+      "array": "0-134",
+      "original_indices": "1001-1135",
+      "state": "COMPLETED"
+    },
+    {
+      "job_id": 61234800,
+      "purpose": "K2 for exact-hard K1 hits at original indices 13 and 22",
+      "array": "0-1",
+      "state": "COMPLETED"
+    },
+    {
+      "job_id": 61235378,
+      "purpose": "K2 for exact-hard K1 hits at original indices 581 and 605",
+      "array": "0-1",
+      "state": "COMPLETED"
+    },
+    {
+      "job_id": 61235594,
+      "purpose": "render the four exact-hard K1 diagnostic scenes",
+      "state": "COMPLETED"
+    }
+  ],
+  "resources_per_array_task": {
+    "cpus": 1,
+    "memory_gib": 8,
+    "walltime_minutes": 30
+  },
+  "labeling": {
+    "profile": "hard1-hard1",
+    "chain_depth": 1,
+    "seed": 42,
+    "neighbor_timeout_s": 600.0,
+    "scene_timeout_s": 900.0,
+    "hard_rate_interval": "0 < solve_rate_1push < 0.05"
+  },
+  "effective_margins_m": {
+    "tier1_base": 0.001,
+    "navigation_contribution": 0.0,
+    "push_approach": 0.003,
+    "xml_minimum_collision": 0.005,
+    "table_inflation": 0.08
+  },
+  "code": {
+    "python_worktree_commit": "0238730a56fb03cfe497a04b15299d764bffbbf1",
+    "compiled_binding_commit": "0b9ac568985191dab454e13ec6bf801d49c72bb3",
+    "compiled_extension_sha256": "8827080ee877179aae170e676d44a1c11e999755cf31d09dc304346c22ef8968",
+    "reducer_sha256": "a2afae2333089d441d4a9764a1b262a26fcfcf3f0d2f1ed7d5db6a9d6f1b8ac9"
+  },
+  "inputs": {
+    "manifest": "/scratch/tdn39/real_exp/environments/twohop_candidates_v3_multiobject_topology_r1/hard1-hard1/manifest.txt",
+    "manifest_sha256": "0e70360d59efd22a2ccf2d8fa7eb4409f74114327e581684fd564e2ae97477fd",
+    "build_sheets_sha256": "77ae3ccea7a131867edd88b9e743be55eba9b702af2c2e80e4dc81c38a6cd0e3"
+  },
+  "primary_output_sha256": {
+    "all1136_k1_rows.jsonl": "d2f1662ae0bbe0feb0e9059ad60977d44447ddf5e98d6970ee1338bf9a0f5821",
+    "exact_hard_k1_candidates_k2_rows.jsonl": "124d8f6164ecc05145b08df9a67fe65a2ae595e349e2bb8312f65c09bd0642a9",
+    "main_k1_validation.json": "7a2bc5429db59ef78bf74436716e8770b61aad07ae5b8f168acd779beecb21af",
+    "tail_k1_validation.json": "8208e9a683d239df19357f310044c09b44b422ca178a9185548c30a09d6c3e66",
+    "selector_selection.json": "00afd05b66474d61ad39eb125c448e340e504e1e1ef2a0e253fb36b65984eb33"
+  }
+}

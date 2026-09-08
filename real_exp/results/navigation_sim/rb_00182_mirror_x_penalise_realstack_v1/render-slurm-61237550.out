@@ -1,0 +1,8 @@
+{
+  "frames": 1245,
+  "fps": 30,
+  "duration_s": 41.5,
+  "max_pose_position_error_cm": 1.2412670766236365e-14,
+  "max_pose_angle_error_deg": 2.842170943040401e-14,
+  "output": "/scratch/tdn39/real_exp/results/navigation_sim/rb_00182_mirror_x_penalise_realstack_v1/rb_00182_mirror_x__nav_baseline_penalise__sim.mp4"
+}

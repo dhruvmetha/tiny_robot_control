@@ -1,0 +1,77 @@
+{
+  "policy": {
+    "auxiliary_position_cm": 5.0,
+    "auxiliary_yaw_deg": 20.0,
+    "dimension_tolerance_cm": 0.5,
+    "reflection": "one global left-right reflection",
+    "wall_assignment": "best permutation within each gate",
+    "wall_position_cm": 5.0,
+    "wall_yaw_deg": 15.0
+  },
+  "all_pairs_distinct": true,
+  "pairs": [
+    {
+      "left": "twohop_multi_00013",
+      "right": "twohop_multi_00022",
+      "distinct": true,
+      "best_difference": {
+        "categorical_mismatch": 1.0,
+        "dimension_cm": 3.0,
+        "wall_yaw_deg": 53.8
+      }
+    },
+    {
+      "left": "twohop_multi_00013",
+      "right": "twohop_multi_00581",
+      "distinct": true,
+      "best_difference": {
+        "categorical_mismatch": 1.0,
+        "dimension_cm": 3.0,
+        "wall_yaw_deg": 52.3
+      }
+    },
+    {
+      "left": "twohop_multi_00013",
+      "right": "twohop_multi_00605",
+      "distinct": true,
+      "best_difference": {
+        "categorical_mismatch": 1.0,
+        "dimension_cm": 3.0,
+        "wall_yaw_deg": 27.6
+      }
+    },
+    {
+      "left": "twohop_multi_00022",
+      "right": "twohop_multi_00581",
+      "distinct": true,
+      "best_difference": {
+        "categorical_mismatch": 0.0,
+        "dimension_cm": 0.0,
+        "wall_position_cm": 7.218032973,
+        "wall_yaw_deg": 74.7
+      }
+    },
+    {
+      "left": "twohop_multi_00022",
+      "right": "twohop_multi_00605",
+      "distinct": true,
+      "best_difference": {
+        "categorical_mismatch": 0.0,
+        "dimension_cm": 0.0,
+        "wall_position_cm": 4.788527958,
+        "wall_yaw_deg": 75.1
+      }
+    },
+    {
+      "left": "twohop_multi_00581",
+      "right": "twohop_multi_00605",
+      "distinct": true,
+      "best_difference": {
+        "categorical_mismatch": 0.0,
+        "dimension_cm": 0.0,
+        "wall_position_cm": 4.785394446,
+        "wall_yaw_deg": 79.9
+      }
+    }
+  ]
+}

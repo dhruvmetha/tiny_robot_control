@@ -1,0 +1,59 @@
+experiment_id: real_twohop_v3_multiobject
+seed: 42
+
+checkpoint:
+  sha256: 3cf348cf7ba247f2cb143376371fc06771665793783d12e3b37bf596e0e5a854
+
+profiles:
+  hard1-hard1:
+    chain_depth: 1
+    simulation_budget_per_gate: 100
+    source_hint:
+      solve_rate_1push: {exclusive_lower: 0.0, exclusive_upper: 0.05}
+    static_capacity: 2000
+    exact_promotion_capacity: 40
+  med2-med2:
+    chain_depth: 2
+    simulation_budget_per_gate: 200
+    source_hint:
+      solve_rate_1push: 0.0
+      solve_rate_hmax2: {inclusive_lower: 0.05, exclusive_upper: 0.30}
+    static_capacity: 1000
+    exact_promotion_capacity: 30
+
+inventory:
+  inner_walls:
+    count: 4
+    physical_ids: [wall_9, wall_10, wall_11, wall_12]
+    size_cm: [19.5, 5.5, 10.0]
+  movables:
+    - {role: obj_1, source_shape: obj_1, count: 1}
+    - {role: obj_4a, source_shape: obj_4, count: 1}
+    - {role: obj_4b, source_shape: obj_4, count: 1}
+
+source:
+  families: [hard_hc1, hard_hc2, hard_loose, hard_zig, med]
+  required_inner_walls: 2
+  required_shapes: [obj_1, obj_4]
+  topology: target_only_solo_opener
+
+composition:
+  minimum_opener_separation_m: 0.24
+  allow_reflection: true
+  allow_independent_component_perturbation: false
+
+screening:
+  local_search: best_first
+  prior: model
+  simulation_budget_scope: keyhole
+  preserve_next_keyhole_access: true
+
+diversity:
+  auxiliary_position_m: 0.05
+  auxiliary_yaw_deg: 20.0
+  wall_position_m: 0.05
+  wall_yaw_deg: 15.0
+  mirrors_share_family: true
+
+selection:
+  replay_stable_target_per_profile: 3

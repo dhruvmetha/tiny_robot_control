@@ -1,0 +1,6 @@
+/scratch/tdn39/envs/namo/bin/ld: cannot find -lyaml-cpp: No such file or directory
+collect2: error: ld returned 1 exit status
+gmake[3]: *** [CMakeFiles/namo_rl.dir/build.make:410: namo_rl.cpython-311-x86_64-linux-gnu.so] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:108: CMakeFiles/namo_rl.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:115: CMakeFiles/namo_rl.dir/rule] Error 2
+gmake: *** [Makefile:169: namo_rl] Error 2

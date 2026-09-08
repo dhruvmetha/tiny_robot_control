@@ -1,0 +1,26 @@
+{
+  "schema": "real_exp_scene_transform_v1",
+  "scene": "v3_snap/hard_zig/rb_00020_mirror_x",
+  "source_scene": "v3_snap/hard_zig/rb_00020",
+  "source_state": "../rb_00020/canonical_reset_observation.json",
+  "transform": {
+    "name": "mirror_x",
+    "workspace_width_cm": 49.0,
+    "position": "x' = 49.0 - x; y' = y",
+    "bearing": "bearing' = (180.0 - bearing) mod 180"
+  },
+  "physical_to_scene_mapping": {
+    "wall_10": "wall_inner_1",
+    "wall_11": "wall_inner_2",
+    "obj_1": "obstacle_0_movable",
+    "obj_4": "obstacle_1_movable"
+  },
+  "source_goal_cm": [
+    23.2927,
+    68.7989
+  ],
+  "mirrored_goal_cm": [
+    25.7073,
+    68.7989
+  ]
+}

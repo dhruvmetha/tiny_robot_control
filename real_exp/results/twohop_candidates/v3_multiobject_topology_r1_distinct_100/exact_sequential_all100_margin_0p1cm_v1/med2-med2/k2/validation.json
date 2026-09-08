@@ -1,0 +1,19 @@
+{
+  "manifest": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_labels_v2_100_margin_0p1cm_v1/med2-med2/k1/post_k1_manifest.txt",
+  "manifest_rows": 47,
+  "merged_rows": 47,
+  "nodecrement_xml_artifacts": 0,
+  "profile": "med2-med2",
+  "semantic_reject_counts": {
+    "status_not_ok": 27
+  },
+  "stage": "k2",
+  "status_counts": {
+    "no_kh1_opener": 8,
+    "ok": 20,
+    "scene_timeout": 19
+  },
+  "unique_inputs": 47,
+  "unreferenced_xml_artifacts": [],
+  "validated_post_k2": 20
+}

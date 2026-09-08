@@ -1,0 +1,19 @@
+✓ NAMO env active on hal0262.amarel.rutgers.edu. NAMO_REPO=/scratch/tdn39/real_exp/code/namo_cpp_twohop_exact_margin0p1cm_v1
+  [Progress] 31 primitives tried (15.4/sec) — current: obj=obstacle_0_movable edge=7 depth=2 neighbour='region_6'
+  [Progress] 47 primitives tried (7.7/sec) — current: obj=obstacle_0_movable edge=15 depth=4 neighbour='region_6'
+  [Progress] 63 primitives tried (7.8/sec) — current: obj=obstacle_0_movable edge=19 depth=1 neighbour='region_6'
+  [Progress] 84 primitives tried (10.0/sec) — current: obj=obstacle_0_movable edge=11 depth=4 neighbour='region_6'
+  [Progress] 96 primitives tried (5.9/sec) — current: obj=obstacle_0_movable edge=7 depth=1 neighbour='region_6'
+  [Progress] 119 primitives tried (10.9/sec) — current: obj=obstacle_0_movable edge=13 depth=4 neighbour='region_6'
+  [Progress] 140 primitives tried (10.2/sec) — current: obj=obstacle_0_movable edge=5 depth=2 neighbour='region_6'
+  [Progress] 156 primitives tried (8.0/sec) — current: obj=obstacle_0_movable edge=15 depth=4 neighbour='region_6'
+  [Progress] 174 primitives tried (8.9/sec) — current: obj=obstacle_0_movable edge=5 depth=2 neighbour='region_6'
+  [Progress] 199 primitives tried (12.1/sec) — current: obj=obstacle_0_movable edge=5 depth=2 neighbour='region_6'
+  [Progress] 216 primitives tried (8.1/sec) — current: obj=obstacle_0_movable edge=15 depth=4 neighbour='region_6'
+  [Progress] 232 primitives tried (7.9/sec) — current: obj=obstacle_0_movable edge=3 depth=2 neighbour='region_6'
+  [Progress] 261 primitives tried (13.7/sec) — current: obj=obstacle_0_movable edge=15 depth=3 neighbour='region_6'
+  [Progress] 272 primitives tried (5.2/sec) — current: obj=obstacle_0_movable edge=17 depth=5 neighbour='region_6'
+  [Progress] 303 primitives tried (14.8/sec) — current: obj=obstacle_0_movable edge=9 depth=3 neighbour='region_6'
+  [Progress] 315 primitives tried (5.9/sec) — current: obj=obstacle_0_movable edge=13 depth=5 neighbour='region_6'
+1/1 34s no_kh1_opener
+done 1 rows -> /scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/k1/shards/task_0956/rows.jsonl in 34s

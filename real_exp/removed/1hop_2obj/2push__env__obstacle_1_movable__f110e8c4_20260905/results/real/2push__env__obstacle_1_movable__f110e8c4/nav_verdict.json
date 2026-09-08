@@ -1,0 +1,54 @@
+{
+  "qualifies": true,
+  "reason": "Both real-navigation variants failed autonomously. Penalise trial 1 failed and the robot fell over; penalise trial 2 only reached after manual robot repositioning. Both ignore trials exhausted the blocked-retry limit without reaching the goal.",
+  "human_verdict": {
+    "status": "failure",
+    "failure_cause": "navigation_baselines_failed",
+    "failure_detail": "penalise and ignore both failed; a manually assisted terminal pose is not autonomous success",
+    "recorded_on": "2026-09-05"
+  },
+  "arms": {
+    "penalise": {
+      "status": "failure",
+      "trial1": {
+        "human_failure_detail": "robot_fell_over",
+        "automated_reached": false,
+        "automated_failure_cause": "stuck_retry_limit_reached",
+        "row": "nav_baseline_penalise/trial1/nav_baseline_penalise_1788647615.json"
+      },
+      "trial2": {
+        "human_failure_detail": "manual_robot_repositioning_required",
+        "automated_reached": true,
+        "row": "nav_baseline_penalise/trial2/nav_baseline_penalise_1788648260.json",
+        "note": "The automated terminal pose is preserved, but the experiment owner marked the run as failure because autonomous execution required manual robot repositioning."
+      }
+    },
+    "ignore": {
+      "status": "failure",
+      "trial1": {
+        "automated_reached": false,
+        "automated_failure_cause": "stuck_retry_limit_reached",
+        "row": "nav_baseline_ignore/trial1/nav_baseline_ignore_1788647848.json"
+      },
+      "trial2": {
+        "automated_reached": false,
+        "automated_failure_cause": "stuck_retry_limit_reached",
+        "row": "nav_baseline_ignore/trial2/nav_baseline_ignore_1788648087.json"
+      }
+    }
+  },
+  "_evidence": {
+    "reached": false,
+    "distance_to_goal_cm": 22.68,
+    "objects_moved": "obj_1",
+    "objects_moved_cm": {
+      "obj_1": 2.63
+    },
+    "stuck_retries": 5,
+    "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+    "route_crosses": "obj_1",
+    "failure_cause": "stuck_retry_limit_reached"
+  },
+  "_row": "nav_baseline_penalise_1788647615.json",
+  "_note": "The human table-side verdict is authoritative. Automated evidence is preserved without rewriting the raw trial outputs."
+}

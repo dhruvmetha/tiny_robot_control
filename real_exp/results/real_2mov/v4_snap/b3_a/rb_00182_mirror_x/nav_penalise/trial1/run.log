@@ -1,0 +1,100 @@
+[Diagnostics] Wrote config.json
+[DIAG] Diagnostics enabled: /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v4_snap/b3_a/rb_00182_mirror_x/nav_penalise/trial1
+Goal given: (18.9, 66.1) cm
+
+Pure navigation baseline, mode 'penalise'. No pushes will be planned.
+Press ESCAPE to quit
+============================================================
+[Runtime] Using remote camera service at tcp://localhost:5556
+[Runtime] Speeds in effect: nav=0.40, push=0.40, keyboard/follow_path=0.30
+[Runtime] Starting RemoteObserverNode...
+[RemoteObserver] Connected to tcp://localhost:5556
+[SerialSender] Port /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00 opened at 115200
+[SerialSender] Started at 30.0 Hz
+[RealEnv] Started (robot_id=1)
+[RemoteRecordClient] Recording started → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v4_snap/b3_a/rb_00182_mirror_x/nav_penalise/trial1/recordings/session_2026-09-03_18-29-14/full_run.mp4
+[Runtime] Full-run video + per-subgoal meta will write to /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v4_snap/b3_a/rb_00182_mirror_x/nav_penalise/trial1/recordings/session_2026-09-03_18-29-14
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[SerialSender] ⚠️ Car 1 DISCONNECTED (alive now: [])
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! ROBOT 1 OFFLINE at startup !!
+!!   ap_connected=True, alive_ids=[], last_status=0.3s ago [fresh]
+!!   Planning will run (sim-only), but the robot CANNOT execute.
+!!   Restart the robot or check the camera_service serial link.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Diagnostics] ⚠️ scene_before.xml capture failed: no xml source path provided
+
+==================================================
+Robot Control - Real Robot (Autonomous)
+==================================================
+Serial port: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_10:51:DB:18:34:7C-if00
+Robot ID: 1
+[Subgoal] --> DISPATCH NAVIGATE: target=(18.9,66.1), robot at (25.4,12.3,θ=87.7°)
+Dry run: False
+[DIAG] subgoal #1 start recorded
+Speed (autonomous): nav=0.40, push=0.40
+==================================================
+Running in autonomous mode
+Press 'r' to toggle recording
+Press 'space' for emergency stop
+Press 'escape' to quit
+==================================================
+
+[NAV] navigate_to: goal=(18.9,66.1) θ=any, from=(25.4,12.3), obstacles=5
+[NAV] state - -> PRE_ROTATING pose=(25.4,12.3,θ=87.7°) pre_target_θ=137.3° heading_err=+49.5°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(25.4,12.4,θ=92.3°) path_waypoints=89 final_wp=(18.8,66.2)
+[SerialSender] Car 1 CONNECTED (alive now: [1])
+[NAV] !! NO PROGRESS (blocked): robot at (7.8,39.6,θ=47.0°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (4.0, 36.2)
+[NAV] state FOLLOWING -> RETREATING pose=(7.8,39.6,θ=47.0°)
+[NAV] Retreat done after 90 ticks (ran out of ticks); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 15.9s, robot now at (7.3,39.2,θ=30.8°)
+[DIAG] subgoal #1 end recorded (outcome=failed)
+[Runtime] 🔌 Robot 1 → ONLINE (alive_ids=[1], ap_connected=True, last_status=0.4s ago)
+[Subgoal] --> DISPATCH NAVIGATE: target=(18.9,66.1), robot at (7.3,39.2,θ=30.8°)
+[DIAG] subgoal #2 start recorded
+[NAV] navigate_to: goal=(18.9,66.1) θ=any, from=(7.3,39.2), obstacles=5
+[NAV] state RETREATING -> PRE_ROTATING pose=(7.3,39.2,θ=30.8°) pre_target_θ=82.2° heading_err=+51.4°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(7.3,39.2,θ=37.6°) path_waypoints=42 final_wp=(18.8,66.2)
+[NAV] !! NO PROGRESS (blocked): robot at (7.1,45.8,θ=57.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (4.1, 41.8)
+[NAV] state FOLLOWING -> RETREATING pose=(7.1,45.8,θ=57.9°)
+[NAV] Retreat done after 48 ticks (reached the cell); drive FAILED (blocked).
+[Subgoal] <-- DONE (FAILED) after 7.9s, robot now at (6.2,44.6,θ=49.8°)
+[DIAG] subgoal #2 end recorded (outcome=failed)
+[Subgoal] --> DISPATCH NAVIGATE: target=(18.9,66.1), robot at (6.2,44.6,θ=49.8°)
+[DIAG] subgoal #3 start recorded
+[NAV] navigate_to: goal=(18.9,66.1) θ=any, from=(6.2,44.6), obstacles=5
+[NAV] state RETREATING -> PRE_ROTATING pose=(6.2,44.6,θ=49.8°) pre_target_θ=89.6° heading_err=+39.7°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(6.2,44.5,θ=50.0°) path_waypoints=36 final_wp=(18.2,66.2)
+[Subgoal] <-- DONE (SUCCESS) after 7.0s, robot now at (17.6,66.5,θ=348.7°)
+[DIAG] subgoal #3 end recorded (outcome=success)
+[Runtime] Plan complete - stopping robot
+[Runtime] Shutting down
+[Diagnostics] ⚠️ scene_after.xml capture failed: no xml source path provided
+[Diagnostics] Wrote summary.json (outcome=success)
+[RemoteRecordClient] Recording stopped → /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v4_snap/b3_a/rb_00182_mirror_x/nav_penalise/trial1/recordings/session_2026-09-03_18-29-14/full_run.mp4
+[Runtime] Sending stop command to robot...
+[SerialSender] Stopped
+[RealEnv] Stopped
+[RemoteObserver] Stopped
+[Runtime] Shutdown complete
+
+============================================================
+  arm                : nav_baseline_penalise
+  reached            : True
+  stopped at         : (17.55, 66.53) cm
+  distance to goal   : 1.38 cm
+  route waypoints    : 57
+  route crossed      : nothing
+  objects shoved     : obj_1
+  elapsed            : 31.0 s
+  failure            : none
+============================================================
+
+  Driving alone reached the goal. This scene did NOT need NAMO.
+
+wrote /home/dhruv/projects_dhruv/namo/robot_control/real_exp/results/real_2mov/v4_snap/b3_a/rb_00182_mirror_x/nav_penalise/trial1/nav_baseline_penalise_1788474586.json
+wrote real_exp/results/real_2mov/v4_snap/b3_a/rb_00182_mirror_x/nav_verdict.json (qualifies is unset, waiting on your call)

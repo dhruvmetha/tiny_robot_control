@@ -1,0 +1,109 @@
+{
+  "eligible": 3,
+  "limit": 100,
+  "profile": "med2-med2",
+  "rejects": {
+    "invalid_k1_materialization": 345,
+    "invalid_k2_materialization": 651,
+    "profile_mismatch": 1
+  },
+  "scenes": [
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 7,
+          "n_tried_1push": 31,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 7,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.22580645161290322,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 4,
+          "n_tried_1push": 38,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 4,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.10526315789473684,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00037",
+      "xml": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/selected/twohop_multi_00037/env.xml"
+    },
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 53,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 3,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.05660377358490566,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 7,
+          "n_tried_1push": 91,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 7,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.07692307692307693,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00143",
+      "xml": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/selected/twohop_multi_00143/env.xml"
+    },
+    {
+      "labels": [
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 9,
+          "n_tried_1push": 34,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 9,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.2647058823529412,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        },
+        {
+          "classification_complete": true,
+          "n_open_within_2push": 3,
+          "n_tried_1push": 37,
+          "n_valid_1push": 0,
+          "n_valid_first_push": 3,
+          "push_kind": "needs_2_chain",
+          "solve_rate_1push": 0.0,
+          "solve_rate_hmax2": 0.08108108108108109,
+          "tier_1push": "unsolvable",
+          "tier_hmax2": "med",
+          "timed_out": false
+        }
+      ],
+      "scene_id": "twohop_multi_00710",
+      "xml": "/scratch/tdn39/real_exp/results/twohop_v3_multiobject/topology_r1/exact_med_search_all1000_margin_0p1cm_v1/med2-med2/selected/twohop_multi_00710/env.xml"
+    }
+  ],
+  "selected": 3
+}

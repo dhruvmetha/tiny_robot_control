@@ -1,0 +1,17 @@
+{
+  "arm": "nav_baseline_ignore",
+  "reached": false,
+  "stopped_x_cm": 22.14,
+  "stopped_y_cm": 25.64,
+  "distance_to_goal_cm": 43.07,
+  "elapsed_s": 51.0,
+  "route_waypoints": 82,
+  "stuck_retries": 5,
+  "stuck_causes": "blocked,blocked,blocked,blocked,blocked",
+  "route_crosses": "obj_1,obj_4",
+  "objects_moved": "obj_1",
+  "objects_moved_cm": {
+    "obj_1": 5.54
+  },
+  "failure_cause": "stuck_retry_limit_reached"
+}

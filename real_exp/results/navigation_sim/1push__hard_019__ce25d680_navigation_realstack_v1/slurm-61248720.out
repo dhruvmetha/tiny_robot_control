@@ -1,0 +1,47 @@
+[NAV] navigate_to: goal=(28.8,57.5) θ=any, from=(21.0,13.6), obstacles=7
+[NAV] state - -> PRE_ROTATING pose=(21.0,13.6,θ=0.0°) pre_target_θ=64.4° heading_err=+64.4°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(21.1,13.7,θ=26.1°) path_waypoints=52 final_wp=(28.8,57.2)
+nav_baseline_ignore: status=success reached=True distance_to_goal_cm=1.59 sim_time_s=13.333 -> /scratch/tdn39/real_exp/results/navigation_sim/1push__hard_019__ce25d680_navigation_realstack_v1/nav_baseline_ignore
+[NAV] navigate_to: goal=(28.8,57.5) θ=any, from=(21.0,13.6), obstacles=7
+[NAV] state - -> PRE_ROTATING pose=(21.0,13.6,θ=0.0°) pre_target_θ=164.9° heading_err=+164.9°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(21.0,13.6,θ=127.2°) path_waypoints=65 final_wp=(28.8,57.2)
+[NAV] !! NO PROGRESS (blocked): robot at (18.9,29.2,θ=4.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (13.9, 28.4)
+[NAV] state FOLLOWING -> RETREATING pose=(18.7,29.2,θ=3.4°)
+[NAV] Retreat done after 14 ticks (reached the cell); drive FAILED (blocked).
+[NAV] navigate_to: goal=(28.8,57.5) θ=any, from=(17.4,28.8), obstacles=7
+[NAV] state RETREATING -> PRE_ROTATING pose=(17.4,28.8,θ=-1.4°) pre_target_θ=46.5° heading_err=+47.9°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(17.7,28.8,θ=7.1°) path_waypoints=40 final_wp=(28.8,56.8)
+[NAV] !! NO PROGRESS (under_commanded): robot at (18.8,29.6,θ=4.8°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (14.0, 28.3)
+[NAV] state FOLLOWING -> RETREATING pose=(18.6,29.5,θ=6.3°)
+[NAV] Retreat done after 19 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(28.8,57.5) θ=any, from=(17.5,28.8), obstacles=7
+[NAV] state RETREATING -> PRE_ROTATING pose=(17.5,28.8,θ=-1.7°) pre_target_θ=36.9° heading_err=+38.6°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(17.7,28.8,θ=-2.7°) path_waypoints=40 final_wp=(28.8,57.2)
+[NAV] !! NO PROGRESS (under_commanded): robot at (18.9,29.0,θ=4.9°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (14.0, 28.1)
+[NAV] state FOLLOWING -> RETREATING pose=(18.8,29.0,θ=4.8°)
+[NAV] Retreat done after 10 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(28.8,57.5) θ=any, from=(17.0,28.8), obstacles=7
+[NAV] state RETREATING -> PRE_ROTATING pose=(17.0,28.8,θ=8.4°) pre_target_θ=42.4° heading_err=+34.1°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(17.0,28.8,θ=10.1°) path_waypoints=40 final_wp=(28.8,56.8)
+[NAV] !! NO PROGRESS (under_commanded): robot at (18.8,29.7,θ=4.7°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (14.0, 28.4)
+[NAV] state FOLLOWING -> RETREATING pose=(18.7,29.6,θ=3.8°)
+[NAV] Retreat done after 20 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(28.8,57.5) θ=any, from=(17.4,29.0), obstacles=7
+[NAV] state RETREATING -> PRE_ROTATING pose=(17.4,29.0,θ=-3.9°) pre_target_θ=44.7° heading_err=+48.6°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(17.7,29.0,θ=4.6°) path_waypoints=40 final_wp=(28.8,56.8)
+[NAV] !! NO PROGRESS (under_commanded): robot at (18.8,29.5,θ=4.8°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (14.0, 28.2)
+[NAV] state FOLLOWING -> RETREATING pose=(18.7,29.5,θ=5.1°)
+[NAV] Retreat done after 19 ticks (reached the cell); drive FAILED (under_commanded).
+[NAV] navigate_to: goal=(28.8,57.5) θ=any, from=(17.5,28.8), obstacles=7
+[NAV] state RETREATING -> PRE_ROTATING pose=(17.5,28.8,θ=-0.4°) pre_target_θ=46.4° heading_err=+46.8°
+[NAV] state PRE_ROTATING -> FOLLOWING pose=(17.8,28.8,θ=4.5°) path_waypoints=41 final_wp=(28.8,57.2)
+[NAV] !! NO PROGRESS (under_commanded): robot at (18.8,29.5,θ=4.8°) has not moved 0.5 cm or turned 3.0° in 3.0s. Treating as FAILED so the subgoal can end.
+[NAV] Retreating to (14.0, 28.2)
+[NAV] state FOLLOWING -> RETREATING pose=(18.7,29.5,θ=5.0°)
+[NAV] Retreat done after 20 ticks (reached the cell); drive FAILED (under_commanded).
+nav_baseline_penalise: status=failure reached=False distance_to_goal_cm=30.83 sim_time_s=34.033 -> /scratch/tdn39/real_exp/results/navigation_sim/1push__hard_019__ce25d680_navigation_realstack_v1/nav_baseline_penalise
