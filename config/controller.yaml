@@ -6,14 +6,27 @@ navigation:
   max_speed: 0.4                 # CAN be overridden by --nav-speed. Aligned with push.max_speed.
   pre_rotation_skip_angle: 45.0  # degrees - skip pre-rotation if heading error < this
   robot_geometry_scale: 1.0      # RVG robot inflation (1.0 = half robot size, matches wavefront)
-  goal_tolerance_ratio: 0.2      # goal_tolerance = ratio * car_size
+  # goal_tolerance = ratio * car_size. car_size is 7 cm on the real robot, so
+  # 0.2 gave 1.4 cm and 0.15 gives 1.05 cm. Tightened 2026-09-08 during the
+  # rb_00121 trials to land the robot closer to push approach poses; uniform
+  # trial 2 that night had 3 stuck pushes and approach accuracy is the
+  # plausible cause. Tightening this makes the robot fiddle longer at each
+  # waypoint, which is the wobble rotation_tolerance_deg was widened to damp,
+  # so the two settings pull against each other. Do not go below 0.1.
+  goal_tolerance_ratio: 0.15     # goal_tolerance = ratio * car_size
   planner: "wavefront"           # "wavefront" or "rvg"
   wavefront_debug_dir: "output_dump/wavefront"  # Save wavefront path images here (null to disable)
   obstacle_proximity_distance_cm: 2.0  # cm - how far from obstacles the extra cost extends
   obstacle_proximity_weight: 5.0       # max cost multiplier at obstacle edge (0 to disable)
 
   # Rotation parameters
-  rotation_tolerance_deg: 2.5    # degrees - rotation complete when within this
+  # Was 2.5, raised 2026-09-08 during the rb_00121 trials. Five post-rotation
+  # stalls that night sat at heading errors of 1.0, 1.6 and 2.5 deg, all at or
+  # inside the old tolerance: the robot reached the target and then could not
+  # hold it for rotation_stable_time because ArUco heading noise is 1-2 deg.
+  # 4.0 gives roughly twice the noise band. Costs approach-heading accuracy on
+  # pushes, which the edge standoff absorbs.
+  rotation_tolerance_deg: 4.0    # degrees - rotation complete when within this
   rotation_stable_time: 0.5      # seconds - hold at target before done
   rotation_speed_max: 0.25       # max wheel speed for rotation
   rotation_speed_min: 0.15       # min wheel speed for rotation
