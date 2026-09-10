@@ -31,6 +31,7 @@ def _args(**overrides):
         best_first_hmax=None,
         keyhole_simulation_budget=None,
         budget_scope=None,
+        goal_clearance=False,
         ml_device="cpu",
         exec_mode=DEFAULT_EXEC_MODE,
     )
@@ -120,6 +121,21 @@ def test_protocol_keys_are_forwarded_when_set():
 
     assert kwargs["best_first_hmax"] == 2
     assert kwargs["full_namo_keyhole_simulation_budget"] == 900
+
+
+def test_goal_clearance_is_forwarded_to_full_namo():
+    kwargs = LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="uniform",
+        goal_clearance=True,
+    ).as_planner_kwargs()
+
+    assert kwargs["full_namo_goal_clearance"] is True
+
+
+def test_goal_clearance_requires_best_first():
+    with pytest.raises(ValueError, match="goal_clearance"):
+        LocalSearchConfig(goal_clearance=True)
 
 
 @pytest.mark.parametrize(

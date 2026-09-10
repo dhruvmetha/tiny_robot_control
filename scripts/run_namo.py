@@ -119,6 +119,7 @@ def local_search_from_args(args) -> LocalSearchConfig:
         best_first_hmax=args.best_first_hmax,
         keyhole_simulation_budget=args.keyhole_simulation_budget,
         budget_scope=args.budget_scope,
+        goal_clearance=args.goal_clearance,
         ml_device=args.ml_device,
         exec_mode=args.exec_mode or DEFAULT_EXEC_MODE,
     )
@@ -2097,6 +2098,13 @@ def main():
         default=None,
         help="Max pushes per local plan for best_first. Omit to use namo_cpp's "
              "canonical value (2), which every registered evaluation used.",
+    )
+    parser.add_argument(
+        "--goal-clearance",
+        action="store_true",
+        help="When movable objects cover the accepted goal cells, disable the "
+             "nearby-free-cell retarget shortcut and ask Full NAMO best-first "
+             "to push the covering object until the goal is reachable.",
     )
     parser.add_argument(
         "--keyhole-simulation-budget",

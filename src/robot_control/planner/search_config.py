@@ -85,6 +85,7 @@ class LocalSearchConfig:
     best_first_hmax: Optional[int] = None
     keyhole_simulation_budget: Optional[int] = None
     budget_scope: Optional[str] = None
+    goal_clearance: bool = False
     ml_device: Optional[str] = None
     exec_mode: str = DEFAULT_EXEC_MODE
 
@@ -141,6 +142,10 @@ class LocalSearchConfig:
                 "budget_scope='keyhole' requires an explicit per-keyhole budget; "
                 "pass --keyhole-simulation-budget"
             )
+        if self.goal_clearance and not self.uses_best_first:
+            raise ValueError(
+                "goal_clearance requires --local-search best_first"
+            )
 
     @property
     def uses_best_first(self) -> bool:
@@ -195,6 +200,8 @@ class LocalSearchConfig:
             kwargs["full_namo_keyhole_simulation_budget"] = self.keyhole_simulation_budget
         if self.budget_scope is not None:
             kwargs["full_namo_budget_scope"] = self.budget_scope
+        if self.goal_clearance:
+            kwargs["full_namo_goal_clearance"] = True
         if self.ml_device:
             kwargs["ml_device"] = self.ml_device
         return kwargs
@@ -226,6 +233,8 @@ class LocalSearchConfig:
         parts.append(
             f"scope={self.budget_scope if self.budget_scope is not None else 'inherited'}"
         )
+        if self.goal_clearance:
+            parts.append("goal_clearance=on (retarget disabled)")
         if self.ml_device:
             parts.append(f"device={self.ml_device}")
         return "  ".join(parts)

@@ -739,10 +739,11 @@ class NAMOPlanner(Planner):
         Now includes reachability checking:
         1. If the goal point itself is covered but a nearby cell is free and
            robot-reachable within GOAL_RETARGET_CAP_CM, returns a
-           NavigateSubgoal to that cell instead (see _select_goal_retarget).
-        2. Else if goal is already reachable, returns NavigateSubgoal to goal
-        3. Else goal is blocked, runs NAMO planning and returns PushSubgoals
-        4. After pushes complete, re-checks reachability and loops
+           NavigateSubgoal to that cell instead (see _select_goal_retarget),
+           unless goal-clearance planning was requested.
+        2. Else if goal is already reachable, returns NavigateSubgoal to goal.
+        3. Else goal is blocked, runs NAMO planning and returns PushSubgoals.
+        4. After pushes complete, re-checks reachability and loops.
 
         Args:
             obs: Current observation
@@ -762,7 +763,8 @@ class NAMOPlanner(Planner):
         # retarget would avoid a NAMO push entirely. Executor-level only —
         # does not touch _is_goal_reachable or any search-side behavior.
         retarget = self._select_goal_retarget(obs)
-        if retarget is not None:
+        goal_point_blocked = retarget is not None
+        if retarget is not None and not self._local_search.goal_clearance:
             rx, ry, dist_cm = retarget
             self._navigating_to_goal = True
             self._retarget_point_cm = (rx, ry)
@@ -774,8 +776,14 @@ class NAMOPlanner(Planner):
             self._record_goal_retarget_diagnostics(obs, rx, ry, dist_cm)
             return NavigateSubgoal(x=rx, y=ry, theta=None)
 
+        if goal_point_blocked:
+            print(
+                "[NAMOPlanner] Goal point BLOCKED - goal-clearance planning enabled; "
+                "asking Full NAMO to move the covering object"
+            )
+
         # Check if goal is reachable (either initially or after pushes)
-        if self._is_goal_reachable(obs):
+        if not goal_point_blocked and self._is_goal_reachable(obs):
             self._navigating_to_goal = True
             self._retarget_point_cm = None
             dist = math.hypot(

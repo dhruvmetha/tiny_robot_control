@@ -141,6 +141,23 @@ def test_a_failed_navigate_to_goal_is_not_silently_swallowed(monkeypatch):
     assert planner.is_complete(obs) is False, "one failure must not give up early"
 
 
+def test_goal_clearance_bypasses_retarget_and_runs_push_planner(monkeypatch):
+    planner = _make_planner(monkeypatch)
+    planner._local_search = planner_mod.LocalSearchConfig(
+        local_search="best_first",
+        best_first_prior="uniform",
+        goal_clearance=True,
+    )
+    planner._select_goal_retarget = lambda _obs: (20.0, 30.0, 10.0)
+    generated = []
+    planner._generate_plan = lambda current: generated.append(current)
+
+    obs = _obs()
+    assert planner.plan(obs) is None
+    assert generated == [obs]
+    assert planner._navigating_to_goal is False
+
+
 def test_the_planner_asks_for_a_fresh_subgoal_after_the_failure(monkeypatch):
     """Not just internal state -- plan() must actually hand back a next step."""
     planner = _make_planner(monkeypatch)
