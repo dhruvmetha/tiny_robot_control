@@ -177,7 +177,7 @@ no-op or jam is detected by the live displacement threshold and fed into the
 external edge blacklist. A real trial succeeds only after final navigation
 places the observed robot within 5 cm of the goal or an explicit valid nearby
 retarget.
-# Execute one simulated keyhole at a time
+## Execute one simulated keyhole at a time
 
 `run_namo.py --planning-horizon first_keyhole` runs the existing Full NAMO best-first search until it finds a verified solution to the first keyhole, then returns that complete local push chain for physical execution. It supports both `--best-first-prior model` and `--best-first-prior uniform`. The default `full_goal` horizon still searches to the final goal before the first physical push.
 

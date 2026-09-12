@@ -97,6 +97,9 @@ def evaluate_chain_outcome(
 
     Returns ``(succeeded, goal_reachable_after, target_open_after)``.
 
+    ``keyhole_target`` carries Full NAMO's frozen region, goal, or clearance
+    criterion, with object IDs already translated to simulator naming.
+
     Without target points the question is the one this has always asked: does
     the final state make the robot's goal reachable. While a boundary is held
     that is the wrong question -- a chain can make the goal reachable while

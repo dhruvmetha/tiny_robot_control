@@ -158,6 +158,7 @@ class LocalSearchConfig:
 
     @property
     def uses_first_keyhole(self) -> bool:
+        """Whether Full NAMO hands off after the first simulated opening."""
         return self.planning_horizon == "first_keyhole"
 
     @property
