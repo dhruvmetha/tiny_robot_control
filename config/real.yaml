@@ -1,6 +1,10 @@
 # Real environment configuration
 # Robot and object marker definitions
 
+# Simulated planning horizon; --planning-horizon overrides this value.
+namo:
+  planning_horizon: full_goal  # first_keyhole hands off after one verified opening
+
 # Camera settings
 camera:
   # RealSense colour stream. Verified 2026-08-21 by capturing a frame through

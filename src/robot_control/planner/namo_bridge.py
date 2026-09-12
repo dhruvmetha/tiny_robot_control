@@ -90,6 +90,8 @@ def evaluate_chain_outcome(
     env: Any,
     target_points: Optional[Sequence[Tuple[float, float]]] = None,
     min_reachable: Optional[int] = None,
+    *,
+    keyhole_target: Optional[Dict[str, Any]] = None,
 ) -> Tuple[bool, bool, Optional[bool]]:
     """Decide whether a simulated chain succeeded.
 
@@ -106,6 +108,10 @@ def evaluate_chain_outcome(
     wavefront update (~7 ms) against a ~160 ms simulated push.
     """
     goal_reachable_after = bool(env.is_robot_goal_reachable())
+    if keyhole_target is not None:
+        from namo.planners.full_namo.keyhole_target import keyhole_is_open
+        opened = keyhole_is_open(env, keyhole_target)
+        return opened, goal_reachable_after, opened
     if not target_points:
         return goal_reachable_after, goal_reachable_after, None
 
@@ -515,11 +521,15 @@ class NAMOPlanBridge:
         *,
         target_points: Optional[Sequence[Tuple[float, float]]] = None,
         min_reachable: Optional[int] = None,
+        keyhole_target: Optional[Dict[str, Any]] = None,
+        push_budget: Optional[Any] = None,
     ) -> ChainVerificationResult:
         """Sim-verify an exact push chain from the current observation.
 
-        Returns success only if every push succeeds and the final state makes
-        the robot goal reachable under the planner's C++ wavefront check.
+        Every push must succeed and satisfy the final goal or supplied opening
+        criterion. Keyhole object IDs use real naming on entry. When supplied,
+        push_budget is the trial allowance used by fresh search; each env.step
+        consumes one unit, including failed pushes.
         """
         t0 = perf_counter()
         planner_scene_xml = self._generate_xml(observation, robot_goal_cm)
@@ -578,14 +588,16 @@ class NAMOPlanBridge:
         original_cwd = os.getcwd()
         os.chdir(str(namo_cpp_dir))
 
+        attempted = 0
         try:
             namo_rl, _, _ = load_canonical_namo_rl(bridge_path)
             starting_robot_pose = self._starting_robot_pose_sim(observation)
             env = self._build_rl_env_for_scene(namo_rl, xml_path, starting_robot_pose)
             goal_sim = self._cm_to_sim(robot_goal_cm[0], robot_goal_cm[1])
             env.set_robot_goal(goal_sim[0], goal_sim[1], 0.0)
+            sim_keyhole = self._map_keyhole_target(keyhole_target, to_sim=True)
 
-            if target_points:
+            if target_points or sim_keyhole:
                 # A chain is graded by whether the boundary is open AFTER it.
                 # If it is already open before anything runs, that test proves
                 # nothing and any stale chain would pass, so the robot would
@@ -593,7 +605,7 @@ class NAMOPlanBridge:
                 # and let the caller re-solve; it will see already_open and move
                 # to the next boundary.
                 open_before, _goal_before, _t = evaluate_chain_outcome(
-                    env, target_points, min_reachable
+                    env, target_points, min_reachable, keyhole_target=sim_keyhole
                 )
                 if open_before:
                     return ChainVerificationResult(
@@ -620,6 +632,18 @@ class NAMOPlanBridge:
                 action.y = 0.0
                 action.theta = 0.0
 
+                if push_budget is not None:
+                    if push_budget.exhausted:
+                        return ChainVerificationResult(
+                            success=False, verified_subgoals=verified_subgoals,
+                            sim_pushes_tried=attempted, failed_step_index=idx,
+                            failure_reason="simulation_budget_exhausted", goal_reachable_after=False,
+                            verification_time_ms=(perf_counter() - t0) * 1000.0,
+                            planner_scene_xml=planner_scene_xml,
+                            object_mapping=self._serialize_object_mapping(),
+                        )
+                    push_budget.consume_or_raise()
+                attempted += 1
                 try:
                     step_result = env.step(action)
                 except Exception as exc:
@@ -656,7 +680,7 @@ class NAMOPlanBridge:
                 verified_subgoals.append(subgoal)
 
             succeeded, goal_reachable_after, target_open_after = evaluate_chain_outcome(
-                env, target_points, min_reachable
+                env, target_points, min_reachable, keyhole_target=sim_keyhole
             )
             if not succeeded:
                 return ChainVerificationResult(
@@ -666,7 +690,7 @@ class NAMOPlanBridge:
                     failed_step_index=None,
                     failure_reason=(
                         "target_not_open_after_chain"
-                        if target_points
+                        if target_points or sim_keyhole
                         else "goal_not_reachable_after_chain"
                     ),
                     goal_reachable_after=goal_reachable_after,
@@ -692,7 +716,7 @@ class NAMOPlanBridge:
             return ChainVerificationResult(
                 success=False,
                 verified_subgoals=[],
-                sim_pushes_tried=0,
+                sim_pushes_tried=attempted,
                 failed_step_index=None,
                 failure_reason=f"verification_exception: {exc!r}",
                 goal_reachable_after=False,
@@ -707,6 +731,13 @@ class NAMOPlanBridge:
                     Path(xml_path).unlink()
                 except OSError:
                     pass
+
+    def _map_keyhole_target(self, target, *, to_sim: bool):
+        """Translate object IDs for this observation; coordinates stay in metres."""
+        if target is None:
+            return None
+        convert = self._resolve_sim_object_id if to_sim else self._object_mapping.get_real_name
+        return dict(target, blocking_objects=[convert(name) for name in target["blocking_objects"]])
 
     def plan(
         self,
@@ -753,6 +784,8 @@ class NAMOPlanBridge:
         self.last_algorithm_stats = None
         self.last_plan_success = None
         self.last_plan_failure_reason = None
+        push_budget = kwargs.get("push_budget")
+        budget_before = push_budget.used if push_budget is not None else 0
 
         # Manual-primitives strategy: bypass the C++ planner entirely.
         # Load a YAML file of (object_id, edge_idx, push_steps) entries,
@@ -845,6 +878,10 @@ class NAMOPlanBridge:
                 )
 
             # Run planning
+            if kwargs.get("full_namo_active_keyhole") is not None:
+                kwargs["full_namo_active_keyhole"] = self._map_keyhole_target(
+                    kwargs["full_namo_active_keyhole"], to_sim=True
+                )
             result = service.plan_from_xml(
                 xml_path=xml_path,
                 robot_goal=(goal_sim[0], goal_sim[1], 0.0),
@@ -861,6 +898,18 @@ class NAMOPlanBridge:
 
             self.last_search_time_ms = result.search_time_ms
             self.last_algorithm_stats = getattr(result, "algorithm_stats", None)
+            if self.last_algorithm_stats is not None:
+                self.last_algorithm_stats = dict(self.last_algorithm_stats)
+                if self.last_algorithm_stats.get("keyhole_target") is not None:
+                    self.last_algorithm_stats["keyhole_target"] = self._map_keyhole_target(
+                        self.last_algorithm_stats["keyhole_target"], to_sim=False
+                    )
+            if push_budget is not None:
+                self.last_algorithm_stats = dict(self.last_algorithm_stats or {},
+                    simulations_used=push_budget.used - budget_before,
+                    trial_simulation_budget_limit=push_budget.limit,
+                    trial_simulation_budget_used=push_budget.used,
+                    trial_simulation_budget_remaining=push_budget.remaining)
             self.last_plan_success = bool(result.success)
             failure_reason = str(getattr(result, "error_message", "") or "")
             if not failure_reason and isinstance(self.last_algorithm_stats, dict):

@@ -35,6 +35,7 @@ BEST_FIRST_PRIOR_CHOICES = ("model", "uniform")
 # not record which rule it ran under. Leaving it None still forwards nothing
 # and inherits namo_cpp's default, so no existing run changes.
 BUDGET_SCOPE_CHOICES = ("full_problem", "keyhole")
+PLANNING_HORIZON_CHOICES = ("full_goal", "first_keyhole")
 
 # Which decision rule reads the ranked pool. `search` pops a priority queue and
 # can back up. `reactive` takes the argmax at the live state in front of the
@@ -88,8 +89,16 @@ class LocalSearchConfig:
     goal_clearance: bool = False
     ml_device: Optional[str] = None
     exec_mode: str = DEFAULT_EXEC_MODE
+    planning_horizon: str = "full_goal"
 
     def __post_init__(self) -> None:
+        if self.planning_horizon not in PLANNING_HORIZON_CHOICES:
+            raise ValueError(f"Unknown planning_horizon {self.planning_horizon!r}")
+        if self.uses_first_keyhole and (
+            self.local_search != "best_first" or self.exec_mode != SEARCH_EXEC_MODE
+            or self.budget_scope == "keyhole"
+        ):
+            raise ValueError("first_keyhole requires best_first search with a full_problem trial budget")
         if self.local_search not in LOCAL_SEARCH_CHOICES:
             raise ValueError(
                 f"Unknown local_search {self.local_search!r}. "
@@ -148,6 +157,10 @@ class LocalSearchConfig:
             )
 
     @property
+    def uses_first_keyhole(self) -> bool:
+        return self.planning_horizon == "first_keyhole"
+
+    @property
     def uses_best_first(self) -> bool:
         return self.local_search == "best_first"
 
@@ -192,6 +205,8 @@ class LocalSearchConfig:
         }
         if self.uses_unheld_greedy:
             kwargs["full_namo_exec_mode"] = self.exec_mode
+        if self.uses_first_keyhole:
+            kwargs["full_namo_planning_horizon"] = self.planning_horizon
         if self.scorer_ckpt:
             kwargs["scorer_ckpt"] = self.scorer_ckpt
         if self.best_first_hmax is not None:
@@ -220,6 +235,7 @@ class LocalSearchConfig:
         if not self.uses_best_first:
             return f"{mode}  |  local search: region_bfs (chain BFS)"
         parts = [mode, f"local search: best_first/{self.best_first_prior}"]
+        parts.append(f"planning horizon: {self.planning_horizon}")
         if self.uses_ranker:
             parts.append(f"ckpt={self.scorer_ckpt}")
         parts.append(f"hmax={self.best_first_hmax if self.best_first_hmax is not None else 'canonical'}")
@@ -317,9 +333,11 @@ def check_search_reaches_planner(
                 "only FullNAMOPlanner owns the commit-and-rebuild loop."
             )
 
+    if config.uses_first_keyhole and (held_boundary or algorithm != "full_namo" or goal_strategy == "manual_primitives"):
+        raise ValueError("first_keyhole requires Full NAMO search without --hold-region-target/--active-target or manual primitives")
     mode_chosen = (
         exec_mode_named or config.uses_reactive
-    ) and not config.uses_unheld_greedy
+    ) and not config.uses_unheld_greedy and not config.uses_first_keyhole
     if mode_chosen and EXEC_MODE_REQUIRES_HELD_BOUNDARY and not held_boundary:
         if config.uses_reactive:
             raise ValueError(

@@ -99,6 +99,9 @@ _DIAG_SAFE_STAT_KEYS = frozenset({
     # therefore report the same budget and mean different things, and a row
     # without this cannot say which. See --budget-scope.
     "simulation_budget_scope",
+    "planning_horizon", "plan_outcome", "goal_reachable", "keyhole_target",
+    "trial_simulation_budget_limit", "trial_simulation_budget_used",
+    "trial_simulation_budget_remaining",
 })
 
 
@@ -305,6 +308,13 @@ class NAMOPlanner(Planner):
         self._ml_goal_model_path = ml_goal_model_path
         self._ml_device = ml_device
         self._local_search = local_search or LocalSearchConfig()
+        if self._local_search.uses_first_keyhole and (
+            algorithm != "full_namo" or execution_mode != "mpc"
+            or hold_region_target or active_target_path or goal_strategy == "manual_primitives"
+        ):
+            raise ValueError("first_keyhole requires Full NAMO with MPC execution and no legacy held target or manual primitives")
+        self._keyhole_target: Optional[Dict[str, Any]] = None
+        self._trial_push_budget = None
         self._scale_factor = float(scale_factor)
         self._hold_region_target = bool(hold_region_target)
         self._active_target_path = Path(active_target_path) if active_target_path else None
@@ -619,6 +629,9 @@ class NAMOPlanner(Planner):
                 "plan_source": reuse_kind,
                 "failed_step_index": failed_step_index,
                 "failure_reason": failure_reason,
+                **self._trial_budget_stats(),
+                **({"planning_horizon": "first_keyhole", "keyhole_target": self._keyhole_target}
+                   if self._local_search.uses_first_keyhole else {}),
                 "robot_pose_cm": [obs.robot_x, obs.robot_y, obs.robot_theta],
                 "object_poses_cm": {
                     name: [o.x, o.y, o.theta]
@@ -627,6 +640,65 @@ class NAMOPlanner(Planner):
             })
         except Exception as exc:
             print(f"[DIAG] record_plan failed: {exc!r}", flush=True)
+
+    def _trial_budget_stats(self) -> Dict[str, int]:
+        """Cumulative trial counters, separate from each call's simulation delta."""
+        budget = self._trial_push_budget
+        if budget is None:
+            return {}
+        return {"trial_simulation_budget_limit": budget.limit,
+                "trial_simulation_budget_used": budget.used,
+                "trial_simulation_budget_remaining": budget.remaining}
+
+    def _get_trial_push_budget(self):
+        """Create the canonical allowance once per first-keyhole real trial."""
+        if not self._local_search.uses_first_keyhole:
+            return None
+        if self._trial_push_budget is None:
+            from namo.planners.utils import PushAttemptBudget
+            from namo.planners.opening.best_first_region_opening import CANONICAL_KEYHOLE_SIMULATION_BUDGET
+            limit = self._local_search.keyhole_simulation_budget
+            self._trial_push_budget = PushAttemptBudget(
+                limit=CANONICAL_KEYHOLE_SIMULATION_BUDGET if limit is None else limit
+            )
+        return self._trial_push_budget
+
+    def _release_observed_keyhole(self, result) -> bool:
+        """Drop the old chain only when the supplied observation already opens its target."""
+        if self._keyhole_target is None or result.failure_reason != "target_already_open_before_chain":
+            return False
+        print("[NAMOPlanner] Keyhole OPEN in the observed scene; selecting the next keyhole")
+        self._keyhole_target = None
+        self._pending_reuse_chain = None
+        self._pending_reuse_origin = None
+        self._committed_chain = []
+        self._committed_chain_origin = None
+        self._plan_generated = False
+        return True
+
+    def _verify_observed_chain(self, obs, chain, origin):
+        """Verify reuse or an observation-only opening check with shared timing and budget."""
+        held = self._load_active_target() if self._hold_region_target else None
+        kwargs = {}
+        if self._local_search.uses_first_keyhole:
+            kwargs = {"keyhole_target": self._keyhole_target,
+                      "push_budget": self._get_trial_push_budget()}
+        started = time.perf_counter()
+        result = self._bridge.verify_chain(
+            observation=obs, robot_goal_cm=self._robot_goal_cm, chain=chain,
+            target_points=list(held.target_samples_m) if held else None,
+            min_reachable=held.minimum_reachable() if held else None, **kwargs,
+        )
+        wall_ms = (time.perf_counter() - started) * 1000.0
+        self._plan_count += 1
+        self._total_planning_ms += result.verification_time_ms
+        self._record_reuse_diagnostics(
+            obs=obs, reuse_kind=origin, verification_time_ms=result.verification_time_ms,
+            planning_wall_time_ms=wall_ms, simulations_used=result.sim_pushes_tried,
+            success=result.success, chain=result.verified_subgoals if result.success else chain,
+            failed_step_index=result.failed_step_index, failure_reason=result.failure_reason,
+        )
+        return result
 
     def _try_pending_chain_reuse(self, obs: Observation) -> bool:
         """Try suffix/full-chain reuse from the fresh post-push observation."""
@@ -643,41 +715,14 @@ class NAMOPlanner(Planner):
         )
 
         def _verify_reuse(chain: List[PushSubgoal], reuse_kind: str):
-            # While a boundary is held, verification is graded against its
-            # frozen points rather than the final goal -- otherwise a chain
-            # could verify by making the goal reachable while abandoning the
-            # boundary being opened.
-            held = self._load_active_target() if self._hold_region_target else None
-            planning_wall_start = time.perf_counter()
-            result = self._bridge.verify_chain(
-                observation=obs,
-                robot_goal_cm=self._robot_goal_cm,
-                chain=chain,
-                target_points=list(held.target_samples_m) if held else None,
-                min_reachable=held.minimum_reachable() if held else None,
-            )
-            planning_wall_time_ms = (
-                time.perf_counter() - planning_wall_start
-            ) * 1000.0
-            self._plan_count += 1
-            self._total_planning_ms += result.verification_time_ms
-            self._record_reuse_diagnostics(
-                obs=obs,
-                reuse_kind=reuse_kind,
-                verification_time_ms=result.verification_time_ms,
-                planning_wall_time_ms=planning_wall_time_ms,
-                simulations_used=result.sim_pushes_tried,
-                success=result.success,
-                chain=result.verified_subgoals if result.success else chain,
-                failed_step_index=result.failed_step_index,
-                failure_reason=result.failure_reason,
-            )
-            return result
+            return self._verify_observed_chain(obs, chain, reuse_kind)
 
         suffix_result = None
         if len(source_chain) > 1:
             suffix_chain = self._copy_push_chain(source_chain[1:])
             suffix_result = _verify_reuse(suffix_chain, "reuse_suffix")
+            if self._release_observed_keyhole(suffix_result):
+                return False
             if suffix_result.success:
                 print(
                     f"[NAMOPlanner] Reusing suffix chain ({len(suffix_result.verified_subgoals)} pushes) "
@@ -703,6 +748,8 @@ class NAMOPlanner(Planner):
                 return False
 
         full_result = _verify_reuse(source_chain, "reuse_full")
+        if self._release_observed_keyhole(full_result):
+            return False
         if full_result.success:
             if suffix_result is None:
                 print(
@@ -1121,6 +1168,8 @@ class NAMOPlanner(Planner):
         self._committed_chain_origin = None
         self._pending_reuse_chain = None
         self._pending_reuse_origin = None
+        self._keyhole_target = None
+        self._trial_push_budget = None
 
     def _select_goal_retarget(self, obs: Observation) -> Optional[Tuple[float, float, float]]:
         """Nearest free, robot-reachable cell to the goal point.
@@ -1324,6 +1373,10 @@ class NAMOPlanner(Planner):
         if self._rollout_samples_per_state is not None:
             kwargs["rollout_samples_per_state"] = self._rollout_samples_per_state
         kwargs.update(self._local_search.as_planner_kwargs())
+        if self._local_search.uses_first_keyhole:
+            kwargs["push_budget"] = self._get_trial_push_budget()
+            if self._keyhole_target is not None:
+                kwargs["full_namo_active_keyhole"] = self._keyhole_target
         if self._ml_goal_model_path:
             kwargs["ml_goal_model_path"] = self._ml_goal_model_path
             kwargs["ml_device"] = self._ml_device
@@ -1516,6 +1569,31 @@ class NAMOPlanner(Planner):
         when planning returns no solution (empty subgoals or exception).
         """
         self._plan_generated = True
+        if self._local_search.uses_first_keyhole:
+            if self._keyhole_target is not None:
+                check = self._verify_observed_chain(obs, [], "keyhole_observation")
+                if not self._release_observed_keyhole(check) and check.failure_reason != "target_not_open_after_chain":
+                    print(f"[NAMOPlanner] Cannot check active keyhole: {check.failure_reason}")
+                    self._planning_failed = True
+                    self._subgoals = []
+                    return
+            self._plan_generated = True
+            budget = self._get_trial_push_budget()
+            if budget.exhausted:
+                print(f"[NAMOPlanner] Trial simulation budget exhausted: {budget.used}/{budget.limit}; stopping search")
+                self._bridge.last_search_time_ms = 0.0
+                self._bridge.last_algorithm_stats = {
+                    "planning_horizon": "first_keyhole", "failure_kind": "simulation_budget_exhausted",
+                    "plan_outcome": "budget_exhausted", "simulations_used": 0, **self._trial_budget_stats(),
+                }
+                self._record_plan_diagnostics(
+                    obs, attempt_index=0, attempt_seed=self._shuffle_seed,
+                    subgoals=[], success=False, planning_wall_time_ms=0.0,
+                    extra={"planning_operation": "budget_stop"},
+                )
+                self._planning_failed = True
+                self._subgoals = []
+                return
         model_warmup_ms = self._warmup_model_ranker_once()
         if self._hold_region_target:
             self._generate_plan_holding_target(obs, model_warmup_ms)
@@ -1570,6 +1648,8 @@ class NAMOPlanner(Planner):
                     failed_pushes=self._failed_pushes | blocked,
                     **self._search_planner_kwargs(effective_seed),
                 )
+                if subgoals and self._local_search.uses_first_keyhole:
+                    self._keyhole_target = self._bridge.last_algorithm_stats["keyhole_target"]
                 planning_wall_time_ms = (
                     time.perf_counter() - planning_wall_start
                 ) * 1000.0

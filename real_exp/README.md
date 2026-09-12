@@ -177,3 +177,23 @@ no-op or jam is detected by the live displacement threshold and fed into the
 external edge blacklist. A real trial succeeds only after final navigation
 places the observed robot within 5 cm of the goal or an explicit valid nearby
 retarget.
+# Execute one simulated keyhole at a time
+
+`run_namo.py --planning-horizon first_keyhole` runs the existing Full NAMO best-first search until it finds a verified solution to the first keyhole, then returns that complete local push chain for physical execution. It supports both `--best-first-prior model` and `--best-first-prior uniform`. The default `full_goal` horizon still searches to the final goal before the first physical push.
+
+The runtime executes one physical push at a time and verifies the remaining chain from the next camera observation against the opening's original target points and threshold. Once the observed scene opens that keyhole, it discards the old chain and selects the next keyhole from the observed scene. If reuse fails while the opening is still closed, Full NAMO searches again with the same blockers and frozen criterion. Goal-clearance tasks retain their occupied-goal-cell criterion. An opening is progress; final trial success still requires reaching the goal.
+
+First-keyhole mode requires `--algorithm full_namo --local-search best_first --execution-mode mpc` and uses a full-problem simulation budget. Omit the legacy `--hold-region-target` / `--active-target` flags. `--exec-mode search` is optional here; policy and greedy-DFS modes have different semantics and are rejected with this horizon. The same mutable allowance covers every fresh search, physical retry, and suffix/full-chain verification in the trial. The default limit is the canonical 900 simulator pushes; `--keyhole-simulation-budget N` overrides the total trial limit in this mode. Camera checks without simulated pushes cost zero units. A new process or `NAMOPlanner.reset()` begins a new trial; restarting a process does not resume a budget.
+
+The CLI flag overrides `namo.planning_horizon` in the real YAML configuration. Logs record `planning_horizon`, `plan_outcome`, the opening criterion, per-call `simulations_used`, and cumulative `trial_simulation_budget_used` / `trial_simulation_budget_remaining`. A plan-only local opening is reported as `keyhole_ready`, separately from full-problem success.
+
+For paired worktrees, set `NAMO_CPP_WORKTREE` and `ROBOT_CONTROL_WORKTREE` to the two checkout roots, then prepare the environment below before using the usual trial command with `--planning-horizon first_keyhole`. Both worktrees are needed. Use the intended real object definitions and calibration when preparing a hardware trial; a code worktree contains its branch's tracked configuration.
+
+```bash
+cd "$NAMO_CPP_WORKTREE"
+set -a
+. env.robotlearning.sh
+set +a
+cd "$ROBOT_CONTROL_WORKTREE"
+export PYTHONPATH="$PWD/src:$PYTHONPATH"
+```

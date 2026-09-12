@@ -45,6 +45,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
+from robot_control.planner.search_config import PLANNING_HORIZON_CHOICES
 
 from robot_control import Runtime, RuntimeConfig, SimConfig
 from robot_control.core.object_defs import ObjectDef
@@ -122,7 +123,19 @@ def local_search_from_args(args) -> LocalSearchConfig:
         goal_clearance=args.goal_clearance,
         ml_device=args.ml_device,
         exec_mode=args.exec_mode or DEFAULT_EXEC_MODE,
+        planning_horizon=getattr(args, "planning_horizon", "full_goal") or "full_goal",
     )
+
+
+def resolve_planning_horizon(args) -> str:
+    """CLI override, then real YAML's namo.planning_horizon, then full-goal default."""
+    if args.planning_horizon is not None:
+        return args.planning_horizon
+    if args.config:
+        with open(args.config, encoding="utf-8") as stream:
+            config = yaml.safe_load(stream) or {}
+        return str(config.get("namo", {}).get("planning_horizon", "full_goal"))
+    return "full_goal"
 
 
 def find_namo_config(scale_factor: float = 1.0, robot_model: str = "car") -> str:
@@ -646,6 +659,7 @@ def _emit_plan_only_solution_yaml(
     planner_scene_xml: Optional[str] = None,
     outcome_override: Optional[str] = None,
     success_override: Optional[bool] = None,
+    planning_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Write and return the plan-only ``solution.yaml`` payload.
 
@@ -685,6 +699,12 @@ def _emit_plan_only_solution_yaml(
         payload["object_mapping"] = object_mapping
     if planner_scene_xml is not None:
         payload["planner_scene_xml"] = planner_scene_xml
+    if planning_metadata and planning_metadata.get("planning_horizon") == "first_keyhole":
+        payload.update({key: planning_metadata[key] for key in
+                        ("planning_horizon", "plan_outcome", "goal_reachable", "keyhole_target")
+                        if key in planning_metadata})
+        if success:
+            payload["outcome"] = planning_metadata["plan_outcome"]
     diag_root.mkdir(parents=True, exist_ok=True)
     out_path = diag_root / "solution.yaml"
     out_path.write_text(yaml.safe_dump(payload, sort_keys=False))
@@ -718,6 +738,8 @@ def _write_plan_only_summary(
     simulations_used = max(0, int(stats.get("sim_pushes_tried", 0) or 0))
     success = bool(solution_payload.get("success", False))
     details = dict(algorithm_stats or {})
+    first_keyhole = details.get("planning_horizon") == "first_keyhole"
+    local_progress = first_keyhole and success and not details.get("goal_reachable", False)
     exec_mode = str(
         details.get("exec_mode")
         or getattr(args, "exec_mode", None)
@@ -743,6 +765,8 @@ def _write_plan_only_summary(
             "local_search": getattr(args, "local_search", None),
             "best_first_prior": getattr(args, "best_first_prior", None),
             "failure_kind": details.get("failure_kind"),
+            **({key: details[key] for key in ("planning_horizon", "plan_outcome", "goal_reachable", "keyhole_target")
+                if key in details} if first_keyhole else {}),
         }
     )
 
@@ -756,7 +780,7 @@ def _write_plan_only_summary(
         artifacts["planner_scene_xml"] = str(planner_scene_xml)
     payload = {
         "run_name": recorder.root.name,
-        "outcome": "success" if success else "planning_failed",
+        "outcome": "keyhole_ready" if local_progress else ("success" if success else "planning_failed"),
         "outcome_reason": str(
             solution_payload.get("outcome")
             or ("success" if success else "planner returned no plan")
@@ -783,6 +807,9 @@ def _write_plan_only_summary(
         },
         "scene_capture": {},
     }
+    if first_keyhole:
+        payload["planning_horizon"] = "first_keyhole"
+        payload["goal_reachable"] = bool(details.get("goal_reachable", False))
     recorder.write_summary(payload)
 
 
@@ -1504,6 +1531,7 @@ def _run_plan_only_mode(args) -> int:
         planner_scene_xml=planner_scene_path.name if planner_scene_path is not None else None,
         outcome_override=(None if plan_success else plan_failure_reason),
         success_override=plan_success,
+        planning_metadata=bridge.last_algorithm_stats,
     )
     _write_plan_only_summary(
         args,
@@ -2040,6 +2068,12 @@ def main():
              "re-choosing after every push. Implied by --active-target.",
     )
     parser.add_argument(
+        "--planning-horizon", choices=PLANNING_HORIZON_CHOICES, default=None,
+        help="full_goal plans to the final goal in sim; first_keyhole returns the first "
+             "verified opening for camera-checked physical execution. Defaults to "
+             "namo.planning_horizon in --config, then full_goal.",
+    )
+    parser.add_argument(
         "--active-target",
         type=str,
         default=None,
@@ -2327,6 +2361,7 @@ def main():
     )
 
     args = parser.parse_args()
+    args.planning_horizon = resolve_planning_horizon(args)
 
     # Bootstrap diagnostics before any real work — installs Tee on stdout/
     # stderr so all subsequent prints land in run.log, and writes config.json
@@ -2369,6 +2404,8 @@ def main():
         _held = bool(args.hold_region_target or args.active_target)
         try:
             _search = local_search_from_args(args)
+            if _search.uses_first_keyhole and args.execution_mode != "mpc":
+                raise ValueError("first_keyhole requires --execution-mode mpc for per-push camera checks")
             check_search_reaches_planner(
                 args.algorithm,
                 args.strategy,
