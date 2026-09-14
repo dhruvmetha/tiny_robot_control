@@ -69,7 +69,12 @@ DEFAULT_TIMEOUT_S = 90.0
 # and then report navigation solving a scene it actually cleared by pushing.
 # The outcome row counts the cycles for that reason: a goal reached after five
 # shoves is a different result from one reached by driving.
-MAX_STUCK_RETRIES = 5
+MAX_STUCK_RETRIES = 10
+
+# Physical navigation trials use a 1 mm route grid. This is separate from the
+# 1 mm tier-1 inflation margin: coarser 5 mm cells can round a valid goal near
+# the workspace boundary into the inflated boundary band.
+REAL_NAV_GRID_RESOLUTION_M = 0.001
 
 
 @dataclass
@@ -128,6 +133,7 @@ class NavigationBaselinePlanner(Planner):
         robot_height_cm: float,
         mode: str = "ignore",
         timeout_s: float = DEFAULT_TIMEOUT_S,
+        resolution_m: float = REAL_NAV_GRID_RESOLUTION_M,
     ) -> None:
         if mode not in MODE_COSTS:
             raise ValueError(f"Unknown mode {mode!r}. Valid: {list(BASELINE_MODES)}")
@@ -137,6 +143,9 @@ class NavigationBaselinePlanner(Planner):
         self._bounds_m = workspace_bounds_m
         self._robot_w = robot_width_cm
         self._robot_h = robot_height_cm
+        if resolution_m <= 0:
+            raise ValueError("resolution_m must be positive")
+        self._resolution_m = resolution_m
 
         self.outcome = BaselineOutcome(mode=mode)
         self._started: Optional[float] = None
@@ -269,6 +278,7 @@ class NavigationBaselinePlanner(Planner):
             movables=movables,
             robot_width_cm=self._robot_w,
             robot_height_cm=self._robot_h,
+            resolution_m=self._resolution_m,
         )
         result = baseline.plan(
             (obs.robot_x / 100.0, obs.robot_y / 100.0),

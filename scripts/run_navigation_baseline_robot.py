@@ -49,6 +49,7 @@ from robot_control import Runtime, RuntimeConfig
 from robot_control.planner.navigation_baseline_planner import (
     BASELINE_MODES,
     DEFAULT_TIMEOUT_S,
+    REAL_NAV_GRID_RESOLUTION_M,
     NavigationBaselinePlanner,
 )
 
@@ -173,6 +174,12 @@ def main() -> int:
     parser.add_argument("--speed", type=float, default=0.3)
     parser.add_argument("--nav-speed", type=float, default=None,
                         help="Override navigation max speed (0-1). Unset uses controller.yaml.")
+    parser.add_argument(
+        "--grid-resolution-mm",
+        type=float,
+        default=REAL_NAV_GRID_RESOLUTION_M * 1000.0,
+        help="Route-grid cell size in mm (default: 1). Separate from the inflation margin.",
+    )
     parser.add_argument("--dry-run", action="store_true",
                         help="Plan and show the route without sending wheel commands.")
     parser.add_argument("--no-quit", action="store_true",
@@ -231,6 +238,7 @@ def main() -> int:
         robot_height_cm=robot_h,
         mode=args.mode,
         timeout_s=args.timeout,
+        resolution_m=args.grid_resolution_mm / 1000.0,
     )
 
     runtime_config = RuntimeConfig(

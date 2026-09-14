@@ -3,9 +3,8 @@
 #
 # Tier-1 rule for occupancy inflation:
 #   total_inflation = robot_radius + inflation_margin
-# The real_2mov study uses a 0.001m shared margin. Keep this identical to
-# namo_cpp/config/wavefront_inflation.yaml so planning and navigation agree
-# about which cells are blocked.
+# Operator-selected trial margin: pair with namo_cpp/config/margin_1mm/
+# so simulation planning and real navigation use the same base inflation.
 tier1:
   base_inflation_margin_m: 0.001
 

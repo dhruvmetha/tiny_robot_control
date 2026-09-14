@@ -4,8 +4,8 @@
 # Used by: test_push.py, test_robot.py, Runtime, SimEnvironment, NAMO integration
 #
 # Naming convention:
-#   obj_<marker_id>  - Movable objects (markers 1-8)
-#   wall_<marker_id> - Static walls (markers 9-15)
+#   obj_<label>      - Movable objects; marker_id is assigned explicitly
+#   wall_<marker_id> - Static walls; type is assigned explicitly
 #   goal             - Goal marker (marker 0)
 #
 # Dimension convention (matching MuJoCo/namo_cpp):
@@ -28,7 +28,7 @@ objects:
     type: goal
 
   # ─────────────────────────────────────────────────────────────
-  # MOVABLE OBJECTS (markers 1-8)
+  # MOVABLE OBJECTS
   # ─────────────────────────────────────────────────────────────
 
 
@@ -71,6 +71,15 @@ objects:
       depth: 7.5
       height: 5.0
 
+  # Same dimensions as obj_4, per operator instruction 2026-09-09.
+  obj_4b:
+    marker_id: 4
+    type: movable
+    shape:
+      width: 12.0
+      depth: 7.5
+      height: 5.0
+
   obj_5:
     marker_id: 2
     type: movable
@@ -79,13 +88,14 @@ objects:
       depth: 4.0
       height: 5.0
 
-  # obj_6:
-  #   marker_id: 6
-  #   type: movable
-  #   shape:
-  #     width: 5.0
-  #     depth: 5.0
-  #     height: 5.0
+  # Square block, measured 2026-09-09.
+  obj_6:
+    marker_id: 13
+    type: movable
+    shape:
+      width: 12.5
+      depth: 12.5
+      height: 5.5
 
   # obj_7:
   #   marker_id: 7
@@ -104,7 +114,7 @@ objects:
   #     height: 5.0
 
   # ─────────────────────────────────────────────────────────────
-  # STATIC WALLS (markers 9-15)
+  # STATIC WALLS
   # ─────────────────────────────────────────────────────────────
 
   # Long wall blocks - 19cm x 5.2cm
